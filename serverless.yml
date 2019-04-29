@@ -24,3 +24,47 @@ provider:
   # commit your env.yml.
   #
   #environment: ${file(env.yml):${self:provider.stage}}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action: [
+        "athena:BatchGetQueryExecution",
+        "athena:CancelQueryExecution",
+        "athena:GetCatalogs",
+        "athena:GetExecutionEngine",
+        "athena:GetExecutionEngines",
+        "athena:GetNamespace",
+        "athena:GetNamespaces",
+        "athena:GetQueryExecution",
+        "athena:GetQueryExecutions",
+        "athena:GetQueryResults",
+        "athena:GetQueryResultsStream",
+        "athena:GetTable",
+        "athena:GetTables",
+        "athena:ListQueryExecutions",
+        "athena:RunQuery",
+        "athena:StartQueryExecution",
+        "athena:StopQueryExecution",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListMultipartUploadParts",
+        "s3:AbortMultipartUpload",
+        "s3:PutObject",
+        "glue:*"
+      ]
+      Resource: "*"
+
+functions:
+  list:
+    handler: list.main
+    events:
+      - http:
+          path: tables
+          method: get
+          cors: true
+          authorizer: aws_iam
+
+resources:
+  - ${file(resources/api-gateway-errors.yml)}
