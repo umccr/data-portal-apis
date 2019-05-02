@@ -57,11 +57,19 @@ provider:
       Resource: "*"
 
 functions:
-  list:
-    handler: list.main
+  file-search:
+    handler: file-search.main
     events:
       - http:
-          path: tables
+          path: files
+          method: get
+          cors: true
+          authorizer: aws_iam
+  file-signed-url:
+    handler: file-signed-url.main
+    events:
+      - http:
+          path: file-signed-url
           method: get
           cors: true
           authorizer: aws_iam
