@@ -1,16 +1,17 @@
 import * as squel from "squel";
 import {badRequest, failure, success} from "./libs/response-lib";
 import * as athena from "./libs/athena-lib";
+import parseFilterQueryString from "./libs/filters";
 
 const DEFAULT_ROWS_PER_PAGE = 20;
 const SORTABLE_COLUMNS = ['size', 'last_modified_date'];
 
 export const main = async (event, context) => {
     const queryStringParams = event.queryStringParameters;
-    const filePath = queryStringParams.filePath;
+    const filterQueryString = queryStringParams.query;
 
-    if (filePath === null) {
-        return badRequest({errors: 'query cannot be empty'});
+    if (filterQueryString === undefined) {
+        return badRequest({errors: 'search query cannot be empty'});
     }
 
     const pageString = queryStringParams.page;
@@ -31,12 +32,12 @@ export const main = async (event, context) => {
         .expr()
         .and('rn BETWEEN ? AND ?', rowStart, rowEnd);
 
-    const searchExpression = squel
-        .expr()
-        .and(`key like '%${filePath}%'`);
+    let searchExpression;
 
-    if (queryStringParams.fileExtension) {
-        searchExpression.and(`key like '%.${queryStringParams.fileExtension}'`);
+    try {
+        searchExpression = parseFilterQueryString(filterQueryString);
+    } catch (e) {
+        return badRequest({status: false, errors: e});
     }
 
     const innerQuery = squel
