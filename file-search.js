@@ -53,7 +53,8 @@ export const main = async (event, context) => {
     const dataQuery = squel
         .select()
         .from(innerQuery)
-        .where(paginationExpression);
+        .where(paginationExpression)
+        .order('rn', true);
 
     const metaDataQuery = squel
         .select()
@@ -78,7 +79,13 @@ export const main = async (event, context) => {
 
         return success({rows: rows, meta: metaData});
     } catch (e) {
-        return failure({status: false, errors: e});
+        let message = e;
+
+        if (typeof e === "object" && e.code) {
+            message = 'Unknown error: ' + e.code
+        }
+
+        return failure({status: false, errors: message});
     }
 };
 
