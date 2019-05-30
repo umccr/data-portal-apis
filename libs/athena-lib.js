@@ -6,13 +6,9 @@ export const call = (action, params) => {
 
     return athena[action](params).promise();
 };
-
 export const getDataForQuery = async (queryString, resultSetParser = null) => {
     const params = {
         QueryString: queryString,
-        QueryExecutionContext: {
-            Database: "dafu"
-        },
         ResultConfiguration: {
             EncryptionConfiguration: {
                 EncryptionOption: "SSE_S3"
@@ -54,3 +50,6 @@ const waitForQueryToComplete = async queryExecutionId => {
         }
     }
 };
+
+export const DATA_TABLE_NAME = 'dafu.data';
+export const LIMS_TABLE_NAME = 'google_lims.umccr_data_google_lims_dev';

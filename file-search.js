@@ -1,6 +1,7 @@
 import * as squel from "squel";
-import {badRequest, failure, success} from "./libs/response-lib";
+import {badRequest, success} from "./libs/response-lib";
 import * as athena from "./libs/athena-lib";
+import {DATA_TABLE_NAME} from "./libs/athena-lib";
 import parseFilterQueryString from "./libs/filters";
 
 const DEFAULT_PAGE_NUMBER = 0;
@@ -10,7 +11,6 @@ const SORTABLE_COLUMNS = ['size', 'last_modified_date'];
 // Maximum allowed percentage for sub sampling
 const MAX_RAND_SAMPLES_LIMIT = 500;
 
-const TABLE_NAME = 'data';
 const ROW_NUMBER_ALIAS = 'rn';
 
 /**
@@ -18,7 +18,7 @@ const ROW_NUMBER_ALIAS = 'rn';
  * {
  *      query:          string, mandatory,  the query string (leave empty for no filter)
  *      rowsPerPage:    int,    optional,   number of rows per page
- *      page:           int,    optional,   the current page number
+ *      page:           int,    opti onal,   the current page number
  *      sortCol:        string, optional,   the column to be sorted
  *      sortAsc:        bool,   optional,   sort in ascending order
  *      randomSamples:  int,    optional,   retrieve n randomly-selected samples
@@ -108,13 +108,13 @@ const processSearchRequest = async event => {
 
     const sortQueryString = getSortQueryString(params);
 
-    const searchExpression = parseFilterQueryString(filterQueryString);
+    const searchExpression = await parseFilterQueryString(filterQueryString);
 
     // Compose query for retrieving meta data
     const metaDataQuery = squel
         .select()
         .field('COUNT()', 'total')
-        .from(TABLE_NAME)
+        .from(DATA_TABLE_NAME)
         .where(searchExpression);
 
     let tableRowCount = null;
@@ -123,7 +123,7 @@ const processSearchRequest = async event => {
     const randomSamples = getRandomSamplingConfig(params);
 
     // By default we dont do random sampling
-    let innerQueryFrom = TABLE_NAME;
+    let innerQueryFrom = DATA_TABLE_NAME;
     let randPercentage;
 
     if (randomSamples !== null) {
@@ -136,7 +136,7 @@ const processSearchRequest = async event => {
 
         console.log(randPercentage);
         // Append sub sampling to the from table name
-        innerQueryFrom = `${TABLE_NAME} TABLESAMPLE BERNOULLI (${randPercentage})`;
+        innerQueryFrom = `${DATA_TABLE_NAME} TABLESAMPLE BERNOULLI (${randPercentage})`;
     }
 
     // Compose pagination expression after random sampling config has been read
@@ -188,7 +188,7 @@ const processSearchRequest = async event => {
     return success({rows: rows, meta: metaData});
 };
 
-const processResultRows = rows => {
+export const processResultRows = rows => {
     const headerRow = rows[0].Data.map(col => {
         const val = col.VarCharValue;
 

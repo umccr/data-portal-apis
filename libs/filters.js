@@ -1,8 +1,11 @@
 import * as squel from "squel";
+import {getDataForQuery, LIMS_TABLE_NAME} from "./athena-lib";
+import {processResultRows} from "../file-search";
 
 const COLUMN_TYPE_STRING = 'string';
 const COLUMN_TYPE_INTEGER = 'integer';
 const COLUMN_TYPE_DATETIME = 'datetime';
+const COLUMN_TYPE_ILLUMINA = 'illumina';
 
 const FILTER_COLUMNS = {
     key: {
@@ -13,6 +16,9 @@ const FILTER_COLUMNS = {
     },
     last_modified_date: {
         type: COLUMN_TYPE_DATETIME
+    },
+    illumina_id: {
+        type: COLUMN_TYPE_ILLUMINA
     }
 };
 
@@ -43,6 +49,12 @@ const FILTERS = {
             alias: 'date',
             description: 'Compare with last modified date of the file'
         },
+        {
+            column: 'illumina_id',
+            type: 'include',
+            alias: 'illumina_id',
+            descriptionL: 'Illumina_id (in LIMS table) includes'
+        }
     ],
 };
 
@@ -80,7 +92,31 @@ const findFilter = key => {
     return functions[0];
 };
 
-const getExpressionFromFilter = (filterKey, filterVal) => {
+const get_key_patterns_from_lims = async illumina_id => {
+    const query = squel.select()
+        .fields(['sampleid', 'samplename', 'project'])
+        .from(LIMS_TABLE_NAME)
+        .where(`illumina_id LIKE \'%${illumina_id}%\'`);
+
+    console.log(query.toString());
+
+    const patterns = await getDataForQuery(query.toString(), rows => {
+        const dataRows = rows.slice(1).map(row => row.Data.map(col => col.VarCharValue));
+        const patterns = [];
+
+        dataRows.map(row => {
+            // Use sample id and sample name for now
+            patterns.push(row[0]);
+            patterns.push(row[1]);
+        });
+
+        return patterns;
+    });
+
+    return patterns;
+};
+
+const getExpressionFromFilter = async (filterKey, filterVal) => {
     const filter = findFilter(filterKey);
 
     const exp = squel.expr();
@@ -98,19 +134,38 @@ const getExpressionFromFilter = (filterKey, filterVal) => {
             exp.and(`${filter.column} ${operator} ${wrappedVal}`);
             break;
         case "end_with":
-            exp.and(`${filter.column} like \'%${filterVal}\'`);
+            exp.and(`${filter.column} LIKE \'%${filterVal}\'`);
             break;
         case "include":
-            exp.and(`${filter.column} like \'%${filterVal}%\'`);
+            // Special case for LIMS Illumina filtering
+            if (FILTER_COLUMNS[filter.column].type === COLUMN_TYPE_ILLUMINA) {
+                const patterns = await get_key_patterns_from_lims(filterVal);
+
+                if (patterns.length === 0) {
+                    throw `illumina_id ${filterVal} not found`;
+                }
+
+                const innerExp = squel.expr();
+
+                // We only need at least one pattern to be matched
+                for (let i=0; i<patterns.length; i++) {
+                    innerExp.or(`key LIKE \'%${patterns[i]}%\'`)
+                }
+
+                exp.and(innerExp);
+            } else {
+                exp.and(`${filter.column} LIKE \'%${filterVal}%\'`);
+            }
+
             break;
         default:
-            throw `Unsupported filter type ${filter.type}`
+            throw `Unsupported filter type ${filter.type}`;
     }
 
     return exp;
 };
 
-const parseFilterQueryString = queryString => {
+const parseFilterQueryString = async queryString => {
     const filters = queryString.trim().split(' ');
 
     const exp = squel.expr();
@@ -123,11 +178,11 @@ const parseFilterQueryString = queryString => {
         switch (tokens.length) {
             case 1:
                 filterKey = FILTERS.default;
-                exp.and(getExpressionFromFilter(filterKey, tokens[0]));
+                exp.and(await getExpressionFromFilter(filterKey, tokens[0]));
                 break;
             case 2:
                 filterKey = tokens[0];
-                exp.and(getExpressionFromFilter(filterKey, tokens[1]));
+                exp.and(await getExpressionFromFilter(filterKey, tokens[1]));
                 break;
             default:
                 throw `Unexpected token in ${filter}`;
