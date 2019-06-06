@@ -147,6 +147,7 @@ const processSearchRequest = async event => {
         .field(`row_number() over(${sortQueryString})`, ROW_NUMBER_ALIAS)
         .field('bucket')
         .field('key')
+        .field('CONCAT(\'s3://\', bucket, \'/\', key) AS path')
         .field('size')
         .field('last_modified_date')
         .from(innerQueryFrom)
@@ -198,6 +199,7 @@ export const processResultRows = rows => {
         }
     });
     const dataRows = rows.slice(1).map(row => row.Data.map(col => col.VarCharValue));
+
     return { headerRow, dataRows };
 };
 
