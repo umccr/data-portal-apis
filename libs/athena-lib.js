@@ -7,13 +7,15 @@ export const call = (action, params) => {
     return athena[action](params).promise();
 };
 export const getDataForQuery = async (queryString, resultSetParser = null) => {
+    const outputLocation = process.env.ATHENA_OUTPUT_LOCATION;
+
     const params = {
         QueryString: queryString,
         ResultConfiguration: {
             EncryptionConfiguration: {
                 EncryptionOption: "SSE_S3"
             },
-            OutputLocation: "s3://umccr-athena-query-results-dev/"
+            OutputLocation: outputLocation
         },
     };
 
@@ -51,5 +53,5 @@ const waitForQueryToComplete = async queryExecutionId => {
     }
 };
 
-export const DATA_TABLE_NAME = 'dafu.data';
-export const LIMS_TABLE_NAME = 'google_lims.umccr_data_google_lims_dev';
+export const S3_KEYS_TABLE_NAME = process.env.S3_KEYS_TABLE_NAME;
+export const LIMS_TABLE_NAME = process.env.LIMS_TABLE_NAME;

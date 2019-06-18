@@ -1,6 +1,5 @@
 import * as squel from "squel";
 import {getDataForQuery, LIMS_TABLE_NAME} from "./athena-lib";
-import {processResultRows} from "../file-search";
 
 const COLUMN_TYPE_STRING = 'string';
 const COLUMN_TYPE_INTEGER = 'integer';
@@ -149,7 +148,7 @@ const getLikeExpression = (col, val, mode, caseSensitive) => {
             wrappedVal = val;
     }
 
-    wrappedVal = `'${wrappedVal}'`
+    wrappedVal = `'${wrappedVal}'`;
 
     const formattedCol = caseSensitive ? col : `LOWER(${col})`;
     const formattedVal = caseSensitive ? wrappedVal : `LOWER(${wrappedVal})`;

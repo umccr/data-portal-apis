@@ -1,7 +1,7 @@
 import * as squel from "squel";
 import {badRequest, success} from "./libs/response-lib";
 import * as athena from "./libs/athena-lib";
-import {DATA_TABLE_NAME} from "./libs/athena-lib";
+import {S3_KEYS_TABLE_NAME} from "./libs/athena-lib";
 import parseFilterQueryString from "./libs/filters";
 
 const DEFAULT_PAGE_NUMBER = 0;
@@ -114,7 +114,7 @@ const processSearchRequest = async event => {
     const metaDataQuery = squel
         .select()
         .field('COUNT()', 'total')
-        .from(DATA_TABLE_NAME)
+        .from(S3_KEYS_TABLE_NAME)
         .where(searchExpression);
 
     let tableRowCount = null;
@@ -123,7 +123,7 @@ const processSearchRequest = async event => {
     const randomSamples = getRandomSamplingConfig(params);
 
     // By default we dont do random sampling
-    let innerQueryFrom = DATA_TABLE_NAME;
+    let innerQueryFrom = S3_KEYS_TABLE_NAME;
     let randPercentage;
 
     if (randomSamples !== null) {
@@ -136,7 +136,7 @@ const processSearchRequest = async event => {
 
         console.log(randPercentage);
         // Append sub sampling to the from table name
-        innerQueryFrom = `${DATA_TABLE_NAME} TABLESAMPLE BERNOULLI (${randPercentage})`;
+        innerQueryFrom = `${S3_KEYS_TABLE_NAME} TABLESAMPLE BERNOULLI (${randPercentage})`;
     }
 
     // Compose pagination expression after random sampling config has been read
