@@ -16,7 +16,7 @@ custom:
 provider:
   name: aws
   runtime: nodejs8.10
-  stage: ${opt:stage}
+  stage: ${opt:STAGE}
   region: ap-southeast-2
   # To load environment variables externally
   # rename env.example to env.yml and uncomment
@@ -65,6 +65,11 @@ functions:
           method: get
           cors: true
           authorizer: aws_iam
+    environment:
+      ATHENA_OUTPUT_LOCATION: ${opt:ATHENA_OUTPUT_LOCATION}
+      S3_KEYS_TABLE_NAME: ${opt:S3_KEYS_TABLE_NAME}
+      LIMS_TABLE_NAME: ${opt:LIMS_TABLE_NAME}
+
   file-signed-url:
     handler: file-signed-url.main
     events:
