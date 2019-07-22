@@ -5,6 +5,7 @@ service: data-portal-app-api
 plugins:
   - serverless-webpack
   - serverless-offline
+  - serverless-domain-manager
 
 # serverless-webpack configuration
 # Enable auto-packing of external modules
@@ -12,6 +13,11 @@ custom:
   webpack:
     webpackConfig: ./webpack.config.js
     includeModules: true
+  customDomain:
+    domainName: api.${opt:DOMAIN}
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
 
 provider:
   name: aws

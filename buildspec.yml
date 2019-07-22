@@ -8,6 +8,7 @@ phases:
       - npm install -g serverless@1.48.0
   build:
     commands:
+      - serverless create_domain
       - serverless deploy --STAGE $STAGE
                           --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
                           --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
