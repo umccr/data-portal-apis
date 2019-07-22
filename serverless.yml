@@ -14,7 +14,7 @@ custom:
     webpackConfig: ./webpack.config.js
     includeModules: true
   customDomain:
-    domainName: api.${opt:DOMAIN}
+    domainName: ${opt:API_DOMAIN_NAME}
     basePath: ''
     stage: ${self:provider.stage}
     createRoute53Record: true
