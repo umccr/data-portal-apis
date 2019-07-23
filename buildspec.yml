@@ -8,11 +8,11 @@ phases:
       - npm install -g serverless@1.48.0
   build:
     commands:
-      - serverless create_domain --STAGE $STAGE
-                                 --API_DOMAIN_NAME $API_DOMAIN_NAME
-                                 --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
-                                 --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
-                                 --LIMS_TABLE_NAME $LIMS_TABLE_NAME
+      - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
+                                                --API_DOMAIN_NAME $API_DOMAIN_NAME
+                                                --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
+                                                --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
+                                                --LIMS_TABLE_NAME $LIMS_TABLE_NAME
       - serverless deploy --STAGE $STAGE
                           --API_DOMAIN_NAME $API_DOMAIN_NAME
                           --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
