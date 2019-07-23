@@ -175,6 +175,8 @@ functions:
               -
                 name: rowsPerPage
                 description: Number of rows to be returned (default 20)
+                # For required field not working,
+                # an issue has been submitted https://github.com/deliveryhero/serverless-aws-documentation/issues/118
                 required: false
               -
                 name: page
