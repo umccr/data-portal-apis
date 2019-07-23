@@ -1,4 +1,4 @@
-import * as squel from "squel";
+import * as squel from "safe-squel";
 import {badRequest, success} from "./libs/response-lib";
 import * as athena from "./libs/athena-lib";
 import {S3_KEYS_TABLE_NAME} from "./libs/athena-lib";
