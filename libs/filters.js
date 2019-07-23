@@ -1,4 +1,5 @@
-import * as squel from "squel";
+// Use safe alternative version for now https://github.com/hiddentao/squel/issues/350#issuecomment-423032176
+import * as squel from "safe-squel";
 import {getDataForQuery, LIMS_TABLE_NAME} from "./athena-lib";
 
 const COLUMN_TYPE_STRING = 'string';
