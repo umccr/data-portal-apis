@@ -175,18 +175,23 @@ functions:
               -
                 name: rowsPerPage
                 description: Number of rows to be returned (default 20)
+                required: false
               -
                 name: page
                 description: Current pagination index (default 0)
+                required: false
               -
                 name: sortCol
                 description: The column to be sorted (choices - columns with sortable=true)
+                required: false
               -
                 name: sortAsc
                 description: Sort in ascending order (default false)
+                required: false
               -
                 name: randomSamples
                 description: Retrieve n randomly-selected samples
+                required: false
             methodResponses:
               -
                 statusCode: '200'
