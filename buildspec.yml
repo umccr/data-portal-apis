@@ -5,6 +5,7 @@ phases:
         nodejs: 8
     commands:
       - npm install
+      # Use fixed version for now. See https://github.com/serverless/serverless/issues/6414
       - npm install -g serverless@1.48.0
   build:
     commands:
