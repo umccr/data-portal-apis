@@ -20,6 +20,6 @@ export const main = async (event, context) => {
 
         return success(url);
     } catch (e) {
-        return failure({errors: e});
+        return failure({errors: e.code});
     }
 };
