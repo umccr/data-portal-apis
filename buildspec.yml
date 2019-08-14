@@ -14,8 +14,10 @@ phases:
                                                 --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
                                                 --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
                                                 --LIMS_TABLE_NAME $LIMS_TABLE_NAME
+                                                --LAMBDA_IAM_ROLE_ARN $LAMBDA_IAM_ROLE_ARN
       - serverless deploy --STAGE $STAGE
                           --API_DOMAIN_NAME $API_DOMAIN_NAME
                           --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
                           --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
                           --LIMS_TABLE_NAME $LIMS_TABLE_NAME
+                          --LAMBDA_IAM_ROLE_ARN $LAMBDA_IAM_ROLE_ARN
