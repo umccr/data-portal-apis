@@ -1,218 +1,125 @@
-# NOTE: update this with your service name
-service: data-portal-app-api
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
 
-# Use the serverless-webpack plugin to transpile ES6
-plugins:
-  - serverless-webpack
-  - serverless-offline
-  - serverless-domain-manager
-  - serverless-aws-documentation
-  - serverless-associate-waf
+service: aws-python3 # NOTE: update this with your service name
 
-# serverless-webpack configuration
-# Enable auto-packing of external modules
-custom:
-  webpack:
-    webpackConfig: ./webpack.config.js
-    includeModules: true
-  customDomain:
-    domainName: ${opt:API_DOMAIN_NAME}
-    basePath: ''
-    stage: ${self:provider.stage}
-    createRoute53Record: true
-  associateWaf:
-    name: dataPortalAPIWebAcl
-  documentation:
-    api:
-      info:
-        version: "2"
-        title: "Data Portal APIs"
-        description: "API documentation"
-    models:
-      -
-        name: HeaderColumn
-        description: "Defines a data column"
-        contentType: "application/json"
-        schema:
-          type: object
-          properties:
-            key:
-              type: string
-            sortable:
-              type: boolean
-      -
-        name: DataRow
-        description: "A data record row"
-        contentType: "application/json"
-        schema:
-          type: array
-          items:
-            type: string
-      -
-        name: Meta
-        description: "Meta data of the data rows"
-        contentType: "application/json"
-        schema:
-          type: object
-          properties:
-            totalRows:
-              description: "Total number of rows"
-              type: integer
-            size:
-              description: "Page size (/no. of rows in a page)"
-              type: integer
-            page:
-              description: "Current page index"
-              type: integer
-            start:
-              description: "Which row number this page starts from"
-              type: integer
-            totalPages:
-              description: "Total number of pages"
-              type: integer
-      -
-        name: FilesResponse
-        description: "Files data response"
-        contentType: "application/json"
-        schema:
-          type: object
-          properties:
-            rows:
-              type: object
-              properties:
-                headRow:
-                  type: array
-                  items:
-                    $ref: "{{model: HeaderColumn}}"
-                dataRows:
-                  type: array
-                  items:
-                    $ref: "{{model: DataRow}}"
-            meta:
-              $ref: "{{model: Meta}}"
-      -
-        name: BadRequestResponse
-        description: "Bad request response"
-        contentType: "application/json"
-        schema:
-          type: object
-          properties:
-            status:
-              type: boolean
-            errors:
-              type: string
-      -
-        name: FailureResponse
-        description: "Failure response"
-        contentType: "application/json"
-        schema:
-          type: object
-          properties:
-            status:
-              type: boolean
-            errors:
-              type: string
-      -
-        name: SignedFileURLResponse
-        description: "Signed file URL response"
-        contentType: "application/json"
-        schema:
-          type: string
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
 
 provider:
   name: aws
-  runtime: nodejs8.10
-  stage: ${opt:STAGE}
-  region: ap-southeast-2
-  timeout: 20
-  role: ${opt:LAMBDA_IAM_ROLE_ARN}
+  runtime: python3.7
+  vpc:
+    securityGroupIds:
+      "Fn::Split":
+        - ","
+        - ${env:RDS_SECURITY_GROUP_IDS}
+    subnetIds:
+      "Fn::Split":
+        - ","
+        - ${env:RDS_SUBNET_IDS}
+  environment:
+    SSM_KEY_NAME_DJANGO_SECRET_KEY: ${env:SSM_KEY_NAME_DJANGO_SECRET_KEY}
+    SSM_KEY_NAME_DATABSE_URL: ${env:SSM_KEY_NAME_DATABSE_URL}
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.py
+#    - exclude-me-dir/**
 
 functions:
-  file-search:
-    handler: file-search.main
-    events:
-      - http:
-          path: files
-          method: get
-          cors: true
-          authorizer: aws_iam
-          documentation:
-            summary: File search
-            description: >
-              Provides the ability to search files with custom filters. Needs to be authenticated.
-            pathParams:
-              -
-                name: query
-                description: The query string (use empty string for no filter)
-                required: true
-              -
-                name: rowsPerPage
-                description: Number of rows to be returned (default 20)
-                # For required field not working,
-                # an issue has been submitted https://github.com/deliveryhero/serverless-aws-documentation/issues/118
-                required: false
-              -
-                name: page
-                description: Current pagination index (default 0)
-                required: false
-              -
-                name: sortCol
-                description: The column to be sorted (choices - columns with sortable=true)
-                required: false
-              -
-                name: sortAsc
-                description: Sort in ascending order (default false)
-                required: false
-              -
-                name: randomSamples
-                description: Retrieve n randomly-selected samples
-                required: false
-            methodResponses:
-              -
-                statusCode: '200'
-                responseModels:
-                  "application/json": FilesResponse
-              -
-                statusCode: '400'
-                responseModels:
-                  "application/json": BadRequestResponse
+  migrate:
+    environment: ${self:custom.variables}
+    handler: migrate.handler
+  hello:
+    handler: handler.hello
+    vpc:
+      securi
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+#    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - websocket: $connect
+#      - s3: ${env:BUCKET}
+#      - schedule: rate(10 minutes)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
+#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+#      - cloudwatchLog: '/aws/lambda/hello'
+#      - cognitoUserPool:
+#          pool: MyUserPool
+#          trigger: PreSignUp
 
-    environment:
-      ATHENA_OUTPUT_LOCATION: ${opt:ATHENA_OUTPUT_LOCATION}
-      S3_KEYS_TABLE_NAME: ${opt:S3_KEYS_TABLE_NAME}
-      LIMS_TABLE_NAME: ${opt:LIMS_TABLE_NAME}
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
 
-  file-signed-url:
-    handler: file-signed-url.main
-    events:
-      - http:
-          path: file-signed-url
-          method: get
-          cors: true
-          authorizer: aws_iam
-          documentation:
-            summary: Get signed url of a S3 file
-            description: >
-              Provides the ability to get the signed url of a S3 object key,
-              using the current authenticated user.
-            pathParams:
-              -
-                name: bucket
-                description: The name of the bucket where the S3 key is in
-                required: true
-              -
-                name: key
-                description: The key of the S3 file to be retrieved
-                required: true
-            methodResponses:
-              -
-                statusCode: '200'
-                responseModels:
-                  "application/json": SignedFileURLResponse
-              -
-                statusCode: '500'
-                responseModels:
-                  "application/json": FailureResponse
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
 
-resources:
-  - ${file(resources/api-gateway-errors.yml)}
+plugins:
+  - serverless-wsgi
+  - serverless-python-requirements
