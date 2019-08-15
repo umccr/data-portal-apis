@@ -1,4 +1,12 @@
 version: 0.2
+env:
+  variables:
+    STAGE: $STAGE
+    API_DOMAIN_NAME: $API_DOMAIN_NAME
+    RDS_SECURITY_GROUP_IDS: $RDS_SECURITY_GROUP_IDS
+    RDS_SUBNET_IDS: $RDS_SUBNET_IDS
+    SSM_KEY_NAME_DATABSE_URL: $SSM_KEY_NAME_DATABSE_URL
+    SSM_KEY_NAME_DJANGO_SECRET_KEY: $SSM_KEY_NAME_DJANGO_SECRET_KEY
 phases:
   install:
     runtime-versions:
@@ -9,15 +17,5 @@ phases:
       - npm install -g serverless@1.48.0
   build:
     commands:
-      - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
-                                                --API_DOMAIN_NAME $API_DOMAIN_NAME
-                                                --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
-                                                --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
-                                                --LIMS_TABLE_NAME $LIMS_TABLE_NAME
-                                                --LAMBDA_IAM_ROLE_ARN $LAMBDA_IAM_ROLE_ARN
-      - serverless deploy --STAGE $STAGE
-                          --API_DOMAIN_NAME $API_DOMAIN_NAME
-                          --ATHENA_OUTPUT_LOCATION $ATHENA_OUTPUT_LOCATION
-                          --S3_KEYS_TABLE_NAME $S3_KEYS_TABLE_NAME
-                          --LIMS_TABLE_NAME $LIMS_TABLE_NAME
-                          --LAMBDA_IAM_ROLE_ARN $LAMBDA_IAM_ROLE_ARN
+      - SLS_DEBUG=true serverless create_domain
+      - serverless deploy
