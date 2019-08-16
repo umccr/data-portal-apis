@@ -3,14 +3,16 @@ env:
   variables:
     STAGE: $STAGE
     API_DOMAIN_NAME: $API_DOMAIN_NAME
+    LAMBDA_IAM_ROLE_ARN: $LAMBDA_IAM_ROLE_ARN
     RDS_SECURITY_GROUP_IDS: $RDS_SECURITY_GROUP_IDS
     RDS_SUBNET_IDS: $RDS_SUBNET_IDS
-    SSM_KEY_NAME_DATABSE_URL: $SSM_KEY_NAME_DATABSE_URL
+    SSM_KEY_NAME_FULL_DB_URL: $SSM_KEY_NAME_FULL_DB_URL
     SSM_KEY_NAME_DJANGO_SECRET_KEY: $SSM_KEY_NAME_DJANGO_SECRET_KEY
 phases:
   install:
     runtime-versions:
         nodejs: 8
+        python: 3.7
     commands:
       - npm install
       # Use fixed version for now. See https://github.com/serverless/serverless/issues/6414
@@ -18,4 +20,5 @@ phases:
   build:
     commands:
       - SLS_DEBUG=true serverless create_domain
+      - ./manage.py migrate
       - serverless deploy
