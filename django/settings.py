@@ -11,17 +11,18 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-import environ
 from environ import Env
 
 from utils import ssm
 
-env = environ.Env(
+env = Env(
     # set casting, default value
     DEBUG=(bool, False)
 )
 
-environ.Env.read_env()
+IS_OFFLINE = os.environ["IS_OFFLINE"]
+
+Env.read_env()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -86,10 +87,14 @@ WSGI_APPLICATION = 'apis.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    'default': Env.db_url_config(ssm.get_secret(os.environ['SSM_KEY_NAME_DATABSE_URL']))
-}
-
+if IS_OFFLINE:
+    DATABASES = {
+        'default': env.db()
+    }
+else:
+    DATABASES = {
+        'default': Env.db_url_config(ssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
