@@ -34,15 +34,16 @@ functions:
         authorizer: aws_iam
       - http:  ANY {proxy+}
         authorizer: aws_iam
-  s3_data_processor:
-    handler: process_sqs_records.handler
+  sqs_s3_event_processor:
+    handler: sqs_s3_event_processor.handler
     events:
       - sqs:
-        arn: arn:aws:sqs:ap-southeast-2:620123204273:data-portal-test
+          arn: arn:aws:sqs:ap-southeast-2:620123204273:data-portal-test
 
 custom:
   wsgi:
-    app: django.wsgi.application
+    app: data_portal.wsgi.application
+    packRequirements: false
 #  customDomain:
 #    domainName: ${env:API_DOMAIN_NAME}
 #    basePath: ''
