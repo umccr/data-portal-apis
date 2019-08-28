@@ -103,10 +103,9 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
     :param records: records to be processed
     """
 
-    bucket_name = os.environ['LIMS_BUCKET_NAME']
     client = boto3.client('s3')
     data_object = client.get_object(
-        Bucket=bucket_name,
+        Bucket=os.environ['LIMS_BUCKET_NAME'],
         Key=os.environ['LIMS_CSV_OBJECT_KEY']
     )
     curr_etag = data_object['ETag']
@@ -119,6 +118,8 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
 
     with transaction.atomic():
         for record in records:
+            bucket_name = record.s3_bucket_name
+
             if record.event_type == EventType.EVENT_OBJECT_REMOVED:
                 # Removing the matched S3Object
                 key = record.s3_object_meta['key']
