@@ -89,6 +89,10 @@ else:
         'default': Env.db_url_config(ssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
     }
 
+DATABASES['default']['OPTIONS'] = {
+    'connect_timeout': 3
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 

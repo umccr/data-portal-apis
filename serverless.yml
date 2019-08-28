@@ -17,14 +17,16 @@ provider:
     securityGroupIds:
       "Fn::Split":
         - ","
-        - ${env:RDS_SECURITY_GROUP_IDS}
+        - ${env:LAMBDA_SECURITY_GROUP_IDS}
     subnetIds:
       "Fn::Split":
         - ","
-        - ${env:RDS_SUBNET_IDS}
+        - ${env:LAMBDA_SUBNET_IDS}
   environment:
     SSM_KEY_NAME_DJANGO_SECRET_KEY: ${env:SSM_KEY_NAME_DJANGO_SECRET_KEY}
     SSM_KEY_NAME_FULL_DB_URL: ${env:SSM_KEY_NAME_FULL_DB_URL}
+    LIMS_BUCKET_NAME: ${env:LIMS_BUCKET_NAME}
+    LIMS_CSV_OBJECT_KEY: ${env:LIMS_CSV_OBJECT_KEY}
 
 functions:
   api:
