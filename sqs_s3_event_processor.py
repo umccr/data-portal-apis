@@ -51,6 +51,7 @@ def handler(event: dict, context):
     messages = event['Records']
 
     try:
+        check_and_sync_lims_rows()
         records = parse_raw_s3_event_records(messages)
         sync_s3_event_records(records)
     except Exception as e:
@@ -97,12 +98,10 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
     return s3_event_records
 
 
-def sync_s3_event_records(records: List[S3EventRecord]) -> None:
+def check_and_sync_lims_rows():
     """
-    Synchronise s3 event records to the db.
-    :param records: records to be processed
+    Check for LIMS data update and synchronise new data to the db
     """
-
     client = boto3.client('s3')
     data_object = client.get_object(
         Bucket=os.environ['LIMS_BUCKET_NAME'],
@@ -116,48 +115,72 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
             # Todo: update LIMSRow records
             pass
 
+
+def sync_s3_event_records(records: List[S3EventRecord]) -> None:
+    """
+    Synchronise s3 event records to the db.
+    :param records: records to be processed
+    """
+
     with transaction.atomic():
         for record in records:
-            bucket_name = record.s3_bucket_name
-
             if record.event_type == EventType.EVENT_OBJECT_REMOVED:
-                # Removing the matched S3Object
-                key = record.s3_object_meta['key']
-                logger.info("Deleting an existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
-
-                s3_object: S3Object = S3Object.objects.filter(bucket=bucket_name, key=key)
-                s3_object.delete()
+                sync_s3_event_record_removed(record)
             elif record.event_type == EventType.EVENT_OBJECT_CREATED:
-                key = record.s3_object_meta['key']
+                sync_s3_event_record_created(record)
+            else:
+                logger.error("Found unsupported S3 event type: %s" % record.event_type)
 
-                size = record.s3_object_meta['size']
-                e_tag = record.s3_object_meta['eTag']
 
-                query_set = S3Object.objects.filter(bucket=bucket_name, key=key)
-                new = not query_set.exists()
-                if new:
-                    logger.info("Creating a new S3Object (bucket=%s, key=%s)" % (bucket_name, key))
-                    s3_object = S3Object(
-                        bucket=bucket_name,
-                        key=key
-                    )
-                else:
-                    logger.info("Updating a existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
-                    s3_object: S3Object = query_set.get()
+def sync_s3_event_record_removed(record: S3EventRecord):
+    """
+    Synchronise a S3 event (REMOVED) record to db
+    """
+    bucket_name = record.s3_bucket_name
+    # Removing the matched S3Object
+    key = record.s3_object_meta['key']
+    logger.info("Deleting an existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
 
-                s3_object.size = size
-                s3_object.last_modified_date = record.event_time
-                s3_object.e_tag = e_tag
-                s3_object.save()
+    s3_object: S3Object = S3Object.objects.filter(bucket=bucket_name, key=key)
+    s3_object.delete()
 
-                # Find all related LIMS rows and associate them
-                lims_rows = LIMSRow.objects.filter(Q(sample_name__in=key) | Q(subject_id__in=key))
-                lims_row: LIMSRow
-                for lims_row in lims_rows:
-                    # Create association if not exist
-                    if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
-                        logger.info("Linking the S3Object (bucket=%s, key=%s) with LIMSRow (%s)"
-                                     % (bucket_name, key, str(lims_row)))
 
-                        association = S3LIMS(s3_object, lims_row)
-                        association.save()
+def sync_s3_event_record_created(record: S3EventRecord):
+    """
+    Synchronise a S3 event (CREATED) record to db
+    """
+    bucket_name = record.s3_bucket_name
+
+    key = record.s3_object_meta['key']
+
+    size = record.s3_object_meta['size']
+    e_tag = record.s3_object_meta['eTag']
+
+    query_set = S3Object.objects.filter(bucket=bucket_name, key=key)
+    new = not query_set.exists()
+    if new:
+        logger.info("Creating a new S3Object (bucket=%s, key=%s)" % (bucket_name, key))
+        s3_object = S3Object(
+            bucket=bucket_name,
+            key=key
+        )
+    else:
+        logger.info("Updating a existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
+        s3_object: S3Object = query_set.get()
+
+    s3_object.size = size
+    s3_object.last_modified_date = record.event_time
+    s3_object.e_tag = e_tag
+    s3_object.save()
+
+    # Find all related LIMS rows and associate them
+    lims_rows = LIMSRow.objects.filter(Q(sample_name__in=key) | Q(subject_id__in=key))
+    lims_row: LIMSRow
+    for lims_row in lims_rows:
+        # Create association if not exist
+        if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
+            logger.info("Linking the S3Object (bucket=%s, key=%s) with LIMSRow (%s)"
+                        % (bucket_name, key, str(lims_row)))
+
+            association = S3LIMS(s3_object, lims_row)
+            association.save()
