@@ -16,11 +16,11 @@ from django.db.models import Q
 import migrate
 from data_portal.models import Configuration, S3Object, LIMSRow, S3LIMS
 
-print("migrating")
-migrate.main()
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+logger.info("Migrating")
+migrate.main()
 
 
 class EventType(Enum):
@@ -30,6 +30,9 @@ class EventType(Enum):
 
 
 class S3EventRecord:
+    """
+    A helper class for S3 event data passing and retrieval
+    """
     def __init__(self, event_type, event_time, s3_bucket_name, s3_object_meta) -> None:
         self.event_type = event_type
         self.event_time = event_time

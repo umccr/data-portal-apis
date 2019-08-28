@@ -4,6 +4,9 @@ from django.db import models
 
 
 class S3Object(models.Model):
+    """
+    Models the metadata of an S3 Object. Fields are the attributes.
+    """
     class Meta:
         unique_together = ['bucket', 'key']
 
@@ -15,6 +18,9 @@ class S3Object(models.Model):
 
 
 class LIMSRow(models.Model):
+    """
+    Models a row in the LIMS data. Fields are the columns.
+    """
     illumina_id = models.CharField(max_length=255)
     run = models.IntegerField()
     timestamp = models.DateField()
@@ -37,6 +43,9 @@ class LIMSRow(models.Model):
 
 
 class S3LIMS(models.Model):
+    """
+    Models the association between a S3 object and a LIMS row
+    """
     class Meta:
         unique_together = ['s3_object', 'lims_row']
 
@@ -45,6 +54,9 @@ class S3LIMS(models.Model):
 
 
 class Configuration(models.Model):
+    """
+    Model that stores a configuration value
+    """
     LAST_LIMS_DATA_ETAG = 'LAST_LIMS_DATA_ETAG'
 
     name = models.CharField(max_length=255, unique=True)
