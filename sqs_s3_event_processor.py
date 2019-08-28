@@ -1,4 +1,8 @@
 import os, django
+from ast import literal_eval
+
+import boto3
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
 django.setup()
 
@@ -12,7 +16,11 @@ from django.db.models import Q
 import migrate
 from data_portal.models import Configuration, S3Object, LIMSRow, S3LIMS
 
+print("migrating")
 migrate.main()
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 class EventType(Enum):
@@ -34,46 +42,56 @@ def handler(event: dict, context):
     Entry point for SQS event processing
     :param event: SQS event
     """
-    logging.info("Start processing")
-    records = event.get('Records', None)
+    logger.info("Start processing")
+    logger.info(event)
 
-    if records is None:
+    messages = event['Records']
+
+    try:
+        records = parse_raw_s3_event_records(messages)
+        sync_s3_event_records(records)
+    except Exception as e:
+        logger.error("An unexpected error occurred: " + str(e))
         return False
 
+    logger.info("Complete")
+    return True
+
+
+def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
+    """
+    Parse raw SQS messages into S3EventRecord objects
+    :param messages: the messages to be processed
+    :return: list of S3EventRecord objects
+    """
     s3_event_records = []
-    for record in records:
-        try:
+
+    for message in messages:
+        # We need to convert json data in string to dict
+        records = literal_eval(message['body'])['Records']
+
+        for record in records:
             event_name = record['eventName']
             event_time = parse(record['eventTime'])
             s3 = record['s3']
             s3_bucket_name = s3['bucket']['name']
             s3_object_meta = s3['object']
-        except KeyError:
-            logging.error("Failed to parse event data")
-            return False
 
-        # Check event type
-        if EventType.EVENT_OBJECT_CREATED.value in event_name:
-            event_type = EventType.EVENT_OBJECT_CREATED
-        elif EventType.EVENT_OBJECT_REMOVED.value in event_name:
-            event_type = EventType.EVENT_OBJECT_REMOVED
-        else:
-            event_type = EventType.EVENT_UNSUPPORTED
+            # Check event type
+            if EventType.EVENT_OBJECT_CREATED.value in event_name:
+                event_type = EventType.EVENT_OBJECT_CREATED
+            elif EventType.EVENT_OBJECT_REMOVED.value in event_name:
+                event_type = EventType.EVENT_OBJECT_REMOVED
+            else:
+                event_type = EventType.EVENT_UNSUPPORTED
 
-        logging.info("Found new event of type %s" % event_type)
+            logger.info("Found new event of type %s" % event_type)
 
-        s3_event_records.append(S3EventRecord(
-            event_type, event_time, s3_bucket_name, s3_object_meta
-        ))
+            s3_event_records.append(S3EventRecord(
+                event_type, event_time, s3_bucket_name, s3_object_meta
+            ))
 
-    try:
-        sync_s3_event_records(s3_event_records)
-    except Exception as e:
-        logging.error("Rolling back.. an unexpected error occurred: " + str(e))
-        return False
-
-    logging.info("Complete")
-    return True
+    return s3_event_records
 
 
 def sync_s3_event_records(records: List[S3EventRecord]) -> None:
@@ -81,7 +99,6 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
     Synchronise s3 event records to the db.
     :param records: records to be processed
     """
-    import boto3
 
     bucket_name = os.environ['LIMS_BUCKET_NAME']
     client = boto3.client('s3')
@@ -92,7 +109,7 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
     curr_etag = data_object['ETag']
 
     if not Configuration.same_or_update(name=Configuration.LAST_LIMS_DATA_ETAG, val=curr_etag):
-        logging.info("Found new LIMS data, updating")
+        logger.info("Found new LIMS data, updating")
         with transaction.atomic():
             # Todo: update LIMSRow records
             pass
@@ -102,7 +119,7 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
             if record.event_type == EventType.EVENT_OBJECT_REMOVED:
                 # Removing the matched S3Object
                 key = record.s3_object_meta['key']
-                logging.info("Deleting an existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
+                logger.info("Deleting an existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
 
                 s3_object: S3Object = S3Object.objects.filter(bucket=bucket_name, key=key)
                 s3_object.delete()
@@ -115,13 +132,13 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
                 query_set = S3Object.objects.filter(bucket=bucket_name, key=key)
                 new = not query_set.exists()
                 if new:
-                    logging.info("Creating a new S3Object (bucket=%s, key=%s)" % (bucket_name, key))
+                    logger.info("Creating a new S3Object (bucket=%s, key=%s)" % (bucket_name, key))
                     s3_object = S3Object(
                         bucket=bucket_name,
                         key=key
                     )
                 else:
-                    logging.info("Updating a existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
+                    logger.info("Updating a existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
                     s3_object: S3Object = query_set.get()
 
                 s3_object.size = size
@@ -135,7 +152,7 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
                 for lims_row in lims_rows:
                     # Create association if not exist
                     if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
-                        logging.info("Linking the S3Object (bucket=%s, key=%s) with LIMSRow (%s)"
+                        logger.info("Linking the S3Object (bucket=%s, key=%s) with LIMSRow (%s)"
                                      % (bucket_name, key, str(lims_row)))
 
                         association = S3LIMS(s3_object, lims_row)
