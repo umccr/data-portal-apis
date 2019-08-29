@@ -27,8 +27,7 @@ logger.setLevel(logging.INFO)
 
 def handler(event, context):
     # Trigger rewrite directly
-    rewrite_lims_rows()
-    return True
+    return rewrite_lims_rows()
 
 
 def rewrite_lims_rows():
@@ -84,4 +83,11 @@ def rewrite_lims_rows():
                 association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
                 association.save()
 
-    logger.info('Rewrite complete. Total %d rows, %d associations' % (LIMSRow.objects.count(), S3LIMS.objects.count()))
+    lims_row_count = LIMSRow.objects.count()
+    association_count = S3LIMS.objects.count()
+    logger.info('Rewrite complete. Total %d rows, %d associations' % (lims_row_count, association_count))
+
+    return {
+        'lims_row_count': lims_row_count,
+        'association_count': association_count,
+    }

@@ -22,7 +22,7 @@ def handler(event, context):
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(['manage.py', 'migrate'])
-    return True
+    return 'Migration complete.'
 
 
 if __name__ == '__main__':
