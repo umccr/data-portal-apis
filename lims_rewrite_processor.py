@@ -16,7 +16,6 @@ django.setup()
 # All other imports should be placed below
 import csv
 import boto3
-import pandas as pd
 import logging
 from botocore.response import StreamingBody
 from django.db import transaction
@@ -43,16 +42,18 @@ def rewrite_lims_rows():
         Key=os.environ['LIMS_CSV_OBJECT_KEY']
     )
 
+    logger.info('Reading csv data')
     body: StreamingBody = data_object['Body']
     bytes_data = body.read()
-    csvreader = csv.DictReader(io.BytesIO(bytes_data))
 
-    with transaction.atomic():
+    with transaction.atomic(), io.BytesIO(bytes_data) as csv_input:
+        csv_reader = csv.DictReader(io.TextIOWrapper(csv_input))
+
         # Delete all rows (and associations) first
         logger.info("Deleting all existing records")
         LIMSRow.objects.all().delete()
 
-        for row in csvreader:
+        for row in csv_reader:
             lims_row = LIMSRow(
                 illumina_id=row['Illumina_ID'],
                 run=int(row['Run']),
