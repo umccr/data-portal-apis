@@ -2,7 +2,9 @@
   "name": "aws-python3",
   "description": "",
   "version": "0.1.0",
-  "dependencies": {},
+  "dependencies": {
+    "serverless-plugin-scripts": "^1.0.2"
+  },
   "devDependencies": {
     "serverless-associate-waf": "^1.1.0",
     "serverless-aws-documentation": "^1.1.0",

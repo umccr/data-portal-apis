@@ -6,6 +6,7 @@ plugins:
   # - serverless-domain-manager
   - serverless-aws-documentation
   - serverless-associate-waf
+  - serverless-plugin-scripts
 
 provider:
   name: aws
@@ -41,11 +42,26 @@ functions:
     events:
       - sqs:
           arn: arn:aws:sqs:ap-southeast-2:620123204273:data-portal-test
-
+  lims_rewrite_processor:
+    handler: lims_rewrite_processor.handler
+    events:
+      - s3:
+          bucket: ${env:LIMS_BUCKET_NAME}
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: ${env:LIMS_CSV_OBJECT_KEY}
+          existing: true
+  migrate:
+    handler: migrate.handler
 custom:
   wsgi:
     app: data_portal.wsgi.application
     packRequirements: false
+  scripts:
+    hooks:
+      # Run db migration as part of the deployment process
+      'deploy:finalize': sls invoke -f migrate
+
 #  customDomain:
 #    domainName: ${env:API_DOMAIN_NAME}
 #    basePath: ''

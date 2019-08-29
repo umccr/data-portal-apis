@@ -3,7 +3,10 @@ import os
 import sys
 
 
-def main():
+def handler(event, context):
+    """
+    Handler for running DB migrations
+    """
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
     try:
         from django.core.management import execute_from_command_line
@@ -17,4 +20,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    handler(None, None)

@@ -1,29 +1,28 @@
 import os, django
-from ast import literal_eval
-
-import boto3
-
+# We need to set up django app first
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
 django.setup()
 
+# All other imports should be placed below
+import logging
+from ast import literal_eval
 from enum import Enum
 from typing import List
 from dateutil.parser import parse
-import logging
 from django.db import transaction
 from django.db.models import Q
 
 import migrate
-from data_portal.models import Configuration, S3Object, LIMSRow, S3LIMS
+from data_portal.models import S3Object, LIMSRow, S3LIMS
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-logger.info("Migrating")
-migrate.main()
 
-
-class EventType(Enum):
+class S3EventType(Enum):
+    """
+    S3 Event categorisation
+    """
     EVENT_OBJECT_CREATED = 'ObjectCreated'
     EVENT_OBJECT_REMOVED = 'ObjectRemoved'
     EVENT_UNSUPPORTED = 'Unsupported'
@@ -51,7 +50,6 @@ def handler(event: dict, context):
     messages = event['Records']
 
     try:
-        check_and_sync_lims_rows()
         records = parse_raw_s3_event_records(messages)
         sync_s3_event_records(records)
     except Exception as e:
@@ -82,12 +80,12 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
             s3_object_meta = s3['object']
 
             # Check event type
-            if EventType.EVENT_OBJECT_CREATED.value in event_name:
-                event_type = EventType.EVENT_OBJECT_CREATED
-            elif EventType.EVENT_OBJECT_REMOVED.value in event_name:
-                event_type = EventType.EVENT_OBJECT_REMOVED
+            if S3EventType.EVENT_OBJECT_CREATED.value in event_name:
+                event_type = S3EventType.EVENT_OBJECT_CREATED
+            elif S3EventType.EVENT_OBJECT_REMOVED.value in event_name:
+                event_type = S3EventType.EVENT_OBJECT_REMOVED
             else:
-                event_type = EventType.EVENT_UNSUPPORTED
+                event_type = S3EventType.EVENT_UNSUPPORTED
 
             logger.info("Found new event of type %s" % event_type)
 
@@ -98,24 +96,6 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
     return s3_event_records
 
 
-def check_and_sync_lims_rows():
-    """
-    Check for LIMS data update and synchronise new data to the db
-    """
-    client = boto3.client('s3')
-    data_object = client.get_object(
-        Bucket=os.environ['LIMS_BUCKET_NAME'],
-        Key=os.environ['LIMS_CSV_OBJECT_KEY']
-    )
-    curr_etag = data_object['ETag']
-
-    if not Configuration.same_or_update(name=Configuration.LAST_LIMS_DATA_ETAG, val=curr_etag):
-        logger.info("Found new LIMS data, updating")
-        with transaction.atomic():
-            # Todo: update LIMSRow records
-            pass
-
-
 def sync_s3_event_records(records: List[S3EventRecord]) -> None:
     """
     Synchronise s3 event records to the db.
@@ -124,9 +104,9 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> None:
 
     with transaction.atomic():
         for record in records:
-            if record.event_type == EventType.EVENT_OBJECT_REMOVED:
+            if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
                 sync_s3_event_record_removed(record)
-            elif record.event_type == EventType.EVENT_OBJECT_CREATED:
+            elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
                 sync_s3_event_record_created(record)
             else:
                 logger.error("Found unsupported S3 event type: %s" % record.event_type)
@@ -182,5 +162,5 @@ def sync_s3_event_record_created(record: S3EventRecord):
             logger.info("Linking the S3Object (bucket=%s, key=%s) with LIMSRow (%s)"
                         % (bucket_name, key, str(lims_row)))
 
-            association = S3LIMS(s3_object, lims_row)
+            association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
             association.save()
