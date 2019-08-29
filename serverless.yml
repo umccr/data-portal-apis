@@ -60,7 +60,7 @@ custom:
   scripts:
     hooks:
       # Run db migration as part of the deployment process
-      'deploy:finalize': sls invoke -f migrate --STAGE ${opt:STAGE}
+      'deploy:finalize': sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
      zip: true
 #  customDomain:
