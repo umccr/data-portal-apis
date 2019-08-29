@@ -38,12 +38,12 @@ functions:
       - http:  ANY {proxy+}
         authorizer: aws_iam
   sqs_s3_event_processor:
-    handler: sqs_s3_event_processor.handler
+    handler: data_processors.sqs_s3_event_processor.handler
     events:
       - sqs:
           arn: arn:aws:sqs:ap-southeast-2:620123204273:data-portal-test
   lims_rewrite_processor:
-    handler: lims_rewrite_processor.handler
+    handler: data_processors.lims_rewrite_processor.handler
     events:
       - s3:
           bucket: ${env:LIMS_BUCKET_NAME}
@@ -60,7 +60,7 @@ custom:
   scripts:
     hooks:
       # Run db migration as part of the deployment process
-      'deploy:finalize': sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
+      'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
      zip: true
 #  customDomain:
