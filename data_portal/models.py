@@ -36,9 +36,13 @@ class LIMSRow(models.Model):
     fastq = models.CharField(max_length=255)
     number_fastqs = models.CharField(max_length=255)
     results = models.CharField(max_length=255)
+    trello = models.CharField(max_length=255)
+    notes = models.TextField()
+    todo = models.CharField(max_length=255)
+
 
     def __str__(self):
-        return 'rn=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
+        return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.illumina_id, self.sample_id, self.sample_name, self.subject_id)
 
 
