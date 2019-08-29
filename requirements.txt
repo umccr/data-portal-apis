@@ -4,9 +4,7 @@ pymysql
 python-dateutil==2.8.0
 Django==2.1.4
 django-environ==0.4.5
-mysqlclient==1.4.4
 pytz==2019.2
 sqlparse==0.3.0
 werkzeug
 aws-xray-sdk
-pandas

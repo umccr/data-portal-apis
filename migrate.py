@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+try:
+  import unzip_requirements
+except ImportError:
+  pass
+
 import os
 import sys
 

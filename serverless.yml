@@ -60,8 +60,9 @@ custom:
   scripts:
     hooks:
       # Run db migration as part of the deployment process
-      'deploy:finalize': sls invoke -f migrate
-
+      'deploy:finalize': sls invoke -f migrate --STAGE ${opt:STAGE}
+  pythonRequirements:
+     zip: true
 #  customDomain:
 #    domainName: ${env:API_DOMAIN_NAME}
 #    basePath: ''
@@ -69,3 +70,8 @@ custom:
 #    createRoute53Record: true
 #  associateWaf:
 #    name: dataPortalAPIWebAcl
+
+package:
+  exclude:
+    - node_modules/**
+    - mocks/**
