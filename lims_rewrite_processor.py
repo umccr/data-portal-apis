@@ -1,3 +1,8 @@
+try:
+  import unzip_requirements
+except ImportError:
+  pass
+
 import io
 import os, django
 # We need to set up django app first
@@ -9,6 +14,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
 django.setup()
 
 # All other imports should be placed below
+import csv
 import boto3
 import pandas as pd
 import logging
@@ -39,14 +45,14 @@ def rewrite_lims_rows():
 
     body: StreamingBody = data_object['Body']
     bytes_data = body.read()
-    df = pd.read_csv(io.BytesIO(bytes_data))
+    csvreader = csv.DictReader(io.BytesIO(bytes_data))
 
     with transaction.atomic():
         # Delete all rows (and associations) first
         logger.info("Deleting all existing records")
         LIMSRow.objects.all().delete()
 
-        for index, row in df.iterrows():
+        for row in csvreader:
             lims_row = LIMSRow(
                 illumina_id=row['Illumina_ID'],
                 run=int(row['Run']),
