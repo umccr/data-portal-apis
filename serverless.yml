@@ -33,10 +33,16 @@ functions:
   api:
     handler: wsgi_handler.handler
     events:
-      - http: ANY /
-        authorizer: aws_iam
-      - http:  ANY {proxy+}
-        authorizer: aws_iam
+      - http:
+          path: files
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+      - http:
+          path: file-signed-url
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
   sqs_s3_event_processor:
     handler: data_processors.sqs_s3_event_processor.handler
     events:
