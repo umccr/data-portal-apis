@@ -8,6 +8,7 @@ from data_portal.models import S3Object, LIMSRow
 from data_processors import lims_rewrite_processor, sqs_s3_event_processor
 
 
+@mock_s3
 class DataProcessorsTests(TestCase):
     """
     Test cases for data processor lambda functions
@@ -15,7 +16,6 @@ class DataProcessorsTests(TestCase):
 
     # This test wont work: https://github.com/spulec/moto/issues/1793
     @mock.patch.dict(os.environ, {'LIMS_BUCKET_NAME': 'lims-bucket', 'LIMS_CSV_OBJECT_KEY': 'lims.csv'})
-    @mock_s3
     def test_lims_rewrite_processor(self):
         """
         Test whether LIMS rewrite processor can rewrite LIMSRow objects (and S3LIMS objects) using the csv.
