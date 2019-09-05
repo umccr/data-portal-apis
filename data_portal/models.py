@@ -1,4 +1,4 @@
-from random import random
+import random
 from typing import Union
 
 from django.db import models
@@ -37,6 +37,7 @@ class S3ObjectManager(models.Manager):
 
             if query.exists():
                 sample_ids.append(pk)
+                count += 1
 
         return self.filter(id__in=sample_ids)
 
@@ -57,7 +58,7 @@ class S3Object(models.Model):
     SORTABLE_COLUMNS = ['size', 'last_modified_date']
     DEFAULT_SORT_COL = 'last_modified_date'
 
-    object = S3ObjectManager
+    objects = S3ObjectManager()
 
 
 class LIMSRow(models.Model):
