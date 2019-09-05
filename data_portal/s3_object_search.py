@@ -25,6 +25,10 @@ class ComparisonOperator(Enum):
         return [o.value[0] for o in ComparisonOperator]
 
     @property
+    def filter_type_symbol(self) -> str:
+        return self.value[0]
+
+    @property
     def filter_type_name(self) -> str:
         return self.value[1]
 
@@ -127,7 +131,6 @@ class FilterFieldTypeFactory:
         return FilterFieldTypeFactory._d.get(filter_id, None)
 
 
-
 class FilterQuery:
     """
     Represents a single filter query
@@ -136,7 +139,7 @@ class FilterQuery:
     val: Any
     comparator: ComparisonOperator
 
-    def __init__(self, field_type: FilterFieldType, comparator_val_raw) -> None:
+    def __init__(self, field_type: FilterFieldType, comparator_val_raw: str) -> None:
         """
         Construct a filter query from the specified FilterFieldType and raw comparator+value string
         :param field_type: the FilterFieldType this query corresponds to
@@ -148,18 +151,22 @@ class FilterQuery:
         comparator = None
         if field_type.type == FilterType.COMPARE:
             # Check whether comparison operator is valid and find it if it's valid
-            comparator = list(filter(
-                lambda o: comparator_val_raw.startswith(o),
-                ComparisonOperator.all_comparator_symbols()
+            comparators = list(filter(
+                lambda o: comparator_val_raw.startswith(o.filter_type_symbol),
+                [o for o in ComparisonOperator]
             ))
 
-            if len(comparator) == 0:
+            if len(comparators) == 0:
                 raise InvalidComparisonOperator(comparator_val_raw)
-
-            comparator = comparator[0]
+            elif len(comparators) == 2:
+                # Use the longer one for cases like < and <=
+                comparator = max(comparators, key=lambda o: len(o.filter_type_symbol))
+            else:
+                # Should have exactly one match.
+                comparator = comparators[0]
 
         # Calculate the len of comparison operator string
-        comparator_len = len(comparator) if comparator is not None else 0
+        comparator_len = len(comparator.filter_type_symbol) if comparator is not None else 0
 
         # Once we have the operator, the val is the remaining string
         # Convert the val to the true variable type
@@ -238,7 +245,7 @@ class S3ObjectSearchQueryHelper:
                     filter_arg = '%s__%s' % (field.field_name, case_sensitive_prefix + 'contains')
                 elif type == FilterType.ENDS_WITH:
                     # Correspond to {field_name}__{(i)ends_with}
-                    filter_arg = '%s__%s' % (field.field_name, case_sensitive_prefix + 'ends_with')
+                    filter_arg = '%s__%s' % (field.field_name, case_sensitive_prefix + 'endswith')
                 else:
                     # Extra safe guard for unexpected/unsupported filter type
                     raise Exception('Unexpected filter type: %s' % type.value)
@@ -248,4 +255,5 @@ class S3ObjectSearchQueryHelper:
                 # Append new filter
                 queryset = queryset.filter(**filter_kwarg)
 
+        print(queryset.query)
         return queryset
