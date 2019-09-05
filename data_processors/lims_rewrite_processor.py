@@ -1,3 +1,5 @@
+from utils.datetime import parse_last_modified_date
+
 try:
   import unzip_requirements
 except ImportError:
@@ -56,7 +58,7 @@ def rewrite_lims_rows():
             lims_row = LIMSRow(
                 illumina_id=row['Illumina_ID'],
                 run=int(row['Run']),
-                timestamp=datetime.strptime(row['Timestamp'], '%Y-%m-%d'),
+                timestamp=parse_last_modified_date(row['Timestamp']),
                 sample_id=row['SampleID'],
                 sample_name=row['SampleName'],
                 project=row['Project'],

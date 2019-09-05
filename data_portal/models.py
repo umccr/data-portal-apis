@@ -1,6 +1,44 @@
+from random import random
 from typing import Union
 
 from django.db import models
+from django.db.models import Max, QuerySet
+
+from data_portal.exceptions import RandSamplesTooLarge
+
+
+class S3ObjectManager(models.Manager):
+    """
+    Manager class for S3 objects, providing additional helper methods.
+    """
+    MAX_RAND_SAMPLES_LIMIT = 500
+
+    def random_samples(self, required: int) -> QuerySet:
+        """
+        Obtain random samples as a lazy-loading query set.
+        Follows the suggested practice from https://books.agiliq.com/projects/django-orm-cookbook/en/latest/random.html.
+        :param required: the required number of samples
+        :return: list of random S3OBject samples
+        """
+        total = self.count()
+
+        if required > self.MAX_RAND_SAMPLES_LIMIT:
+            raise RandSamplesTooLarge(self.MAX_RAND_SAMPLES_LIMIT)
+
+        # We can't give more samples than the maximum of what we have
+        actual = min(total, required)
+        count = 1
+        max_id = self.aggregate(max_id=Max("id"))['max_id']
+        sample_ids = []
+
+        while count <= actual:
+            pk = random.randint(1, max_id)
+            query = self.filter(pk=pk)
+
+            if query.exists():
+                sample_ids.append(pk)
+
+        return self.filter(id__in=sample_ids)
 
 
 class S3Object(models.Model):
@@ -15,6 +53,11 @@ class S3Object(models.Model):
     size = models.IntegerField()
     last_modified_date = models.DateTimeField()
     e_tag = models.CharField(max_length=255)
+
+    SORTABLE_COLUMNS = ['size', 'last_modified_date']
+    DEFAULT_SORT_COL = 'last_modified_date'
+
+    object = S3ObjectManager
 
 
 class LIMSRow(models.Model):
