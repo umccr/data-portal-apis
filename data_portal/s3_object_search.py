@@ -1,7 +1,6 @@
 from collections import defaultdict
 from enum import Enum
 from typing import List, Dict, Any, Callable
-
 from django.db.models import QuerySet
 
 from data_portal.exceptions import InvalidComparisonOperator, InvalidSearchQuery
@@ -211,11 +210,11 @@ class S3ObjectSearchQueryHelper:
         return filters
 
     @staticmethod
-    def parse(query_raw: str) -> QuerySet:
+    def parse(query_raw: str, base_queryset: QuerySet) -> QuerySet:
         filters = S3ObjectSearchQueryHelper._parse_filter_vals(query_raw)
 
         # Base query set
-        queryset = S3Object.objects
+        queryset = base_queryset
 
         # First check any global filter
         case_sensitive_id = FilterFieldTypeFactory.CASE_SENSITIVE
@@ -255,5 +254,4 @@ class S3ObjectSearchQueryHelper:
                 # Append new filter
                 queryset = queryset.filter(**filter_kwarg)
 
-        print(queryset.query)
         return queryset

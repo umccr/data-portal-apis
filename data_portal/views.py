@@ -4,11 +4,15 @@ from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
+import logging
 
 from data_portal.exceptions import InvalidSearchQuery, InvalidQueryParameter
 from data_portal.models import S3Object, S3ObjectManager
 from data_portal.s3_object_search import S3ObjectSearchQueryHelper
 from data_portal.serializers import S3ObjectSerializer
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def parse_sorting_params(query_params: dict) -> Tuple[str, str]:
@@ -77,20 +81,23 @@ def search_file(request: Request):
     except InvalidQueryParameter as e:
         return JsonResponse(data={'errors': 'invalid query parameters: ' + str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Apply random sampling if required
+    if random_samples is not None:
+        query_set = S3Object.objects.random_samples(random_samples)
+        # For random sampling, default rows per page doesn't apply
+        rows_per_page = S3ObjectManager.MAX_RAND_SAMPLES_LIMIT
+    else:
+        query_set = S3Object.objects
+
     # Parse and apply filters
     try:
-        query_set = S3ObjectSearchQueryHelper.parse(query)
+        query_set = S3ObjectSearchQueryHelper.parse(query, query_set)
     except InvalidSearchQuery as e:
         return JsonResponse(data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Apply random sampling if required
-    if random_samples is not None:
-        query_set = query_set.random_samples(random_samples)
-        # For random sampling, default rows per page doesn't apply
-        rows_per_page = S3ObjectManager.MAX_RAND_SAMPLES_LIMIT
-
     # Apply ordering
     query_set = query_set.order_by(sort_asc_prefix + sort_col)
+    logger.info('Query to be excuted: (without pagination) %s ' % query_set.query)
 
     # Apply pagination
     paginator = Paginator(query_set, per_page=rows_per_page)
