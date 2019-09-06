@@ -9,3 +9,4 @@ sqlparse==0.3.0
 werkzeug
 aws-xray-sdk
 djangorestframework
+factory_boy

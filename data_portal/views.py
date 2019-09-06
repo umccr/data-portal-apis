@@ -8,11 +8,14 @@ import logging
 
 from data_portal.exceptions import InvalidSearchQuery, InvalidQueryParameter
 from data_portal.models import S3Object, S3ObjectManager
+from data_portal.responses import JsonErrorResponse
 from data_portal.s3_object_search import S3ObjectSearchQueryHelper
 from data_portal.serializers import S3ObjectSerializer
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+DEFAULT_ROWS_PER_PAGE = 20
 
 
 def parse_sorting_params(query_params: dict) -> Tuple[str, str]:
@@ -34,7 +37,7 @@ def parse_pagination_params(query_params: dict) -> Tuple[int, int]:
     """
     Parse query parameters for pagination
     """
-    rows_per_page = query_params.get('rowsPerPage', '20')
+    rows_per_page = str(query_params.get('rowsPerPage', DEFAULT_ROWS_PER_PAGE))
     page = query_params.get('page', '0')
 
     if not rows_per_page.isdigit():
@@ -66,7 +69,7 @@ def search_file(request: Request):
     query_params
     * query:          str,    mandatory,  the query string (leave empty for no filter)
     * rowsPerPage:    int,    optional,   number of rows per page. (no effect is randomSamples is set).
-    * page:           int,    optional,   the current page number
+    * page:           int,    optional,   the current page number. 0-based.
     * sortCol:        str,    optional,   the column to be sorted
     * sortAsc:        bool,   optional,   sort in ascending order
     * randomSamples:  int,    optional,   retrieve n randomly-selected samples
@@ -79,7 +82,7 @@ def search_file(request: Request):
         sort_col, sort_asc_prefix = parse_sorting_params(query_params)
         random_samples = parse_random_samples(query_params)
     except InvalidQueryParameter as e:
-        return JsonResponse(data={'errors': 'invalid query parameters: ' + str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonErrorResponse('invalid query parameters: ' + str(e), status=status.HTTP_400_BAD_REQUEST)
 
     # Apply random sampling if required
     if random_samples is not None:
@@ -93,7 +96,7 @@ def search_file(request: Request):
     try:
         query_set = S3ObjectSearchQueryHelper.parse(query, query_set)
     except InvalidSearchQuery as e:
-        return JsonResponse(data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonErrorResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
     # Apply ordering
     query_set = query_set.order_by(sort_asc_prefix + sort_col)
@@ -101,12 +104,7 @@ def search_file(request: Request):
 
     # Apply pagination
     paginator = Paginator(query_set, per_page=rows_per_page)
-
-    try:
-        object_page = paginator.get_page(page + 1)
-    except EmptyPage as e:
-        return JsonResponse(data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+    object_page = paginator.get_page(page + 1)
     object_list = object_page.object_list
     empty_record = len(object_list) == 0
 
@@ -122,7 +120,7 @@ def search_file(request: Request):
     }
 
     data = {
-        'mata': meta_data,
+        'meta': meta_data,
         'rows': {
             'headerRow': [],
             'dataRows': serializer.data
