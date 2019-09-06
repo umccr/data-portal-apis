@@ -3,8 +3,7 @@ from enum import Enum
 from typing import List, Dict, Any, Callable
 from django.db.models import QuerySet
 
-from data_portal.exceptions import InvalidComparisonOperator, InvalidSearchQuery
-from data_portal.models import S3Object, S3LIMS
+from data_portal.exceptions import InvalidComparisonOperator, InvalidSearchQuery, InvalidFilterValue
 from utils.datetime import parse_last_modified_date
 
 
@@ -169,19 +168,26 @@ class FilterQuery:
 
         # Once we have the operator, the val is the remaining string
         # Convert the val to the true variable type
-        self.val = field_type.field.val_parser(comparator_val_raw[comparator_len:])
+        val_raw = comparator_val_raw[comparator_len:]
+        try:
+            self.val = field_type.field.val_parser(val_raw)
+        except ValueError:
+            raise InvalidFilterValue(val_raw)
+
         self.comparator = comparator
 
 
 class S3ObjectSearchQueryHelper:
     @staticmethod
     def _parse_filter_vals(query_raw: str) -> Dict[str, List[FilterQuery]]:
+        # Remove spaces around and split into each individual filter
         filters_raw = query_raw.strip().split(' ')
 
         filters: Dict[str, List[FilterQuery]] = defaultdict(list)
 
         for filter_raw in filters_raw:
-            tokens = filter_raw.split(':')
+            # Remove spaces around and split into left and right
+            tokens = filter_raw.strip().split(':')
 
             if len(tokens) > 2:
                 raise InvalidSearchQuery(query_raw, 'filter "%s" is invalid' % filter_raw)
@@ -190,7 +196,11 @@ class S3ObjectSearchQueryHelper:
                 # Default filter
                 val = tokens[0]
                 filter_id = FilterFieldTypeFactory.DEFAULT
-                filters[filter_id].append(FilterQuery(FilterFieldTypeFactory.get(filter_id), comparator_val_raw=val))
+
+                try:
+                    filters[filter_id].append(FilterQuery(FilterFieldTypeFactory.get(filter_id), comparator_val_raw=val))
+                except InvalidFilterValue as e:
+                    raise InvalidSearchQuery(query_raw, str(e))
 
             if len(tokens) == 2:
                 # Non-default filter
@@ -205,6 +215,8 @@ class S3ObjectSearchQueryHelper:
                 try:
                     filters[filter_id].append(FilterQuery(filter_field_type, comparator_val_raw=comparator_val))
                 except InvalidComparisonOperator as e:
+                    raise InvalidSearchQuery(query_raw, str(e))
+                except InvalidFilterValue as e:
                     raise InvalidSearchQuery(query_raw, str(e))
 
         return filters

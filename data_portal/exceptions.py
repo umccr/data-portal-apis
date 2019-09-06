@@ -22,6 +22,14 @@ class InvalidComparisonOperator(Exception):
         super().__init__('Invalid comparison operator in "%s"' % operator_val_raw, *args)
 
 
+class InvalidFilterValue(Exception):
+    """
+    Raised when filter value is invalid (i.e. can not be converted to the true variable type)
+    """
+    def __init__(self, val_raw: str, *args: object) -> None:
+        super().__init__('Invalid filter value: %s' % val_raw, *args)
+
+
 class RandSamplesTooLarge(Exception):
     """
     Raised when the requested number of random samples is too large
