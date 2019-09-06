@@ -16,7 +16,14 @@ from data_portal.tests.factories import S3ObjectFactory, LIMSRowFactory, S3LIMSF
 
 
 class S3ObjectSearchResultRow:
+    """
+    Represents a single search result row.
+    """
     def __init__(self, field_list: List) -> None:
+        """
+        The sequence of fields follows the S3ObjectSerializer
+        :param field_list: list of field values
+        """
         super().__init__()
         self.rn = field_list[0]
         self.bucket = field_list[1]
@@ -27,6 +34,11 @@ class S3ObjectSearchResultRow:
 
 
 def parse_s3_object_result_rows(response: JsonResponse):
+    """
+    Parse Http response to S3 object rows for the ease of testing
+    :param response: response from making the request to the API
+    :return: list of S3ObjectSearchResultRow objects
+    """
     data = json.loads(response.content)
     rows = data['rows']['dataRows']
     result_list = []
@@ -37,6 +49,9 @@ def parse_s3_object_result_rows(response: JsonResponse):
 
 
 class S3ObjectSearchTests(TestCase):
+    """
+    Test cases for S3 object searching/listing
+    """
     def setUp(self) -> None:
         self.client = APIClient()
 
