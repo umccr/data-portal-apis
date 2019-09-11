@@ -1,4 +1,7 @@
 from typing import Tuple, Optional
+
+import boto3
+from botocore.exceptions import ClientError
 from django.core.paginator import Paginator, EmptyPage
 from django.http import JsonResponse
 from rest_framework import status
@@ -137,4 +140,26 @@ def search_file(request: Request):
 
 @api_view(['GET'])
 def sign_s3_file(request: Request):
-    return JsonResponse(data={})
+    """
+    query params
+    * bucket: str,    mandatory,  the bucket name
+    * key:    str,    mandatory,  the s3 object key
+    """
+    query_params = request.query_params
+    bucket = query_params.get('bucket', None)
+    key = query_params.get('key', None)
+
+    if bucket is None or key is None:
+        return JsonErrorResponse('Missing required parameters: bucket / key', status=status.HTTP_400_BAD_REQUEST)
+
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.generate_presigned_url('get_object', Params={
+            'Bucket': bucket,
+            'Key': key
+        })
+    except ClientError as e:
+        logging.error(e)
+        return JsonErrorResponse('Failed to sign the specified s3 object', status=status.HTTP_400_BAD_REQUEST)
+
+    return JsonResponse(data=response, status=status.HTTP_200_OK)
