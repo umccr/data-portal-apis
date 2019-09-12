@@ -3,7 +3,7 @@ service: data-portal-app-api
 plugins:
   - serverless-wsgi
   - serverless-python-requirements
-  # - serverless-domain-manager
+  - serverless-domain-manager
   - serverless-aws-documentation
   - serverless-associate-waf
   - serverless-plugin-scripts
@@ -69,13 +69,14 @@ custom:
       'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
      zip: true
-#  customDomain:
-#    domainName: ${env:API_DOMAIN_NAME}
-#    basePath: ''
-#    stage: ${self:provider.stage}
-#    createRoute53Record: true
-#  associateWaf:
-#    name: dataPortalAPIWebAcl
+     slim: true
+  customDomain:
+    domainName: ${env:API_DOMAIN_NAME}
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+  associateWaf:
+    name: dataPortalAPIWebAcl
 
 package:
   exclude:

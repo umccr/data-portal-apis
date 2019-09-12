@@ -30,6 +30,10 @@ def parse_sorting_params(query_params: dict) -> Tuple[str, str]:
     is_sort_asc = sort_asc_raw is not None and sort_asc_raw.lower() == 'true'
     sort_asc_prefix = '-' if not is_sort_asc else ''
 
+    # Ignore null value for sort col
+    if sort_col == "null":
+        sort_col = S3Object.DEFAULT_SORT_COL
+
     if sort_col not in S3Object.SORTABLE_COLUMNS:
         raise InvalidQueryParameter('sortCol', sort_col, 'The column is either unknown or not allowed to be sorted.')
 
@@ -162,4 +166,4 @@ def sign_s3_file(request: Request):
         logging.error(e)
         return JsonErrorResponse('Failed to sign the specified s3 object', status=status.HTTP_400_BAD_REQUEST)
 
-    return JsonResponse(data=response, status=status.HTTP_200_OK)
+    return JsonResponse(data=response, status=status.HTTP_200_OK, safe=False)

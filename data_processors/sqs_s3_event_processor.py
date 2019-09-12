@@ -1,5 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
-
 try:
   import unzip_requirements
 except ImportError:
@@ -12,6 +10,7 @@ django.setup()
 
 # All other imports should be placed below
 import logging
+from django.core.exceptions import ObjectDoesNotExist
 from ast import literal_eval
 from enum import Enum
 from typing import List

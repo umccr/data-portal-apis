@@ -10,3 +10,4 @@ werkzeug
 aws-xray-sdk
 moto
 pytest
+factory_boy
