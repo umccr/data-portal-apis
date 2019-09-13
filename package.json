@@ -10,6 +10,7 @@
     "serverless-associate-waf": "^1.1.0",
     "serverless-aws-documentation": "^1.1.0",
     "serverless-python-requirements": "^5.0.0",
+    "serverless-s3-batch": "^1.0.0",
     "serverless-wsgi": "^1.7.3"
   }
 }
