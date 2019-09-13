@@ -1,5 +1,3 @@
-from utils.datetime import parse_last_modified_date
-
 try:
   import unzip_requirements
 except ImportError:
@@ -19,6 +17,7 @@ django.setup()
 import csv
 import boto3
 import logging
+from utils.datetime import parse_last_modified_date
 from botocore.response import StreamingBody
 from django.db import transaction
 from data_portal.models import LIMSRow, S3Object, S3LIMS

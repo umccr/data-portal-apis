@@ -1,3 +1,5 @@
+from data_processors.persist_s3_object import persist_s3_object
+
 try:
   import unzip_requirements
 except ImportError:
@@ -147,37 +149,8 @@ def sync_s3_event_record_created(record: S3EventRecord):
     Synchronise a S3 event (CREATED) record to db
     """
     bucket_name = record.s3_bucket_name
-
     key = record.s3_object_meta['key']
-
     size = record.s3_object_meta['size']
     e_tag = record.s3_object_meta['eTag']
 
-    query_set = S3Object.objects.filter(bucket=bucket_name, key=key)
-    new = not query_set.exists()
-    if new:
-        logger.info("Creating a new S3Object (bucket=%s, key=%s)" % (bucket_name, key))
-        s3_object = S3Object(
-            bucket=bucket_name,
-            key=key
-        )
-    else:
-        logger.info("Updating a existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
-        s3_object: S3Object = query_set.get()
-
-    s3_object.size = size
-    s3_object.last_modified_date = record.event_time
-    s3_object.e_tag = e_tag
-    s3_object.save()
-
-    # Find all related LIMS rows and associate them
-    lims_rows = LIMSRow.objects.filter(Q(sample_name__in=key) | Q(subject_id__in=key))
-    lims_row: LIMSRow
-    for lims_row in lims_rows:
-        # Create association if not exist
-        if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
-            logger.info("Linking the S3Object (bucket=%s, key=%s) with LIMSRow (%s)"
-                        % (bucket_name, key, str(lims_row)))
-
-            association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
-            association.save()
+    persist_s3_object(bucket=bucket_name, key=key, size=size, last_modified_date=record.event_type, e_tag=e_tag)
