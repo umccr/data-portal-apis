@@ -7,7 +7,6 @@ plugins:
   - serverless-aws-documentation
   - serverless-associate-waf
   - serverless-plugin-scripts
-  - serverless-s3-batch
 
 provider:
   name: aws
@@ -49,8 +48,8 @@ functions:
     events:
       - sqs:
           arn: ${env:S3_EVENT_SQS_ARN}
-  s3_manifest_processor:
-    handler: data_processors.s3_manifest_processor.handler
+  s3_batch_job_processor:
+    handler: data_processors.s3_batch_job_processor.handler
   lims_rewrite_processor:
     handler: data_processors.lims_rewrite_processor.handler
     events:
@@ -70,12 +69,6 @@ custom:
     hooks:
       # Run db migration as part of the deployment process
       'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
-  s3batch:
-    manifest:
-      format: inventory
-      location: manifest-location
-    report: report-location
-    operation: s3_manifest_processor
   pythonRequirements:
      zip: true
      slim: true
