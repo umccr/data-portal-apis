@@ -21,4 +21,4 @@ phases:
   build:
     commands:
       - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
-      - serverless deploy --STAGE $STAGE
+      - SLS_DEBUG=true serverless deploy --STAGE $STAGE
