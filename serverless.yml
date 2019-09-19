@@ -57,8 +57,10 @@ functions:
           rules:
             - suffix: ${env:LIMS_CSV_OBJECT_KEY}
           existing: true
+    timeout: 20
   migrate:
     handler: migrate.handler
+    timeout: 10
 custom:
   wsgi:
     app: data_portal.wsgi.application
