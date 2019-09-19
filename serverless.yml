@@ -48,8 +48,6 @@ functions:
     events:
       - sqs:
           arn: ${env:S3_EVENT_SQS_ARN}
-  s3_batch_job_processor:
-    handler: data_processors.s3_batch_job_processor.handler
   lims_rewrite_processor:
     handler: data_processors.lims_rewrite_processor.handler
     events:
