@@ -17,7 +17,7 @@ django.setup()
 import csv
 import boto3
 import logging
-from utils.datetime import parse_last_modified_date
+from utils.datetime import parse_lims_timestamp
 from botocore.response import StreamingBody
 from django.db import transaction
 from data_portal.models import LIMSRow, S3Object, S3LIMS
@@ -57,7 +57,7 @@ def rewrite_lims_rows():
             lims_row = LIMSRow(
                 illumina_id=row['IlluminaID'],
                 run=int(row['Run']),
-                timestamp=parse_last_modified_date(row['Timestamp']),
+                timestamp=parse_lims_timestamp(row['Timestamp']),
                 subject_id=row['SubjectID'],
                 sample_id=row['SampleID'],
                 library_id=row['LibraryID'],
@@ -85,9 +85,7 @@ def rewrite_lims_rows():
             lims_row.save()
 
             # Find all matching S3Object objects and create association between them and the lims row
-            for s3_object in S3Object.objects.filter(
-                Q(key__contains=lims_row.sample_name) | Q(key__contains=lims_row.subject_id)
-            ):
+            for s3_object in S3Object.objects.filter(key__contains=lims_row.external_subject_id):
                 association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
                 association.save()
 

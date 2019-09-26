@@ -1,5 +1,3 @@
-from data_processors.persist_s3_object import persist_s3_object
-
 try:
   import unzip_requirements
 except ImportError:
@@ -18,8 +16,10 @@ from enum import Enum
 from typing import List
 from dateutil.parser import parse
 from django.db import transaction
-from django.db.models import Q
+import traceback
+
 from data_portal.models import S3Object, LIMSRow, S3LIMS
+from data_processors.persist_s3_object import persist_s3_object
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -59,7 +59,7 @@ def handler(event: dict, context):
         records = parse_raw_s3_event_records(messages)
         return sync_s3_event_records(records)
     except Exception as e:
-        logger.error("An unexpected error occurred: " + str(e))
+        logger.error("An unexpected error occurred!" + traceback.format_exc())
         return False
 
 
@@ -153,4 +153,4 @@ def sync_s3_event_record_created(record: S3EventRecord):
     size = record.s3_object_meta['size']
     e_tag = record.s3_object_meta['eTag']
 
-    persist_s3_object(bucket=bucket_name, key=key, size=size, last_modified_date=record.event_type, e_tag=e_tag)
+    persist_s3_object(bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag)
