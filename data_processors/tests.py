@@ -1,12 +1,11 @@
 from moto import mock_s3
+import boto3
 import os
 from unittest import TestCase, mock
-import boto3
 from django.utils.timezone import now
 
 from data_portal.models import S3Object, LIMSRow
 from data_processors import lims_rewrite_processor, sqs_s3_event_processor
-
 
 @mock_s3
 class DataProcessorsTests(TestCase):
@@ -20,14 +19,16 @@ class DataProcessorsTests(TestCase):
         """
         Test whether LIMS rewrite processor can rewrite LIMSRow objects (and S3LIMS objects) using the csv.
         """
-        sample_name = 'some_sample_name'
+        external_subject_id = 'external_subject_id'
         test_csv_data \
-            = "Illumina_ID,Run,Timestamp,SampleID,SampleName,Project,SubjectID,Type,Phenotype,Source,\
-            Quality,Secondary Analysis,FASTQ,Number FASTQS,Results,Trello,Notes,ToDo\n\
-            Illumina_ID,1,2019-01-01,SampleID,%s,Project,SubjectID,Type,Phenotype,Source,\
-            Quality,Secondary Analysis,FASTQ,Number FASTQS,Results,Trello,Notes,ToDo" % sample_name
+            = f"IlluminaID,Run,Timestamp,SubjectID,SampleID,LibraryID,ExternalSubjectID,ExternalSampleID,ExternalLibraryID,\
+            SampleName,ProjectOwner,ProjectName,Type,Assay,Phenotype,Source,\
+            Quality,Topup,SecondaryAnalysis,FASTQ,NumberFASTQS,Results,Trello,Notes,ToDo\n\
+            IlluminaID,1,2019-01-01,SubjectID,SampleID,LibraryID,{external_subject_id},ExternalSampleID,ExternalLibraryID,\
+            SampleName,ProjectOwner,ProjectName,Type,Assay,Phenotype,Source,\
+            Quality,Topup,SecondaryAnalysis,FASTQ,NumberFASTQS,Results,Trello,Notes,ToDo"
 
-        s3_object = S3Object(bucket='s3-keys-bucket', key='SampleName.json', size=0, last_modified_date=now(), e_tag='')
+        s3_object = S3Object(bucket='s3-keys-bucket', key=f'{external_subject_id}/file.json', size=0, last_modified_date=now(), e_tag='')
         s3_object.save()
 
         # Create a fake bucket for csv
@@ -54,21 +55,29 @@ class DataProcessorsTests(TestCase):
                 illumina_id='Illumina_ID',
                 run=1,
                 timestamp=now(),
-                sample_id='SampleID',
-                sample_name='SampleName',
-                project='Project',
                 subject_id='SubjectID',
+                sample_id='SampleID',
+                library_id='LibraryID',
+                external_subject_id='ExternalSubjectID',
+                external_sample_id='ExternalSampleID',
+                external_library_id='ExternalLibraryID',
+                sample_name='SampleName',
+                project_owner='ProjectOwner',
+                project_name='ProjectName',
                 type='Type',
+                assay='Assay',
                 phenotype='Phenotype',
                 source='Source',
                 quality='Quality',
-                secondary_analysis='Secondary Analysis',
+                topup='Topup',
+                secondary_analysis='SecondaryAnalysis',
                 fastq='FASTQ',
-                number_fastqs='Number FASTQS',
+                number_fastqs='NumberFASTQS',
                 results='Results',
                 trello='Trello',
                 notes='Notes',
-                todo='ToDo')
+                todo='ToDo'
+        )
         lims_row.save()
 
         bucket_name = 'some-bucket'
