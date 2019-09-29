@@ -38,11 +38,13 @@ functions:
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
+          cors: true
       - http:
           path: file-signed-url
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
+          cors: true
   sqs_s3_event_processor:
     handler: data_processors.sqs_s3_event_processor.handler
     events:
