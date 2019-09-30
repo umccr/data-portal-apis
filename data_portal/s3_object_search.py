@@ -278,4 +278,5 @@ class S3ObjectSearchQueryHelper:
                 # Append new filter
                 queryset = queryset.filter(filter_q)
 
-        return queryset
+        # We only want distinct results as we may have joined the tables for LIMS field search
+        return queryset.distinct()
