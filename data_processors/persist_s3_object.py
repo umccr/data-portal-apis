@@ -31,7 +31,7 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
 
     if new:
         # Find all related LIMS rows and associate them
-        lims_rows = LIMSRow.objects.filter(Q(sample_name__in=key) | Q(subject_id__in=key))
+        lims_rows = LIMSRow.objects.filter(external_subject_id__in=key)
         lims_row: LIMSRow
         for lims_row in lims_rows:
             # Create association if not exist
