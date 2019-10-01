@@ -17,8 +17,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-
-
 def handler(event, context):
-    # Trigger rewrite directly
-    return persist_lims_data()
+    return persist_lims_data(
+        csv_bucket=os.environ['LIMS_BUCKET_NAME'],
+        csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
+        rewrite=True
+    )

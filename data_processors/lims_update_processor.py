@@ -20,5 +20,5 @@ def handler(event, context):
     return persist_lims_data(
         csv_bucket=os.environ['LIMS_BUCKET_NAME'],
         csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
-        rewrite=False
+        rewrite=False,
     )
