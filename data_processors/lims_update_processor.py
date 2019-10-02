@@ -3,7 +3,6 @@ try:
 except ImportError:
   pass
 
-import io
 import os, django
 # We need to set up django app first
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
@@ -21,5 +20,5 @@ def handler(event, context):
     return persist_lims_data(
         csv_bucket=os.environ['LIMS_BUCKET_NAME'],
         csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
-        rewrite=True
+        rewrite=False,
     )

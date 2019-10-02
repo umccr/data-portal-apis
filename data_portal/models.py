@@ -65,6 +65,9 @@ class LIMSRow(models.Model):
     """
     Models a row in the LIMS data. Fields are the columns.
     """
+    class Meta:
+        unique_together = ['illumina_id', 'sample_id']
+
     illumina_id = models.CharField(max_length=255)
     run = models.IntegerField()
     timestamp = models.DateField()
@@ -91,10 +94,14 @@ class LIMSRow(models.Model):
     notes = models.TextField()
     todo = models.CharField(max_length=255)
 
-
     def __str__(self):
         return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.illumina_id, self.sample_id, self.sample_name, self.subject_id)
+
+    # The attributes used to find linking between LIMSRow and S3Object(Key)
+    # In short, these attr values should be part of the S3 Object key.
+    # This is the common logic used for both persisting s3 and lims.
+    S3_LINK_ATTRS = ('subject_id', 'sample_id')
 
 
 class S3LIMS(models.Model):
