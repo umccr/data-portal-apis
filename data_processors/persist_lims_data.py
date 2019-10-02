@@ -65,22 +65,24 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
         else:
             lims_row_update_count += 1
 
-        # Find all matching S3Object objects and create association between them and the lims row
-        key_filter = Q()
+        # Only find association if we have SubjectID, as it can be None
+        if lims_row.subject_id is not None:
+            # Find all matching S3Object objects and create association between them and the lims row
+            key_filter = Q()
 
-        # AND all filters
-        for attr in LIMSRow.S3_LINK_ATTRS:
-            key_filter &= Q(key__contains=getattr(lims_row, attr))
+            # AND all filters
+            for attr in LIMSRow.S3_LINK_ATTRS:
+                key_filter &= Q(key__contains=getattr(lims_row, attr))
 
-        for s3_object in S3Object.objects.filter(key_filter):
-            # Create association if not exist
-            if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
-                logger.info(f"Linking the S3Object ({str(s3_object)}) with LIMSRow ({str(lims_row)})")
+            for s3_object in S3Object.objects.filter(key_filter):
+                # Create association if not exist
+                if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
+                    logger.info(f"Linking the S3Object ({str(s3_object)}) with LIMSRow ({str(lims_row)})")
 
-                association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
-                association.save()
+                    association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
+                    association.save()
 
-                association_count += 1
+                    association_count += 1
 
     csv_input.close()
     logger.info(f'LIMS data processing complete. \n'

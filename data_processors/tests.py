@@ -166,7 +166,7 @@ class DataProcessorsTests(TestCase):
         with self.assertRaises(UnexpectedLIMSDataFormatException):
             lims_update_processor.handler(None, None)
 
-    def test_lims_blank_columns(self):
+    def test_lims_non_nullable_columns(self):
         """
         Test we can correctly process non-nullable columns and rollback the whole processing if one row doesn't have
         the required values
@@ -187,6 +187,18 @@ class DataProcessorsTests(TestCase):
             lims_rewrite_processor.handler(None, None)
 
         self.assertEqual(LIMSRow.objects.count(), 0)
+
+    def test_lims_empty_subject_id(self):
+        """
+        Test searching for S3-LIMS association will not break when the LIMS row has empty SubjectID
+        """
+        row_1 = generate_lims_csv_row_dict('1')
+
+        # Use blank values for all non-nullable fields
+        row_1['SubjectID'] = '-'
+        self.save_lims_csv([row_1])
+        # No exception should be thrown
+        lims_rewrite_processor.handler(None, None)
 
     def test_sqs_s3_event_processor(self):
         """
