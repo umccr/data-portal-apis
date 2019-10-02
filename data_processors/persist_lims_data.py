@@ -5,7 +5,7 @@ import re
 
 import boto3
 from botocore.response import StreamingBody
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 from data_portal.models import LIMSRow, S3Object, S3LIMS
 from utils.datetime import parse_lims_timestamp
@@ -122,7 +122,11 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
         parse_lims_row(row, lims_row)
         new = False
 
-    lims_row.save()
+    try:
+        lims_row.save()
+    except IntegrityError as e:
+        raise UnexpectedLIMSDataFormatException(str(e))
+
     # Mark this row as dirty
     dirty_ids[row_id] = row_number
 
@@ -150,11 +154,13 @@ def parse_lims_row(csv_row: dict, row_object: LIMSRow = None) -> LIMSRow:
 
         field_name = csv_column_to_field_name(key)
 
-        # Type conversion for a small number of columns
-        if field_name == 'timestamp':
-            parsed_value = parse_lims_timestamp(parsed_value)
-        elif field_name == 'run':
-            parsed_value = int(parsed_value)
+        if parsed_value is not None:
+            # Type conversion for a small number of columns
+            if field_name == 'timestamp':
+                parsed_value = parse_lims_timestamp(parsed_value)
+            elif field_name == 'run':
+                parsed_value = int(parsed_value)
+
 
         # Dynamically set field value
         lims_row.__setattr__(field_name, parsed_value)

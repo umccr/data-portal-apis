@@ -14,7 +14,7 @@ from data_processors import lims_rewrite_processor, sqs_s3_event_processor, lims
 from data_processors.persist_lims_data import UnexpectedLIMSDataFormatException
 
 lims_csv_columns = [
-    'IlluminaID', 'Run', 'Timestamp','SubjectID','SampleID','LibraryID',
+    'IlluminaID', 'Run', 'Timestamp', 'SubjectID', 'SampleID', 'LibraryID',
     'ExternalSubjectID', 'ExternalSampleID', 'ExternalLibraryID', 'SampleName',
     'ProjectOwner', 'ProjectName', 'Type', 'Assay', 'Phenotype', 'Source',
     'Quality', 'Topup', 'SecondaryAnalysis', 'FASTQ', 'NumberFASTQS', 'Results', 'Trello', 'Notes', 'ToDo'
@@ -165,6 +165,28 @@ class DataProcessorsTests(TestCase):
 
         with self.assertRaises(UnexpectedLIMSDataFormatException):
             lims_update_processor.handler(None, None)
+
+    def test_lims_blank_columns(self):
+        """
+        Test we can correctly process non-nullable columns and rollback the whole processing if one row doesn't have
+        the required values
+        """
+        row_1 = generate_lims_csv_row_dict('1')
+        row_2 = generate_lims_csv_row_dict('2')
+
+        # Use blank values for all non-nullable fields
+        row_1['IlluminaID'] = '-'
+        row_1['Run'] = '-'
+        row_1['Timestamp'] = '-'
+        row_1['SampleID'] = '-'
+        row_1['LibraryID'] = '-'
+
+        self.save_lims_csv([row_1, row_2])
+
+        with self.assertRaises(UnexpectedLIMSDataFormatException):
+            lims_rewrite_processor.handler(None, None)
+
+        self.assertEqual(LIMSRow.objects.count(), 0)
 
     def test_sqs_s3_event_processor(self):
         """
