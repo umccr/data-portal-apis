@@ -50,8 +50,8 @@ functions:
     events:
       - sqs:
           arn: ${env:S3_EVENT_SQS_ARN}
-  lims_rewrite_processor:
-    handler: data_processors.lims_rewrite_processor.handler
+  lims_update_processor:
+    handler: data_processors.lims_update_processor.handler
     events:
       - s3:
           bucket: ${env:LIMS_BUCKET_NAME}
