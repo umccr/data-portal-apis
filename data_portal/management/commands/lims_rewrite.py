@@ -8,8 +8,8 @@ class Command(BaseCommand):
     Command to execute LIMS data rewrite with specified csv (s3) location
     """
     def add_arguments(self, parser: CommandParser):
-        parser.add_argument('csv_bucket_name')
-        parser.add_argument('csv_key')
+        parser.add_argument('-csv_bucket_name', '--csv_bucket_name')
+        parser.add_argument('-csv_key', '--csv_key')
 
     def handle(self, *args, **options):
         csv_bucket_name = options['csv_bucket_name']
