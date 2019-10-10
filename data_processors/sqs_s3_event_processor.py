@@ -1,5 +1,3 @@
-from data_processors.persist_s3_object import persist_s3_object
-
 try:
   import unzip_requirements
 except ImportError:
@@ -15,11 +13,14 @@ import logging
 from django.core.exceptions import ObjectDoesNotExist
 from ast import literal_eval
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 from dateutil.parser import parse
 from django.db import transaction
-from django.db.models import Q
+import traceback
+from collections import defaultdict
+
 from data_portal.models import S3Object, LIMSRow, S3LIMS
+from data_processors.persist_s3_object import persist_s3_object
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -59,7 +60,7 @@ def handler(event: dict, context):
         records = parse_raw_s3_event_records(messages)
         return sync_s3_event_records(records)
     except Exception as e:
-        logger.error("An unexpected error occurred: " + str(e))
+        logger.error("An unexpected error occurred!" + traceback.format_exc())
         return False
 
 
@@ -105,19 +106,19 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     :param records: records to be processed
     :return results of synchronisation
     """
-    results = {
-        'removed_count': 0,
-        'created_count': 0,
-        'unsupported_count': 0
-    }
+    results = defaultdict(int)
 
     with transaction.atomic():
         for record in records:
             if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
-                results['removed_count'] += sync_s3_event_record_removed(record)
+                removed_count, s3_lims_removed_count = sync_s3_event_record_removed(record)
+                results['removed_count'] += removed_count
+                results['s3_lims_removed_count'] += s3_lims_removed_count
+
             elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
-                sync_s3_event_record_created(record)
-                results['created_count'] += 1
+                created_count, s3_lims_created_count = sync_s3_event_record_created(record)
+                results['created_count'] += created_count
+                results['s3_lims_created_count'] += s3_lims_created_count
             else:
                 logger.error("Found unsupported S3 event type: %s" % record.event_type)
                 results['unsupported_count'] += 1
@@ -126,9 +127,11 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     return results
 
 
-def sync_s3_event_record_removed(record: S3EventRecord):
+def sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
     """
     Synchronise a S3 event (REMOVED) record to db
+    :param record: record to be synced
+    :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     bucket_name = record.s3_bucket_name
     # Removing the matched S3Object
@@ -136,21 +139,29 @@ def sync_s3_event_record_removed(record: S3EventRecord):
     logger.info("Deleting an existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
 
     try:
-        s3_object: S3Object = S3Object.objects.filter(bucket=bucket_name, key=key)
+        s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
+
+        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
+        s3_lims_count = s3_lims_records.count()
+        s3_lims_records.delete()
+
         s3_object.delete()
-        return 1
+        return 1, s3_lims_count
     except ObjectDoesNotExist as e:
         logger.error('Failed to remove an in-existent S3Object record: ' + str(e))
-        return 0
+        return 0, 0
 
 
 def sync_s3_event_record_created(record: S3EventRecord):
     """
     Synchronise a S3 event (CREATED) record to db
+    :return: number of s3 object created, number of s3-lims association records created
     """
     bucket_name = record.s3_bucket_name
     key = record.s3_object_meta['key']
     size = record.s3_object_meta['size']
     e_tag = record.s3_object_meta['eTag']
 
-    persist_s3_object(bucket=bucket_name, key=key, size=size, last_modified_date=record.event_type, e_tag=e_tag)
+    return persist_s3_object(
+        bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag
+    )

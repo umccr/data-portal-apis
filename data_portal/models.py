@@ -65,29 +65,43 @@ class LIMSRow(models.Model):
     """
     Models a row in the LIMS data. Fields are the columns.
     """
+    class Meta:
+        unique_together = ['illumina_id', 'sample_id']
+
     illumina_id = models.CharField(max_length=255)
     run = models.IntegerField()
     timestamp = models.DateField()
+    subject_id = models.CharField(max_length=255, null=True, blank=False)
     sample_id = models.CharField(max_length=255)
-    sample_name = models.CharField(max_length=255)
-    project = models.CharField(max_length=255)
-    subject_id = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)
-    phenotype = models.CharField(max_length=255)
-    source = models.CharField(max_length=255)
-    quality = models.CharField(max_length=255)
-    secondary_analysis = models.CharField(max_length=255)
-    fastq = models.CharField(max_length=255)
-    number_fastqs = models.CharField(max_length=255)
-    results = models.CharField(max_length=255)
-    trello = models.CharField(max_length=255)
-    notes = models.TextField()
-    todo = models.CharField(max_length=255)
-
+    library_id = models.CharField(max_length=255)
+    external_subject_id = models.CharField(max_length=255, null=True, blank=False)
+    external_sample_id = models.CharField(max_length=255, null=True, blank=False)
+    external_library_id = models.CharField(max_length=255, null=True, blank=False)
+    sample_name = models.CharField(max_length=255, null=True, blank=False)
+    project_owner = models.CharField(max_length=255, null=True, blank=False)
+    project_name = models.CharField(max_length=255, null=True, blank=False)
+    type = models.CharField(max_length=255, null=True, blank=False)
+    assay = models.CharField(max_length=255, null=True, blank=False)
+    phenotype = models.CharField(max_length=255, null=True, blank=False)
+    source = models.CharField(max_length=255, null=True, blank=False)
+    quality = models.CharField(max_length=255, null=True, blank=False)
+    topup = models.CharField(max_length=255, null=True, blank=False)
+    secondary_analysis = models.CharField(max_length=255, null=True, blank=False)
+    fastq = models.CharField(max_length=255, null=True, blank=False)
+    number_fastqs = models.CharField(max_length=255, null=True, blank=False)
+    results = models.CharField(max_length=255, null=True, blank=False)
+    trello = models.CharField(max_length=255, null=True, blank=False)
+    notes = models.TextField(null=True, blank=False)
+    todo = models.CharField(max_length=255, null=True, blank=False)
 
     def __str__(self):
         return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.illumina_id, self.sample_id, self.sample_name, self.subject_id)
+
+    # The attributes used to find linking between LIMSRow and S3Object(Key)
+    # In short, these attr values should be part of the S3 Object key.
+    # This is the common logic used for both persisting s3 and lims.
+    S3_LINK_ATTRS = ('subject_id', 'sample_id')
 
 
 class S3LIMS(models.Model):

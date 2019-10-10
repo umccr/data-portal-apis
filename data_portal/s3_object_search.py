@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
-from typing import List, Dict, Any, Callable
-from django.db.models import QuerySet
+from typing import List, Dict, Any, Callable, Tuple
+from django.db.models import QuerySet, Q
 
 from data_portal.exceptions import InvalidComparisonOperator, InvalidSearchQuery, InvalidFilterValue
 from utils.datetime import parse_last_modified_date
@@ -56,14 +56,15 @@ class FilterField(Enum):
     #         (Note that Django will then 'inner join's the S3Object and LIMS table)
     # - model_class: either S3Object or S3LIMS. S3Object is our 'base' class.
 
-    KEY = ('key', str)
-    SIZE = ('size', int)
-    LAST_MODIFIED_DATE = ('last_modified_date', parse_last_modified_date)
-    ILLUMINA_ID = ('s3lims__lims_row__illumina_id', str)
-    CASE = ('case', lambda c: c.lower() == 'true')
+    KEY = (('key',), str)
+    SIZE = (('size',), int)
+    LAST_MODIFIED_DATE = (('last_modified_date',), parse_last_modified_date)
+    SUBJECT_ID = (('s3lims__lims_row__subject_id', 's3lims__lims_row__external_subject_id'), str)
+    SAMPLE_ID =(('s3lims__lims_row__sample_id',), str)
+    CASE = (('case',), lambda c: c.lower() == 'true')
 
     @property
-    def field_name(self) -> str:
+    def field_names(self) -> Tuple:
         return self.value[0]
 
     @property
@@ -94,7 +95,8 @@ class FilterFieldTypeFactory:
     KEY_EXTENSION = 'ext'
     FILE_SIZE = 'size'
     LAST_MODIFIED_DATE = 'date'
-    ILLUMINA_ID = 'illumina_id'
+    SUBJECT_ID = 'subjectid'
+    SAMPLE_ID = 'sampleid'
     CASE_SENSITIVE = 'case'
 
     # The default filter
@@ -110,11 +112,17 @@ class FilterFieldTypeFactory:
             FilterType.COMPARE,
             'Compare with last modified date of the file'
         ),
-        ILLUMINA_ID: FilterFieldType(
-            ILLUMINA_ID,
-            FilterField.ILLUMINA_ID,
+        SUBJECT_ID: FilterFieldType(
+            SUBJECT_ID,
+            FilterField.SUBJECT_ID,
             FilterType.CONTAINS,
-            'Illumina_id (in LIMS table) includes'
+            'SubjectID/ExternalSubjectID (in LIMS table) includes'
+        ),
+        SAMPLE_ID: FilterFieldType(
+            SAMPLE_ID,
+            FilterField.SAMPLE_ID,
+            FilterType.CONTAINS,
+            'SampleID (in LIMS table) includes'
         ),
         CASE_SENSITIVE: FilterFieldType(
             CASE_SENSITIVE,
@@ -243,27 +251,32 @@ class S3ObjectSearchQueryHelper:
                 field = filter.field_type.field
                 val = filter.val
 
-                if type == FilterType.COMPARE:
-                    comparator = filter.comparator
-                    if comparator.filter_type_name is None:
-                        # No comparator for exact comparison
-                        filter_arg = '%s' % field.field_name
-                    else:
-                        # Correspond to {field_name}__{operator}
-                        filter_arg = '%s__%s' % (field.field_name, comparator.filter_type_name)
-                elif type == FilterType.CONTAINS:
-                    # Correspond to {field_name}__{(i)contains}
-                    filter_arg = '%s__%s' % (field.field_name, case_sensitive_prefix + 'contains')
-                elif type == FilterType.ENDS_WITH:
-                    # Correspond to {field_name}__{(i)ends_with}
-                    filter_arg = '%s__%s' % (field.field_name, case_sensitive_prefix + 'endswith')
-                else:
-                    # Extra safe guard for unexpected/unsupported filter type
-                    raise Exception('Unexpected filter type: %s' % type.value)
+                filter_q = Q()
 
-                filter_kwarg = {filter_arg: val}
+                for field_name in field.field_names:
+                    if type == FilterType.COMPARE:
+                        comparator = filter.comparator
+                        if comparator.filter_type_name is None:
+                            # No comparator for exact comparison
+                            filter_arg = field_name
+                        else:
+                            # Correspond to {field_name}__{operator}
+                            filter_arg = f'{field_name}__{comparator.filter_type_name}'
+                    elif type == FilterType.CONTAINS:
+                        # Correspond to {field_name}__{(i)contains}
+                        filter_arg = f'{field_name}__{case_sensitive_prefix + "contains"}'
+                    elif type == FilterType.ENDS_WITH:
+                        # Correspond to {field_name}__{(i)ends_with}
+                        filter_arg = f'{field_name}__{case_sensitive_prefix + "endswith"}'
+                    else:
+                        # Extra safe guard for unexpected/unsupported filter type
+                        raise Exception('Unexpected filter type: %s' % type.value)
+
+                    filter_kwarg = {filter_arg: val}
+                    filter_q = filter_q | Q(**filter_kwarg)
 
                 # Append new filter
-                queryset = queryset.filter(**filter_kwarg)
+                queryset = queryset.filter(filter_q)
 
-        return queryset
+        # We only want distinct results as we may have joined the tables for LIMS field search
+        return queryset.distinct()
