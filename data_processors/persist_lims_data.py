@@ -106,16 +106,16 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
 
     # Using the identifier combination to find the object
     illumina_id = row['IlluminaID']
-    sample_id = row['SampleID']
-    row_id = (illumina_id, sample_id)
+    library_id = row['LibraryID']
+    row_id = (illumina_id, library_id)
 
     # If find another row in which the id has been seen in previous rows, we raise an error
     if row_id in dirty_ids:
         prev_row_number = dirty_ids[row_id]
         raise UnexpectedLIMSDataFormatException(f'Duplicate row identifier for row {prev_row_number} and {row_number}:'
-                                                f'IlluminaID={illumina_id}, SampleID={sample_id}')
+                                                f'IlluminaID={illumina_id}, LibraryID={library_id}')
 
-    query_set = LIMSRow.objects.filter(illumina_id=illumina_id, sample_id=sample_id)
+    query_set = LIMSRow.objects.filter(illumina_id=illumina_id, library_id=library_id)
 
     if not query_set.exists():
         lims_row = parse_lims_row(row)

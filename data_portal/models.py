@@ -66,7 +66,7 @@ class LIMSRow(models.Model):
     Models a row in the LIMS data. Fields are the columns.
     """
     class Meta:
-        unique_together = ['illumina_id', 'sample_id']
+        unique_together = ['illumina_id', 'library_id']
 
     illumina_id = models.CharField(max_length=255)
     run = models.IntegerField()
