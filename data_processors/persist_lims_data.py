@@ -112,7 +112,8 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
     # If find another row in which the id has been seen in previous rows, we raise an error
     if row_id in dirty_ids:
         prev_row_number = dirty_ids[row_id]
-        raise UnexpectedLIMSDataFormatException(f'Duplicate row identifier for row {prev_row_number} and {row_number}')
+        raise UnexpectedLIMSDataFormatException(f'Duplicate row identifier for row {prev_row_number} and {row_number}:'
+                                                f'IlluminaID={illumina_id}, SampleID={sample_id}')
 
     query_set = LIMSRow.objects.filter(illumina_id=illumina_id, sample_id=sample_id)
 
@@ -162,7 +163,6 @@ def parse_lims_row(csv_row: dict, row_object: LIMSRow = None) -> LIMSRow:
                 parsed_value = parse_lims_timestamp(parsed_value)
             elif field_name == 'run':
                 parsed_value = int(parsed_value)
-
 
         # Dynamically set field value
         lims_row.__setattr__(field_name, parsed_value)
