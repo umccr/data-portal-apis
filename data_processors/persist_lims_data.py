@@ -54,8 +54,8 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
 
     lims_row_update_count = 0
     lims_row_new_count = 0
+    lims_row_invalid_count = 0
     association_count = 0
-    failed_count = 0
 
     dirty_ids = {}
 
@@ -65,7 +65,7 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
         except UnexpectedLIMSDataFormatException as e:
             # Report an error instead of let the whole transaction fails
             logger.error("Error persisting the LIMS row: " + str(e))
-            failed_count += 1
+            lims_row_invalid_count += 1
             continue
 
         if new:
@@ -94,12 +94,13 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
 
     csv_input.close()
     logger.info(f'LIMS data processing complete. \n'
-                f'{lims_row_new_count} new, {lims_row_update_count} updated, {failed_count} failed'
+                f'{lims_row_new_count} new, {lims_row_update_count} updated, {lims_row_invalid_count} invalid, \n'
                 f'{association_count} new associations')
 
     return {
         'lims_row_update_count': lims_row_update_count,
         'lims_row_new_count': lims_row_new_count,
+        'lims_row_invalid_count': failed_count,
         'association_count': association_count,
     }
 
