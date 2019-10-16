@@ -100,7 +100,7 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
     return {
         'lims_row_update_count': lims_row_update_count,
         'lims_row_new_count': lims_row_new_count,
-        'lims_row_invalid_count': failed_count,
+        'lims_row_invalid_count': lims_row_invalid_count,
         'association_count': association_count,
     }
 
@@ -141,7 +141,7 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
     except IntegrityError as e:
         raise UnexpectedLIMSDataFormatException(str(e))
     except ValidationError as e:
-        raise UnexpectedLIMSDataFormatException(str(e))
+        raise UnexpectedLIMSDataFormatException(str(e) + " - " + str(lims_row))
 
     # Mark this row as dirty
     dirty_ids[row_id] = row_number
