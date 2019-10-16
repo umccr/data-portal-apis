@@ -5,6 +5,7 @@ import re
 
 import boto3
 from botocore.response import StreamingBody
+from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
 from django.db.models import Q
 from data_portal.models import LIMSRow, S3Object, S3LIMS
@@ -126,8 +127,11 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
         new = False
 
     try:
+        lims_row.full_clean()
         lims_row.save()
     except IntegrityError as e:
+        raise UnexpectedLIMSDataFormatException(str(e))
+    except ValidationError as e:
         raise UnexpectedLIMSDataFormatException(str(e))
 
     # Mark this row as dirty
