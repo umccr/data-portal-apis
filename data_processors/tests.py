@@ -32,7 +32,7 @@ def generate_lims_csv_row_dict(id: str) -> dict:
         if col == 'Run':
             row[col] = '1'
         elif col == 'Timestamp':
-            row[col] = '01/01/19'
+            row[col] = '2019-01-01'
         else:
             # Normal columns, just use column name as value + id
             row[col] = col + id
@@ -163,8 +163,8 @@ class DataProcessorsTests(TestCase):
         row_duplicate = generate_lims_csv_row_dict('3')
         self.save_lims_csv([row_duplicate, row_duplicate])
 
-        with self.assertRaises(UnexpectedLIMSDataFormatException):
-            lims_update_processor.handler(None, None)
+        process_results = lims_update_processor.handler(None, None)
+        self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
     def test_lims_non_nullable_columns(self):
         """
@@ -183,10 +183,11 @@ class DataProcessorsTests(TestCase):
 
         self.save_lims_csv([row_1, row_2])
 
-        with self.assertRaises(UnexpectedLIMSDataFormatException):
-            lims_rewrite_processor.handler(None, None)
+        process_results = lims_rewrite_processor.handler(None, None)
 
-        self.assertEqual(LIMSRow.objects.count(), 0)
+        self.assertEqual(LIMSRow.objects.count(), 1)
+        self.assertEqual(process_results['lims_row_new_count'], 1)
+        self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
     def test_lims_empty_subject_id(self):
         """

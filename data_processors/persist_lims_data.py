@@ -5,6 +5,7 @@ import re
 
 import boto3
 from botocore.response import StreamingBody
+from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
 from django.db.models import Q
 from data_portal.models import LIMSRow, S3Object, S3LIMS
@@ -53,12 +54,19 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
 
     lims_row_update_count = 0
     lims_row_new_count = 0
+    lims_row_invalid_count = 0
     association_count = 0
 
     dirty_ids = {}
 
     for row_number, row in enumerate(csv_reader):
-        lims_row, new = parse_and_persist_lims_object(dirty_ids, row, row_number)
+        try:
+            lims_row, new = parse_and_persist_lims_object(dirty_ids, row, row_number)
+        except UnexpectedLIMSDataFormatException as e:
+            # Report an error instead of let the whole transaction fails
+            logger.error("Error persisting the LIMS row: " + str(e))
+            lims_row_invalid_count += 1
+            continue
 
         if new:
             lims_row_new_count += 1
@@ -86,11 +94,13 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
 
     csv_input.close()
     logger.info(f'LIMS data processing complete. \n'
-                f'{lims_row_new_count} new, {lims_row_update_count} updated, {association_count} new associations')
+                f'{lims_row_new_count} new, {lims_row_update_count} updated, {lims_row_invalid_count} invalid, \n'
+                f'{association_count} new associations')
 
     return {
         'lims_row_update_count': lims_row_update_count,
         'lims_row_new_count': lims_row_new_count,
+        'lims_row_invalid_count': lims_row_invalid_count,
         'association_count': association_count,
     }
 
@@ -106,15 +116,16 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
 
     # Using the identifier combination to find the object
     illumina_id = row['IlluminaID']
-    sample_id = row['SampleID']
-    row_id = (illumina_id, sample_id)
+    library_id = row['LibraryID']
+    row_id = (illumina_id, library_id)
 
     # If find another row in which the id has been seen in previous rows, we raise an error
     if row_id in dirty_ids:
         prev_row_number = dirty_ids[row_id]
-        raise UnexpectedLIMSDataFormatException(f'Duplicate row identifier for row {prev_row_number} and {row_number}')
+        raise UnexpectedLIMSDataFormatException(f'Duplicate row identifier for row {prev_row_number} and {row_number}:'
+                                                f'IlluminaID={illumina_id}, LibraryID={library_id}')
 
-    query_set = LIMSRow.objects.filter(illumina_id=illumina_id, sample_id=sample_id)
+    query_set = LIMSRow.objects.filter(illumina_id=illumina_id, library_id=library_id)
 
     if not query_set.exists():
         lims_row = parse_lims_row(row)
@@ -125,9 +136,12 @@ def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
         new = False
 
     try:
+        lims_row.full_clean()
         lims_row.save()
     except IntegrityError as e:
         raise UnexpectedLIMSDataFormatException(str(e))
+    except ValidationError as e:
+        raise UnexpectedLIMSDataFormatException(str(e) + " - " + str(lims_row))
 
     # Mark this row as dirty
     dirty_ids[row_id] = row_number
@@ -162,7 +176,6 @@ def parse_lims_row(csv_row: dict, row_object: LIMSRow = None) -> LIMSRow:
                 parsed_value = parse_lims_timestamp(parsed_value)
             elif field_name == 'run':
                 parsed_value = int(parsed_value)
-
 
         # Dynamically set field value
         lims_row.__setattr__(field_name, parsed_value)
