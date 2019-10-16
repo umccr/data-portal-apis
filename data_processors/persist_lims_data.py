@@ -59,7 +59,11 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
     dirty_ids = {}
 
     for row_number, row in enumerate(csv_reader):
-        lims_row, new = parse_and_persist_lims_object(dirty_ids, row, row_number)
+        try:
+            lims_row, new = parse_and_persist_lims_object(dirty_ids, row, row_number)
+        except UnexpectedLIMSDataFormatException as e:
+            # Report an error instead of let the whole transaction fails
+            logger.error("Error persisting the LIMS row: " + str(e))
 
         if new:
             lims_row_new_count += 1
