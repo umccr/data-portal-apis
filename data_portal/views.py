@@ -113,7 +113,7 @@ def search_file(request: Request):
         logger.info('Query to be executed: (without pagination) %s ' % query_set.query)
     except EmptyResultSet as e:
         logger.info("No data available")
-        return JsonResponse(data={}, status=status.HTTP_200_OK)
+        return JsonResponse(data={'rows': {'headerRow': [], 'dataRows': []}}, status=status.HTTP_200_OK)
 
     # Apply pagination
     paginator = Paginator(query_set, per_page=rows_per_page)
