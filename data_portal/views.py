@@ -2,6 +2,7 @@ from typing import Tuple, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from django.core.exceptions import EmptyResultSet
 from django.core.paginator import Paginator, EmptyPage
 from django.http import JsonResponse
 from rest_framework import status
@@ -107,7 +108,12 @@ def search_file(request: Request):
 
     # Apply ordering
     query_set = query_set.order_by(sort_asc_prefix + sort_col)
-    logger.info('Query to be excuted: (without pagination) %s ' % query_set.query)
+
+    try:
+        logger.info('Query to be executed: (without pagination) %s ' % query_set.query)
+    except EmptyResultSet as e:
+        logger.info("No data available")
+        return JsonResponse(data={}, status=status.HTTP_200_OK)
 
     # Apply pagination
     paginator = Paginator(query_set, per_page=rows_per_page)
