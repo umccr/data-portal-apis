@@ -2,7 +2,21 @@ from typing import Dict, List
 
 from rest_framework import serializers
 
-from data_portal.models import S3Object, S3ObjectManager
+from data_portal.models import S3Object, LIMSRow
+
+
+class LIMSRowSerializer(serializers.Serializer):
+    illumina_id = serializers.CharField()
+    run = serializers.IntegerField()
+    subject_id = serializers.CharField()
+    external_subject_id = serializers.CharField()
+    sample_id = serializers.CharField()
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
 class S3ObjectSerializer(serializers.Serializer):
@@ -13,6 +27,7 @@ class S3ObjectSerializer(serializers.Serializer):
     path = serializers.SerializerMethodField()
     size = serializers.IntegerField()
     last_modified_date = serializers.DateTimeField()
+    lims_rows = serializers.SerializerMethodField()
 
     def get_rn(self, obj: S3Object) -> int:
         """
@@ -26,7 +41,21 @@ class S3ObjectSerializer(serializers.Serializer):
         """
         return 's3://%s/%s' % (obj.bucket, obj.key)
 
-    def to_representation(self, instance) -> list:
+    def get_lims_rows(self, obj: S3Object) -> List[Dict]:
+        """
+        Get associated LIMS rows
+        :return: list of LIMS data
+        """
+        lims_rows = LIMSRow.objects.filter(s3lims__s3_object=obj)
+
+        data = []
+        for lims_row in lims_rows:
+            serializer = LIMSRowSerializer(instance=lims_row)
+            data.append(serializer.data)
+
+        return data
+
+    def to_representation(self, instance: S3Object) -> list:
         """
         Override the default method so that we have
         Object instance -> list of values in field order
