@@ -51,7 +51,7 @@ class S3ObjectSerializer(serializers.Serializer):
         """
         return 's3://%s/%s' % (obj.bucket, obj.key)
 
-    def get_lims(self, obj: S3Object):
+    def get_lims(self, obj: S3Object) -> None:
         """
         Get and set associated LIMS data, so it can be used for other lims field getters
         """
