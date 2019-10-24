@@ -58,18 +58,19 @@ class S3ObjectSerializer(serializers.Serializer):
         lims_rows = LIMSRow.objects.filter(s3lims__s3_object=obj)
 
         # In case we don't have associated lims record
-        field_value_list = {'illumina_id': [], 'run': [], 'subject_ids': [], 'sample_id': []}
+        # Use dict for each value so that we don't get duplicate values
+        field_value_dict = {'illumina_id': {}, 'run': {}, 'subject_ids': {}, 'sample_id': {}}
         for lims_row in lims_rows:
             serializer = LIMSRowSerializer(instance=lims_row)
             lims_row_data = serializer.data
 
             for field, value in lims_row_data.items():
-                field_value_list[field].append(str(value))
+                field_value_dict[field][str(value)] = str(value)
 
         # Concatenate field value lists
         concatenated_data = {}
-        for field, value_list in field_value_list.items():
-            concatenated_data[field] = '\n,'.join(value_list)
+        for field, value_dict in field_value_dict.items():
+            concatenated_data[field] = ',\n'.join(value_dict.keys())
 
         self.lims = concatenated_data
 
