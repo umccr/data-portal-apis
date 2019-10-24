@@ -69,7 +69,7 @@ class S3ObjectSerializer(serializers.Serializer):
         # Concatenate field value lists
         concatenated_data = {}
         for field, value_list in field_value_list.items():
-            concatenated_data[field] = ','.join(value_list)
+            concatenated_data[field] = '\n,'.join(value_list)
 
         self.lims = concatenated_data
 
