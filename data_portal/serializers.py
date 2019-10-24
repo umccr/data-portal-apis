@@ -30,10 +30,10 @@ class S3ObjectSerializer(serializers.Serializer):
     path = serializers.SerializerMethodField()
     size = serializers.IntegerField()
     last_modified_date = serializers.DateTimeField()
-    illumina_ids = serializers.SerializerMethodField()
-    runs = serializers.SerializerMethodField()
-    subject_ids = serializers.SerializerMethodField()
-    sample_ids = serializers.SerializerMethodField()
+    illumina_id = serializers.SerializerMethodField()
+    run = serializers.SerializerMethodField()
+    subject_id = serializers.SerializerMethodField()
+    sample_id = serializers.SerializerMethodField()
 
     def __init__(self, instance=None, data=empty, **kwargs):
         super().__init__(instance, data, **kwargs)
@@ -73,7 +73,7 @@ class S3ObjectSerializer(serializers.Serializer):
 
         self.lims = concatenated_data
 
-    def get_illumina_ids(self, obj: S3Object):
+    def get_illumina_id(self, obj: S3Object):
         """
         Get concatenated illumina ids
         """
@@ -82,7 +82,7 @@ class S3ObjectSerializer(serializers.Serializer):
 
         return self.lims['illumina_id']
 
-    def get_runs(self, obj: S3Object):
+    def get_run(self, obj: S3Object):
         """
         Get concatenated run numbers
         """
@@ -91,7 +91,7 @@ class S3ObjectSerializer(serializers.Serializer):
 
         return self.lims['run']
 
-    def get_subject_ids(self, obj: S3Object):
+    def get_subject_id(self, obj: S3Object):
         """
         Get concatenated subject ids
         """
@@ -100,7 +100,7 @@ class S3ObjectSerializer(serializers.Serializer):
 
         return self.lims['subject_ids']
 
-    def get_sample_ids(self, obj: S3Object):
+    def get_sample_id(self, obj: S3Object):
         """
         Get concatenated sample ids
         """
