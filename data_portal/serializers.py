@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List
 
 from rest_framework import serializers
@@ -27,7 +28,7 @@ class S3ObjectSerializer(serializers.Serializer):
     path = serializers.SerializerMethodField()
     size = serializers.IntegerField()
     last_modified_date = serializers.DateTimeField()
-    lims_rows = serializers.SerializerMethodField()
+    lims = serializers.SerializerMethodField()
 
     def get_rn(self, obj: S3Object) -> int:
         """
@@ -41,19 +42,26 @@ class S3ObjectSerializer(serializers.Serializer):
         """
         return 's3://%s/%s' % (obj.bucket, obj.key)
 
-    def get_lims_rows(self, obj: S3Object) -> List[Dict]:
+    def get_lims(self, obj: S3Object) -> Dict:
         """
-        Get associated LIMS rows
+        Get associated LIMS data
         :return: list of LIMS data
         """
         lims_rows = LIMSRow.objects.filter(s3lims__s3_object=obj)
 
-        data = []
+        field_value_list = defaultdict(list)
         for lims_row in lims_rows:
             serializer = LIMSRowSerializer(instance=lims_row)
-            data.append(serializer.data)
+            lims_row_data = serializer.data
 
-        return data
+            for field, value in lims_row_data.items():
+                field_value_list[field].append(str(value))
+
+        concatenated_data = {}
+        for field, value_list in field_value_list.items():
+            concatenated_data[field] = ','.join(value_list)
+
+        return concatenated_data
 
     def to_representation(self, instance: S3Object) -> list:
         """
