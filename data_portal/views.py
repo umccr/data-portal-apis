@@ -189,12 +189,12 @@ def storage_stats(request: Request):
     unassociated_lims = LIMSRow.objects.filter(s3lims__isnull=True).count()
 
     data = {
-        'total_s3': total_s3,
-        'associated_s3': associated_s3,
-        'unassociated_s3': unassociated_s3,
-        'total_lims': total_lims,
-        'associated_lims': associated_lims,
-        'unassociated_lims': unassociated_lims
+        'Total S3 Objects': total_s3,
+        'Linked S3 Objects': associated_s3,
+        'Not Linked S3 Objects': unassociated_s3,
+        'Total LIMS Rows': total_lims,
+        'Linked LIMS Rows': associated_lims,
+        'Not Linked LIMS Rows': unassociated_lims
     }
 
     return JsonResponse(data=data, status=status.HTTP_200_OK)
