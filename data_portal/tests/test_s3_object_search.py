@@ -1,4 +1,5 @@
 import json
+import logging
 import urllib.parse
 from datetime import timedelta
 from typing import List
@@ -181,12 +182,13 @@ class S3ObjectSearchTests(TestCase):
         * ext
         * date: all comparison operators
         * size: all comparison operators
-        * illumina_id: enabled and not enabled (as this determines whether we do JOIN operation)
+        * subject_id: filled and not filled
+        * sample_id: filled and not filled
+        * linked: true and false
         * case: enabled and not enabled
         """
         file_name_without_ext = 's3_object_earlier'
         ext = 'csv'
-        illumina_id = 'some_illumina_id'
         size = 1
         date = now().astimezone(pytz.timezone('UTC')).date()
         date_format = '%Y-%m-%d'
@@ -197,7 +199,13 @@ class S3ObjectSearchTests(TestCase):
             size=size
         )
 
-        lims_row = LIMSRowFactory(illumina_id=illumina_id)
+        # Not linked with any LIMS row
+        not_linked_s3_object = S3ObjectFactory()
+
+        subject_id = "subject_id"
+        external_subject_id = "external_subject_id"
+        sample_id = "sample_id"
+        lims_row = LIMSRowFactory(subject_id=subject_id, external_subject_id=external_subject_id, sample_id=sample_id)
         s3_lims = S3LIMSFactory(s3_object=s3_object, lims_row=lims_row)
 
         # Prepare a valid query that covers all supported features
@@ -215,30 +223,45 @@ class S3ObjectSearchTests(TestCase):
             (date+timedelta(days=1)).strftime(date_format),
         )
 
-        illumina_id_query = 'illumina_id:%s' % illumina_id
+        # Test both subject_id and external_subject_id
+        lims_join_query_base = 'subjectid:%s subjectid:%s sampleid:%s' % (subject_id, external_subject_id, sample_id)
         case_query = 'case:true pathinc:%s ext:%s' % (file_name_without_ext.upper(), ext.upper())
 
         # All testable queries
         # query_no_illumina_id is the base query
-        query_no_illumina_id = [default_query, ext_query, pathinc_query, size_query, last_modified_date_query]
-        query_with_illumina_id = query_no_illumina_id.copy() + [illumina_id_query]
-        query_default_case_sensitivity = query_no_illumina_id.copy()
+        query_no_lims_join = [default_query, ext_query, pathinc_query, size_query, last_modified_date_query]
+        query_with_lims_join = query_no_lims_join.copy() + [lims_join_query_base]
+        query_linked_filter_true = ['linked:true']
+        query_linked_filter_false = ['linked:false']
+        query_default_case_sensitivity = query_no_lims_join.copy()
         query_case_sensitive = [size_query, last_modified_date_query, case_query]
 
-        # List of all testable queries
-        query_list = [query_no_illumina_id, query_with_illumina_id, query_default_case_sensitivity, query_case_sensitive]
+        # List of all testable queries + the expected s3 object to be returned in the result
+        query_list = [
+            (query_no_lims_join, s3_object),
+            (query_with_lims_join, s3_object),
+            (query_linked_filter_true, s3_object),
+            (query_linked_filter_false, not_linked_s3_object),
+            (query_default_case_sensitivity, s3_object),
+            (query_case_sensitive, s3_object)
+        ]
+
+        logger = logging.getLogger()
 
         # Test one by one
-        for sub_query_list in query_list:
+        for sub_query_list, expected_s3_object in query_list:
             query_string = ' '.join(sub_query_list)
             query_string_encoded = urllib.parse.quote(query_string.encode('utf8'))
             response = self.client.get(reverse('file-search') + '?query=%s' % query_string_encoded)
+
+            if not response.status_code == status.HTTP_200_OK:
+                logger.error("FAILED: " + query_string)
 
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             results = parse_s3_object_result_rows(response)
             # We should always get the one matching s3 object
             self.assertEqual(len(results), 1, msg='Query: %s' % query_string)
-            self.assertEqual(results[0].rn, s3_object.id, msg='Query: %s' % query_string)
+            self.assertEqual(results[0].rn, expected_s3_object.id, msg='Query: %s' % query_string)
 
     def test_search_query_invalid(self):
         """
