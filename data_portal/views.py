@@ -181,39 +181,39 @@ def storage_stats(request: Request):
     Storage statistics
     """
     total_s3 = S3Object.objects.count()
-    associated_s3 = S3Object.objects.filter(s3lims__isnull=False).count()
-    unassociated_s3 = S3Object.objects.filter(s3lims__isnull=True).count()
+    linked_s3 = S3Object.objects.filter(s3lims__isnull=False).count()
+    not_linked_s3 = S3Object.objects.filter(s3lims__isnull=True).count()
 
     total_lims = LIMSRow.objects.count()
-    associated_lims = LIMSRow.objects.filter(s3lims__isnull=False).count()
-    unassociated_lims = LIMSRow.objects.filter(s3lims__isnull=True).count()
+    linked_lims = LIMSRow.objects.filter(s3lims__isnull=False).count()
+    not_linked_lims = LIMSRow.objects.filter(s3lims__isnull=True).count()
 
-    data = [
-        {
+    data = {
+        'total_s3': {
             'label': 'Total S3 Objects',
             'value': total_s3,
         },
-        {
+        'linked_s3': {
             'label': 'Linked S3 Objects',
-            'value': associated_s3,
+            'value': linked_s3,
         },
-        {
+        'not_linked_s3': {
             'label': 'Not Linked S3 Objects',
-            'value': unassociated_s3,
+            'value': not_linked_s3,
             'query': 'linked:false'
         },
-        {
+        'total_lims': {
             'label': 'Total LIMS Rows',
             'value': total_lims,
         },
-        {
+        'linked_lims': {
             'label': 'Linked LIMS Rows',
-            'value': associated_lims,
+            'value': linked_lims,
         },
-        {
+        'not_linked_lims': {
             'label': 'Not Linked LIMS Rows',
-            'value': unassociated_lims,
+            'value': not_linked_lims,
         },
-    ]
+    }
 
-    return JsonResponse(data=data, status=status.HTTP_200_OK, safe=False)
+    return JsonResponse(data=data, status=status.HTTP_200_OK)
