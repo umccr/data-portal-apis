@@ -37,7 +37,10 @@ class S3ObjectSerializer(serializers.Serializer):
 
     def __init__(self, instance=None, data=empty, **kwargs):
         super().__init__(instance, data, **kwargs)
+        # Current LIMS data
         self.lims = None
+        # Current S3 object
+        self.curr_obj = None
 
     def get_rn(self, obj: S3Object) -> int:
         """
@@ -72,13 +75,15 @@ class S3ObjectSerializer(serializers.Serializer):
         for field, value_dict in field_value_dict.items():
             concatenated_data[field] = ',\n'.join(value_dict.keys())
 
+        # Keep a record of the current object so we know whether lims needs to be reloaded
         self.lims = concatenated_data
+        self.curr_obj = obj
 
     def get_illumina_id(self, obj: S3Object):
         """
         Get concatenated illumina ids
         """
-        if self.lims is None:
+        if self.lims is None or self.curr_obj != obj:
             self.get_lims(obj)
 
         return self.lims['illumina_id']
@@ -87,7 +92,7 @@ class S3ObjectSerializer(serializers.Serializer):
         """
         Get concatenated run numbers
         """
-        if self.lims is None:
+        if self.lims is None or self.curr_obj != obj:
             self.get_lims(obj)
 
         return self.lims['run']
@@ -96,7 +101,7 @@ class S3ObjectSerializer(serializers.Serializer):
         """
         Get concatenated subject ids
         """
-        if self.lims is None:
+        if self.lims is None or self.curr_obj != obj:
             self.get_lims(obj)
 
         return self.lims['subject_ids']
@@ -105,7 +110,7 @@ class S3ObjectSerializer(serializers.Serializer):
         """
         Get concatenated sample ids
         """
-        if self.lims is None:
+        if self.lims is None or self.curr_obj != obj:
             self.get_lims(obj)
 
         return self.lims['sample_id']
