@@ -11,7 +11,7 @@ from rest_framework.request import Request
 import logging
 
 from data_portal.exceptions import InvalidSearchQuery, InvalidQueryParameter
-from data_portal.models import S3Object, S3ObjectManager
+from data_portal.models import S3Object, S3ObjectManager, LIMSRow, S3LIMS
 from data_portal.responses import JsonErrorResponse
 from data_portal.s3_object_search import S3ObjectSearchQueryHelper
 from data_portal.serializers import S3ObjectSerializer
@@ -173,3 +173,47 @@ def sign_s3_file(request: Request):
         return JsonErrorResponse('Failed to sign the specified s3 object', status=status.HTTP_400_BAD_REQUEST)
 
     return JsonResponse(data=response, status=status.HTTP_200_OK, safe=False)
+
+
+@api_view(['GET'])
+def storage_stats(request: Request):
+    """
+    Storage statistics
+    """
+    total_s3 = S3Object.objects.count()
+    linked_s3 = S3Object.objects.filter(s3lims__isnull=False).distinct().count()
+    not_linked_s3 = S3Object.objects.filter(s3lims__isnull=True).count()
+
+    total_lims = LIMSRow.objects.count()
+    linked_lims = LIMSRow.objects.filter(s3lims__isnull=False).distinct().count()
+    not_linked_lims = LIMSRow.objects.filter(s3lims__isnull=True).count()
+
+    data = {
+        'total_s3': {
+            'label': 'Total S3 Objects',
+            'value': total_s3,
+        },
+        'linked_s3': {
+            'label': 'Linked S3 Objects',
+            'value': linked_s3,
+        },
+        'not_linked_s3': {
+            'label': 'Not Linked S3 Objects',
+            'value': not_linked_s3,
+            'query': 'linked:false'
+        },
+        'total_lims': {
+            'label': 'Total LIMS Rows',
+            'value': total_lims,
+        },
+        'linked_lims': {
+            'label': 'Linked LIMS Rows',
+            'value': linked_lims,
+        },
+        'not_linked_lims': {
+            'label': 'Not Linked LIMS Rows',
+            'value': not_linked_lims,
+        },
+    }
+
+    return JsonResponse(data=data, status=status.HTTP_200_OK)

@@ -41,7 +41,7 @@ class FilterType(Enum):
     CONTAINS = 'CONTAINS'
     COMPARE = 'COMPARE'
     GLOBAL_CASE_SENSITIVITY = 'GLOBAL_CASE_SENSITIVITY'
-
+    GLOBAL_LINKED_WITH_LIMS = 'GLOBAL_LINKED_WITH_LIMS'
 
 class FilterField(Enum):
     """
@@ -62,6 +62,7 @@ class FilterField(Enum):
     SUBJECT_ID = (('s3lims__lims_row__subject_id', 's3lims__lims_row__external_subject_id'), str)
     SAMPLE_ID =(('s3lims__lims_row__sample_id',), str)
     CASE = (('case',), lambda c: c.lower() == 'true')
+    LINKED = (('linked',), lambda c: c.lower() == 'true')
 
     @property
     def field_names(self) -> Tuple:
@@ -98,6 +99,7 @@ class FilterFieldTypeFactory:
     SUBJECT_ID = 'subjectid'
     SAMPLE_ID = 'sampleid'
     CASE_SENSITIVE = 'case'
+    LINKED_WITH_LIMS = 'linked'
 
     # The default filter
     DEFAULT = KEY_INCLUDES
@@ -130,6 +132,12 @@ class FilterFieldTypeFactory:
             FilterType.GLOBAL_CASE_SENSITIVITY,
             'Defines case sensitivity for string comparison. Default to false'
         ),
+        LINKED_WITH_LIMS: FilterFieldType(
+            LINKED_WITH_LIMS,
+            FilterField.LINKED,
+            FilterType.GLOBAL_LINKED_WITH_LIMS,
+            'The record is linked with at least one LIMS row'
+        )
     }
 
     @staticmethod
@@ -188,6 +196,12 @@ class FilterQuery:
 class S3ObjectSearchQueryHelper:
     @staticmethod
     def _parse_filter_vals(query_raw: str) -> Dict[str, List[FilterQuery]]:
+        """
+        Parse raw query to defined filters.
+        :param query_raw: raw query
+        :except InvalidSearchQuery: search query is found to be invalid
+        :return: defined filters
+        """
         # Remove spaces around and split into each individual filter
         filters_raw = query_raw.strip().split(' ')
 
@@ -231,6 +245,13 @@ class S3ObjectSearchQueryHelper:
 
     @staticmethod
     def parse(query_raw: str, base_queryset: QuerySet) -> QuerySet:
+        """
+        Parse raw query into Django QuerySet
+        :param query_raw: raw query
+        :param base_queryset: equivalent base QuerySet
+        :except InvalidSearchQuery: search query is found to be invalid
+        :return: parsed QuerySet
+        """
         filters = S3ObjectSearchQueryHelper._parse_filter_vals(query_raw)
 
         # Base query set
@@ -241,9 +262,21 @@ class S3ObjectSearchQueryHelper:
         case_sensitive = case_sensitive_id in filters and filters[case_sensitive_id][0].val is True
         case_sensitive_prefix = '' if case_sensitive else 'i'
 
+        linked_with_lims_id = FilterFieldTypeFactory.LINKED_WITH_LIMS
+        has_linked_with_lims = linked_with_lims_id in filters
+
+        # Only apply this special filter if we have the filter for linked_with_lims
+        if has_linked_with_lims:
+            linked_with_lims = filters[linked_with_lims_id][0].val is True
+
+            if linked_with_lims:
+                queryset = queryset.filter(s3lims__isnull=False)
+            else:
+                queryset = queryset.filter(s3lims__isnull=True)
+
         for filter_id, filter_list in filters.items():
-            # Ignore case sensitive filter as they have been checked
-            if filter_id == case_sensitive_id:
+            # Ignore global filters as they have been checked
+            if filter_id == case_sensitive_id or filter_id == linked_with_lims_id:
                 continue
 
             for filter in filter_list:
