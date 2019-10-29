@@ -181,11 +181,11 @@ def storage_stats(request: Request):
     Storage statistics
     """
     total_s3 = S3Object.objects.count()
-    linked_s3 = S3Object.objects.filter(s3lims__isnull=False).count()
+    linked_s3 = S3Object.objects.filter(s3lims__isnull=False).distinct().count()
     not_linked_s3 = S3Object.objects.filter(s3lims__isnull=True).count()
 
     total_lims = LIMSRow.objects.count()
-    linked_lims = LIMSRow.objects.filter(s3lims__isnull=False).count()
+    linked_lims = LIMSRow.objects.filter(s3lims__isnull=False).distinct().count()
     not_linked_lims = LIMSRow.objects.filter(s3lims__isnull=True).count()
 
     data = {
