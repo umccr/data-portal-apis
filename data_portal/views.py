@@ -1,9 +1,8 @@
 from typing import Tuple, Optional
-
 import boto3
 from botocore.exceptions import ClientError
 from django.core.exceptions import EmptyResultSet
-from django.core.paginator import Paginator, EmptyPage
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -102,7 +101,8 @@ def search_file(request: Request):
 
     # Parse and apply filters
     try:
-        query_set = S3ObjectSearchQueryHelper.parse(query, query_set)
+        query_helper = S3ObjectSearchQueryHelper()
+        query_set = query_helper.parse(query, query_set)
     except InvalidSearchQuery as e:
         return JsonErrorResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
