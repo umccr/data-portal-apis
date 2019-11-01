@@ -16,9 +16,11 @@ phases:
         nodejs: 8
         python: 3.7
     commands:
+      - pip3 install -r requirements.txt
       - npm install
       - npm install -g serverless
   build:
     commands:
+      - ./manage.py test
       - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
       - SLS_DEBUG=true serverless deploy --STAGE $STAGE
