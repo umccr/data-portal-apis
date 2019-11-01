@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Tuple, Callable, Any, Dict, List, Optional
+from typing import Tuple, Callable, Any, Dict, List, Optional, Union, Type
 from django.db.models import QuerySet, Q
 
 from data_portal.exceptions import InvalidComparisonOperator, InvalidFilterValue, InvalidSearchQuery
@@ -8,7 +8,8 @@ from data_portal.exceptions import InvalidComparisonOperator, InvalidFilterValue
 
 class ComparisonOperator(Enum):
     """
-    Enum for a comparison operator used, allowing conversion from symbol strings (user input) to Django operators
+    Enum for the comparison operator supported for COMPARISON FilterMethod,
+    storing the conversion table from symbol strings (user input) to Django operators.
     """
     # OPERATOR = (query symbol, Django query operator)
     EQUAL = ('=', None)
@@ -28,14 +29,14 @@ class ComparisonOperator(Enum):
     @property
     def symbol(self) -> str:
         """
-        :return: string symbol of the operator
+        Get the symbol of current operator
         """
         return self.value[0]
 
     @property
     def name(self) -> str:
         """
-        :return: name of the operator
+        Get the name of current operator (in Django querying)
         """
         return self.value[1]
 
@@ -54,6 +55,7 @@ class FilterMethod:
 
     def __init__(self, name: str, is_global: bool) -> None:
         """
+        Configure a new supported filter method.
         :param name: name of the filter method (using a defined name constant above)
         :param is_global: whether this method is a global filter (rule)
         """
@@ -66,6 +68,8 @@ class FilterMethodFactory:
     Factory class storing all supported filter methods.
     Extend this class for additional methods which are specific to a search view.
     """
+    _methods: Dict[str, FilterMethod]
+
     def __init__(self) -> None:
         self._methods = {}
 
@@ -91,12 +95,19 @@ class FilterMethodFactory:
 
 
 class FilterTag:
+    """
+    Representing a filter tag, in which value parser will be used and apply on the model field names
+    Extend this class for additional tags which are specific to a search view.
+    """
+    # TAG_NAME = 'UNIQUE_STRING_IDENTIFIER'
     CASE = 'CASE'
 
-    def __init__(self, name: str, value_parser: Callable[[str], Any], field_names: Optional[Tuple]) -> None:
+    def __init__(self, name: str, value_parser: Union[Callable[[str], Any], Type], field_names: Optional[Tuple]) -> None:
         """
+        Configure a new supported filter tag.
         :param name: name of the filter tag (using a defined name constant above)
         :param value_parser: parser function that converts raw value in str to the real type
+                             which can be either a function or a primitive type (e.g. str, and we will do `str(val)`)
         :param field_names: field names used in Django query, in a Tuple.
                             Note that one filter can be applied on multiple field names
                             (currently only OR relation supported)
@@ -107,23 +118,40 @@ class FilterTag:
 
 
 class FilterTagFactory:
+    """
+    Factory class storing all supported filter tags.
+    Extend this class for additional tags which are specific to a search view.
+    """
+    _tags: Dict[str, FilterTag]
+
     def __init__(self) -> None:
-        self._fields = {}
+        self._tags = {}
 
         # Register base filter tags
         self.register(FilterTag(FilterTag.CASE, lambda c: c.lower() == 'true', None))
 
-    def register(self, field: FilterTag):
-        self._fields[field.name] = field
+    def register(self, filter_tag: FilterTag):
+        """
+        Register a filter tag into the factory
+        :param filter_tag: new filter tag to be added in
+        """
+        self._tags[filter_tag.name] = filter_tag
 
-    def get(self, name: str) -> FilterTag:
-        return self._fields.get(name, None)
+    def get(self, tag_name: str) -> FilterTag:
+        """
+        Get the filter tag with the specified name
+        :param tag_name: tag name
+        """
+        return self._tags.get(tag_name, None)
 
 
 class FilterType:
     """
     Represents a filter field with a specific filter type.
+    Extend this class for additional types which are specific to a search view.
     """
+    # TAG_NAME = 'lowercase_unique_identifier' (used in query string - [filter_type]:[operator][filter_val])
+
     CASE_SENSITIVE = 'case'
 
     def __init__(
@@ -133,6 +161,15 @@ class FilterType:
         method: FilterMethod,
         description: str
     ) -> None:
+        """
+        Configure a new supported filter type.
+        :param name: name of the filter type (used in query string - [filter_type]:[operator][filter_val]
+        :param tag: the underlying filter tag supporting this filter type.
+                    note that one filter tag can be used by multiple filter types.
+        :param method: the underlying filter method supporting this filter type.
+        :param description: description of this filter type, which can also be used in the future for dynamic
+                            querying help text retrieval.
+        """
         self.name = name
         self.tag = tag
         self.method = method
@@ -143,12 +180,19 @@ class FilterTypeFactory:
     """
     Factory class storing supported filter types
     """
+    _filter_types: Dict[str, FilterType]
+
     def __init__(self, filter_tag_factory: FilterTagFactory, filter_method_factory: FilterMethodFactory) -> None:
+        """
+        :param filter_tag_factory: used for retrieving the corresponding filter tag objects
+        :param filter_method_factory: used for retrieving the corresponding filter method objects
+        """
         self._filter_types = {}
         self._default = None
         self.filter_tag_factory = filter_tag_factory
         self.filter_method_factory = filter_method_factory
 
+        # Register base filter tags
         self.register(FilterType(
             FilterType.CASE_SENSITIVE,
             filter_tag_factory.get(FilterTag.CASE),
@@ -157,36 +201,57 @@ class FilterTypeFactory:
         ))
 
     def register(self, filter_type: FilterType) -> None:
+        """
+        Register a filter type into the factory
+        :param filter_type: new filter type to be added in
+        """
         self._filter_types[filter_type.name] = filter_type
 
     def set_default(self, filter_type_name: str) -> None:
+        """
+        Set the default filter type to the filter type name (which must already exists in `_filter_types`)
+        :param filter_type_name: name of the filter type
+        """
         self._default = self._filter_types.get(filter_type_name)
 
     def get(self, filter_type_name: str) -> FilterType:
+        """
+        Get the filter type with the specified name
+        :param filter_type_name: name of the filter type
+        """
         return self._filter_types.get(filter_type_name, None)
 
     def get_default(self) -> FilterType:
+        """
+        Get the default filter type (for the case when the input only contains a value [v], so no [t]:[o][v] and we can
+        refer to the default filter type.
+        """
         return self._default
 
 
 class Filter:
     """
-    Represents a single filter query
+    Represents a single filter query: [filter_type]:[operator][filter_val]
+    Note that operator is optional depending on the filter type.
     """
     filter_type: FilterType
-    val: Any
     comparator: ComparisonOperator
+    val: Any  # Value converted from raw value
 
     def __init__(self, filter_type: FilterType, comparator_val_raw: str) -> None:
         """
         Construct a filter query from the specified FilterFieldType and raw comparator+value string
         :param filter_type: the FilterType this query corresponds to
         :param comparator_val_raw: raw comparator+value string, comparator may be empty.
+        :raise InvalidComparisonOperator: comparison operator is in invalid format
+        :raise InvalidFilterValue: filter value is in invalid format
         """
         super().__init__()
         self.filter_type = filter_type
 
         comparator = None
+
+        # Only checks for comparison operator if we are comparing
         if filter_type.method.name == FilterMethod.COMPARE:
             # Check whether comparison operator is valid and find it if it's valid
             comparators = list(filter(
@@ -218,6 +283,9 @@ class Filter:
 
 
 class SearchQueryHelper:
+    """
+    Helper class for search query text parsing and processing
+    """
     def __init__(
         self,
         filter_type_factory: FilterTypeFactory,
@@ -233,8 +301,9 @@ class SearchQueryHelper:
         """
         Parse raw query to defined filters.
         :param query_raw: raw query
-        :except InvalidSearchQuery: search query is found to be invalid
-        :return: defined filters
+        :except InvalidSearchQuery: search query string is invalid
+        :return: parsed filters, list of Filter objects mapped by filter type name.
+                 note that this also means we support applying multiple filters of the same type.
         """
         # Remove spaces around and split into each individual filter
         filters_raw = query_raw.strip().split(' ')
@@ -259,9 +328,9 @@ class SearchQueryHelper:
                     raise InvalidSearchQuery(query_raw, str(e))
 
             if len(tokens) == 2:
-                # Non-default filter
+                # Non-default filter, so we expect a filter type name
                 filter_type_name = tokens[0]
-                comparator_val = tokens[1]
+                comparator_val = tokens[1]  # [comparator(optional)][filter value]
 
                 # Check whether the filter id is valid
                 filter_type = self._filter_type_factory.get(filter_type_name)
@@ -284,6 +353,7 @@ class SearchQueryHelper:
         :param queryset: base queryset
         :return: updated queryset
         """
+        # Apply case sensitivity preference, default is case insensitive.
         case_sensitive_name = FilterType.CASE_SENSITIVE
         case_sensitive = case_sensitive_name in filters and filters[case_sensitive_name][0].val is True
 
@@ -314,6 +384,7 @@ class SearchQueryHelper:
             if filter_method.is_global:
                 continue
 
+            # Note that we support multiple filter conditions of the same type by `AND` each filter condition.
             for curr_filter in filter_list:
                 method = curr_filter.filter_type.method
                 tag = curr_filter.filter_type.tag
@@ -321,6 +392,7 @@ class SearchQueryHelper:
 
                 filter_q = Q()
 
+                # We also support comparison to multiple fields, and we `OR` each filter condition.
                 for field_name in tag.field_names:
                     if method.name == FilterMethod.COMPARE:
                         comparator = curr_filter.comparator
