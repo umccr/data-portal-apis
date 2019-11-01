@@ -10,7 +10,7 @@ from rest_framework.request import Request
 import logging
 
 from data_portal.exceptions import InvalidSearchQuery, InvalidQueryParameter
-from data_portal.models import S3Object, S3ObjectManager, LIMSRow, S3LIMS
+from data_portal.models import S3Object, S3ObjectManager, LIMSRow
 from data_portal.responses import JsonErrorResponse
 from data_portal.s3_object_search import S3ObjectSearchQueryHelper
 from data_portal.serializers import S3ObjectSerializer
