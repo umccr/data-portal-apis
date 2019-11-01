@@ -1,7 +1,6 @@
 version: 0.2
 env:
   variables:
-    # Env variables for the application to be deployed
     STAGE: $STAGE
     API_DOMAIN_NAME: $API_DOMAIN_NAME
     LAMBDA_IAM_ROLE_ARN: $LAMBDA_IAM_ROLE_ARN
@@ -11,10 +10,6 @@ env:
     SSM_KEY_NAME_DJANGO_SECRET_KEY: $SSM_KEY_NAME_DJANGO_SECRET_KEY
     LIMS_BUCKET_NAME: $LIMS_BUCKET_NAME
     LIMS_CSV_OBJECT_KEY: $LIMS_CSV_OBJECT_KEY
-    # Env variables for testing
-    DEBUG: "on"
-    DJANGO_SECRET_KEY: "test-secret"
-    DATABASE_URL: mysql://root:test@localhost:3306/data_portal
 phases:
   install:
     runtime-versions:
@@ -22,9 +17,6 @@ phases:
         python: 3.7
     commands:
       # Install dependencies for testing
-      - sudo printf 'mysql-server mysql-server/root_password password test' | sudo debconf-set-selections and printf 'mysql-server mysql-server/root_password_again password test' | sudo debconf-set-selections
-      - sudo apt-get update && sudo apt-get -y install mysql-server systemd
-      - sudo systemctl start mysql
       - pip3 install -r requirements.txt
       # Install serverless framework
       - npm install
