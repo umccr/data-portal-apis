@@ -22,9 +22,9 @@ phases:
         python: 3.7
     commands:
       # Install dependencies for testing
-      - printf 'mysql-server mysql-server/root_password password test' | debconf-set-selections and printf 'mysql-server mysql-server/root_password_again password test' | debconf-set-selections
-      - apt-get update && apt-get -y install mysql-server
-      - systemctl start mysql
+      - sudo printf 'mysql-server mysql-server/root_password password test' | sudo debconf-set-selections and printf 'mysql-server mysql-server/root_password_again password test' | sudo debconf-set-selections
+      - sudo apt-get update && sudo apt-get -y install mysql-server systemd
+      - sudo systemctl start mysql
       - pip3 install -r requirements.txt
       # Install serverless framework
       - npm install
