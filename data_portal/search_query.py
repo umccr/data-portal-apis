@@ -102,7 +102,12 @@ class FilterTag:
     # TAG_NAME = 'UNIQUE_STRING_IDENTIFIER'
     CASE = 'CASE'
 
-    def __init__(self, name: str, value_parser: Union[Callable[[str], Any], Type], field_names: Optional[Tuple]) -> None:
+    def __init__(
+        self,
+        name: str,
+        value_parser: Union[Callable[[str], Any], Type],
+        field_names: Optional[Tuple]
+    ) -> None:
         """
         Configure a new supported filter tag.
         :param name: name of the filter tag (using a defined name constant above)

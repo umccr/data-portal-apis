@@ -1,19 +1,13 @@
+"""
+This file contains search query support for search views based on S3Object table.
+This uses and extends the base search query functionality provided in `search_query`.
+"""
 from typing import Dict, List
 from django.db.models import QuerySet
 
 from data_portal.search_query import FilterType, FilterTag, FilterTypeFactory, FilterMethod, SearchQueryHelper, \
     Filter, FilterMethodFactory, FilterTagFactory
 from utils.datetime import parse_last_modified_date
-
-
-class S3FilterType(FilterType):
-    KEY_INCLUDES = 'pathinc'
-    KEY_EXTENSION = 'ext'
-    FILE_SIZE = 'size'
-    LAST_MODIFIED_DATE = 'date'
-    SUBJECT_ID = 'subjectid'
-    SAMPLE_ID = 'sampleid'
-    LINKED_WITH_LIMS = 'linked'
 
 
 class S3FilterTag(FilterTag):
@@ -32,28 +26,47 @@ class S3FilterMethod(FilterMethod):
 class S3FilterMethodFactory(FilterMethodFactory):
     def __init__(self) -> None:
         super().__init__()
+
         self.register(FilterMethod(S3FilterMethod.LINKED_WITH_LIMS, True))
 
 
 class S3FilterTagFactory(FilterTagFactory):
     def __init__(self) -> None:
         super().__init__()
+
         self.register(FilterTag(S3FilterTag.KEY, str, ('key',)))
         self.register(FilterTag(S3FilterTag.SIZE, int, ('size',)))
         self.register(FilterTag(S3FilterTag.LAST_MODIFIED_DATE, parse_last_modified_date, ('last_modified_date',)))
-        self.register(FilterTag(S3FilterTag.SUBJECT_ID, str, ('s3lims__lims_row__subject_id', 's3lims__lims_row__external_subject_id')))
+        self.register(FilterTag(
+            S3FilterTag.SUBJECT_ID,
+            str,
+            ('s3lims__lims_row__subject_id', 's3lims__lims_row__external_subject_id')
+        ))
         self.register(FilterTag(S3FilterTag.SAMPLE_ID, str, ('s3lims__lims_row__sample_id',)))
         self.register(FilterTag(S3FilterTag.LINKED, lambda c: c.lower() == 'true', None))
 
 
+# Instantiate factories
 filter_method_factory = S3FilterMethodFactory()
 filter_tag_factory = S3FilterTagFactory()
 
 
+class S3FilterType(FilterType):
+    KEY_INCLUDES = 'pathinc'
+    KEY_EXTENSION = 'ext'
+    FILE_SIZE = 'size'
+    LAST_MODIFIED_DATE = 'date'
+    SUBJECT_ID = 'subjectid'
+    SAMPLE_ID = 'sampleid'
+    LINKED_WITH_LIMS = 'linked'
+
+
 class S3FilterTypeFactory(FilterTypeFactory):
     def __init__(self) -> None:
+        # Instantiate filter type factory using the factory instances above
         super().__init__(filter_tag_factory, filter_method_factory)
 
+        # Self explanatory - see description parameter below
         self.register(FilterType(
             S3FilterType.KEY_INCLUDES,
             self.filter_tag_factory.get(S3FilterTag.KEY),
@@ -99,6 +112,7 @@ class S3FilterTypeFactory(FilterTypeFactory):
         self.set_default(S3FilterType.KEY_INCLUDES)
 
 
+# Instantiate the factory
 filter_type_factory = S3FilterTypeFactory()
 
 
