@@ -45,8 +45,8 @@ variables originated from Terraform > CodeBuild to Serverless.
   export them in local environment. We can simply use the CAPITAL_LETTER_ONES (and their values) in Terraform output.
 
 #### Testing
-- Unit tests are available at different places (and we can do `python manage.py test {package}` to run these
-  tests, but unit testing is not currenly integrated in
-  (Serverless/CodeBuild) deployment process yet.
+- Integration tests are available at different places (and we can do `python manage.py test {package}` to run these
+  tests.
+- Integration tests are integrated as part of the CodeBuild. (See `buildspec.yml`)
 - As AWS services are involved in the workflow of some functions, so for testing
  `moto` is used for mocking these services.
