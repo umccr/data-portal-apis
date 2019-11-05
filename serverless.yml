@@ -68,7 +68,7 @@ functions:
     timeout: 20
   migrate:
     handler: migrate.handler
-    timeout: 10
+    timeout: 20
 custom:
   wsgi:
     app: data_portal.wsgi.application

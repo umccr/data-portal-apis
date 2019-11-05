@@ -1,5 +1,4 @@
 from typing import List, Dict
-
 import boto3
 from django.test import TestCase
 from moto import mock_s3
@@ -11,8 +10,6 @@ from data_processors import lims_rewrite_processor, sqs_s3_event_processor, lims
 
 
 # All columns in a LIMS CSV
-from data_processors.persist_lims_data import UnexpectedLIMSDataFormatException
-
 lims_csv_columns = [
     'IlluminaID', 'Run', 'Timestamp', 'SubjectID', 'SampleID', 'LibraryID',
     'ExternalSubjectID', 'ExternalSampleID', 'ExternalLibraryID', 'SampleName',

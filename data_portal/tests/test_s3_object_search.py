@@ -52,6 +52,7 @@ def parse_s3_object_result_rows(response: JsonResponse):
 class S3ObjectSearchTests(TestCase):
     """
     Test cases for S3 object searching/listing
+    todo: refactor test cases for base/common search query support out to a separate test file
     """
     def setUp(self) -> None:
         self.client = APIClient()
@@ -254,10 +255,7 @@ class S3ObjectSearchTests(TestCase):
             query_string_encoded = urllib.parse.quote(query_string.encode('utf8'))
             response = self.client.get(reverse('file-search') + '?query=%s' % query_string_encoded)
 
-            if not response.status_code == status.HTTP_200_OK:
-                logger.error("FAILED: " + query_string)
-
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_200_OK, msg=str(json.loads(response.content)))
             results = parse_s3_object_result_rows(response)
             # We should always get the one matching s3 object
             self.assertEqual(len(results), 1, msg='Query: %s' % query_string)

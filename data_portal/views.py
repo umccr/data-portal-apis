@@ -1,9 +1,8 @@
 from typing import Tuple, Optional
-
 import boto3
 from botocore.exceptions import ClientError
 from django.core.exceptions import EmptyResultSet
-from django.core.paginator import Paginator, EmptyPage
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -11,7 +10,7 @@ from rest_framework.request import Request
 import logging
 
 from data_portal.exceptions import InvalidSearchQuery, InvalidQueryParameter
-from data_portal.models import S3Object, S3ObjectManager, LIMSRow, S3LIMS
+from data_portal.models import S3Object, S3ObjectManager, LIMSRow
 from data_portal.responses import JsonErrorResponse
 from data_portal.s3_object_search import S3ObjectSearchQueryHelper
 from data_portal.serializers import S3ObjectSerializer
@@ -102,7 +101,8 @@ def search_file(request: Request):
 
     # Parse and apply filters
     try:
-        query_set = S3ObjectSearchQueryHelper.parse(query, query_set)
+        query_helper = S3ObjectSearchQueryHelper()
+        query_set = query_helper.parse(query, query_set)
     except InvalidSearchQuery as e:
         return JsonErrorResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
