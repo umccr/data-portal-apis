@@ -16,7 +16,8 @@ class SearchQueryTests(TestCase):
     def setUp(self) -> None:
         # Create mocked queryset so that we can record what has been passed to filter() method
         self.queryset = QuerySet()
-        self.queryset.filter = Mock(side_effect=self._record_filter_arguments)
+        self.queryset.filter = Mock(side_effect=lambda args: self._record_filter_arguments(self.queryset, args))
+        self.queryset.distinct = Mock()
         self.filter_arguments = []
 
         # Set up some sample filter methods, tags, types and factories for testing
@@ -39,7 +40,7 @@ class SearchQueryTests(TestCase):
         string_field_names = ("integer_field_1", "integer_field_2")
         self.filter_tag_factory.register(FilterTag(
             name=filter_tag_int_name,
-            value_parser=str,
+            value_parser=int,
             field_names=string_field_names)
         )
 
@@ -76,11 +77,12 @@ class SearchQueryTests(TestCase):
             filter_tag_factory=self.filter_tag_factory
         )
 
-    def _record_filter_arguments(self, filter_arguments) -> None:
+    def _record_filter_arguments(self, queryset, filter_arguments) -> None:
         """
         Side effect method used for queryset object, recording the arguments passed into queryset.filter()
         """
         self.filter_arguments.append(filter_arguments)
+        return queryset
 
     def _set_parsed_filters(self, filters) -> None:
         """
@@ -93,7 +95,8 @@ class SearchQueryTests(TestCase):
         Test we can accept an empty query string
         """
         filters = self.helper._parse_raw_query("")
-        self.assertEqual(len(filters), 0)
+        # We should have treated this as a default filter type
+        self.assertEqual(len(filters), 1)
 
     def test_parse_raw_query_default(self):
         """
@@ -106,20 +109,28 @@ class SearchQueryTests(TestCase):
         """
         Test we can parse raw query with valid string 'contains' filter
         """
-        val_1 = "some_string_1"
-        val_2 = "some_string_2"
-        filters = self.helper._parse_raw_query(f'{self.type_name_contains}:{val_1} {self.type_name_contains}:{val_2}')
+        val = "some_string"
+        filters = self.helper._parse_raw_query(f'{self.type_name_contains}:{val}')
 
         # Check at high level we have the right number of filters
         self.assertTrue(self.type_name_contains in filters)
-        contains_filters = filters[self.type_name_contains]
-        self.assertEqual(len(contains_filters), 2)
+        contains_filter = filters[self.type_name_contains][0]
 
-        # Check each parsed filter
-        for curr_filter in contains_filters:
-            # We have parsed in the right filter type and value.
-            self.assertEqual(curr_filter.filter_type, self.filter_type_factory.get(self.type_name_compare))
-            self.assertTrue(curr_filter.val in [val_1])
+        # We have parsed in the right filter type and value.
+        self.assertEqual(contains_filter.filter_type, self.filter_type_factory.get(self.type_name_contains))
+        self.assertTrue(contains_filter.val in [val])
+
+        self._set_parsed_filters(filters)
+        self.helper.parse("", self.queryset)
+
+        filter_type = self.filter_type_factory.get(self.type_name_contains)
+        expected_q = Q()
+
+        for field_name in filter_type.tag.field_names:
+            q_arg = f'{field_name}__icontains'
+            expected_q = expected_q | Q(**{q_arg: val})
+
+        self.assertEqual(self.filter_arguments, expected_q)
 
     def test_parse_raw_query_ends_with(self):
         """
@@ -138,7 +149,7 @@ class SearchQueryTests(TestCase):
         for curr_filter in contains_filters:
             # We have parsed in the right filter type and value.
             self.assertEqual(curr_filter.filter_type, self.filter_type_factory.get(self.type_name_ends_with))
-            self.assertTrue(curr_filter.val in [val_1])
+            self.assertTrue(curr_filter.val in [val_1, val_2])
 
     def test_parse_raw_query_comparison(self):
         """
@@ -193,4 +204,4 @@ class SearchQueryTests(TestCase):
         Test we can detect invalid comparison operator from raw query
         """
         with self.assertRaises(InvalidSearchQuery):
-            self.helper._parse_raw_query(query_raw=f'{self.type_name_compare}:<>1')
+            self.helper._parse_raw_query(query_raw=f'{self.type_name_compare}:!=1')  # Use an inquality which is invalid
