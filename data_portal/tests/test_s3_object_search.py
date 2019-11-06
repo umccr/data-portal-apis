@@ -52,7 +52,8 @@ def parse_s3_object_result_rows(response: JsonResponse):
 class S3ObjectSearchTests(TestCase):
     """
     Test cases for S3 object searching/listing
-    todo: refactor test cases for base/common search query support out to a separate test file
+    todo: tests for general search functionality can be refactored out
+     if the general search functionality is used by multiple search views
     """
     def setUp(self) -> None:
         self.client = APIClient()
