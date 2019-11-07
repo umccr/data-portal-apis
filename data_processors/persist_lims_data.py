@@ -2,6 +2,7 @@ import csv
 import io
 import logging
 import re
+from typing import Tuple, Dict
 
 import boto3
 from botocore.response import StreamingBody
@@ -24,14 +25,13 @@ class UnexpectedLIMSDataFormatException(Exception):
 
 
 @transaction.atomic  # Either the whole csv will be processed without error; or no data will be updated!
-def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
+def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False) -> Dict[str, int]:
     """
     Persist lims data into the db
     :param csv_bucket: the s3 bucket storing the csv file
     :param csv_key: the s3 file key of the csv
     :param rewrite: whether we are rewriting the data
-    :param force_insert: whether we are force inserting data into the db, regardless of duplicate id
-    :return:
+    :return: result statistics - count of updated, new and invalid LIMS rows and new S3LIMS associations
     """
     client = boto3.client('s3')
     # Note that the body data is lazy loaded
@@ -105,7 +105,7 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False):
     }
 
 
-def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int):
+def parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int) -> Tuple[LIMSRow, bool]:
     """
     Parse and persist the LIMSRow from the row dict to the db
     :param dirty_ids: used to keep track of dirty row (identifiers)

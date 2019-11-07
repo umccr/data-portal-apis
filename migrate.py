@@ -5,10 +5,9 @@ except ImportError:
   pass
 
 import os
-import sys
 
 
-def handler(event, context):
+def handler(event, context) -> str:
     """
     Handler for running DB migrations
     """

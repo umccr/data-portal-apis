@@ -316,6 +316,10 @@ class SearchQueryHelper:
         filters: Dict[str, List[Filter]] = defaultdict(list)
 
         for filter_raw in filters_raw:
+            # Ignore empty string raw filter
+            if filter_raw == '':
+                continue
+
             # Remove spaces around and split into left and right
             tokens = filter_raw.strip().split(':')
 

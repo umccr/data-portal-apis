@@ -13,7 +13,7 @@ import logging
 from django.core.exceptions import ObjectDoesNotExist
 from ast import literal_eval
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Union, Dict
 from dateutil.parser import parse
 from django.db import transaction
 import traceback
@@ -46,7 +46,7 @@ class S3EventRecord:
         self.s3_object_meta = s3_object_meta
 
 
-def handler(event: dict, context):
+def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
     """
     Entry point for SQS event processing
     :param event: SQS event
@@ -152,7 +152,7 @@ def sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
         return 0, 0
 
 
-def sync_s3_event_record_created(record: S3EventRecord):
+def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     """
     Synchronise a S3 event (CREATED) record to db
     :return: number of s3 object created, number of s3-lims association records created

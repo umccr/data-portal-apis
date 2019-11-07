@@ -3,7 +3,7 @@ import boto3
 client = boto3.client('ssm')
 
 
-def get_secret(key):
+def get_secret(key) -> str:
     """
     Retrieve the secret value from SSM.
     :param key: the key of the secret

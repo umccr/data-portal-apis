@@ -7,6 +7,9 @@ from data_portal.tests.factories import S3ObjectFactory, LIMSRowFactory, S3LIMSF
 
 
 class StorageStatsTests(TestCase):
+    """
+    Test cases for storage stats api
+    """
     def test_get_stats(self):
         """
         Test storage stats works as expected

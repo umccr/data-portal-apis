@@ -10,6 +10,9 @@ from rest_framework.test import APIClient
 
 @mock_s3
 class S3ObjectPreSignTests(TestCase):
+    """
+    Test cases for S3 object signing api
+    """
     def setUp(self) -> None:
         self.client = APIClient()
         # Important for testing, ensuring we are not mutating actual infrastructure

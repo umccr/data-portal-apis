@@ -27,6 +27,7 @@ class S3FilterMethodFactory(FilterMethodFactory):
     def __init__(self) -> None:
         super().__init__()
 
+        # Register filter methods for S3 object search, in additional to base methods
         self.register(FilterMethod(S3FilterMethod.LINKED_WITH_LIMS, True))
 
 
@@ -34,6 +35,7 @@ class S3FilterTagFactory(FilterTagFactory):
     def __init__(self) -> None:
         super().__init__()
 
+        # Register filter tags for S3 object search, in additional to base tags
         self.register(FilterTag(S3FilterTag.KEY, str, ('key',)))
         self.register(FilterTag(S3FilterTag.SIZE, int, ('size',)))
         self.register(FilterTag(S3FilterTag.LAST_MODIFIED_DATE, parse_last_modified_date, ('last_modified_date',)))
@@ -121,6 +123,9 @@ class S3ObjectSearchQueryHelper(SearchQueryHelper):
         super().__init__(filter_type_factory, filter_tag_factory, filter_method_factory)
 
     def apply_global_filters(self, filters: Dict[str, List[Filter]], queryset: QuerySet) -> QuerySet:
+        """
+        Apply global filters specific to S3 object search
+        """
         queryset = super().apply_global_filters(filters, queryset)
 
         linked_with_lims_id = S3FilterType.LINKED_WITH_LIMS

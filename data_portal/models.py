@@ -118,9 +118,8 @@ class S3LIMS(models.Model):
 class Configuration(models.Model):
     """
     Model that stores a configuration value
+    Currently not used; but could be used for cases when we want to record the state of some data - e.g. LIMS file.
     """
-    LAST_LIMS_DATA_ETAG = 'LAST_LIMS_DATA_ETAG'
-
     name = models.CharField(max_length=255, unique=True)
     value = models.TextField()
 
