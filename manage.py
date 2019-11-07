@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+try:
+  import unzip_requirements
+except ImportError:
+  pass
+
 import os
 import sys
 

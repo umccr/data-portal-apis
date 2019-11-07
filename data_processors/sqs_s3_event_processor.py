@@ -1,3 +1,8 @@
+try:
+  import unzip_requirements
+except ImportError:
+  pass
+
 import os, django
 # We need to set up django app first
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
