@@ -1,5 +1,7 @@
 import logging
 from datetime import datetime
+from typing import Tuple
+
 from django.db import transaction
 from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 
@@ -10,7 +12,7 @@ logger.setLevel(logging.INFO)
 
 
 @transaction.atomic
-def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size: int, e_tag: str):
+def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size: int, e_tag: str) -> Tuple[int, int]:
     """
     Persist an s3 object record into the db
     :param bucket: s3 bucket name

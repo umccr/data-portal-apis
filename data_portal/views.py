@@ -181,6 +181,7 @@ def storage_stats(request: Request):
     Storage statistics
     """
     total_s3 = S3Object.objects.count()
+    # Distinct is required as table joining can produce duplicate S3Object records, similar below for LIMS
     linked_s3 = S3Object.objects.filter(s3lims__isnull=False).distinct().count()
     not_linked_s3 = S3Object.objects.filter(s3lims__isnull=True).count()
 

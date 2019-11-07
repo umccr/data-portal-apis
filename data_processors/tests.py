@@ -49,6 +49,7 @@ def csv_row_dict_to_string(row: dict) -> str:
 class DataProcessorsTests(TestCase):
     """
     Test cases for data processing (lambda) functions
+    todo: break this class down into separate classes for different data processing functions
     """
 
     def setUp(self) -> None:
@@ -84,7 +85,7 @@ class DataProcessorsTests(TestCase):
         )
         self.bucket.delete()
 
-    def save_lims_csv(self, rows: List[Dict[str, str]]):
+    def _save_lims_csv(self, rows: List[Dict[str, str]]) -> None:
         """
         Save a list of row dicts to the csv and put it in the mocked S3 bucket
         :param rows: list of row dicts
@@ -99,7 +100,7 @@ class DataProcessorsTests(TestCase):
             Bucket=os.environ['LIMS_BUCKET_NAME'], Key=os.environ['LIMS_CSV_OBJECT_KEY'], Body=csv_data
         )
 
-    def test_lims_rewrite_processor(self):
+    def test_lims_rewrite_processor(self) -> None:
         """
         Test whether LIMS rewrite processor can process csv data as expected
         """
@@ -111,7 +112,7 @@ class DataProcessorsTests(TestCase):
         row_1['SampleID'] = sample_id
         row_1['SubjectID'] = subject_id
 
-        self.save_lims_csv([row_1])
+        self._save_lims_csv([row_1])
 
         # Create the s3 object such that key contains what we need to find for s3-lims association
         s3_object = S3Object(bucket='s3-keys-bucket', key=f'{subject_id}/{sample_id}/test.json', size=0, last_modified_date=now(), e_tag='')
@@ -128,14 +129,14 @@ class DataProcessorsTests(TestCase):
         # We should also have created the association
         self.assertEqual(process_results['association_count'], 1)
 
-    def test_lims_update_processor(self):
+    def test_lims_update_processor(self) -> None:
         """
         Test whether LIMS rewrite processor can process csv data as expected
         """
         row_1 = generate_lims_csv_row_dict('1')
 
         # Create and save test csv data
-        self.save_lims_csv([row_1])
+        self._save_lims_csv([row_1])
         # Let data be processed through so we have some existing data
         lims_update_processor.handler(None, None)
 
@@ -143,7 +144,7 @@ class DataProcessorsTests(TestCase):
         new_results = 'NewResults'
         row_1['Results'] = new_results
         row_2 = generate_lims_csv_row_dict('2')
-        self.save_lims_csv([row_1, row_2])
+        self._save_lims_csv([row_1, row_2])
 
         process_results = lims_update_processor.handler(None, None)
 
@@ -158,12 +159,12 @@ class DataProcessorsTests(TestCase):
 
         # Test when we have duplicate row id, task should fail
         row_duplicate = generate_lims_csv_row_dict('3')
-        self.save_lims_csv([row_duplicate, row_duplicate])
+        self._save_lims_csv([row_duplicate, row_duplicate])
 
         process_results = lims_update_processor.handler(None, None)
         self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
-    def test_lims_non_nullable_columns(self):
+    def test_lims_non_nullable_columns(self) -> None:
         """
         Test we can correctly process non-nullable columns and rollback the whole processing if one row doesn't have
         the required values
@@ -178,7 +179,7 @@ class DataProcessorsTests(TestCase):
         row_1['SampleID'] = '-'
         row_1['LibraryID'] = '-'
 
-        self.save_lims_csv([row_1, row_2])
+        self._save_lims_csv([row_1, row_2])
 
         process_results = lims_rewrite_processor.handler(None, None)
 
@@ -186,7 +187,7 @@ class DataProcessorsTests(TestCase):
         self.assertEqual(process_results['lims_row_new_count'], 1)
         self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
-    def test_lims_empty_subject_id(self):
+    def test_lims_empty_subject_id(self) -> None:
         """
         Test searching for S3-LIMS association will not break when the LIMS row has empty SubjectID
         """
@@ -194,11 +195,11 @@ class DataProcessorsTests(TestCase):
 
         # Use blank values for all non-nullable fields
         row_1['SubjectID'] = '-'
-        self.save_lims_csv([row_1])
+        self._save_lims_csv([row_1])
         # No exception should be thrown
         lims_rewrite_processor.handler(None, None)
 
-    def test_sqs_s3_event_processor(self):
+    def test_sqs_s3_event_processor(self) -> None:
         """
         Test whether SQS S3 event processor can process event data as expected
         """

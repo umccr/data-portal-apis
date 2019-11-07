@@ -51,7 +51,7 @@ def parse_s3_object_result_rows(response: JsonResponse):
 
 class S3ObjectSearchTests(TestCase):
     """
-    Test cases for S3 object searching/listing
+    Test cases for S3 object searching/listing api
     todo: tests for general search functionality can be refactored out
      if the general search functionality is used by multiple search views
     """
