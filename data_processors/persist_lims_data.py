@@ -25,12 +25,13 @@ class UnexpectedLIMSDataFormatException(Exception):
 
 
 @transaction.atomic  # Either the whole csv will be processed without error; or no data will be updated!
-def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False) -> Dict[str, int]:
+def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False, create_association: bool = False) -> Dict[str, int]:
     """
     Persist lims data into the db
     :param csv_bucket: the s3 bucket storing the csv file
     :param csv_key: the s3 file key of the csv
     :param rewrite: whether we are rewriting the data
+    :param create_association: whether to create association link between LIMS rows and S3 object
     :return: result statistics - count of updated, new and invalid LIMS rows and new S3LIMS associations
     """
     client = boto3.client('s3')
@@ -74,7 +75,7 @@ def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False) -> D
             lims_row_update_count += 1
 
         # Only find association if we have SubjectID, as it can be None
-        if lims_row.subject_id is not None:
+        if lims_row.subject_id is not None and create_association:
             # Find all matching S3Object objects and create association between them and the lims row
             key_filter = Q()
 
