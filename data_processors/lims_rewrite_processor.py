@@ -20,5 +20,6 @@ def handler(event, context) -> Dict[str, int]:
     return persist_lims_data(
         csv_bucket=os.environ['LIMS_BUCKET_NAME'],
         csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
-        rewrite=True
+        rewrite=True,
+        create_association=False,
     )

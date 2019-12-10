@@ -127,7 +127,7 @@ class DataProcessorsTests(TestCase):
         # No update is expected
         self.assertEqual(process_results['lims_row_update_count'], 0)
         # We should also have created the association
-        self.assertEqual(process_results['association_count'], 1)
+        self.assertEqual(process_results['association_count'], 0)
 
     def test_lims_update_processor(self) -> None:
         """
