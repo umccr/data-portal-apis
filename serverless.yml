@@ -34,6 +34,12 @@ functions:
     handler: wsgi_handler.handler
     events:
       - http:
+          path: lims
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+          cors: true
+      - http:
           path: files
           method: get
           integration: lambda-proxy
