@@ -150,3 +150,17 @@ class S3ObjectSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         pass
+
+
+class LIMSRowModelSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = LIMSRow
+        fields = '__all__'
+
+    rn = serializers.SerializerMethodField()
+
+    def get_rn(self, obj: LIMSRow) -> int:
+        """
+        Use id as row number
+        """
+        return obj.id
