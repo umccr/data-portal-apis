@@ -40,6 +40,12 @@ functions:
           authorizer: aws_iam
           cors: true
       - http:
+          path: lims/{id}
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+          cors: true
+      - http:
           path: files
           method: get
           integration: lambda-proxy
@@ -75,6 +81,7 @@ functions:
   migrate:
     handler: migrate.handler
     timeout: 20
+
 custom:
   wsgi:
     app: data_portal.wsgi.application
