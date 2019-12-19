@@ -22,6 +22,10 @@ class LIMSRowViewSet(ReadOnlyListViewset):
     logger.debug('Query to be executed: %s ' % queryset.query)
     serializer_class = LIMSRowModelSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['subject_id', 'timestamp', 'type', 'run', 'sample_id', 'external_subject_id', 'results', 'phenotype']
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = [
+        'subject_id', 'timestamp', 'type', 'run', 'sample_id', 'external_subject_id', 'results', 'phenotype',
+        'library_id', 'external_sample_id', 'project_name'
+    ]
     ordering = ['-subject_id']
+    search_fields = ordering_fields
