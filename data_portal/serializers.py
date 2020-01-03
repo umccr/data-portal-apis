@@ -5,6 +5,8 @@ from rest_framework.fields import empty
 
 from data_portal.models import S3Object, LIMSRow
 
+READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
+
 
 class LIMSRowSerializer(serializers.Serializer):
     illumina_id = serializers.CharField()
@@ -156,3 +158,23 @@ class LIMSRowModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = LIMSRow
         fields = '__all__'
+
+
+class S3ObjectModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = S3Object
+        fields = '__all__'
+
+
+class SubjectIdSerializer(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        return instance.subject_id
+
+    def to_internal_value(self, data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+    def create(self, validated_data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)

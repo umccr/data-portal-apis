@@ -1,15 +1,21 @@
 from django.urls import path, include
-from rest_framework import routers
+from rest_framework_nested import routers
 
 from data_portal import views
-from .viewsets import LIMSRowViewSet
+from .viewsets import LIMSRowViewSet, S3ObjectViewSet, SubjectViewSet, SubjectS3ObjectViewSet
 
 router = routers.DefaultRouter()
-router.register(r'lims', LIMSRowViewSet)
+router.register(r'lims', LIMSRowViewSet, basename='lims')
+router.register(r's3', S3ObjectViewSet, basename='s3')
+router.register(r'subjects', SubjectViewSet, basename='subjects')
+
+subjects_router = routers.NestedDefaultRouter(router, r'subjects', lookup='subject')
+subjects_router.register(r's3', SubjectS3ObjectViewSet, base_name='subject-s3')
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('files', views.search_file, name='file-search'),
     path('file-signed-url', views.sign_s3_file, name='file-signed-url'),
-    path('storage-stats', views.storage_stats, name='storage-stats')
+    path('storage-stats', views.storage_stats, name='storage-stats'),
+    path('', include(router.urls)),
+    path('', include(subjects_router.urls)),
 ]
