@@ -52,7 +52,7 @@ functions:
           authorizer: aws_iam
           cors: true
       - http:
-          path: s3/{id}
+          path: s3/{s3Id}
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
@@ -64,19 +64,19 @@ functions:
           authorizer: aws_iam
           cors: true
       - http:
-          path: subjects/{id}
+          path: subjects/{subjectId}
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
           cors: true
       - http:
-          path: subjects/{id}/s3
+          path: subjects/{subjectId}/s3
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
           cors: true
       - http:
-          path: subjects/{id}/s3/{id}
+          path: subjects/{subjectId}/s3/{s3Id}
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
