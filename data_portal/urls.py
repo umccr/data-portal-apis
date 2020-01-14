@@ -3,8 +3,9 @@ from rest_framework_nested import routers
 
 from data_portal import views
 from .viewsets import LIMSRowViewSet, S3ObjectViewSet, SubjectViewSet, SubjectS3ObjectViewSet
+from .routers import OptionalSlashDefaultRouter
 
-router = routers.DefaultRouter()
+router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
 router.register(r's3', S3ObjectViewSet, basename='s3')
 router.register(r'subjects', SubjectViewSet, basename='subjects')
