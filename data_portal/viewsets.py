@@ -63,7 +63,7 @@ class SubjectS3ObjectViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
     ordering = ['key']
-    search_fields = ['key']
+    search_fields = ['$key']
 
     def get_queryset(self):
         return S3Object.objects.get_by_subject_id(self.kwargs['subject_pk'])
