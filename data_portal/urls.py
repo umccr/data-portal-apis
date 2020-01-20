@@ -11,7 +11,7 @@ router.register(r's3', S3ObjectViewSet, basename='s3')
 router.register(r'subjects', SubjectViewSet, basename='subjects')
 
 subjects_router = routers.NestedDefaultRouter(router, r'subjects', lookup='subject')
-subjects_router.register(r's3', SubjectS3ObjectViewSet, base_name='subject-s3')
+subjects_router.register(r's3', SubjectS3ObjectViewSet, basename='subject-s3')
 
 urlpatterns = [
     path('files', views.search_file, name='file-search'),
