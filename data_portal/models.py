@@ -6,6 +6,7 @@ from django.db import models
 from django.db.models import Max, QuerySet
 
 from data_portal.exceptions import RandSamplesTooLarge
+from data_portal.fields import HashField
 
 
 class S3ObjectManager(models.Manager):
@@ -53,16 +54,16 @@ class S3ObjectManager(models.Manager):
 
 class S3Object(models.Model):
     """
-    Models the metadata of an S3 Object. Fields are the attributes.
+    MySQL has character length limitation on unique indexes and since key column require to store
+    lengthy path, unique_hash is sha256sum of bucket and key for unique indexes purpose.
     """
-    class Meta:
-        unique_together = ['bucket', 'key']
 
     bucket = models.CharField(max_length=255)
-    key = models.CharField(max_length=255)
-    size = models.IntegerField()
+    key = models.TextField()
+    size = models.BigIntegerField()
     last_modified_date = models.DateTimeField()
     e_tag = models.CharField(max_length=255)
+    unique_hash = HashField(unique=True, base_fields=['bucket', 'key'], default=None)
 
     SORTABLE_COLUMNS = ['size', 'last_modified_date']
     DEFAULT_SORT_COL = 'last_modified_date'
@@ -96,10 +97,10 @@ class LIMSRow(models.Model):
     quality = models.CharField(max_length=255, null=True, blank=True)
     topup = models.CharField(max_length=255, null=True, blank=True)
     secondary_analysis = models.CharField(max_length=255, null=True, blank=True)
-    fastq = models.CharField(max_length=255, null=True, blank=True)
+    fastq = models.TextField(null=True, blank=True)
     number_fastqs = models.CharField(max_length=255, null=True, blank=True)
-    results = models.CharField(max_length=255, null=True, blank=True)
-    trello = models.CharField(max_length=255, null=True, blank=True)
+    results = models.TextField(null=True, blank=True)
+    trello = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     todo = models.CharField(max_length=255, null=True, blank=True)
 
