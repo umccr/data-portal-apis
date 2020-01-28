@@ -1,6 +1,7 @@
 import logging
 
-from rest_framework import filters
+from django.db import InternalError
+from rest_framework import filters, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
@@ -67,3 +68,10 @@ class SubjectS3ObjectViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return S3Object.objects.get_by_subject_id(self.kwargs['subject_pk'])
+
+    def handle_exception(self, exc):
+        logger.exception(exc)
+        if isinstance(exc, InternalError):
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super(SubjectS3ObjectViewSet, self).handle_exception(exc)
