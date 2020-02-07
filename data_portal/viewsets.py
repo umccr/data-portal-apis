@@ -20,7 +20,7 @@ class LIMSRowViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = [
         'subject_id', 'timestamp', 'type', 'run', 'sample_id', 'external_subject_id', 'results', 'phenotype',
-        'library_id', 'external_sample_id', 'project_name'
+        'library_id', 'external_sample_id', 'project_name', 'illumina_id',
     ]
     ordering = ['-subject_id']
     search_fields = ordering_fields
