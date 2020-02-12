@@ -46,10 +46,19 @@ class S3ObjectManager(models.Manager):
     def get_all(self):
         return self.exclude(key__contains='.snakemake')
 
-    def get_by_subject_id(self, subject_id: str) -> QuerySet:
+    def get_by_subject_id(self, subject_id: str, **kwargs) -> QuerySet:
         if re.match(r'SBJ[0-9]', subject_id.upper()):
+            bucket = kwargs.get('bucket', None)
+            if bucket:
+                return self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake').filter(bucket=bucket)
             return self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake')
         return self.none()
+
+    def get_by_illumina_id(self, illumina_id: str, **kwargs) -> QuerySet:
+        bucket = kwargs.get('bucket', None)
+        if bucket:
+            return self.filter(key__icontains=illumina_id).filter(bucket=bucket)
+        return self.filter(key__icontains=illumina_id)
 
 
 class S3Object(models.Model):

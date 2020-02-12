@@ -178,3 +178,31 @@ class SubjectIdSerializer(serializers.BaseSerializer):
 
     def create(self, validated_data):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+
+class RunIdSerializer(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        return instance.illumina_id
+
+    def to_internal_value(self, data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+    def create(self, validated_data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+
+class BucketIdSerializer(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        return instance.bucket
+
+    def to_internal_value(self, data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+    def create(self, validated_data):
+        raise NotImplementedError(READ_ONLY_SERIALIZER)
