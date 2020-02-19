@@ -176,6 +176,7 @@ custom:
     basePath: ''
     stage: ${self:provider.stage}
     createRoute53Record: true
+    certificateArn: ${env:CERTIFICATE_ARN}
   associateWaf:
     name: dataPortalAPIWebAcl
 package:
