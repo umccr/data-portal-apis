@@ -178,7 +178,7 @@ custom:
     createRoute53Record: true
     certificateArn: ${env:CERTIFICATE_ARN}
   associateWaf:
-    name: dataPortalAPIWebAcl
+    name: ${env:WAF_NAME}
 package:
   exclude:
     - node_modules/**
