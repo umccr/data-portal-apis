@@ -1,10 +1,13 @@
-# UMCCR Data Portal Back End
+# UMCCR Data Portal Backend API
 
-The stack is provisioned by the Serverless framework (`serverless.yml`),
-within AWS CodeBuild environment (`buildspec.yml` is the configuration file), where environment
-variables originated from Terraform > CodeBuild to Serverless.
+Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal Client](https://github.com/umccr/data-portal-client).
+
+A fresh deployment has to _first_ done with [Terraform Data Portal stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal).
+
+Then, this stack is provisioned by the Serverless framework (`serverless.yml`), within AWS CodeBuild/CodePipeline environment (`buildspec.yml`), where environment variables originated from Terraform > CodeBuild to Serverless.
 
 ## Stack Overview
+
 #### Lambda functions
 - `api` (available through API Gateway): 
   - s3 file search
@@ -50,3 +53,42 @@ variables originated from Terraform > CodeBuild to Serverless.
 - Integration tests are integrated as part of the CodeBuild. (See `buildspec.yml`)
 - As AWS services are involved in the workflow of some functions, so for testing
  `moto` is used for mocking these services.
+ 
+## Destroy
+ 
+* Before tear down Terraform stack, it is required to run `serverless remove` to tear down application Lambda, API Gateway, API domain, and S3 buckets, ... i.e. resources created by this serverless stack, _manually_ (contrast to serverless deploy done through CodeBuild/CodePipeline in CI/CD fashion). 
+* First, `terraform output` and export all UPPERCASE environment variables.
+* Then, run `serverless delete_domain && serverless remove` to tear down the stack.
+* Example as follows:
+```
+ssoawsdev
+export AWS_PROFILE=dev
+
+cd {...}/umccr/infrastructure/terraform/stacks/umccr_data_portal
+terraform workspace select dev
+terraform output
+export API_DOMAIN_NAME=<value>
+export CERTIFICATE_ARN=<value>
+export LAMBDA_IAM_ROLE_ARN=<value>
+export LAMBDA_SECURITY_GROUP_IDS=<value>
+export LAMBDA_SUBNET_IDS=<value>
+export LIMS_BUCKET_NAME=<value>
+export LIMS_CSV_OBJECT_KEY=<value>
+export S3_EVENT_SQS_ARN=<value>
+export SSM_KEY_NAME_DJANGO_SECRET_KEY=<value>
+export SSM_KEY_NAME_FULL_DB_URL=<value>
+export WAF_NAME=<value>
+
+cd {...}/umccr/data-portal/data-portal-apis
+SLS_DEBUG=true serverless deploy list --STAGE dev
+SLS_DEBUG=true serverless info --STAGE dev
+
+aws s3 ls | grep serverless
+aws apigateway get-rest-apis
+aws lambda list-functions | grep portal
+aws cloudformation list-stacks | grep portal
+
+(if all good then)
+SLS_DEBUG=true serverless delete_domain --STAGE dev
+SLS_DEBUG=true serverless remove --STAGE dev
+```
