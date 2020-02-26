@@ -1,16 +1,17 @@
 try:
-  import unzip_requirements
+    import unzip_requirements
 except ImportError:
-  pass
+    pass
 
-import os, django
+import django
+import os
+
 # We need to set up django app first
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
 django.setup()
 
 # All other imports should be placed below
 import logging
-from django.core.exceptions import ObjectDoesNotExist
 from ast import literal_eval
 from enum import Enum
 from typing import List, Tuple, Union, Dict
@@ -19,8 +20,7 @@ from django.db import transaction
 import traceback
 from collections import defaultdict
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS
-from data_processors.persist_s3_object import persist_s3_object
+from data_processors.services import persist_s3_object, delete_s3_object, tag_s3_object
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -28,7 +28,8 @@ logger.setLevel(logging.INFO)
 
 class S3EventType(Enum):
     """
-    S3 Event categorisation
+    See S3 Supported Event Types
+    https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html#supported-notification-event-types
     """
     EVENT_OBJECT_CREATED = 'ObjectCreated'
     EVENT_OBJECT_REMOVED = 'ObjectRemoved'
@@ -39,6 +40,7 @@ class S3EventRecord:
     """
     A helper class for S3 event data passing and retrieval
     """
+
     def __init__(self, event_type, event_time, s3_bucket_name, s3_object_meta) -> None:
         self.event_type = event_type
         self.event_time = event_time
@@ -138,18 +140,7 @@ def sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
     key = record.s3_object_meta['key']
     logger.info("Deleting an existing S3Object (bucket=%s, key=%s)" % (bucket_name, key))
 
-    try:
-        s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-
-        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
-        s3_lims_count = s3_lims_records.count()
-        s3_lims_records.delete()
-
-        s3_object.delete()
-        return 1, s3_lims_count
-    except ObjectDoesNotExist as e:
-        logger.error('Failed to remove an in-existent S3Object record: ' + str(e))
-        return 0, 0
+    return delete_s3_object(bucket_name, key)
 
 
 def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
@@ -161,6 +152,8 @@ def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     key = record.s3_object_meta['key']
     size = record.s3_object_meta['size']
     e_tag = record.s3_object_meta['eTag']
+
+    tag_s3_object(bucket_name, key)
 
     return persist_s3_object(
         bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag

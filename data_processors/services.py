@@ -2,6 +2,8 @@ import logging
 from datetime import datetime
 from typing import Tuple
 
+import boto3
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 
@@ -74,3 +76,72 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
         logging.error(f"No association to any LIMS row is found for the S3Object (bucket={bucket}, key={key})")
 
     return 1, new_association_count
+
+
+def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
+    """
+    Delete a S3 object record from db
+    :param bucket_name: s3 bucket name
+    :param key: s3 object key
+    :return: number of s3 records deleted, number of s3-lims association records deleted
+    """
+    try:
+        s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
+        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
+        s3_lims_count = s3_lims_records.count()
+        s3_lims_records.delete()
+        s3_object.delete()
+        return 1, s3_lims_count
+    except ObjectDoesNotExist as e:
+        logger.error("Failed to remove an in-existent S3Object record: " + str(e))
+        return 0, 0
+
+
+def tag_s3_object(bucket_name: str, key: str):
+    """
+    Tag S3 Object if extension is .bam
+
+    NOTE: You can associate up to 10 tags with an object. See
+    https://docs.aws.amazon.com/AmazonS3/latest/dev/object-tagging.html
+    :param bucket_name:
+    :param key:
+    """
+
+    if key.endswith('.bam'):
+        client = boto3.client('s3')
+        response = client.get_object_tagging(Bucket=bucket_name, Key=key)
+        tag_set = response.get('TagSet', [])
+
+        tag_archive = {'Key': 'Archive', 'Value': 'true'}
+        tag_bam = {'Key': 'Filetype', 'Value': 'bam'}
+
+        if len(tag_set) == 0:
+            tag_set.append(tag_archive)
+            tag_set.append(tag_bam)
+        else:
+            # have existing tags
+            immutable_tags = tuple(tag_set)  # have immutable copy first
+            if tag_bam not in immutable_tags:
+                tag_set.append(tag_bam)  # just add tag_bam
+            if tag_archive not in immutable_tags:
+                values = set()
+                for tag in immutable_tags:
+                    for value in tag.values():
+                        values.add(value)
+                if tag_archive['Key'] not in values:
+                    tag_set.append(tag_archive)  # only add if Archive is not present
+
+        payload = client.put_object_tagging(
+            Bucket=bucket_name,
+            Key=key,
+            Tagging={'TagSet': tag_set}
+        )
+
+        if payload['ResponseMetadata']['HTTPStatusCode'] == 200:
+            logger.info(f"Tagged the S3Object ({key}) with ({str(tag_set)})")
+        else:
+            logger.error(f"Failed to Tag the S3Object ({key}) with ({str(payload)})")
+
+    else:
+        # sound of silence
+        pass
