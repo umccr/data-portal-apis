@@ -62,11 +62,11 @@ def get_matching_s3_keys(bucket, prefix="", suffix=""):
 
 def bucket_exists(bucket) -> bool:
     """
-    Boto head_bucket API
+    head_bucket API
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_bucket
 
     :param bucket:
-    :return: True if bucket exists, False otherwise
+    :return bool: True if bucket exists, False otherwise
     """
     try:
         resp = s3.head_bucket(Bucket=bucket)
@@ -75,3 +75,72 @@ def bucket_exists(bucket) -> bool:
         logger.error(f"Bucket ({bucket}) not found or no permission. Exception: {e}")
 
     return False
+
+
+def presign_s3_file(bucket: str, key: str) -> (bool, str):
+    """
+    Generate a presigned URL
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.generate_presigned_url
+    https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
+
+    :param bucket:
+    :param key:
+    :return tuple (bool, str): (true, signed_url) if success, otherwise (false, error message)
+    """
+    try:
+        return True, s3.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key})
+    except ClientError as e:
+        message = f"Failed to sign the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
+        logging.error(message)
+        return False, message
+
+
+def head_s3_object(bucket: str, key: str) -> (bool, dict):
+    """
+    head_object API
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object
+
+    :param bucket:
+    :param key:
+    :return tuple (bool, dict): (true, dict object metadata) if success, otherwise (false, dict error message)
+    """
+    try:
+        return True, s3.head_object(Bucket=bucket, Key=key)
+    except ClientError as e:
+        message = f"Failed head request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
+        logging.error(message)
+        return False, dict(error=message)
+
+
+def restore_s3_object(bucket: str, key: str, days=90) -> (bool, dict):
+    """
+    restore_object API
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.restore_object
+    https://docs.aws.amazon.com/AmazonS3/latest/API/API_RestoreObject.html
+    https://docs.aws.amazon.com/AmazonS3/latest/dev/restoring-objects.html
+
+    :param bucket:
+    :param key:
+    :param days:
+    :return bool, dict: True if restore request is success, False otherwise with error message
+    """
+    __tier__ = 'Bulk'  # 'Standard' or 'Bulk'
+
+    restore_request = {
+        'Days': days,
+        'GlacierJobParameters': {
+            'Tier': __tier__
+        },
+        'Tier': __tier__,
+        'Description': 'Restore request through data portal'
+    }
+
+    try:
+        resp = s3.restore_object(Bucket=bucket, Key=key, RestoreRequest=restore_request)
+        logger.info(f"Requested restore for the S3 object (s3://{bucket}{key}) with "
+                    f"{days} days, {__tier__} tier. Response - {resp}")
+        return True, resp
+    except ClientError as e:
+        message = f"Failed restore request for the S3 object (s3://{bucket}/{key}). Exception - {e}"
+        logger.error(message)
+        return False, dict(error=message)

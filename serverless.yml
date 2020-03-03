@@ -58,6 +58,24 @@ functions:
           authorizer: aws_iam
           cors: true
       - http:
+          path: s3/{s3Id}/presign
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+          cors: true
+      - http:
+          path: s3/{s3Id}/status
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+          cors: true
+      - http:
+          path: s3/{s3Id}/restore
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+          cors: true
+      - http:
           path: buckets
           method: get
           integration: lambda-proxy
@@ -119,6 +137,12 @@ functions:
           cors: true
       - http:
           path: runs/{runId}/lims/{limsId}
+          method: get
+          integration: lambda-proxy
+          authorizer: aws_iam
+          cors: true
+      - http:
+          path: presign
           method: get
           integration: lambda-proxy
           authorizer: aws_iam
