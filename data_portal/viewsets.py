@@ -60,26 +60,11 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
         obj_status.update(head_object=response[1])
         return Response(obj_status)
 
-    @action(detail=True)
+    @action(detail=True, methods=['post'])
     def restore(self, request, pk=None):
-        query_params = self.request.query_params
-        days = query_params.get('days', None)
-
-        if days is not None and not days.isnumeric():
-            return Response({'error': 'Error in days request parameter'})
-
-        # TODO demo mode
-        __demo__ = True
-        if __demo__:
-            return Response({'days': days})
-
+        payload = self.request.data
         obj: S3Object = self.get_object()
-
-        if days is None:
-            response = libs3.restore_s3_object(obj.bucket, obj.key)
-        else:
-            response = libs3.restore_s3_object(obj.bucket, obj.key, days=days)
-
+        response = libs3.restore_s3_object(obj.bucket, obj.key, days=payload['days'], email=payload['email'])
         return Response(response[1])
 
 

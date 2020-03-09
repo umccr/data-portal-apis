@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -112,7 +114,7 @@ def head_s3_object(bucket: str, key: str) -> (bool, dict):
         return False, dict(error=message)
 
 
-def restore_s3_object(bucket: str, key: str, days=90) -> (bool, dict):
+def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
     """
     restore_object API
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.restore_object
@@ -124,22 +126,33 @@ def restore_s3_object(bucket: str, key: str, days=90) -> (bool, dict):
     :param days:
     :return bool, dict: True if restore request is success, False otherwise with error message
     """
-    __tier__ = 'Bulk'  # 'Standard' or 'Bulk'
+    allowed_tiers = ['Standard', 'Bulk']  # 'Standard' or 'Bulk' for DEEP_ARCHIVE
+    tier = kwargs.get('tier', 'Bulk')
+    if tier not in allowed_tiers:
+        message = f"Failed restore request for the S3 object (s3://{bucket}/{key}). Allow tiers: ({allowed_tiers})"
+        logger.error(message)
+        return False, dict(error=message)
+
+    days = kwargs.get('days', 7)
+    requested_by = kwargs.get('email', '')
+    requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     restore_request = {
         'Days': days,
         'GlacierJobParameters': {
-            'Tier': __tier__
+            'Tier': tier
         },
-        'Tier': __tier__,
-        'Description': 'Restore request through data portal'
+        'Tier': tier,
+        'Description': f'Restore request through data portal {requested_by} {requested_time}'
     }
 
     try:
         resp = s3.restore_object(Bucket=bucket, Key=key, RestoreRequest=restore_request)
+        status_code = resp['ResponseMetadata']['HTTPStatusCode']
         logger.info(f"Requested restore for the S3 object (s3://{bucket}{key}) with "
-                    f"{days} days, {__tier__} tier. Response - {resp}")
-        return True, resp
+                    f"{days} days, {tier} tier, {requested_by} at {requested_time}. "
+                    f"Response HTTPStatusCode - {status_code}")
+        return True, dict(status_code=status_code)
     except ClientError as e:
         message = f"Failed restore request for the S3 object (s3://{bucket}/{key}). Exception - {e}"
         logger.error(message)

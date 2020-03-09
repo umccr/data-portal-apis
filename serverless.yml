@@ -71,7 +71,7 @@ functions:
           cors: true
       - http:
           path: s3/{s3Id}/restore
-          method: get
+          method: post
           integration: lambda-proxy
           authorizer: aws_iam
           cors: true
