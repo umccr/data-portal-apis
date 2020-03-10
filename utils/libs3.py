@@ -137,14 +137,7 @@ def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
     requested_by = kwargs.get('email', '')
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    restore_request = {
-        'Days': days,
-        'GlacierJobParameters': {
-            'Tier': tier
-        },
-        'Tier': tier,
-        'Description': f'Restore request through data portal {requested_by} {requested_time}'
-    }
+    restore_request = {'Days': days, 'GlacierJobParameters': {'Tier': tier}}
 
     try:
         resp = s3.restore_object(Bucket=bucket, Key=key, RestoreRequest=restore_request)
