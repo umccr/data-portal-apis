@@ -10,7 +10,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.8
   stage: ${opt:STAGE}
   region: ap-southeast-2
   role: ${env:LAMBDA_IAM_ROLE_ARN}
@@ -207,3 +207,4 @@ package:
   exclude:
     - node_modules/**
     - mocks/**
+    - downloads/**

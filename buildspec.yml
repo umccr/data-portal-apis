@@ -15,14 +15,12 @@ env:
 phases:
   install:
     runtime-versions:
-        nodejs: 8
-        python: 3.7
+        nodejs: 12
+        python: 3.8
     commands:
-      # Install dependencies for testing
       - pip3 install -r requirements.txt
-      # Install serverless framework
-      - npm install
       - npm install -g serverless
+      - npm install
   build:
     commands:
       - ./manage.py test
