@@ -10,6 +10,8 @@ env:
     LAMBDA_SUBNET_IDS: $LAMBDA_SUBNET_IDS
     SSM_KEY_NAME_FULL_DB_URL: $SSM_KEY_NAME_FULL_DB_URL
     SSM_KEY_NAME_DJANGO_SECRET_KEY: $SSM_KEY_NAME_DJANGO_SECRET_KEY
+    SSM_KEY_NAME_LIMS_SPREADSHEET_ID: $SSM_KEY_NAME_LIMS_SPREADSHEET_ID
+    SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON: $SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON
     LIMS_BUCKET_NAME: $LIMS_BUCKET_NAME
     LIMS_CSV_OBJECT_KEY: $LIMS_CSV_OBJECT_KEY
 phases:
@@ -19,8 +21,8 @@ phases:
         python: 3.8
     commands:
       - pip3 install -r requirements.txt
-      - npm install -g serverless
-      - npm install
+      - yarn global add serverless
+      - yarn install
   build:
     commands:
       - ./manage.py test

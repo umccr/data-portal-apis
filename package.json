@@ -11,6 +11,10 @@
     "serverless-aws-documentation": "^1.1.0",
     "serverless-python-requirements": "^5.1.0",
     "serverless-s3-batch": "^1.0.2",
-    "serverless-wsgi": "^1.7.4"
+    "serverless-wsgi": "^1.7.4",
+    "yarn": "^1.22.4"
+  },
+  "resolutions": {
+    "minimist": ">=1.2.2"
   }
 }
