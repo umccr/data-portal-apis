@@ -3,6 +3,7 @@ from datetime import datetime
 
 import boto3
 from botocore.exceptions import ClientError
+from botocore.response import StreamingBody
 
 logger = logging.getLogger()
 
@@ -11,9 +12,6 @@ s3 = boto3.client("s3")
 
 def get_matching_s3_objects(bucket, prefix="", suffix=""):
     """
-    NOTE: For big bucket, it will be paginated by 1000 objects per request.
-    e.g. 450,000 objects  * $0.0055 / 1000 = $2.475
-
     Generate objects in an S3 bucket.
     https://alexwlchan.net/2019/07/listing-s3-keys/
 
@@ -109,7 +107,7 @@ def head_s3_object(bucket: str, key: str) -> (bool, dict):
     try:
         return True, s3.head_object(Bucket=bucket, Key=key)
     except ClientError as e:
-        message = f"Failed head request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
+        message = f"Failed on HEAD request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
         logging.error(message)
         return False, dict(error=message)
 
@@ -150,3 +148,69 @@ def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
         message = f"Failed restore request for the S3 object (s3://{bucket}/{key}). Exception - {e}"
         logger.error(message)
         return False, dict(error=message)
+
+
+def get_s3_object(bucket: str, key: str) -> (bool, dict):
+    """
+    get_object API
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.get_object
+
+    :param bucket:
+    :param key:
+    :return tuple (bool, dict): (true, dict object metadata) if success, otherwise (false, dict error message)
+    """
+    try:
+        return True, s3.get_object(Bucket=bucket, Key=key)
+    except ClientError as e:
+        message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
+        logging.error(message)
+        return False, dict(error=message)
+
+
+def read_s3_object_body(bucket: str, key: str) -> bytes:
+    """
+    (eagerly) Read the object (streaming) body and return the content
+
+    NOTE: Not optimise for reading very large file content. For that, look for alternate approaches, e.g.
+    Working with really large objects in S3
+    https://alexwlchan.net/2019/02/working-with-large-s3-objects/
+
+    :param bucket:
+    :param key:
+    :return:
+    """
+    client = boto3.client("s3")  # Note Moto need to temporary switch mock-S3-client-session in context
+    data_object = client.get_object(Bucket=bucket, Key=key)
+    body: StreamingBody = data_object['Body']  # Note the body data is lazy loaded
+    content = body.read()
+    body.close()
+    return content
+
+
+def get_s3_object_tagging(bucket: str, key: str):
+    """
+    get_object_tagging API
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.get_object_tagging
+
+    TODO Pass-through call
+
+    :param bucket:
+    :param key:
+    :return:
+    """
+    return s3.get_object_tagging(Bucket=bucket, Key=key)
+
+
+def put_s3_object_tagging(bucket: str, key: str, tagging: dict):
+    """
+    put_object_tagging API
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_object_tagging
+
+    TODO Pass-through call
+
+    :param bucket:
+    :param key:
+    :param tagging:
+    :return:
+    """
+    return s3.put_object_tagging(Bucket=bucket, Key=key, Tagging=tagging)

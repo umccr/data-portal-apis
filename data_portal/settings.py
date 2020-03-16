@@ -7,7 +7,7 @@ import os
 from corsheaders.defaults import default_headers
 from environ import Env
 
-from utils import ssm
+from utils import libssm
 
 env = Env(
     # set casting, default value
@@ -29,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if IS_OFFLINE:
     SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 else:
-    SECRET_KEY = ssm.get_secret(os.environ['SSM_KEY_NAME_DJANGO_SECRET_KEY'])
+    SECRET_KEY = libssm.get_secret(os.environ['SSM_KEY_NAME_DJANGO_SECRET_KEY'])
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
@@ -94,7 +94,7 @@ if IS_OFFLINE:
     }
 else:
     DATABASES = {
-        'default': Env.db_url_config(ssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
+        'default': Env.db_url_config(libssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
     }
 
 DATABASES['default']['OPTIONS'] = {

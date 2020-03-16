@@ -7,7 +7,7 @@ import os
 from django.utils.timezone import now
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS
-from data_processors import lims_rewrite_processor, sqs_s3_event_processor, lims_update_processor
+from data_processors import lims_processor, sqs_s3_event_processor
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -121,7 +121,7 @@ class DataProcessorsTests(TestCase):
         s3_object = S3Object(bucket='s3-keys-bucket', key=f'{subject_id}/{sample_id}/test.json', size=0, last_modified_date=now(), e_tag='')
         s3_object.save()
 
-        process_results = lims_rewrite_processor.handler(None, None)
+        process_results = lims_processor.rewrite_handler(None, None)
 
         # We should have added the new row
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -141,7 +141,7 @@ class DataProcessorsTests(TestCase):
         # Create and save test csv data
         self._save_lims_csv([row_1])
         # Let data be processed through so we have some existing data
-        lims_update_processor.handler(None, None)
+        lims_processor.update_handler(None, None)
 
         # Now we want to test changing one row (i.e. changing a column arbitrarily, and adding a new row
         new_results = 'NewResults'
@@ -149,7 +149,7 @@ class DataProcessorsTests(TestCase):
         row_2 = generate_lims_csv_row_dict('2')
         self._save_lims_csv([row_1, row_2])
 
-        process_results = lims_update_processor.handler(None, None)
+        process_results = lims_processor.update_handler(None, None)
 
         # We should have added a new row
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -164,7 +164,7 @@ class DataProcessorsTests(TestCase):
         row_duplicate = generate_lims_csv_row_dict('3')
         self._save_lims_csv([row_duplicate, row_duplicate])
 
-        process_results = lims_update_processor.handler(None, None)
+        process_results = lims_processor.update_handler(None, None)
         self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
     def test_lims_non_nullable_columns(self) -> None:
@@ -184,7 +184,7 @@ class DataProcessorsTests(TestCase):
 
         self._save_lims_csv([row_1, row_2])
 
-        process_results = lims_rewrite_processor.handler(None, None)
+        process_results = lims_processor.rewrite_handler(None, None)
 
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -200,7 +200,7 @@ class DataProcessorsTests(TestCase):
         row_1['SubjectID'] = '-'
         self._save_lims_csv([row_1])
         # No exception should be thrown
-        lims_rewrite_processor.handler(None, None)
+        lims_processor.rewrite_handler(None, None)
 
     def test_sqs_s3_event_processor(self) -> None:
         """

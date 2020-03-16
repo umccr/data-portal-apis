@@ -1,6 +1,6 @@
 import boto3
 
-client = boto3.client('ssm')
+client = boto3.client("ssm")
 
 
 def get_secret(key) -> str:

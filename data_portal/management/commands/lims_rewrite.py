@@ -1,6 +1,6 @@
 from django.core.management import BaseCommand, CommandParser
 
-from data_processors.persist_lims_data import persist_lims_data
+from data_processors.services import persist_lims_data
 
 
 class Command(BaseCommand):
