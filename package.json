@@ -7,6 +7,7 @@
     "serverless-plugin-scripts": "^1.0.2"
   },
   "devDependencies": {
+    "husky": "^4.2.3",
     "serverless-associate-waf": "^1.2.0",
     "serverless-aws-documentation": "^1.1.0",
     "serverless-python-requirements": "^5.1.0",
