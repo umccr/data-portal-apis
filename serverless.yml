@@ -181,17 +181,23 @@ functions:
           rules:
             - suffix: ${env:LIMS_CSV_OBJECT_KEY}
           existing: true
-    timeout: 30
+    timeout: 29
   lims_scheduled_update_processor:
     handler: data_processors.lims_processor.scheduled_update_handler
     events:
-      - schedule: cron(0 12 * * ? *)
-    timeout: 30
+      - schedule:
+          rate: cron(0 12 * * ? *)
+          enabled: ${self:custom.enabled.${opt:stage}, self.enabled.other}
+    timeout: 29
   migrate:
     handler: migrate.handler
     timeout: 20
 
 custom:
+  enabled:
+    dev: false
+    prod: true
+    other: false
   wsgi:
     app: data_portal.wsgi.application
     packRequirements: false
