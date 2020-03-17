@@ -181,14 +181,14 @@ functions:
           rules:
             - suffix: ${env:LIMS_CSV_OBJECT_KEY}
           existing: true
-    timeout: 29
+    timeout: 28
   lims_scheduled_update_processor:
     handler: data_processors.lims_processor.scheduled_update_handler
     events:
       - schedule:
           rate: cron(0 12 * * ? *)
           enabled: ${self:custom.enabled.${opt:STAGE}, self.enabled.other}
-    timeout: 29
+    timeout: 28
   migrate:
     handler: migrate.handler
     timeout: 20
