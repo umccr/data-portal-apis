@@ -14,7 +14,7 @@ setup(
             "django_extensions",
         ],
         "test": [
-            "moto==1.3.14",
+            "moto==1.3.13",
             "factory_boy==2.12.0",
             "pytz==2019.3",
         ],
