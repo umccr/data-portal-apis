@@ -1,9 +1,8 @@
 import random
-import re
 from typing import Union
 
 from django.db import models
-from django.db.models import Max, QuerySet
+from django.db.models import Max, QuerySet, Q
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
@@ -47,18 +46,40 @@ class S3ObjectManager(models.Manager):
         return self.exclude(key__contains='.snakemake')
 
     def get_by_subject_id(self, subject_id: str, **kwargs) -> QuerySet:
-        if re.match(r'SBJ[0-9]', subject_id.upper()):
-            bucket = kwargs.get('bucket', None)
-            if bucket:
-                return self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake').filter(bucket=bucket)
-            return self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake')
-        return self.none()
-
-    def get_by_illumina_id(self, illumina_id: str, **kwargs) -> QuerySet:
+        qs: QuerySet = self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake')
         bucket = kwargs.get('bucket', None)
         if bucket:
-            return self.filter(key__icontains=illumina_id).filter(bucket=bucket)
-        return self.filter(key__icontains=illumina_id)
+            qs = qs.filter(bucket=bucket)
+        return qs
+
+    def get_subject_results(self, subject_id: str, **kwargs) -> QuerySet:
+        qs: QuerySet = self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake')
+        bam = Q(key__iregex='wgs') & Q(key__iregex='ready') & Q(key__iregex='.bam$')
+        vcf = (Q(key__iregex='umccrised/[^(work)*]')
+               & Q(key__iregex='(somatic-ensemble|normal-ensemble-predispose_genes).vcf.gz$'))
+        cancer = Q(key__iregex='umccrised') & Q(key__iregex='cancer_report.html$')
+        qc = Q(key__iregex='umccrised') & Q(key__iregex='multiqc_report.html$')
+        pcgr = Q(key__iregex='umccrised') & Q(key__iregex='pcgr/') & Q(key__iregex='(pcgr|cpsr).html$')
+        coverage = Q(key__iregex='cacao') & Q(key__iregex='html') & Q(key__iregex='(cacao_normal|cacao_tumor)')
+        circos = (Q(key__iregex='work/') & Q(key__iregex='purple/') & Q(key__iregex='circos')
+                  & Q(key__iregex='baf') & Q(key__iregex='.png$'))
+        wts_bam = Q(key__iregex='wts') & Q(key__iregex='ready') & Q(key__iregex='.bam$')
+        wts_qc = Q(key__iregex='wts') & Q(key__iregex='multiqc/') & Q(key__iregex='multiqc_report.html$')
+        rnasum = Q(key__iregex='RNAseq_report.html$')
+        q_results: Q = bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | rnasum
+        qs = qs.filter(q_results)
+
+        bucket = kwargs.get('bucket', None)
+        if bucket:
+            qs = qs.filter(bucket=bucket)
+        return qs
+
+    def get_by_illumina_id(self, illumina_id: str, **kwargs) -> QuerySet:
+        qs: QuerySet = self.filter(key__icontains=illumina_id)
+        bucket = kwargs.get('bucket', None)
+        if bucket:
+            qs = qs.filter(bucket=bucket)
+        return qs
 
 
 class S3Object(models.Model):

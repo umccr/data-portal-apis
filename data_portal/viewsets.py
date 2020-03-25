@@ -88,13 +88,25 @@ class SubjectViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def retrieve(self, request, pk=None, **kwargs):
-        data = {
-            'id': pk,
-            'lims': LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data,
-            's3': {
-                'count': S3Object.objects.get_by_subject_id(pk).count()
-            }
-        }
+        results = S3Object.objects.get_subject_results(pk).all()
+
+        features = []
+        for obj in results:
+            p: S3Object = obj
+            if p.key.endswith('png'):
+                resp = libs3.presign_s3_file(p.bucket, p.key)
+                if resp[0]:
+                    features.append(resp[1])
+
+        data = {'id': pk}
+        data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
+        data.update(
+            s3={
+                'count': S3Object.objects.get_by_subject_id(pk).count(),
+                'next': request.build_absolute_uri() + '/s3'
+            })
+        data.update(features=features)
+        data.update(results=S3ObjectModelSerializer(results, many=True).data)
         return Response(data)
 
 
