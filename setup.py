@@ -9,7 +9,6 @@ setup(
     description="UMCCR Data Portal APIs",
     extras_require={
         "dev": [
-            "Werkzeug",
             "pipdeptree",
             "django_extensions",
         ],
@@ -32,5 +31,6 @@ setup(
         "python-dateutil==2.8.1",
         "google-api-python-client==1.8.0",
         "google-auth==1.11.3",
+        "Werkzeug==1.0.0",
     ],
 )
