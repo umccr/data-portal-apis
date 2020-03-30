@@ -203,11 +203,14 @@ custom:
     packRequirements: false
   scripts:
     hooks:
-      # Run db migration as part of the deployment process
       'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
      zip: true
      slim: true
+     slimPatternsAppendDefaults: false
+     slimPatterns:
+       - '**/*.py[c|o]'
+       - '**/__pycache__*'
   customDomain:
     domainName: ${env:API_DOMAIN_NAME}
     basePath: ''
