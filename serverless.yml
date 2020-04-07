@@ -168,12 +168,17 @@ functions:
           authorizer: aws_iam
           cors: true
   sqs_s3_event_processor:
-    handler: data_processors.sqs_s3_event_processor.handler
+    handler: data_processors.lambdas.s3.handler
     events:
       - sqs:
           arn: ${env:S3_EVENT_SQS_ARN}
+  sqs_iap_event_processor:
+    handler: data_processors.lambdas.iap.handler
+    events:
+      - sqs:
+          arn: ${env:IAP_ENS_EVENT_SQS_ARN}
   lims_update_processor:
-    handler: data_processors.lims_processor.update_handler
+    handler: data_processors.lambdas.lims.update_handler
     events:
       - s3:
           bucket: ${env:LIMS_BUCKET_NAME}
@@ -183,7 +188,7 @@ functions:
           existing: true
     timeout: 28
   lims_scheduled_update_processor:
-    handler: data_processors.lims_processor.scheduled_update_handler
+    handler: data_processors.lambdas.lims.scheduled_update_handler
     events:
       - schedule:
           rate: cron(0 12 * * ? *)

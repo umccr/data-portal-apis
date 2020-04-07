@@ -6,11 +6,11 @@ except ImportError:
 import django
 import os
 
-# We need to set up django app first
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
 django.setup()
 
-# All other imports should be placed below
+# ---
+
 import logging
 from ast import literal_eval
 from enum import Enum

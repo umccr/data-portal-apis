@@ -1,13 +1,14 @@
 import logging
+import os
 from typing import List, Dict
+
 import boto3
 from django.test import TestCase
-from moto import mock_s3
-import os
 from django.utils.timezone import now
+from moto import mock_s3
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS
-from data_processors import lims_processor, sqs_s3_event_processor
+from data_portal.models import S3Object, LIMSRow
+from data_processors.lambdas import lims
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -49,10 +50,9 @@ def csv_row_dict_to_string(row: dict) -> str:
 
 
 @mock_s3
-class DataProcessorsTests(TestCase):
+class LIMSLambdaTests(TestCase):
     """
     Test cases for data processing (lambda) functions
-    todo: break this class down into separate classes for different data processing functions
     """
 
     def setUp(self) -> None:
@@ -118,10 +118,11 @@ class DataProcessorsTests(TestCase):
         self._save_lims_csv([row_1])
 
         # Create the s3 object such that key contains what we need to find for s3-lims association
-        s3_object = S3Object(bucket='s3-keys-bucket', key=f'{subject_id}/{sample_id}/test.json', size=0, last_modified_date=now(), e_tag='')
+        s3_object = S3Object(bucket='s3-keys-bucket', key=f'{subject_id}/{sample_id}/test.json', size=0,
+                             last_modified_date=now(), e_tag='')
         s3_object.save()
 
-        process_results = lims_processor.rewrite_handler(None, None)
+        process_results = lims.rewrite_handler(None, None)
 
         # We should have added the new row
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -141,7 +142,7 @@ class DataProcessorsTests(TestCase):
         # Create and save test csv data
         self._save_lims_csv([row_1])
         # Let data be processed through so we have some existing data
-        lims_processor.update_handler(None, None)
+        lims.update_handler(None, None)
 
         # Now we want to test changing one row (i.e. changing a column arbitrarily, and adding a new row
         new_results = 'NewResults'
@@ -149,7 +150,7 @@ class DataProcessorsTests(TestCase):
         row_2 = generate_lims_csv_row_dict('2')
         self._save_lims_csv([row_1, row_2])
 
-        process_results = lims_processor.update_handler(None, None)
+        process_results = lims.update_handler(None, None)
 
         # We should have added a new row
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -164,7 +165,7 @@ class DataProcessorsTests(TestCase):
         row_duplicate = generate_lims_csv_row_dict('3')
         self._save_lims_csv([row_duplicate, row_duplicate])
 
-        process_results = lims_processor.update_handler(None, None)
+        process_results = lims.update_handler(None, None)
         self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
     def test_lims_non_nullable_columns(self) -> None:
@@ -184,7 +185,7 @@ class DataProcessorsTests(TestCase):
 
         self._save_lims_csv([row_1, row_2])
 
-        process_results = lims_processor.rewrite_handler(None, None)
+        process_results = lims.rewrite_handler(None, None)
 
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -200,123 +201,4 @@ class DataProcessorsTests(TestCase):
         row_1['SubjectID'] = '-'
         self._save_lims_csv([row_1])
         # No exception should be thrown
-        lims_processor.rewrite_handler(None, None)
-
-    def test_sqs_s3_event_processor(self) -> None:
-        """
-        Test whether SQS S3 event processor can process event data as expected
-        """
-
-        # Compose test data
-        lims_row = LIMSRow(
-                illumina_id='Illumina_ID',
-                run=1,
-                timestamp=now(),
-                subject_id='SubjectID',
-                sample_id='SampleID',
-                library_id='LibraryID',
-                external_subject_id='ExternalSubjectID',
-                external_sample_id='ExternalSampleID',
-                external_library_id='ExternalLibraryID',
-                sample_name='SampleName',
-                project_owner='ProjectOwner',
-                project_name='ProjectName',
-                type='Type',
-                assay='Assay',
-                phenotype='Phenotype',
-                source='Source',
-                quality='Quality',
-                topup='Topup',
-                secondary_analysis='SecondaryAnalysis',
-                fastq='FASTQ',
-                number_fastqs='NumberFASTQS',
-                results='Results',
-                trello='Trello',
-                notes='Notes',
-                todo='ToDo'
-        )
-        lims_row.save()
-
-        bucket_name = 'some-bucket'
-        key_to_delete = 'to-delete.json'
-
-        # Create an S3Object first with the key to be deleted
-        s3_object = S3Object(bucket=bucket_name, key=key_to_delete, size=0, last_modified_date=now(), e_tag='')
-        s3_object.save()
-
-        # Create the s3-lims association between the lims row and s3 object (to be deleted)
-        s3_lims = S3LIMS(s3_object=s3_object, lims_row=lims_row)
-        s3_lims.save()
-
-        s3_event_message = {
-            "Records": [
-                {
-                    "eventTime": "2019-01-01T00:00:00.000Z",
-                    "eventName": "ObjectRemoved",
-                    "s3": {
-                        "bucket": {
-                            "name": bucket_name,
-                        },
-                        "object": {
-                            "key": key_to_delete,
-                            "size": 1,
-                            "eTag": "object eTag",
-                        }
-                    }
-                },
-                {
-                    "eventTime": "2019-01-01T00:00:00.000Z",
-                    "eventName": "ObjectCreated",
-                    "s3": {
-                        "bucket": {
-                            "name": bucket_name
-                        },
-                        "object": {
-                            "key": f'{lims_row.subject_id}/{lims_row.sample_id}/test.json',
-                            "size": 1,
-                            "eTag": "object eTag",
-                        }
-                    }
-                }
-            ]
-        }
-
-        sqs_event = {
-            "Records": [
-                {
-                    "body": str(s3_event_message),
-                }
-            ]
-        }
-
-        results = sqs_s3_event_processor.handler(sqs_event, None)
-
-        self.assertEqual(results['removed_count'], 1)
-        # We should expect the existing association removed as well
-        self.assertEqual(results['s3_lims_removed_count'], 1)
-
-        self.assertEqual(results['created_count'], 1)
-        # We should expect the new association created as well
-        self.assertEqual(results['s3_lims_created_count'], 1)
-        self.assertEqual(results['unsupported_count'], 0)
-
-    def test_unique_hash(self) -> None:
-        """
-        Integration test for S3Object.unique_hash HashField data type
-        python manage.py test data_processors.tests.DataProcessorsTests.test_unique_hash
-        :return:
-        """
-        bucket = 'unique-hash-bucket'
-        key = 'start/umccrise/pcgr/pcgr.html'
-
-        # echo -n 'unique-hash-bucketstart/umccrise/pcgr/pcgr.html' | sha256sum
-        left = '92f7602596b2952a0e695d29b444de3568968b2b7ed19a5fb0ecbf26e197681c'
-        logger.info(f"Pre compute: (unique_hash={left})")
-
-        s3_object = S3Object(bucket=bucket, key=key, size=0, last_modified_date=now(), e_tag='1234567890')
-        s3_object.save()
-        right = s3_object.unique_hash
-
-        logger.info(f"DB save: (bucket={s3_object.bucket}, key={s3_object.key}, unique_hash={right})")
-
-        self.assertEqual(left, right)
+        lims.rewrite_handler(None, None)

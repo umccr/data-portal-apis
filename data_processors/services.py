@@ -10,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction, IntegrityError
 from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile
 from data_processors.exceptions import UnexpectedLIMSDataFormatException
 from utils.datetime import parse_lims_timestamp
 from utils import libgdrive, libssm, libs3
@@ -99,7 +99,7 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
         s3_object.delete()
         return 1, s3_lims_count
     except ObjectDoesNotExist as e:
-        logger.error("Failed to remove an in-existent S3Object record: " + str(e))
+        logger.error(f"Failed to remove an in-existent S3Object record: {str(e)}")
         return 0, 0
 
 
@@ -149,7 +149,8 @@ def tag_s3_object(bucket_name: str, key: str):
 
 
 @transaction.atomic
-def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False, create_association: bool = False) -> Dict[str, int]:
+def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False, create_association: bool = False) -> Dict[
+    str, int]:
     """
     Persist lims data into the db
     :param csv_bucket: the s3 bucket storing the csv file
@@ -338,3 +339,67 @@ def __csv_column_to_field_name(column_name: str) -> str:
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', column_name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+@transaction.atomic
+def delete_gds_file(payload: dict):
+    """
+    Payload data structure is dict response of GET /v1/files/{fileId}
+    https://aps2.platform.illumina.com/gds/swagger/index.html
+
+    On UMCCR portal, a unique GDS file means unique together of volume_name and path. See GDSFile model.
+
+    :param payload:
+    """
+    try:
+        volume_name = payload['volumeName']
+        path = payload['path']
+        gds_file = GDSFile.objects.get(volume_name=volume_name, path=path)
+        gds_file.delete()
+        logger.info(f"Deleted GDSFile: gds://{volume_name}{path}")
+    except ObjectDoesNotExist as e:
+        logger.error(f"Failed to remove an in-existent GDSFile: {str(e)}")
+
+
+@transaction.atomic
+def create_or_update_gds_file(payload: dict):
+    """
+    Payload data structure is dict response of GET /v1/files/{fileId}
+    https://aps2.platform.illumina.com/gds/swagger/index.html
+
+    On UMCCR portal, a unique GDS file means unique together of volume_name and path. See GDSFile model.
+
+    :param payload:
+    """
+    volume_name = payload.get('volumeName')
+    path = payload.get('path')
+
+    qs = GDSFile.objects.filter(volume_name=volume_name, path=path)
+    if not qs.exists():
+        logger.info(f"Creating a new GDSFile (volume_name={volume_name}, path={path})")
+        gds_file = GDSFile()
+    else:
+        logger.info(f"Updating existing GDSFile (volume_name={volume_name}, path={path})")
+        gds_file: GDSFile = qs.get()
+
+    gds_file.file_id = payload.get('id')
+    gds_file.name = payload.get('name')
+    gds_file.volume_id = payload.get('volumeId')
+    gds_file.volume_name = volume_name
+    gds_file.type = payload.get('type', None)
+    gds_file.tenant_id = payload.get('tenantId')
+    gds_file.sub_tenant_id = payload.get('subTenantId')
+    gds_file.path = path
+    gds_file.time_created = payload.get('timeCreated')
+    gds_file.created_by = payload.get('createdBy')
+    gds_file.time_modified = payload.get('timeModified')
+    gds_file.modified_by = payload.get('modifiedBy')
+    gds_file.inherited_acl = payload.get('inheritedAcl')
+    gds_file.urn = payload.get('urn')
+    gds_file.size_in_bytes = payload.get('sizeInBytes')
+    gds_file.is_uploaded = payload.get('isUploaded')
+    gds_file.archive_status = payload.get('archiveStatus')
+    gds_file.time_archived = payload.get('timeArchived', None)
+    gds_file.storage_tier = payload.get('storageTier')
+    gds_file.presigned_url = payload.get('presignedUrl', None)
+    gds_file.save()

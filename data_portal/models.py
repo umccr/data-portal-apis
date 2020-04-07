@@ -201,3 +201,38 @@ class Configuration(models.Model):
             return False
 
         return True
+
+
+class GDSFile(models.Model):
+    """
+    Model wrap around IAP GDS File - GET /v1/files/{fileId}
+    https://aps2.platform.illumina.com/gds/swagger/index.html
+
+    NOTE:
+    For composite (unique) key, it follows S3 style bucket + key pattern, see unique_hash.
+    i.e. gds://volume_name/path ~ s3://bucket/key and, this full path must be unique globally.
+    """
+    file_id = models.CharField(max_length=255)
+    name = models.TextField()
+    volume_id = models.CharField(max_length=255)
+    volume_name = models.TextField()
+    type = models.CharField(max_length=255, null=True, blank=True)
+    tenant_id = models.CharField(max_length=255)
+    sub_tenant_id = models.CharField(max_length=255)
+    path = models.TextField()
+    time_created = models.DateTimeField()
+    created_by = models.CharField(max_length=255)
+    time_modified = models.DateTimeField()
+    modified_by = models.CharField(max_length=255)
+    inherited_acl = models.TextField()
+    urn = models.TextField()
+    size_in_bytes = models.BigIntegerField()
+    is_uploaded = models.BooleanField(null=True)
+    archive_status = models.CharField(max_length=255)
+    time_archived = models.DateTimeField(null=True, blank=True)
+    storage_tier = models.CharField(max_length=255)
+    presigned_url = models.TextField(null=True, blank=True)
+    unique_hash = HashField(unique=True, base_fields=['volume_name', 'path'], default=None)
+
+    def __str__(self):
+        return f"File '{self.name}' in volume '{self.volume_name}' with path '{self.path}'"
