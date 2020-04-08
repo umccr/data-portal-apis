@@ -45,38 +45,52 @@ class IAPLambdaTests(TestCase):
 
         ens_sqs_message_attributes = {
             "sub-tenant-id": {
-                "Type": "String",
-                "Value": "wid:f687447b-d13e-4464-a6b8-7167fc75742d"
+                "stringValue": "uid:does-not-matter",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "subscription-urn": {
-                "Type": "String",
-                "Value": "urn:ilmn:igp:us-east-1"
-                         ":eXei3veelae8iNgae6aipoo7Hodeeh3ohshaeTai7iezib1oog5tha3Aixai3jeebi7shei5aePhej3eem"
-                         ":subscription:sub.747 "
+                "stringValue": "urn:does-not-matter",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "contentversion": {
-                "Type": "String",
-                "Value": "V1"
+                "stringValue": "V1",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "action": {
-                "Type": "String",
-                "Value": "uploaded"
-            },
-            "type": {
-                "Type": "String",
-                "Value": "gds.files"
+                "stringValue": "uploaded",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "actiondate": {
-                "Type": "String",
-                "Value": "2020-04-01T20:55:36.7698333Z"
+                "stringValue": "2020-04-08T02:00:59.9745859Z",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "type": {
+                "stringValue": "gds.files",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "producedby": {
-                "Type": "String",
-                "Value": "GenomicDataStoreService"
+                "stringValue": "GenomicDataStoreService",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "contenttype": {
-                "Type": "String",
-                "Value": "application/json"
+                "stringValue": "application/json",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             }
         }
 
@@ -103,9 +117,11 @@ class IAPLambdaTests(TestCase):
 
         ens_sqs_message_attributes = {
             "type": {
-                "Type": "String",
-                "Value": "tes.runs"
-            }
+                "stringValue": "tes.runs",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
         }
 
         sqs_event_message = {
@@ -151,13 +167,17 @@ class IAPLambdaTests(TestCase):
 
         ens_sqs_message_attributes = {
             "action": {
-                "Type": "String",
-                "Value": "deleted"
+                "stringValue": "deleted",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
             },
             "type": {
-                "Type": "String",
-                "Value": "gds.files"
-            }
+                "stringValue": "gds.files",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
         }
 
         sqs_event_message = {
