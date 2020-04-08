@@ -31,13 +31,13 @@ def handler(event, context):
     messages = event['Records']
 
     for message in messages:
-        event_type = message['messageAttributes']['type']['Value']
+        event_type = message['messageAttributes']['type']['stringValue']
 
         if event_type not in IMPLEMENTED_ENS_TYPES:
             raise UnsupportedIAPEventNotificationServiceType(event_type)
 
         if event_type == GDS_FILES:
-            event_action = message['messageAttributes']['action']['Value']
+            event_action = message['messageAttributes']['action']['stringValue']
             message_body_json = json.loads(message['body'])
             if event_action == 'deleted':
                 delete_gds_file(message_body_json)
