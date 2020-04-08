@@ -9,6 +9,8 @@ from typing import Tuple, Dict
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction, IntegrityError
 from django.db.models import Q, ExpressionWrapper, Value, CharField, F
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile
 from data_processors.exceptions import UnexpectedLIMSDataFormatException
@@ -390,7 +392,7 @@ def create_or_update_gds_file(payload: dict):
     gds_file.tenant_id = payload.get('tenantId')
     gds_file.sub_tenant_id = payload.get('subTenantId')
     gds_file.path = path
-    gds_file.time_created = payload.get('timeCreated')
+    gds_file.time_created = make_aware(parse_datetime(payload.get('timeCreated')))
     gds_file.created_by = payload.get('createdBy')
     gds_file.time_modified = payload.get('timeModified')
     gds_file.modified_by = payload.get('modifiedBy')
