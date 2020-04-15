@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 from django.utils.timezone import now
 
@@ -77,7 +78,7 @@ class S3LambdaTests(TestCase):
                             "name": bucket_name
                         },
                         "object": {
-                            "key": f'{lims_row.subject_id}/{lims_row.sample_id}/test.json',
+                            "key": f"{lims_row.subject_id}/{lims_row.sample_id}/test.json",
                             "size": 1,
                             "eTag": "object eTag",
                         }
@@ -104,3 +105,34 @@ class S3LambdaTests(TestCase):
         # We should expect the new association created as well
         self.assertEqual(results['s3_lims_created_count'], 1)
         self.assertEqual(results['unsupported_count'], 0)
+
+    def test_delete_non_existent_s3_object(self):
+        s3_event_message = {
+            "Records": [
+                {
+                    "eventTime": "2019-01-01T00:00:00.000Z",
+                    "eventName": "ObjectRemoved",
+                    "s3": {
+                        "bucket": {
+                            "name": "test",
+                        },
+                        "object": {
+                            "key": "this/dose/not/exist/in/db.txt",
+                            "size": 1,
+                            "eTag": "object eTag",
+                        }
+                    }
+                }
+            ]
+        }
+
+        sqs_event = {
+            "Records": [
+                {
+                    "body": str(s3_event_message),
+                }
+            ]
+        }
+
+        s3.handler(sqs_event, None)
+        self.assertRaises(ObjectDoesNotExist)

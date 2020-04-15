@@ -32,7 +32,6 @@ def update_handler(event, context) -> Dict[str, int]:
         csv_bucket=os.environ['LIMS_BUCKET_NAME'],
         csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
         rewrite=False,
-        create_association=False,
     )
 
 
@@ -48,7 +47,6 @@ def rewrite_handler(event, context) -> Dict[str, int]:
         csv_bucket=os.environ['LIMS_BUCKET_NAME'],
         csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
         rewrite=True,
-        create_association=False,
     )
 
 

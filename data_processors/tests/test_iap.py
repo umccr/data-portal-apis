@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 
 from data_portal.models import GDSFile
@@ -110,8 +111,8 @@ class IAPLambdaTests(TestCase):
         path = "/Runs/200401_A00130_0134_BHT5N3DMXX/IntegrationTest.txt"
         qs = GDSFile.objects.filter(volume_name=volume, path=path)
         gds_file = qs.get()
-        logger.info(f"Found GDSFile record from db: gds://{gds_file.volume_name}{gds_file.path}")
         self.assertEqual(1, qs.count())
+        logger.info(f"Asserted found GDSFile record from db: gds://{gds_file.volume_name}{gds_file.path}")
 
     def test_unsupported_ens_event_type(self):
 
@@ -192,3 +193,31 @@ class IAPLambdaTests(TestCase):
 
         iap.handler(sqs_event_message, None)
         self.assertEqual(0, GDSFile.objects.count())
+
+    def test_delete_non_existent_gds_file(self):
+        gds_file_message = {
+            "volumeName": "test",
+            "path": "/this/does/not/exist/in/db/gds_file.path",
+        }
+
+        ens_sqs_message_attributes = {
+            "action": {
+                "stringValue": "deleted",
+            },
+            "type": {
+                "stringValue": "gds.files",
+            },
+        }
+
+        sqs_event_message = {
+            "Records": [
+                {
+                    "eventSource": "aws:sqs",
+                    "body": json.dumps(gds_file_message),
+                    "messageAttributes": ens_sqs_message_attributes
+                }
+            ]
+        }
+
+        iap.handler(sqs_event_message, None)
+        self.assertRaises(ObjectDoesNotExist)

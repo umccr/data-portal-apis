@@ -65,7 +65,7 @@ class GDSFileFactory(factory.django.DjangoModelFactory):
     tenant_id = "ookohRahWee0ko1epoon3ej5tezeecu2thaec3AhsaSh3uqueeThasu0guTheeyeecheemoh9tu3neiGh0"
     sub_tenant_id = "wid:f687447b-d13e-4464-a6b8-7167fc75742d"
     path = "/Runs/200401_B00130_0134_GU9AICA8AI/Test.txt"
-    time_created = "2020-04-08T02:00:58.026467"
+    time_created = "2020-04-08T02:00:58.026467Z"
     created_by = "14c99f4f-8934-4af2-9df2-729e1b840f42"
     time_modified = "2020-04-01T20:55:35.025Z"
     modified_by = "14c99f4f-8934-4af2-9df2-729e1b840f42"

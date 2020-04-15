@@ -7,15 +7,14 @@ from io import BytesIO
 from typing import Tuple, Dict
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile
-from data_processors.exceptions import UnexpectedLIMSDataFormatException
-from utils.datetime import parse_lims_timestamp
 from utils import libgdrive, libssm, libs3
+from utils.datetime import parse_lims_timestamp
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -53,6 +52,7 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
     if not new:
         return 0, 0
 
+    # TODO remove association logic and drop S3LIMS table, related with global search overhaul
     # Number of s3-lims association records we have created in this run
     new_association_count = 0
 
@@ -81,11 +81,12 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
 
     # Check if we do find any association at all or not
     if len(lims_rows) == 0:
-        logging.error(f"No association to any LIMS row is found for the S3Object (bucket={bucket}, key={key})")
+        logger.debug(f"No association to any LIMS row is found for the S3Object (bucket={bucket}, key={key})")
 
     return 1, new_association_count
 
 
+@transaction.atomic
 def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     Delete a S3 object record from db
@@ -99,9 +100,10 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
         s3_lims_count = s3_lims_records.count()
         s3_lims_records.delete()
         s3_object.delete()
+        logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")
         return 1, s3_lims_count
     except ObjectDoesNotExist as e:
-        logger.error(f"Failed to remove an in-existent S3Object record: {str(e)}")
+        logger.info(f"No deletion required. Non-existent S3Object (bucket={bucket_name}, key={key}): {str(e)}")
         return 0, 0
 
 
@@ -143,7 +145,7 @@ def tag_s3_object(bucket_name: str, key: str):
         if payload['ResponseMetadata']['HTTPStatusCode'] == 200:
             logger.info(f"Tagged the S3Object ({key}) with ({str(tag_set)})")
         else:
-            logger.error(f"Failed to Tag the S3Object ({key}) with ({str(payload)})")
+            logger.error(f"Failed to tag the S3Object ({key}) with ({str(payload)})")
 
     else:
         # sound of silence
@@ -151,26 +153,25 @@ def tag_s3_object(bucket_name: str, key: str):
 
 
 @transaction.atomic
-def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False, create_association: bool = False) -> Dict[
+def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False) -> Dict[
     str, int]:
     """
     Persist lims data into the db
     :param csv_bucket: the s3 bucket storing the csv file
     :param csv_key: the s3 file key of the csv
     :param rewrite: whether we are rewriting the data
-    :param create_association: whether to create association link between LIMS rows and S3 object
-    :return: result statistics - count of updated, new and invalid LIMS rows and new S3LIMS associations
+    :return: result statistics - count of updated, new and invalid LIMS rows
     """
-    logger.info("Reading LIMS data from bucket")
+    logger.info("Reading LIMS data from S3 bucket")
     bytes_data = libs3.read_s3_object_body(csv_bucket, csv_key)
     csv_input = BytesIO(bytes_data)
-    return __persist_lims_data(csv_input, rewrite, create_association)
+    return __persist_lims_data(csv_input, rewrite)
 
 
 @transaction.atomic
 def persist_lims_data_from_google_drive(account_info_ssm_key: str, file_id_ssm_key: str) -> Dict[str, int]:
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    logger.info(f"Reading LIMS data from drive at {requested_time}")
+    logger.info(f"Reading LIMS data from google drive at {requested_time}")
 
     bytes_data = libgdrive.download_sheet1_csv(
         account_info=libssm.get_secret(account_info_ssm_key),
@@ -180,123 +181,78 @@ def persist_lims_data_from_google_drive(account_info_ssm_key: str, file_id_ssm_k
     return __persist_lims_data(csv_input)
 
 
-@transaction.atomic  # Either the whole csv will be processed without error; or no data will be updated!
-def __persist_lims_data(csv_input: BytesIO, rewrite: bool = False, create_association: bool = False) -> Dict[str, int]:
+@transaction.atomic
+def __persist_lims_data(csv_input: BytesIO, rewrite: bool = False) -> Dict[str, int]:
     """
     Persist lims data into the db
     :param csv_input: buffer instance of BytesIO
     :param rewrite: whether we are rewriting the data
-    :param create_association: whether to create association link between LIMS rows and S3 object
-    :return: result statistics - count of updated, new and invalid LIMS rows and new S3LIMS associations
+    :return: result statistics - count of updated, new and invalid LIMS rows
     """
-    logger.info(f"Start processing LIMS data...")
+    logger.info(f"Start processing LIMS data")
     csv_reader = csv.DictReader(io.TextIOWrapper(csv_input))
 
     if rewrite:
-        # Delete all rows (and associations) first
+        # Delete all rows first
         logger.info("REWRITE MODE: Deleting all existing records")
         LIMSRow.objects.all().delete()
 
     lims_row_update_count = 0
     lims_row_new_count = 0
     lims_row_invalid_count = 0
-    association_count = 0
 
     dirty_ids = {}
+    na_symbol = "-"  # LIMS Not Applicable symbol is dash
 
     for row_number, row in enumerate(csv_reader):
-        try:
-            lims_row, new = __parse_and_persist_lims_object(dirty_ids, row, row_number)
-        except UnexpectedLIMSDataFormatException as e:
-            # Report an error instead of let the whole transaction fails
-            msg = str(e)
-            # TODO skipping known issue logging for now
-            if not msg.find("{'sample_id': ['This field cannot be null.']}") or \
-                    not msg.find("{'library_id': ['This field cannot be null.']}"):
-                logger.error("Error persisting the LIMS row: " + msg)
+        sample_id = row['SampleID']
+        illumina_id = row['IlluminaID']
+        library_id = row['LibraryID']
+        row_id = (illumina_id, library_id)
+
+        if sample_id is None or library_id is None or sample_id == na_symbol or library_id == na_symbol:
+            logger.info(f"Skip row {row_number}. SampleID or LibraryID column is null or NA.")
             lims_row_invalid_count += 1
             continue
 
-        if new:
+        if row_id in dirty_ids:
+            prev_row_number = dirty_ids[row_id]
+            logger.info(f"Skip row {row_number}. Having duplicated ID with previous row {prev_row_number} "
+                        f"on IlluminaID={illumina_id}, LibraryID={library_id}")
+
+            lims_row_invalid_count += 1
+            continue
+
+        query_set = LIMSRow.objects.filter(illumina_id=illumina_id, library_id=library_id)
+
+        if not query_set.exists():
+            lims_row = __parse_lims_row(row)
             lims_row_new_count += 1
         else:
+            lims_row = query_set.get()
+            __parse_lims_row(row, lims_row)
             lims_row_update_count += 1
 
-        # Only find association if we have SubjectID, as it can be None
-        if lims_row.subject_id is not None and create_association:
-            # Find all matching S3Object objects and create association between them and the lims row
-            key_filter = Q()
+        try:
+            lims_row.full_clean()
+            lims_row.save()
+        except ValidationError as e:
+            msg = str(e) + " - " + str(lims_row)
+            logger.error(f"Error persisting the LIMS row: {msg}")
+            lims_row_invalid_count += 1
+            continue
 
-            # AND all filters
-            for attr in LIMSRow.S3_LINK_ATTRS:
-                key_filter &= Q(key__contains=getattr(lims_row, attr))
-
-            for s3_object in S3Object.objects.filter(key_filter):
-                # Create association if not exist
-                if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
-                    logger.info(f"Linking the S3Object ({str(s3_object)}) with LIMSRow ({str(lims_row)})")
-
-                    association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
-                    association.save()
-
-                    association_count += 1
+        dirty_ids[row_id] = row_number
 
     csv_input.close()
-    logger.info(f'LIMS data processing complete. \n'
-                f'{lims_row_new_count} new, {lims_row_update_count} updated, {lims_row_invalid_count} invalid, \n'
-                f'{association_count} new associations')
+    logger.info(f"LIMS data processing complete. "
+                f"{lims_row_new_count} new, {lims_row_update_count} updated, {lims_row_invalid_count} invalid")
 
     return {
         'lims_row_update_count': lims_row_update_count,
         'lims_row_new_count': lims_row_new_count,
         'lims_row_invalid_count': lims_row_invalid_count,
-        'association_count': association_count,
     }
-
-
-def __parse_and_persist_lims_object(dirty_ids: dict, row: dict, row_number: int) -> Tuple[LIMSRow, bool]:
-    """
-    Parse and persist the LIMSRow from the row dict to the db
-    :param dirty_ids: used to keep track of dirty row (identifiers)
-    :param row: row dict (from csv)
-    :param row_number: index of the row
-    :return: saved LIMSRow, a flag indicating whether the object is newly created
-    """
-
-    # Using the identifier combination to find the object
-    illumina_id = row['IlluminaID']
-    library_id = row['LibraryID']
-    row_id = (illumina_id, library_id)
-
-    # If find another row in which the id has been seen in previous rows, we raise an error
-    if row_id in dirty_ids:
-        prev_row_number = dirty_ids[row_id]
-        msg = f'Duplicate row identifier for row {prev_row_number} and {row_number}: ' \
-              f'IlluminaID={illumina_id}, LibraryID={library_id}'
-        raise UnexpectedLIMSDataFormatException(msg)
-
-    query_set = LIMSRow.objects.filter(illumina_id=illumina_id, library_id=library_id)
-
-    if not query_set.exists():
-        lims_row = __parse_lims_row(row)
-        new = True
-    else:
-        lims_row = query_set.get()
-        __parse_lims_row(row, lims_row)
-        new = False
-
-    try:
-        lims_row.full_clean()
-        lims_row.save()
-    except IntegrityError as e:
-        raise UnexpectedLIMSDataFormatException(str(e))
-    except ValidationError as e:
-        raise UnexpectedLIMSDataFormatException(str(e) + " - " + str(lims_row))
-
-    # Mark this row as dirty
-    dirty_ids[row_id] = row_number
-
-    return lims_row, new
 
 
 def __parse_lims_row(csv_row: dict, row_object: LIMSRow = None) -> LIMSRow:
@@ -353,14 +309,15 @@ def delete_gds_file(payload: dict):
 
     :param payload:
     """
+    volume_name = payload['volumeName']
+    path = payload['path']
+
     try:
-        volume_name = payload['volumeName']
-        path = payload['path']
         gds_file = GDSFile.objects.get(volume_name=volume_name, path=path)
         gds_file.delete()
         logger.info(f"Deleted GDSFile: gds://{volume_name}{path}")
     except ObjectDoesNotExist as e:
-        logger.error(f"Failed to remove an in-existent GDSFile: {str(e)}")
+        logger.info(f"No deletion required. Non-existent GDSFile (volume={volume_name}, path={path}): {str(e)}")
 
 
 @transaction.atomic

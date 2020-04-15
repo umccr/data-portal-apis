@@ -130,8 +130,6 @@ class LIMSLambdaTests(TestCase):
         self.assertEqual(LIMSRow.objects.get(illumina_id='IlluminaID1', sample_id=sample_id).results, row_1['Results'])
         # No update is expected
         self.assertEqual(process_results['lims_row_update_count'], 0)
-        # We should also have created the association
-        self.assertEqual(process_results['association_count'], 0)
 
     def test_lims_update_processor(self) -> None:
         """
@@ -158,8 +156,6 @@ class LIMSLambdaTests(TestCase):
         self.assertEqual(process_results['lims_row_update_count'], 1)
         # The actual object should have been updated
         self.assertEqual(LIMSRow.objects.get(illumina_id='IlluminaID1', sample_id='SampleID1').results, new_results)
-        # We no association should have been created as we havent saved any S3Object record
-        self.assertEqual(process_results['association_count'], 0)
 
         # Test when we have duplicate row id, task should fail
         row_duplicate = generate_lims_csv_row_dict('3')

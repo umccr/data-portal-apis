@@ -26,7 +26,7 @@ IMPLEMENTED_ENS_TYPES = [GDS_FILES]
 
 def handler(event, context):
     logger.info("Start processing IAP ENS event")
-    logger.info(json.dumps(event))
+    logger.info(event)
 
     messages = event['Records']
 
@@ -43,3 +43,5 @@ def handler(event, context):
                 delete_gds_file(message_body_json)
             else:
                 create_or_update_gds_file(message_body_json)
+
+    logger.info("IAP ENS event processing complete")
