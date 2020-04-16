@@ -211,7 +211,7 @@ def __persist_lims_data(csv_input: BytesIO, rewrite: bool = False) -> Dict[str, 
         row_id = (illumina_id, library_id)
 
         if sample_id is None or library_id is None or sample_id == na_symbol or library_id == na_symbol:
-            logger.info(f"Skip row {row_number}. SampleID or LibraryID column is null or NA.")
+            logger.debug(f"Skip row {row_number}. SampleID or LibraryID column is null or NA.")
             lims_row_invalid_count += 1
             continue
 

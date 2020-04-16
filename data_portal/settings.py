@@ -16,8 +16,6 @@ env = Env(
 
 IS_OFFLINE = os.environ.get("IS_OFFLINE", False)
 
-Env.read_env()
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,9 +25,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if IS_OFFLINE:
+    Env.read_env()
     SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+    DATABASES = {'default': env.db()}
 else:
     SECRET_KEY = libssm.get_secret(os.environ['SSM_KEY_NAME_DJANGO_SECRET_KEY'])
+    DATABASES = {
+        'default': Env.db_url_config(libssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
+    }
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
@@ -87,15 +90,6 @@ WSGI_APPLICATION = 'data_portal.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
-if IS_OFFLINE:
-    DATABASES = {
-        'default': env.db()
-    }
-else:
-    DATABASES = {
-        'default': Env.db_url_config(libssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
-    }
 
 DATABASES['default']['OPTIONS'] = {
     'connect_timeout': 3
