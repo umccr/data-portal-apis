@@ -10,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 from django.utils.dateparse import parse_datetime
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, is_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile
 from utils import libgdrive, libssm, libs3
@@ -335,7 +335,7 @@ def create_or_update_gds_file(payload: dict):
 
     qs = GDSFile.objects.filter(volume_name=volume_name, path=path)
     if not qs.exists():
-        logger.info(f"Creating a new GDSFile (volume_name={volume_name}, path={path})")
+        logger.info(f"Creating new GDSFile (volume_name={volume_name}, path={path})")
         gds_file = GDSFile()
     else:
         logger.info(f"Updating existing GDSFile (volume_name={volume_name}, path={path})")
@@ -349,16 +349,21 @@ def create_or_update_gds_file(payload: dict):
     gds_file.tenant_id = payload.get('tenantId')
     gds_file.sub_tenant_id = payload.get('subTenantId')
     gds_file.path = path
-    gds_file.time_created = make_aware(parse_datetime(payload.get('timeCreated')))
+    time_created = parse_datetime(payload.get('timeCreated'))
+    gds_file.time_created = time_created if is_aware(time_created) else make_aware(time_created)
     gds_file.created_by = payload.get('createdBy')
-    gds_file.time_modified = payload.get('timeModified')
+    time_modified = parse_datetime(payload.get('timeModified'))
+    gds_file.time_modified = time_modified if is_aware(time_modified) else make_aware(time_modified)
     gds_file.modified_by = payload.get('modifiedBy')
-    gds_file.inherited_acl = payload.get('inheritedAcl')
+    gds_file.inherited_acl = payload.get('inheritedAcl', None)
     gds_file.urn = payload.get('urn')
     gds_file.size_in_bytes = payload.get('sizeInBytes')
     gds_file.is_uploaded = payload.get('isUploaded')
     gds_file.archive_status = payload.get('archiveStatus')
-    gds_file.time_archived = payload.get('timeArchived', None)
+    time_archived = payload.get('timeArchived', None)
+    if time_archived:
+        time_archived = parse_datetime(time_archived)
+        gds_file.time_archived = time_archived if is_aware(time_archived) else make_aware(time_archived)
     gds_file.storage_tier = payload.get('storageTier')
     gds_file.presigned_url = payload.get('presignedUrl', None)
     gds_file.save()

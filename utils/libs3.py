@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+"""libs3 module
+
+Module interface for underlay S3 client operations
+Loosely based on design patterns: Facade, Adapter/Wrapper
+
+Should retain/suppress all boto S3 API calls here, including
+boto specific exceptions and, boto specific data type that need
+for processing response.
+
+Goal is, so that else where in code, it does not need to depends on boto3
+API directly. i.e. No more import boto3, but just import libs3 instead.
+
+If unsure, start with Pass-through call.
+"""
 import logging
 from datetime import datetime
 

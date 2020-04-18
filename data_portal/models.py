@@ -224,7 +224,7 @@ class GDSFile(models.Model):
     created_by = models.CharField(max_length=255)
     time_modified = models.DateTimeField()
     modified_by = models.CharField(max_length=255)
-    inherited_acl = models.TextField()
+    inherited_acl = models.TextField(null=True, blank=True)
     urn = models.TextField()
     size_in_bytes = models.BigIntegerField()
     is_uploaded = models.BooleanField(null=True)

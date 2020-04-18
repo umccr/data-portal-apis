@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""libgdrive module
+
+Module interface for underlay Google Drive client operations
+Loosely based on design patterns: Facade, Adapter/Wrapper
+
+Should retain/suppress all Google Drive API calls here, including
+Google API specific exceptions and data type that need for processing response.
+
+Goal is, so that else where in code, it does not need to depends on googleapiclient
+API directly. i.e. No more import googleapiclient, but just import libgdrive instead.
+
+If unsure, start with Pass-through call.
+"""
 import io
 import json
 import logging
