@@ -3,7 +3,7 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow
+from data_portal.models import S3Object, LIMSRow, GDSFile
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 
@@ -206,3 +206,9 @@ class BucketIdSerializer(serializers.BaseSerializer):
 
     def create(self, validated_data):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+
+class GDSFileModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GDSFile
+        fields = '__all__'

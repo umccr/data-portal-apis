@@ -203,6 +203,32 @@ class Configuration(models.Model):
         return True
 
 
+class GDSFileManager(models.Manager):
+
+    def get_all(self):
+        return self.exclude(path__contains='.snakemake')
+
+    def get_by_subject_id(self, subject_id: str, **kwargs) -> QuerySet:
+        qs: QuerySet = self.filter(path__icontains=subject_id).exclude(path__contains='.snakemake')
+        volume_name = kwargs.get('volume_name', None)
+        if volume_name:
+            qs = qs.filter(volume_name=volume_name)
+        volume_id = kwargs.get('volume_id', None)
+        if volume_id:
+            qs = qs.filter(volume_name=volume_id)
+        return qs
+
+    def get_by_illumina_id(self, illumina_id: str, **kwargs) -> QuerySet:
+        qs: QuerySet = self.filter(path__icontains=illumina_id)
+        volume_name = kwargs.get('volume_name', None)
+        if volume_name:
+            qs = qs.filter(volume_name=volume_name)
+        volume_id = kwargs.get('volume_id', None)
+        if volume_id:
+            qs = qs.filter(volume_name=volume_id)
+        return qs
+
+
 class GDSFile(models.Model):
     """
     Model wrap around IAP GDS File - GET /v1/files/{fileId}
@@ -233,6 +259,8 @@ class GDSFile(models.Model):
     storage_tier = models.CharField(max_length=255)
     presigned_url = models.TextField(null=True, blank=True)
     unique_hash = HashField(unique=True, base_fields=['volume_name', 'path'], default=None)
+
+    objects = GDSFileManager()
 
     def __str__(self):
         return f"File '{self.name}' in volume '{self.volume_name}' with path '{self.path}'"

@@ -7,10 +7,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from utils import libs3
-from .models import LIMSRow, S3Object
+from .models import LIMSRow, S3Object, GDSFile
 from .pagination import StandardResultsSetPagination
 from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
-    BucketIdSerializer
+    BucketIdSerializer, GDSFileModelSerializer
 
 logger = logging.getLogger()
 
@@ -20,7 +20,7 @@ LIMS_SEARCH_ORDER_FIELDS = [
 ]
 
 
-def presign_response(bucket, key):
+def _presign_response(bucket, key):
     response = libs3.presign_s3_file(bucket, key)
     if response[0]:
         return Response({'signed_url': response[1]})
@@ -50,7 +50,7 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
     @action(detail=True)
     def presign(self, request, pk=None):
         obj: S3Object = self.get_object()
-        return presign_response(obj.bucket, obj.key)
+        return _presign_response(obj.bucket, obj.key)
 
     @action(detail=True)
     def status(self, request, pk=None):
@@ -66,6 +66,26 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
         obj: S3Object = self.get_object()
         response = libs3.restore_s3_object(obj.bucket, obj.key, days=payload['days'], email=payload['email'])
         return Response(response[1])
+
+
+class GDSFileViewSet(ReadOnlyModelViewSet):
+    queryset = GDSFile.objects.get_all()
+    serializer_class = GDSFileModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['path']
+    search_fields = ['$path']
+
+    # TODO client direct API request to GDS endpoint?
+    # @action(detail=True)
+    # def presign(self, request, pk=None):
+    #     obj: GDSFile = self.get_object()
+    #     response = libgds.get_file(obj.file_id)
+    #     if response[0]:
+    #         return Response({'signed_url': response[1]})
+    #     else:
+    #         return Response({'error': response[1]})
 
 
 class BucketViewSet(ReadOnlyModelViewSet):
@@ -100,10 +120,16 @@ class SubjectViewSet(ReadOnlyModelViewSet):
 
         data = {'id': pk}
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
+        _base_url = request.build_absolute_uri()
         data.update(
             s3={
                 'count': S3Object.objects.get_by_subject_id(pk).count(),
-                'next': request.build_absolute_uri() + '/s3'
+                'next': _base_url + 's3' if _base_url.endswith('/') else _base_url + '/s3'
+            })
+        data.update(
+            gds={
+                'count': GDSFile.objects.get_by_subject_id(pk).count(),
+                'next': _base_url + 'gds' if _base_url.endswith('/') else _base_url + '/gds'
             })
         data.update(features=features)
         data.update(results=S3ObjectModelSerializer(results, many=True).data)
@@ -130,6 +156,26 @@ class SubjectS3ObjectViewSet(ReadOnlyModelViewSet):
         return super(SubjectS3ObjectViewSet, self).handle_exception(exc)
 
 
+class SubjectGDSFileViewSet(ReadOnlyModelViewSet):
+    serializer_class = GDSFileModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['path']
+    search_fields = ['$path']
+
+    def get_queryset(self):
+        volume_name = self.request.query_params.get('volume_name', None)
+        return GDSFile.objects.get_by_subject_id(self.kwargs['subject_pk'], volume_name=volume_name)
+
+    def handle_exception(self, exc):
+        logger.exception(exc)
+        if isinstance(exc, InternalError):
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super(SubjectGDSFileViewSet, self).handle_exception(exc)
+
+
 class RunViewSet(ReadOnlyModelViewSet):
     queryset = LIMSRow.objects.values_list('illumina_id', named=True).filter(illumina_id__isnull=False).distinct()
     serializer_class = RunIdSerializer
@@ -140,6 +186,7 @@ class RunViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def retrieve(self, request, pk=None, **kwargs):
+        volume_name = self.request.query_params.get('volume_name', 'umccr-run-data-dev')  # FIXME
         data = {
             'id': pk,
             'lims': {
@@ -147,12 +194,15 @@ class RunViewSet(ReadOnlyModelViewSet):
             },
             's3': {
                 'count': S3Object.objects.get_by_illumina_id(pk).count()
-            }
+            },
+            'gds': {
+                'count': GDSFile.objects.get_by_illumina_id(pk, volume_name=volume_name).count()
+            },
         }
         return Response(data)
 
 
-class RunDataViewSet(ReadOnlyModelViewSet):
+class RunDataS3ObjectViewSet(ReadOnlyModelViewSet):
     serializer_class = S3ObjectModelSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -169,10 +219,30 @@ class RunDataViewSet(ReadOnlyModelViewSet):
         if isinstance(exc, InternalError):
             return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return super(RunDataViewSet, self).handle_exception(exc)
+        return super(RunDataS3ObjectViewSet, self).handle_exception(exc)
 
 
-class RunMetaDataViewSet(ReadOnlyModelViewSet):
+class RunDataGDSFileViewSet(ReadOnlyModelViewSet):
+    serializer_class = GDSFileModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['path']
+    search_fields = ['$path']
+
+    def get_queryset(self):
+        volume_name = self.request.query_params.get('volume_name', 'umccr-run-data-dev')  # FIXME
+        return GDSFile.objects.get_by_illumina_id(self.kwargs['run_pk'], volume_name=volume_name)
+
+    def handle_exception(self, exc):
+        logger.exception(exc)
+        if isinstance(exc, InternalError):
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super(RunDataGDSFileViewSet, self).handle_exception(exc)
+
+
+class RunDataLIMSViewSet(ReadOnlyModelViewSet):
     serializer_class = LIMSRowModelSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -199,4 +269,4 @@ class PresignedUrlViewSet(ViewSet):
         if bucket is None or key is None:
             return Response({'error': 'Missing required parameters: bucket or key'})
 
-        return presign_response(bucket, key)
+        return _presign_response(bucket, key)
