@@ -20,7 +20,7 @@ phases:
         nodejs: 12
         python: 3.8
     commands:
-      - pip install '.[test]' -r requirements.txt
+      - pip install -r requirements-test.txt
       - yarn global add serverless
       - yarn install
   build:

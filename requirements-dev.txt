@@ -1,0 +1,3 @@
+-r requirements-test.txt
+pipdeptree
+django_extensions
