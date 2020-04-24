@@ -1,4 +1,4 @@
-service: data-portal-app-api
+service: data-portal-api
 
 plugins:
   - serverless-wsgi
@@ -13,6 +13,7 @@ provider:
   runtime: python3.8
   stage: ${opt:STAGE}
   region: ap-southeast-2
+  deploymentBucket: ${env:SERVERLESS_DEPLOYMENT_BUCKET}
   role: ${env:LAMBDA_IAM_ROLE_ARN}
   vpc:
     securityGroupIds:
@@ -30,6 +31,7 @@ provider:
     SSM_KEY_NAME_FULL_DB_URL: ${env:SSM_KEY_NAME_FULL_DB_URL}
     LIMS_BUCKET_NAME: ${env:LIMS_BUCKET_NAME}
     LIMS_CSV_OBJECT_KEY: ${env:LIMS_CSV_OBJECT_KEY}
+    DJANGO_SETTINGS_MODULE: data_portal.settings.aws
 
 functions:
   api:
@@ -266,4 +268,11 @@ package:
     - mocks/**
     - downloads/**
     - venv/**
+    - .venv/**
     - env/**
+    - data/**
+    - docker-compose.yml
+    - docker-compose.override.sample.yml
+    - docker-compose.override.yml
+    - main.tf
+    - .terraform/**

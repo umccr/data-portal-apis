@@ -4,91 +4,70 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 
 A fresh deployment has to _first_ done with [Terraform Data Portal stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal).
 
-Then, this stack is provisioned by the Serverless framework (`serverless.yml`), within AWS CodeBuild/CodePipeline environment (`buildspec.yml`), where environment variables originated from Terraform > CodeBuild to Serverless.
-
-## Stack Overview
-
-#### Lambda functions
-- `api` (available through API Gateway): 
-  - s3 file search
-  - s3 url signing
-- `sqs_s3_event_processor`: handles S3 create/update/delete events, through SQS (which is provisioned by
-  Terraform)
-- `lims_update_processor`: handles LIMS spreadsheet update
-  - Note that if we want to rewrite LIMS data (where we also have production-scale s3 objects data in the db), 
-    we will need to run `data_processors/lims_rewrite_processor.py` (or Django management command `lims_rewrite` 
-    for custom csv file S3 location) in a separate place such as an EC2 environment,
-    which should be in the same VPC and Security Group as the lambda functions.
-- `migrate`: used for updating db schema, run at the end of serverless deployment 
-   (see `deploy:finalize` in `serverless.yml`)
-
-#### API
-- Custom API domain
-  - The domain name is given by Terraform
-- WAF (Web Application Firewall)
-  - Associated with the WAF provisioned by Terraform
-
+Then, this stack is provisioned by the Serverless framework (`serverless.yml`), within AWS CodeBuild and CodePipeline environment (`buildspec.yml`), where environment variables originated from Terraform > CodeBuild > Serverless.
 
 ## Development
 
-#### Python & Django directory structure
-- `data_portal/`: use this as the Django project root for IDEs such as PyCharm
-  - `management/commands/`: custom commands, currently only have `lims_rewrite_processor` as mentioned above
-  - `migrations/`: auto-generated (by Django) db migration files
-  - `tests/`: unit tests for scripts in `data_portal` package
-- `data_processors/`: where all data processors reside in. 
-  - `tests`: unit tests for all these data processing functions
-- `utils/`: utility functions
-
 #### Local Development
-- With in virtualenv for Python, we can do things like `manage.py xxx`.
-- We can also use `serverless invoke` to invoke our lambda functions locally:
-  - `serverless invoke local --function {function_name} --STAGE dev --path {mock_file_path}.json`
-- As the stack is dependent on a number of env variables, we need to manually
-  export them in local environment. We can simply use the CAPITAL_LETTER_ONES (and their values) in Terraform output.
+
+- Required Python 3.8 (see [.python-version](.python-version)) and recommended PyCharm IDE
+
+```
+docker-compose up -d
+pip install -r requirements-dev.txt
+export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+python manage.py runserver_plus --print-sql
+```
+
+- http://localhost:8000
+- http://localhost:8181
+
 
 #### Testing
-- Integration tests are available at different places (and we can do `python manage.py test {package}` to run these
-  tests.
-- Integration tests are integrated as part of the CodeBuild. (See `buildspec.yml`)
-- As AWS services are involved in the workflow of some functions, so for testing
- `moto` is used for mocking these services.
- 
-## Destroy
- 
-* Before tear down Terraform stack, it is required to run `serverless remove` to tear down application Lambda, API Gateway, API domain, and S3 buckets, ... i.e. resources created by this serverless stack, _manually_ (contrast to serverless deploy done through CodeBuild/CodePipeline in CI/CD fashion). 
-* First, `terraform output` and export all UPPERCASE environment variables.
-* Then, run `serverless delete_domain && serverless remove` to tear down the stack.
-* Example as follows:
+
+- Run test suite
+```
+python manage.py test
+```
+
+- Run individual test case, e.g.
+```
+python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique_hash
+```
+
+#### Serverless
+
+- You can serverless invoke or deploy from local dev. But favour over CodeBuild pipeline for deploying into production environment.
+- Serverless deploy target only to AWS. Therefore need to setup AWS environment specific variables as follows:
 ```
 ssoawsdev
 export AWS_PROFILE=dev
 
-cd {...}/umccr/infrastructure/terraform/stacks/umccr_data_portal
-terraform workspace select dev
-terraform output
-export API_DOMAIN_NAME=<value>
-export CERTIFICATE_ARN=<value>
-export LAMBDA_IAM_ROLE_ARN=<value>
-export LAMBDA_SECURITY_GROUP_IDS=<value>
-export LAMBDA_SUBNET_IDS=<value>
-export LIMS_BUCKET_NAME=<value>
-export LIMS_CSV_OBJECT_KEY=<value>
-export S3_EVENT_SQS_ARN=<value>
-export SSM_KEY_NAME_DJANGO_SECRET_KEY=<value>
-export SSM_KEY_NAME_FULL_DB_URL=<value>
-export WAF_NAME=<value>
+terraform init .
+source mkvar.sh dev
 
-cd {...}/umccr/data-portal/data-portal-apis
-SLS_DEBUG=true serverless deploy list --STAGE dev
-SLS_DEBUG=true serverless info --STAGE dev
+serverless info --STAGE dev
+serverless deploy --STAGE dev
+serverless invoke -f migrate --STAGE dev --noinput
+serverless invoke -f lims_scheduled_update_processor --STAGE dev --noinput
 
-aws s3 ls | grep serverless
-aws apigateway get-rest-apis
-aws lambda list-functions | grep portal
-aws cloudformation list-stacks | grep portal
+(OR)
 
-(if all good then)
+aws lambda invoke --function-name data-portal-api-dev-migrate output.json
+aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_processor output.json
+```
+
+## Destroy
+
+- Before tear down [Terraform stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal), it is required to run `serverless remove` to remove Lambda, API Gateway, API domain, ... resources created by this serverless stack.
+- Example as follows:
+```
+ssoawsdev
+export AWS_PROFILE=dev
+
+terraform init .
+source mkvar.sh dev
+
 SLS_DEBUG=true serverless delete_domain --STAGE dev
 SLS_DEBUG=true serverless remove --STAGE dev
 ```

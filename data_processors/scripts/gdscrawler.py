@@ -4,14 +4,23 @@
 Meant to run as offline tool to ingest GDS files metadata into Portal database
 
 Usage:
-0. export IAP_BASE_URL=<baseUrl>  e.g. https://aps2.plaftorm.illumina.com
-1. export IAP_AUTH_TOKEN=<tok>
-2. export IAP_GDS_VOLUME=<volNameOrId>  e.g. umccr-temp-dev  Optional otherwise, see --volume
-3. For Django settings, terraform output and export all CAPITAL variables as environment variables
-4. ssoawsprod and export AWS_PROFILE=prod
-5. screen or tmux session
-6. python -m data_processors.scripts.gdscrawler -h
-7. python -m data_processors.scripts.gdscrawler -v umccr-primary-data-dev -l
+0. screen or tmux session
+1. export IAP_BASE_URL=<baseUrl>  e.g. https://aps2.plaftorm.illumina.com
+2. export IAP_AUTH_TOKEN=<tok>
+3. export IAP_GDS_VOLUME=<volNameOrId>  e.g. umccr-temp-dev  Optional otherwise, see --volume
+
+(If run against AWS)
+1. ssoawsdev
+2. export AWS_PROFILE=dev
+3. terraform init .
+4. source mkvar.sh dev
+5. export DJANGO_SETTINGS_MODULE=data_portal.settings.aws
+
+(If run against local)
+1. export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+
+1. python -m data_processors.scripts.gdscrawler -h
+2. python -m data_processors.scripts.gdscrawler -v umccr-primary-data-dev -l
 """
 import argparse
 import json
@@ -27,7 +36,7 @@ logger.setLevel(logging.INFO)
 
 if __name__ == '__main__':
     import django
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
     django.setup()
     from data_processors import services
 

@@ -12,11 +12,20 @@ Cost:
     For 2712 .bam objects, 2712 * 0.00594 / 1000 = $0.01610928
 
 Usage:
-1. For Django settings, terraform output and export all CAPITAL variables as environment variables
-2. ssoawsprod and export AWS_PROFILE=prod
-3. screen or tmux session
-4. python -m data_processors.scripts.tagger -h
-5. python -m data_processors.scripts.tagger umccr-primary-data-dev -l
+0. screen or tmux session
+
+(If run against AWS)
+1. ssoawsdev
+2. export AWS_PROFILE=dev
+3. terraform init .
+4. source mkvar.sh dev
+5. export DJANGO_SETTINGS_MODULE=data_portal.settings.aws
+
+(If run against local)
+1. export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+
+1. python -m data_processors.scripts.tagger -h
+2. python -m data_processors.scripts.tagger umccr-primary-data-dev -l
 """
 import argparse
 import logging
@@ -32,7 +41,7 @@ FILTER_SUFFIX = ".bam"
 
 if __name__ == '__main__':
     import django
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
     django.setup()
     from data_processors import services
 

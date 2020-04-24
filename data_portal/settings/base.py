@@ -1,46 +1,29 @@
-"""
-Django settings for data portal site.
-"""
+# -*- coding: utf-8 -*-
+"""base Django settings for data portal
 
+Refer Django settings documentation
+https://docs.djangoproject.com/en/3.0/ref/settings/
+
+Usage:
+- base settings are setup for local quick start convenience
+- extend and overwrite this base settings
+- e.g. see local.py or aws.py
+
+WARNING:
+- DO NOT USE BASE SETTINGS FOR PRODUCTION
+"""
 import os
+import uuid
 
 from corsheaders.defaults import default_headers
-from environ import Env
 
-from utils import libssm
-
-env = Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
-
-IS_OFFLINE = os.environ.get("IS_OFFLINE", False)
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', uuid.uuid4())
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-if IS_OFFLINE:
-    Env.read_env()
-    SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
-    DATABASES = {'default': env.db()}
-else:
-    SECRET_KEY = libssm.get_secret(os.environ['SSM_KEY_NAME_DJANGO_SECRET_KEY'])
-    DATABASES = {
-        'default': Env.db_url_config(libssm.get_secret(os.environ['SSM_KEY_NAME_FULL_DB_URL']))
-    }
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = os.getenv('DJANGO_DEBUG', True)
 
 ALLOWED_HOSTS = ['*']
-
-
-# Application definition
 
 INSTALLED_APPS = [
     'corsheaders',
@@ -87,16 +70,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'data_portal.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
-DATABASES['default']['OPTIONS'] = {
-    'connect_timeout': 3
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
 }
-
-# Password validation
-# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -113,10 +92,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/2.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -127,23 +102,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.2/howto/static-files/
-
 STATIC_URL = '/static/'
-
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
-}
-
-# Enable CORS
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    'x-amz-security-token',
-    'x-amz-date',
-]
 
 LOGGING = {
     'version': 1,
@@ -166,3 +125,17 @@ LOGGING = {
         },
     },
 }
+
+# ---
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-amz-security-token',
+    'x-amz-date',
+]

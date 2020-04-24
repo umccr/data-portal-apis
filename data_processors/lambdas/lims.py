@@ -6,7 +6,7 @@ except ImportError:
 import django
 import os
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
 
 # ---
