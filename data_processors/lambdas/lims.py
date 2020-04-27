@@ -14,40 +14,10 @@ django.setup()
 import logging
 from typing import Dict
 
-from data_processors.services import persist_lims_data, persist_lims_data_from_google_drive
+from data_processors.services import persist_lims_data_from_google_drive
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
-def update_handler(event, context) -> Dict[str, int]:
-    """
-    Update handler for LIMS data csv file drop into designated S3 bucket
-
-    :param event:
-    :param context:
-    :return: stat of LIMS update
-    """
-    return persist_lims_data(
-        csv_bucket=os.environ['LIMS_BUCKET_NAME'],
-        csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
-        rewrite=False,
-    )
-
-
-def rewrite_handler(event, context) -> Dict[str, int]:
-    """
-    Update handler for LIMS data csv file drop into designated S3 bucket with rewrite True
-
-    :param event:
-    :param context:
-    :return: stat of LIMS update
-    """
-    return persist_lims_data(
-        csv_bucket=os.environ['LIMS_BUCKET_NAME'],
-        csv_key=os.environ['LIMS_CSV_OBJECT_KEY'],
-        rewrite=True,
-    )
 
 
 def scheduled_update_handler(event, context) -> Dict[str, int]:

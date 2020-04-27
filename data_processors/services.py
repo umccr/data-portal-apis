@@ -153,22 +153,6 @@ def tag_s3_object(bucket_name: str, key: str):
 
 
 @transaction.atomic
-def persist_lims_data(csv_bucket: str, csv_key: str, rewrite: bool = False) -> Dict[
-    str, int]:
-    """
-    Persist lims data into the db
-    :param csv_bucket: the s3 bucket storing the csv file
-    :param csv_key: the s3 file key of the csv
-    :param rewrite: whether we are rewriting the data
-    :return: result statistics - count of updated, new and invalid LIMS rows
-    """
-    logger.info("Reading LIMS data from S3 bucket")
-    bytes_data = libs3.read_s3_object_body(csv_bucket, csv_key)
-    csv_input = BytesIO(bytes_data)
-    return __persist_lims_data(csv_input, rewrite)
-
-
-@transaction.atomic
 def persist_lims_data_from_google_drive(account_info_ssm_key: str, file_id_ssm_key: str) -> Dict[str, int]:
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LIMS data from google drive at {requested_time}")
@@ -178,11 +162,11 @@ def persist_lims_data_from_google_drive(account_info_ssm_key: str, file_id_ssm_k
         file_id=libssm.get_secret(file_id_ssm_key),
     )
     csv_input = BytesIO(bytes_data)
-    return __persist_lims_data(csv_input)
+    return persist_lims_data(csv_input)
 
 
 @transaction.atomic
-def __persist_lims_data(csv_input: BytesIO, rewrite: bool = False) -> Dict[str, int]:
+def persist_lims_data(csv_input: BytesIO, rewrite: bool = False) -> Dict[str, int]:
     """
     Persist lims data into the db
     :param csv_input: buffer instance of BytesIO

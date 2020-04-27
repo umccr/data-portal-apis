@@ -29,8 +29,6 @@ provider:
     SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON: ${env:SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON}
     SSM_KEY_NAME_DJANGO_SECRET_KEY: ${env:SSM_KEY_NAME_DJANGO_SECRET_KEY}
     SSM_KEY_NAME_FULL_DB_URL: ${env:SSM_KEY_NAME_FULL_DB_URL}
-    LIMS_BUCKET_NAME: ${env:LIMS_BUCKET_NAME}
-    LIMS_CSV_OBJECT_KEY: ${env:LIMS_CSV_OBJECT_KEY}
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
 
 functions:
@@ -215,16 +213,6 @@ functions:
     events:
       - sqs:
           arn: ${env:IAP_ENS_EVENT_SQS_ARN}
-  lims_update_processor:
-    handler: data_processors.lambdas.lims.update_handler
-    events:
-      - s3:
-          bucket: ${env:LIMS_BUCKET_NAME}
-          event: s3:ObjectCreated:*
-          rules:
-            - suffix: ${env:LIMS_CSV_OBJECT_KEY}
-          existing: true
-    timeout: 28
   lims_scheduled_update_processor:
     handler: data_processors.lambdas.lims.scheduled_update_handler
     events:
