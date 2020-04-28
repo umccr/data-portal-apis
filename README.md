@@ -2,9 +2,11 @@
 
 Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal Client](https://github.com/umccr/data-portal-client).
 
-A fresh deployment has to _first_ done with [Terraform Data Portal stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal).
+## Deployment
 
-Then, this stack is provisioned by the Serverless framework (`serverless.yml`), within AWS CodeBuild and CodePipeline environment (`buildspec.yml`), where environment variables originated from Terraform > CodeBuild > Serverless.
+1. A fresh deployment has to _first_ done with [Terraform Data Portal stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal), as IaC for longer-live infrastructure artifacts/services deployment.
+
+2. Then, this API (shorter-live, a more repetitive backend stack) is provisioned by the Serverless framework (`serverless.yml`), within AWS CodeBuild and CodePipeline CI/CD build setup (`buildspec.yml`) -- whereas **AWS specific environment variables** originated from `Terraform > CodeBuild > Serverless`.
 
 ## Development
 

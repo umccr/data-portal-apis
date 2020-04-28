@@ -1,9 +1,15 @@
 #!/usr/bin/env source
 # -*- coding: utf-8 -*-
 # Sourcing this script will perform
-#   terraform workspace select <dev|prod>
-#   terraform output
-# and, all upper case terraform output variables will be exported into environment variables
+#   1. terraform workspace select <dev|prod>
+#   2. terraform output
+#   3. and, all upper case terraform output variables will be exported into environment variables
+#
+# CAVEATS:
+# Tried to be POSIX-y shell script with cut, grep, tr for text wrangling.
+# Tested on macOS. Should ever fail this, try export env var from terraform output as steps above.
+# Only needed for Serverless purpose though, see ${env:XXX} in serverless.yml.
+# Local development setup does not depends on these AWS specific env var.
 
 if [ "$(ps -p $$ -ocomm=)" = 'zsh' ] || [ "${BASH_SOURCE[0]}" -ef "$0" ]
 then
@@ -34,8 +40,8 @@ while IFS= read -r line; do
   l=$(echo "$line" | cut -c1-2)
   if echo "$l" | grep -Eq '[A-Z]'; then
     var=$(echo "$line" | tr -d " ")
-    k=$(echo "$var" | cut -d'=' -f1)
     if [ -n "$2" ] && [ "$2" = "unset" ]; then
+      k=$(echo "$var" | cut -d'=' -f1)
       echo "unset $k"
       unset "$k"
     else
@@ -51,6 +57,8 @@ if [ -n "$2" ] && [ "$2" = "unset" ]; then
   echo "unset STAGE"
   unset STAGE
 else
-  echo "export STAGE=dev"
-  export STAGE=dev
+  echo "export STAGE=$1"
+  export STAGE=$1
 fi
+
+terraform workspace select default
