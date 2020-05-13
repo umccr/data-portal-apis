@@ -14,14 +14,15 @@ django.setup()
 import json
 import logging
 
-from data_processors.services import delete_gds_file, create_or_update_gds_file
+from data_processors import services as srv
 from data_processors.exceptions import *
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 GDS_FILES = 'gds.files'
-IMPLEMENTED_ENS_TYPES = [GDS_FILES]
+BSSH_RUNS = 'bssh.runs'
+IMPLEMENTED_ENS_TYPES = [GDS_FILES, BSSH_RUNS]
 
 
 def handler(event, context):
@@ -36,12 +37,22 @@ def handler(event, context):
         if event_type not in IMPLEMENTED_ENS_TYPES:
             raise UnsupportedIAPEventNotificationServiceType(event_type)
 
+        event_action = message['messageAttributes']['action']['stringValue']
+        message_body_json = json.loads(message['body'])
+
         if event_type == GDS_FILES:
-            event_action = message['messageAttributes']['action']['stringValue']
-            message_body_json = json.loads(message['body'])
             if event_action == 'deleted':
-                delete_gds_file(message_body_json)
+                srv.delete_gds_file(message_body_json)
             else:
-                create_or_update_gds_file(message_body_json)
+                srv.create_or_update_gds_file(message_body_json)
+
+        if event_type == BSSH_RUNS:
+            payload = {}
+            payload.update(message_body_json)
+            payload.update(messageAttributesAction=event_action)
+            payload.update(messageAttributesActionType=event_type)
+            payload.update(messageAttributesActionDate=message['messageAttributes']['actiondate']['stringValue'])
+            payload.update(messageAttributesProducedBy=message['messageAttributes']['producedby']['stringValue'])
+            srv.create_or_update_sequence_run(payload)
 
     logger.info("IAP ENS event processing complete")

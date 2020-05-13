@@ -12,7 +12,7 @@ from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun
 from utils import libgdrive, libssm, libs3
 from utils.datetime import parse_lims_timestamp
 
@@ -351,3 +351,42 @@ def create_or_update_gds_file(payload: dict):
     gds_file.storage_tier = payload.get('storageTier')
     gds_file.presigned_url = payload.get('presignedUrl', None)
     gds_file.save()
+
+
+@transaction.atomic
+def create_or_update_sequence_run(payload: dict):
+    run_id = payload.get('id')
+    date_modified = payload.get('dateModified')
+    status = payload.get('status')
+
+    qs = SequenceRun.objects.filter(run_id=run_id, date_modified=date_modified, status=status)
+    if not qs.exists():
+        logger.info(f"Creating new SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
+        sqr = SequenceRun()
+    else:
+        logger.info(f"Updating existing SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
+        sqr: SequenceRun = qs.get()
+
+    sqr.run_id = run_id
+    sqr.date_modified = date_modified
+    sqr.status = status
+    sqr.gds_folder_path = payload.get('gdsFolderPath')
+    sqr.gds_volume_name = payload.get('gdsVolumeName')
+    sqr.reagent_barcode = payload.get('reagentBarcode')
+    sqr.v1pre3_id = payload.get('v1pre3Id')
+    sqr.acl = payload.get('acl')
+    sqr.flowcell_barcode = payload.get('flowcellBarcode')
+    sqr.sample_sheet_name = payload.get('sampleSheetName')
+    sqr.api_url = payload.get('apiUrl')
+    sqr.name = payload.get('name')
+    sqr.instrument_run_id = payload.get('instrumentRunId')
+    sqr.msg_attr_action = payload.get('messageAttributesAction')
+    sqr.msg_attr_action_date = payload.get('messageAttributesActionDate')
+    sqr.msg_attr_action_type = payload.get('messageAttributesActionType')
+    sqr.msg_attr_produced_by = payload.get('messageAttributesProducedBy')
+    sqr.save()
+
+    # TODO send slack message? only if new sequence run status i.e. `if not qs.exists()`,
+    # Otherwise; if it is a duplicate message, resolution is:
+    # - the existing SequenceRun db record will get updated -- last message win strategy  (current choice)
+    # - Or, we could discard it -- first message win strategy

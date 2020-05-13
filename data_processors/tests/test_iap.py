@@ -4,7 +4,7 @@ import logging
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 
-from data_portal.models import GDSFile
+from data_portal.models import GDSFile, SequenceRun
 from data_portal.tests.factories import GDSFileFactory
 from data_processors.exceptions import *
 from data_processors.lambdas import iap
@@ -221,3 +221,78 @@ class IAPLambdaTests(TestCase):
 
         iap.handler(sqs_event_message, None)
         self.assertRaises(ObjectDoesNotExist)
+
+    def test_sequence_run_event(self):
+
+        mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
+        mock_instrument_run_id = "200508_A01052_0001_AC5GT7ACGT"
+        mock_date_modified = "2020-05-09T22:17:03.1015272Z"
+        mock_status = "Complete"
+
+        sequence_run_message = {
+            "gdsFolderPath": f"/Runs/{mock_instrument_run_id}_{mock_run_id}",
+            "gdsVolumeName": "bssh.acgtacgt498038ed99fa94fe79523959",
+            "reagentBarcode": "NV9999999-ACGTA",
+            "v1pre3Id": "666666",
+            "dateModified": mock_date_modified,
+            "acl": [
+                "wid:acgtacgt-1980-38gt-99ac-94fa79523959"
+            ],
+            "flowcellBarcode": "BARCODEEE",
+            "sampleSheetName": "SampleSheet.csv",
+            "apiUrl": f"https://api.aps2.sh.basespace.illumina.com/v2/runs/{mock_run_id}",
+            "name": mock_instrument_run_id,
+            "id": mock_run_id,
+            "instrumentRunId": mock_instrument_run_id,
+            "status": mock_status
+        }
+
+        ens_sqs_message_attributes = {
+            "action": {
+                "stringValue": "statuschanged",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "actiondate": {
+                "stringValue": "2020-05-09T22:17:10.815Z",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "type": {
+                "stringValue": "bssh.runs",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "producedby": {
+                "stringValue": "BaseSpaceSequenceHub",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "contenttype": {
+                "stringValue": "application/json",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            }
+        }
+
+        sqs_event_message = {
+            "Records": [
+                {
+                    "eventSource": "aws:sqs",
+                    "body": json.dumps(sequence_run_message),
+                    "messageAttributes": ens_sqs_message_attributes
+                }
+            ]
+        }
+
+        iap.handler(sqs_event_message, None)
+
+        qs = SequenceRun.objects.filter(run_id=mock_run_id)
+        sqr = qs.get()
+        self.assertEqual(1, qs.count())
+        logger.info(f"Asserted found SequenceRun record from db: {sqr}")

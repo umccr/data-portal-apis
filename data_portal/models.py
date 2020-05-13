@@ -264,3 +264,32 @@ class GDSFile(models.Model):
 
     def __str__(self):
         return f"File '{self.name}' in volume '{self.volume_name}' with path '{self.path}'"
+
+
+class SequenceRun(models.Model):
+    class Meta:
+        unique_together = ['run_id', 'date_modified', 'status']
+
+    run_id = models.CharField(max_length=255)
+    date_modified = models.DateTimeField()
+    status = models.CharField(max_length=255)
+    gds_folder_path = models.TextField()
+    gds_volume_name = models.TextField()
+    reagent_barcode = models.CharField(max_length=255)
+    v1pre3_id = models.CharField(max_length=255)
+    acl = models.TextField()
+    flowcell_barcode = models.CharField(max_length=255)
+    sample_sheet_name = models.CharField(max_length=255)
+    api_url = models.TextField()
+    name = models.CharField(max_length=255)
+    instrument_run_id = models.CharField(max_length=255)
+    msg_attr_action = models.CharField(max_length=255)
+    msg_attr_action_type = models.CharField(max_length=255)
+    msg_attr_action_date = models.DateTimeField()
+    msg_attr_produced_by = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"Run ID '{self.run_id}', " \
+               f"Instrument ID '{self.instrument_run_id}', " \
+               f"Date Modified '{self.date_modified}', " \
+               f"Status '{self.status}'"

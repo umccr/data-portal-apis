@@ -1,7 +1,7 @@
 import factory
 from django.utils.timezone import now
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):
@@ -81,3 +81,26 @@ class GDSFileFactory(factory.django.DjangoModelFactory):
     is_uploaded = True
     archive_status = "None"
     storage_tier = "Standard"
+
+
+class SequenceRunFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SequenceRun
+
+    run_id = "r.ACGTlKjDgEy099ioQOeOWg"
+    date_modified = "2020-05-09T19:36:41.6573088Z"
+    status = "Complete"
+    instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
+    gds_folder_path = f"/Runs/{instrument_run_id}_{run_id}"
+    gds_volume_name = "bssh.acgtacgt498038ed99fa94fe79523959"
+    reagent_barcode = "NV9999999-RGSBS"
+    v1pre3_id = "666666"
+    acl = ["wid:acgtacgt-9999-38ed-99fa-94fe79523959"]
+    flowcell_barcode = "BARCODEEE"
+    sample_sheet_name = "SampleSheet.csv"
+    api_url = f"https://api.aps2.sh.basespace.illumina.com/v2/runs/{run_id}"
+    name = instrument_run_id
+    msg_attr_action = "statuschanged"
+    msg_attr_action_type = "bssh.runs"
+    msg_attr_action_date = "2020-05-09T22:17:10.815Z"
+    msg_attr_produced_by = "BaseSpaceSequenceHub"
