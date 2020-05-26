@@ -14,3 +14,10 @@ def get_secret(key) -> str:
         WithDecryption=True
     )
     return resp['Parameter']['Value']
+
+
+def get_ssm_param(name):
+    """
+    Fetch the parameter with the given name from SSM Parameter Store.
+    """
+    return get_secret(name)

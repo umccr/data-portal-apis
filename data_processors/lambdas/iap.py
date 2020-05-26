@@ -53,6 +53,10 @@ def handler(event, context):
             payload.update(messageAttributesActionType=event_type)
             payload.update(messageAttributesActionDate=message['messageAttributes']['actiondate']['stringValue'])
             payload.update(messageAttributesProducedBy=message['messageAttributes']['producedby']['stringValue'])
-            srv.create_or_update_sequence_run(payload)
+            sqr = srv.create_or_update_sequence_run(payload)
+            if sqr:
+                ts = message['attributes']['ApproximateFirstReceiveTimestamp']
+                aws_account = message['eventSourceARN'].split(':')[4]
+                srv.send_slack_message(sqr=sqr, sqs_record_timestamp=int(ts), aws_account=aws_account)
 
     logger.info("IAP ENS event processing complete")

@@ -1,8 +1,10 @@
 import json
 import logging
+import os
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
+from mockito import when, unstub, mock
 
 from data_portal.models import GDSFile, SequenceRun
 from data_portal.tests.factories import GDSFileFactory
@@ -14,6 +16,9 @@ logger.setLevel(logging.INFO)
 
 
 class IAPLambdaTests(TestCase):
+
+    def tearDown(self) -> None:
+        unstub()
 
     def test_uploaded_gds_file_event(self):
 
@@ -236,10 +241,10 @@ class IAPLambdaTests(TestCase):
             "v1pre3Id": "666666",
             "dateModified": mock_date_modified,
             "acl": [
-                "wid:acgtacgt-1980-38gt-99ac-94fa79523959"
+                "wid:e4730533-d752-3601-b4b7-8d4d2f6373de"
             ],
             "flowcellBarcode": "BARCODEEE",
-            "sampleSheetName": "SampleSheet.csv",
+            "sampleSheetName": "MockSampleSheet.csv",
             "apiUrl": f"https://api.aps2.sh.basespace.illumina.com/v2/runs/{mock_run_id}",
             "name": mock_instrument_run_id,
             "id": mock_run_id,
@@ -285,10 +290,28 @@ class IAPLambdaTests(TestCase):
                 {
                     "eventSource": "aws:sqs",
                     "body": json.dumps(sequence_run_message),
-                    "messageAttributes": ens_sqs_message_attributes
+                    "messageAttributes": ens_sqs_message_attributes,
+                    "attributes": {
+                        "ApproximateReceiveCount": "3",
+                        "SentTimestamp": "1589509337523",
+                        "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
+                        "ApproximateFirstReceiveTimestamp": "1589509337535"
+                    },
+                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
                 }
             ]
         }
+
+        # Comment the following mock to actually send slack message for this test case. i.e.
+        # export SLACK_CHANNEL=#arteria-dev
+        # python manage.py test data_processors.tests.test_iap.IAPLambdaTests.test_sequence_run_event
+        #
+        os.environ['SLACK_CHANNEL'] = "#mock"
+        mock_response = mock(iap.srv.libslack.http.client.HTTPResponse)
+        mock_response.status = 200
+        when(iap.srv.libslack.libssm).get_ssm_param(...).thenReturn("mock_webhook_id_123")
+        when(iap.srv.libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
+        when(iap.srv.libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
 
         iap.handler(sqs_event_message, None)
 

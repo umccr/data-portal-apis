@@ -5,7 +5,7 @@ Meant to run as offline tool to ingest GDS files metadata into Portal database
 
 Usage:
 0. screen or tmux session
-1. export IAP_BASE_URL=<baseUrl>  e.g. https://aps2.plaftorm.illumina.com
+1. export IAP_BASE_URL=https://aps2.platform.illumina.com
 2. export IAP_AUTH_TOKEN=<tok>
 3. export IAP_GDS_VOLUME=<volNameOrId>  e.g. umccr-temp-dev  Optional otherwise, see --volume
 

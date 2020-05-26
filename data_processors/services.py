@@ -13,7 +13,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun
-from utils import libgdrive, libssm, libs3
+from utils import libgdrive, libssm, libs3, libslack, lookup
 from utils.datetime import parse_lims_timestamp
 
 logger = logging.getLogger()
@@ -363,30 +363,119 @@ def create_or_update_sequence_run(payload: dict):
     if not qs.exists():
         logger.info(f"Creating new SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
         sqr = SequenceRun()
+        sqr.run_id = run_id
+        sqr.date_modified = date_modified
+        sqr.status = status
+        sqr.gds_folder_path = payload.get('gdsFolderPath')
+        sqr.gds_volume_name = payload.get('gdsVolumeName')
+        sqr.reagent_barcode = payload.get('reagentBarcode')
+        sqr.v1pre3_id = payload.get('v1pre3Id')
+        sqr.acl = payload.get('acl')
+        sqr.flowcell_barcode = payload.get('flowcellBarcode')
+        sqr.sample_sheet_name = payload.get('sampleSheetName')
+        sqr.api_url = payload.get('apiUrl')
+        sqr.name = payload.get('name')
+        sqr.instrument_run_id = payload.get('instrumentRunId')
+        sqr.msg_attr_action = payload.get('messageAttributesAction')
+        sqr.msg_attr_action_date = payload.get('messageAttributesActionDate')
+        sqr.msg_attr_action_type = payload.get('messageAttributesActionType')
+        sqr.msg_attr_produced_by = payload.get('messageAttributesProducedBy')
+        sqr.save()
+        return sqr
     else:
-        logger.info(f"Updating existing SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
-        sqr: SequenceRun = qs.get()
+        logger.info(f"Ignore existing SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
+        return None
 
-    sqr.run_id = run_id
-    sqr.date_modified = date_modified
-    sqr.status = status
-    sqr.gds_folder_path = payload.get('gdsFolderPath')
-    sqr.gds_volume_name = payload.get('gdsVolumeName')
-    sqr.reagent_barcode = payload.get('reagentBarcode')
-    sqr.v1pre3_id = payload.get('v1pre3Id')
-    sqr.acl = payload.get('acl')
-    sqr.flowcell_barcode = payload.get('flowcellBarcode')
-    sqr.sample_sheet_name = payload.get('sampleSheetName')
-    sqr.api_url = payload.get('apiUrl')
-    sqr.name = payload.get('name')
-    sqr.instrument_run_id = payload.get('instrumentRunId')
-    sqr.msg_attr_action = payload.get('messageAttributesAction')
-    sqr.msg_attr_action_date = payload.get('messageAttributesActionDate')
-    sqr.msg_attr_action_type = payload.get('messageAttributesActionType')
-    sqr.msg_attr_produced_by = payload.get('messageAttributesProducedBy')
-    sqr.save()
 
-    # TODO send slack message? only if new sequence run status i.e. `if not qs.exists()`,
-    # Otherwise; if it is a duplicate message, resolution is:
-    # - the existing SequenceRun db record will get updated -- last message win strategy  (current choice)
-    # - Or, we could discard it -- first message win strategy
+def send_slack_message(sqr: SequenceRun, sqs_record_timestamp: int, aws_account: str):
+    # Colours
+    GREEN = '#36a64f'
+    RED = '#ff0000'
+    BLUE = '#439FE0'
+    GRAY = '#dddddd'
+    BLACK = '#000000'
+
+    if sqr.status == 'Uploading' or sqr.status == 'Running':
+        slack_color = BLUE
+    elif sqr.status == 'PendingAnalysis' or sqr.status == 'Complete':
+        slack_color = GREEN
+    elif sqr.status == 'FailedUpload' or sqr.status == 'Failed' or sqr.status == 'TimedOut':
+        slack_color = RED
+    else:
+        logger.info(f"Unsupported status {sqr.status}. Not reporting to Slack!")
+        return
+
+    acl = sqr.acl
+    if len(acl) == 1:
+        owner = lookup.get_wg_name_from_id(acl[0])
+    else:
+        logger.info("Multiple IDs in ACL, expected 1!")
+        owner = 'undetermined'
+
+    sender = "Illumina Application Platform"
+    topic = f"Notification from {sqr.msg_attr_action_type} (Portal)"
+    attachments = [
+        {
+            "fallback": f"Run {sqr.instrument_run_id}: {sqr.status}",
+            "color": slack_color,
+            "pretext": sqr.name,
+            "title": f"Run: {sqr.instrument_run_id}",
+            "text": sqr.gds_folder_path,
+            "fields": [
+                {
+                    "title": "Action",
+                    "value": sqr.msg_attr_action,
+                    "short": True
+                },
+                {
+                    "title": "Action Type",
+                    "value": sqr.msg_attr_action_type,
+                    "short": True
+                },
+                {
+                    "title": "Status",
+                    "value": sqr.status,
+                    "short": True
+                },
+                {
+                    "title": "Volume Name",
+                    "value": sqr.gds_volume_name,
+                    "short": True
+                },
+                {
+                    "title": "Action Date",
+                    "value": sqr.msg_attr_action_date,
+                    "short": True
+                },
+                {
+                    "title": "Modified Date",
+                    "value": sqr.date_modified,
+                    "short": True
+                },
+                {
+                    "title": "Produced By",
+                    "value": sqr.msg_attr_produced_by,
+                    "short": True
+                },
+                {
+                    "title": "BSSH Run ID",
+                    "value": sqr.run_id,
+                    "short": True
+                },
+                {
+                    "title": "Run Owner",
+                    "value": owner,
+                    "short": True
+                },
+                {
+                    "title": "AWS Account",
+                    "value": lookup.get_aws_account_name(aws_account),
+                    "short": True
+                }
+            ],
+            "footer": "IAP BSSH.RUNS Event",
+            "ts": sqs_record_timestamp
+        }
+    ]
+
+    return libslack.call_slack_webhook(sender, topic, attachments)
