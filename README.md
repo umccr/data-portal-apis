@@ -12,37 +12,35 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 
 #### Local Development
 
-- Required Python 3.8 (see [.python-version](.python-version)) and recommended PyCharm IDE
-
+- Recommended: Python 3.8 and PyCharm IDE
+- Create virtual environment and activate it, then:
 ```
-docker-compose up -d
-pip install -r requirements-dev.txt
-export DJANGO_SETTINGS_MODULE=data_portal.settings.local
-python manage.py runserver_plus --print-sql
+aws sso login --profile=dev
+export AWS_PROFILE=dev
+make up
 ```
-
-- http://localhost:8000
-- http://localhost:8181
+- REST API at: http://localhost:8000
+- MySQL Adminer at: http://localhost:8181
 
 
 #### Testing
 
 - Run test suite
-```
-python manage.py test
+```commandline
+make test
 ```
 
 - Run individual test case, e.g.
-```
+```commandline
 python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique_hash
 ```
 
-#### Serverless
+## Serverless
 
 - You can serverless invoke or deploy from local dev. But favour over CodeBuild pipeline for deploying into production environment.
 - Serverless deploy target only to AWS. Therefore need to setup AWS environment specific variables as follows:
 ```
-ssoawsdev
+aws sso login --profile=dev
 export AWS_PROFILE=dev
 
 terraform init .
@@ -64,7 +62,7 @@ aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_proc
 - Before tear down [Terraform stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal), it is required to run `serverless remove` to remove Lambda, API Gateway, API domain, ... resources created by this serverless stack.
 - Example as follows:
 ```
-ssoawsdev
+aws sso login --profile=dev
 export AWS_PROFILE=dev
 
 terraform init .

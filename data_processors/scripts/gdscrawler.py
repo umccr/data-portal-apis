@@ -28,7 +28,7 @@ import logging
 import os
 from datetime import datetime
 
-from utils import libgds
+from libiap import libgds
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
