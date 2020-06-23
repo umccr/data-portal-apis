@@ -1,7 +1,11 @@
-import factory
-from django.utils.timezone import now
+import json
+from datetime import datetime
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun
+import factory
+from django.utils.timezone import now, make_aware
+
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
+from data_processors.pipeline.dto import WorkflowType, FastQReadType
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):
@@ -104,3 +108,32 @@ class SequenceRunFactory(factory.django.DjangoModelFactory):
     msg_attr_action_type = "bssh.runs"
     msg_attr_action_date = "2020-05-09T22:17:10.815Z"
     msg_attr_produced_by = "BaseSpaceSequenceHub"
+
+
+class WorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    sequence_run = factory.SubFactory(SequenceRunFactory)
+    wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
+    wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
+    wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
+    version = "v1"
+    type_name = WorkflowType.BCL_CONVERT.name
+    fastq_read_type_name = FastQReadType.PAIRED_END.name
+    input = json.dumps({
+        "mock": "must load template from ssm parameter store"
+    })
+    start = make_aware(datetime.now())
+    output = json.dumps({
+        'main/fastqs': {
+            'location': f"gds://{wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert",
+            'basename': "out-dir-bclConvert",
+            'nameroot': "",
+            'nameext': "",
+            'class': "Directory",
+            'listing': []
+        }
+    })
+    end = make_aware(datetime.now())
+    end_status = "succeeded"

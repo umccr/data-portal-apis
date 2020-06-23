@@ -293,3 +293,26 @@ class SequenceRun(models.Model):
                f"Instrument ID '{self.instrument_run_id}', " \
                f"Date Modified '{self.date_modified}', " \
                f"Status '{self.status}'"
+
+
+class Workflow(models.Model):
+    class Meta:
+        unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
+
+    wfr_id = models.CharField(max_length=255)
+    wfl_id = models.CharField(max_length=255)
+    wfv_id = models.CharField(max_length=255)
+    version = models.CharField(max_length=255)
+    type_name = models.CharField(max_length=255)
+    input = models.TextField()
+    start = models.DateTimeField()
+    output = models.TextField(null=True, blank=True)
+    end = models.DateTimeField(null=True, blank=True)
+    end_status = models.CharField(max_length=255, null=True, blank=True)
+
+    fastq_read_type_name = models.CharField(max_length=255, null=True, blank=True)
+    sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
+    parents = models.TextField(null=True, blank=True)  # JSON contains {'parents' : [1, 2, ...]}
+
+    def __str__(self):
+        return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"

@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import logging
 import re
 from datetime import datetime
@@ -12,7 +13,8 @@ from django.db.models import Q, ExpressionWrapper, Value, CharField, F
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
+from data_processors.pipeline.dto import WorkflowType, FastQReadType
 from utils import libgdrive, libssm, libs3, libslack, lookup
 from utils.datetime import parse_lims_timestamp
 
@@ -479,3 +481,49 @@ def send_slack_message(sqr: SequenceRun, sqs_record_timestamp: int, aws_account:
     ]
 
     return libslack.call_slack_webhook(sender, topic, attachments)
+
+
+@transaction.atomic
+def create_or_update_workflow(model: dict):
+    wfl_id = model.get('wfl_id')
+    wfr_id = model.get('wfr_id')
+    wfv_id = model.get('wfv_id')
+    wfl_type: WorkflowType = model.get('type')
+
+    qs = Workflow.objects.filter(wfl_id=wfl_id, wfr_id=wfr_id, wfv_id=wfv_id)
+
+    if not qs.exists():
+        logger.info(f"Creating new {wfl_type} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
+        workflow = Workflow()
+        workflow.wfl_id = wfl_id
+        workflow.wfr_id = wfr_id
+        workflow.wfv_id = wfv_id
+        workflow.type_name = wfl_type.name
+        workflow.version = model.get('version')
+        workflow.input = json.dumps(model.get('input'))  # expect input in dict
+        workflow.sequence_run = model.get('sequence_run')
+
+        start = model.get('start')
+        workflow.start = start if is_aware(start) else make_aware(start)
+
+        fastq_read_type: FastQReadType = model.get('fastq_read_type')
+        if fastq_read_type:
+            workflow.fastq_read_type_name = fastq_read_type.name
+
+        if model.get('parents'):
+            ids = []
+            for parent in model.get('parents'):
+                ids.append(parent.id)
+            workflow.parents = json.dumps({'parents': ids})
+    else:
+        logger.info(f"Updating existing {wfl_type} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
+        workflow: Workflow = qs.get()
+        workflow.output = model.get('output')  # expect output in json
+        workflow.end_status = model.get('end_status')
+
+        end = model.get('end')
+        workflow.end = end if is_aware(end) else make_aware(end)
+
+    workflow.save()
+
+    return workflow
