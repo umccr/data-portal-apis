@@ -1,11 +1,13 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
 from data_processors.pipeline.dto import WorkflowType, FastQReadType
+
+utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):
@@ -137,3 +139,7 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     })
     end = make_aware(datetime.now())
     end_status = "succeeded"
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
+    )

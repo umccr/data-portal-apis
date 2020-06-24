@@ -499,6 +499,7 @@ def create_or_update_workflow(model: dict):
         workflow.wfr_id = wfr_id
         workflow.wfv_id = wfv_id
         workflow.type_name = wfl_type.name
+        workflow.wfr_name = model.get('wfr_name')
         workflow.version = model.get('version')
         workflow.input = json.dumps(model.get('input'))  # expect input in dict
         workflow.sequence_run = model.get('sequence_run')

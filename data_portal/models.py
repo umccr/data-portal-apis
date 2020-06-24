@@ -299,6 +299,7 @@ class Workflow(models.Model):
     class Meta:
         unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
 
+    wfr_name = models.TextField(null=True, blank=True)
     wfr_id = models.CharField(max_length=255)
     wfl_id = models.CharField(max_length=255)
     wfv_id = models.CharField(max_length=255)

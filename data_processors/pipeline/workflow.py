@@ -54,6 +54,7 @@ class WorkflowDomainModel(object):
         iap_wes_workflow_input_json = self.build_ssm_path("input").value  # must load input from ssm param store
         self._workflow_input: dict = json.loads(iap_wes_workflow_input_json)
 
+        self.wfr_name = None
         self.wfr_id = None
         self.wfv_id = None
         self.start = None
@@ -69,6 +70,7 @@ class WorkflowDomainModel(object):
         :return: dict
         """
         return {
+            'wfr_name': self.wfr_name,
             'wfl_id': self._workflow_id,
             'wfr_id': self.wfr_id,
             'wfv_id': self.wfv_id,
@@ -177,14 +179,17 @@ class WorkflowLaunch(WESInterface):
     def __init__(self, model: WorkflowDomainModel):
 
         utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-        run_name = f"umccr__{model.workflow_type.value}__workflow__{model.sqr.name}__{model.sqr.run_id}__{utc_now_ts}"
+        if model.sqr:
+            model.wfr_name = f"umccr__{model.workflow_type.value}__{model.sqr.name}__{model.sqr.run_id}__{utc_now_ts}"
+        else:
+            model.wfr_name = f"umccr__{model.workflow_type.value}__None__None__{utc_now_ts}"  # just in case sqr is None
 
         with self.api_client:
             version_api = libwes.WorkflowVersionsApi(self.api_client)
             workflow_id = model.workflow_id
             version_name = model.workflow_version
             body = libwes.LaunchWorkflowVersionRequest(
-                name=run_name,
+                name=model.wfr_name,
                 input=model.workflow_input,
             )
 
