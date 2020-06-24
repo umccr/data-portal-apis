@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 from typing import List, Optional
 
+from django.core.serializers.json import DjangoJSONEncoder
 from libiap.openapi import libwes
 
 from data_portal.models import SequenceRun, Workflow
@@ -186,13 +187,12 @@ class WorkflowLaunch(WESInterface):
                 name=run_name,
                 input=model.workflow_input,
             )
-            body_to_json = json.dumps(body.to_dict())
 
             try:
                 logger.info(f"LAUNCHING WORKFLOW_ID: {workflow_id}, VERSION_NAME: {version_name}, "
-                            f"INPUT: \n{body_to_json}")
+                            f"INPUT: \n{json.dumps(body.to_dict(), cls=DjangoJSONEncoder)}")
                 wfl_run: libwes.WorkflowRun = version_api.launch_workflow_version(workflow_id, version_name, body=body)
-                logger.info(f"WORKFLOW LAUNCH SUCCESS: \n{wfl_run}")
+                logger.info(f"WORKFLOW LAUNCH SUCCESS: \n{json.dumps(wfl_run.to_dict(), cls=DjangoJSONEncoder)}")
 
                 model.start = wfl_run.time_started if wfl_run.time_started else datetime.utcnow()
                 model.wfr_id = wfl_run.id

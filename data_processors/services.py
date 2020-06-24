@@ -504,6 +504,8 @@ def create_or_update_workflow(model: dict):
         workflow.sequence_run = model.get('sequence_run')
 
         start = model.get('start')
+        if start is None:
+            start = datetime.utcnow()
         workflow.start = start if is_aware(start) else make_aware(start)
 
         fastq_read_type: FastQReadType = model.get('fastq_read_type')
@@ -518,11 +520,16 @@ def create_or_update_workflow(model: dict):
     else:
         logger.info(f"Updating existing {wfl_type} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
         workflow: Workflow = qs.get()
-        workflow.output = model.get('output')  # expect output in json
-        workflow.end_status = model.get('end_status')
+
+        if model.get('output'):
+            workflow.output = model.get('output')  # expect output in json
+
+        if model.get('end_status'):
+            workflow.end_status = model.get('end_status')
 
         end = model.get('end')
-        workflow.end = end if is_aware(end) else make_aware(end)
+        if end:
+            workflow.end = end if is_aware(end) else make_aware(end)
 
     workflow.save()
 

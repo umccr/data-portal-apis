@@ -386,7 +386,7 @@ class IAPLambdaTests(TestCase):
                     "TimeCreated": "2020-05-18T06:26:05.070575",
                     "TimeModified": "2020-05-18T06:27:32.787349",
                     "TenantId": f"{_rand(82)}",
-                    "Description": "Uses sambamda slice and samtools to extract bam region of interest.",
+                    "Description": "Uses sambamba slice and samtools to extract bam region of interest.",
                     "CreatedBy": f"{_uuid()}",
                     "Href": f"https://aps2.platform.illumina.com/v1/workflows/"
                             f"{WorkflowFactory.wfl_id}/versions/{WorkflowFactory.version}",
