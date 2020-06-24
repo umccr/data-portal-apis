@@ -337,7 +337,7 @@ class IAPLambdaTests(TestCase):
         success_bcl_convert_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, success_bcl_convert_workflow_runs.count())
 
-    def test_wes_runs_historyevents_germline(self):
+    def test_wes_runs_event_germline(self):
         """
         Scenario:
         In order to kick off germline workflow, bcl convert must be completed at least.
@@ -409,30 +409,30 @@ class IAPLambdaTests(TestCase):
 
         ens_sqs_message_attributes = {
             "action": {
-                "stringValue": "succeeded",
+                "stringValue": "updated",
                 "stringListValues": [],
                 "binaryListValues": [],
                 "dataType": "String"
             },
-            "actiondate": {
+            "actionDate": {
                 "stringValue": "2020-05-09T22:17:10.815Z",
                 "stringListValues": [],
                 "binaryListValues": [],
                 "dataType": "String"
             },
             "type": {
-                "stringValue": "wes.runs.historyevents",
+                "stringValue": "wes.runs",
                 "stringListValues": [],
                 "binaryListValues": [],
                 "dataType": "String"
             },
-            "producedby": {
+            "producedBy": {
                 "stringValue": "WorkflowExecutionService",
                 "stringListValues": [],
                 "binaryListValues": [],
                 "dataType": "String"
             },
-            "contenttype": {
+            "contentType": {
                 "stringValue": "application/json",
                 "stringListValues": [],
                 "binaryListValues": [],
@@ -444,6 +444,8 @@ class IAPLambdaTests(TestCase):
             "Records": [
                 {
                     "eventSource": "aws:sqs",
+                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
+                    "awsRegion": "ap-southeast-2",
                     "body": json.dumps(workflow_run_message),
                     "messageAttributes": ens_sqs_message_attributes,
                     "attributes": {
@@ -452,7 +454,6 @@ class IAPLambdaTests(TestCase):
                         "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
                         "ApproximateFirstReceiveTimestamp": "1589509337535"
                     },
-                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
                 }
             ]
         }

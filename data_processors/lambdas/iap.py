@@ -25,8 +25,8 @@ logger.setLevel(logging.INFO)
 
 GDS_FILES = 'gds.files'
 BSSH_RUNS = 'bssh.runs'
-WES_RUNS_HISTORYEVENTS = 'wes.runs.historyevents'
-IMPLEMENTED_ENS_TYPES = [GDS_FILES, BSSH_RUNS, WES_RUNS_HISTORYEVENTS]
+WES_RUNS = 'wes.runs'
+IMPLEMENTED_ENS_TYPES = [GDS_FILES, BSSH_RUNS, WES_RUNS]
 
 
 def handler(event, context):
@@ -72,7 +72,7 @@ def handler(event, context):
                     # spec.fastq_read_type = FastQReadType.PAIRED_END
                     WorkflowDomainModel(spec).launch()
 
-        if event_type == WES_RUNS_HISTORYEVENTS:
+        if event_type == WES_RUNS:
             # update workflow run output, end time and end status
             # extract wfr_id from message and query Workflow from db
             wfr_id = message_body_json['WorkflowRun']['Id']
