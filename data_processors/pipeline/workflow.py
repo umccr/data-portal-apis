@@ -54,7 +54,17 @@ class WorkflowDomainModel(object):
         iap_wes_workflow_input_json = self.build_ssm_path("input").value  # must load input from ssm param store
         self._workflow_input: dict = json.loads(iap_wes_workflow_input_json)
 
-        self.wfr_name = None
+        # construct and format workflow run name convention
+        # [RUN_NAME_PREFIX]__[WORKFLOW_TYPE]__[SEQUENCE_RUN_NAME]__[SEQUENCE_RUN_ID]__[UTC_TIMESTAMP]
+        _run_name_prefix = "umccr__automated"  # important for wes.runs event filtering startsWith expression if use
+        ssm_key_iap_workflow_run_name_prefix = os.getenv("SSM_KEY_NAME_IAP_WORKFLOW_RUN_NAME_PREFIX", None)
+        if ssm_key_iap_workflow_run_name_prefix:
+            _run_name_prefix = libssm.SSMParamStore(ssm_key_iap_workflow_run_name_prefix).value
+        sqr_name = self._sqr.name if self._sqr else "None"
+        sqr_run_id = self._sqr.run_id if self._sqr else "None"
+        utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
+        self.wfr_name = f"{_run_name_prefix}__{self._workflow_type.value}__{sqr_name}__{sqr_run_id}__{utc_now_ts}"
+
         self.wfr_id = None
         self.wfv_id = None
         self.start = None
@@ -177,12 +187,6 @@ class WorkflowUpdate(WESInterface):
 class WorkflowLaunch(WESInterface):
 
     def __init__(self, model: WorkflowDomainModel):
-
-        utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-        if model.sqr:
-            model.wfr_name = f"umccr__{model.workflow_type.value}__{model.sqr.name}__{model.sqr.run_id}__{utc_now_ts}"
-        else:
-            model.wfr_name = f"umccr__{model.workflow_type.value}__None__None__{utc_now_ts}"  # just in case sqr is None
 
         with self.api_client:
             version_api = libwes.WorkflowVersionsApi(self.api_client)
