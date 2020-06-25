@@ -463,3 +463,99 @@ class IAPLambdaTests(TestCase):
         # assert germline workflow launch success and save workflow runs in portal db
         success_germline_workflow_runs = Workflow.objects.all()
         self.assertEqual(3, success_germline_workflow_runs.count())
+
+    def test_wes_runs_event_not_in_automation(self):
+        """
+        Scenario:
+        Testing wes.runs event's workflow is not in Portal workflow runs automation database. Therefore, skip.
+        That is, it might have been launched elsewhere.
+        """
+        wfr_id = f"wfr.{_rand(32)}"
+        workflow_run_message = {
+            "Timestamp": "2020-05-18T06:47:46.146Z",
+            "EventType": "RunSucceeded",
+            "EventDetails": {},
+            "WorkflowRun": {
+                "TenantId": f"{_rand(82)}",
+                "Status": "Succeeded",
+                "TimeModified": "2020-05-18T06:47:19.20065",
+                "Acl": [
+                    f"tid:{_rand(82)}",
+                    f"wid:{_uuid()}"
+                ],
+                "WorkflowVersion": {
+                    "Id": f"wfv.{_rand(32)}",
+                    "Language": {
+                        "Name": "CWL",
+                        "Version": "1.1"
+                    },
+                    "Version": "v1",
+                    "Status": "Active",
+                    "TimeCreated": "2020-05-18T06:26:05.070575",
+                    "TimeModified": "2020-05-18T06:27:32.787349",
+                    "TenantId": f"{_rand(82)}",
+                    "Description": "Uses sambamba slice and samtools to extract bam region of interest.",
+                    "CreatedBy": f"{_uuid()}",
+                    "Href": f"https://aps2.platform.illumina.com/v1/workflows/"
+                            f"{WorkflowFactory.wfl_id}/versions/{WorkflowFactory.version}",
+                    "Acl": [
+                        f"tid:{_rand(82)}",
+                        f"wid:{_uuid()}"
+                    ],
+                    "ModifiedBy": f"{_uuid()}"
+                },
+                "Id": f"{wfr_id}",
+                "TimeCreated": "2020-05-18T06:27:32.662549",
+                "StatusSummary": "",
+                "TimeStarted": "2020-05-18T06:27:32.956904",
+                "CreatedBy": f"{_uuid()}",
+                "Href": f"https://aps2.platform.illumina.com/v1/workflows/runs/{wfr_id}",
+                "TimeStopped": "2020-05-18T06:47:46.146+00:00",
+                "ModifiedBy": f"{_uuid()}"
+            }
+        }
+
+        ens_sqs_message_attributes = {
+            "action": {
+                "stringValue": "updated",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "type": {
+                "stringValue": "wes.runs",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "producedBy": {
+                "stringValue": "WorkflowExecutionService",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+        }
+
+        sqs_event_message = {
+            "Records": [
+                {
+                    "eventSource": "aws:sqs",
+                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
+                    "awsRegion": "ap-southeast-2",
+                    "body": json.dumps(workflow_run_message),
+                    "messageAttributes": ens_sqs_message_attributes,
+                    "attributes": {
+                        "ApproximateReceiveCount": "3",
+                        "SentTimestamp": "1589509337523",
+                        "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
+                        "ApproximateFirstReceiveTimestamp": "1589509337535"
+                    },
+                }
+            ]
+        }
+
+        iap.handler(sqs_event_message, None)
+
+        # assert 0 workflow runs in portal db
+        workflow_runs = Workflow.objects.all()
+        self.assertEqual(0, workflow_runs.count())

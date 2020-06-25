@@ -18,7 +18,6 @@ from data_processors import services as srv
 from data_processors.exceptions import *
 from data_processors.pipeline.dto import WorkflowType, FastQReadType
 from data_processors.pipeline.workflow import WorkflowDomainModel, WorkflowSpecification
-from data_portal.models import Workflow
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -78,28 +77,31 @@ def handler(event, context):
             wfr_id = message_body_json['WorkflowRun']['Id']
             wfv_id = message_body_json['WorkflowRun']['WorkflowVersion']['Id']
             status: str = message_body_json['WorkflowRun']['Status']
-            workflow = Workflow.objects.get(wfr_id=wfr_id, wfv_id=wfv_id)
+            workflow = srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
 
-            # then WorkflowDomainModel(spec).update(workflow)
-            spec = WorkflowSpecification()
-            spec.workflow_type = WorkflowType[workflow.type_name]
-            if workflow.fastq_read_type_name is not None:
-                spec.fastq_read_type = FastQReadType[workflow.fastq_read_type_name]
-            spec.sequence_run = workflow.sequence_run
-            this_model: WorkflowDomainModel = WorkflowDomainModel(spec)
-            this_model.update(workflow)
-
-            # then depends on this_model workflow type and/or other pipeline decision factor/logic
-            # we may kick off next_model workflow i.e. WorkflowDomainModel(next_spec).launch()
-            if this_model.workflow_type == WorkflowType.BCL_CONVERT and "Succeeded".lower() == status.lower():
-                germline_spec = WorkflowSpecification()
-                germline_spec.workflow_type = WorkflowType.GERMLINE
-                germline_spec.parents = [workflow]
-                # optionally propagate these attributes
-                germline_spec.sequence_run = workflow.sequence_run
+            if workflow:
+                # if workflow is in Portal db then WorkflowDomainModel(spec).update(workflow)
+                spec = WorkflowSpecification()
+                spec.workflow_type = WorkflowType[workflow.type_name]
                 if workflow.fastq_read_type_name is not None:
-                    germline_spec.fastq_read_type = FastQReadType[workflow.fastq_read_type_name]
-                next_model: WorkflowDomainModel = WorkflowDomainModel(germline_spec)
-                next_model.launch()
+                    spec.fastq_read_type = FastQReadType[workflow.fastq_read_type_name]
+                spec.sequence_run = workflow.sequence_run
+                this_model: WorkflowDomainModel = WorkflowDomainModel(spec)
+                this_model.update(workflow)
+
+                # then depends on this_model workflow type and/or other pipeline decision factor/logic
+                # we may kick off next_model workflow i.e. WorkflowDomainModel(next_spec).launch()
+                if this_model.workflow_type == WorkflowType.BCL_CONVERT and "Succeeded".lower() == status.lower():
+                    germline_spec = WorkflowSpecification()
+                    germline_spec.workflow_type = WorkflowType.GERMLINE
+                    germline_spec.parents = [workflow]
+                    # optionally propagate these attributes
+                    germline_spec.sequence_run = workflow.sequence_run
+                    if workflow.fastq_read_type_name is not None:
+                        germline_spec.fastq_read_type = FastQReadType[workflow.fastq_read_type_name]
+                    next_model: WorkflowDomainModel = WorkflowDomainModel(germline_spec)
+                    next_model.launch()
+            else:
+                logger.info(f"Run ID '{wfr_id}' is not found in Portal workflow runs automation database. Skipping...")
 
     logger.info("IAP ENS event processing complete")

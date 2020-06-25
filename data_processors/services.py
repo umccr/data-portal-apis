@@ -535,3 +535,12 @@ def create_or_update_workflow(model: dict):
     workflow.save()
 
     return workflow
+
+
+def get_workflow_by_ids(wfr_id, wfv_id):
+    workflow = None
+    try:
+        workflow = Workflow.objects.get(wfr_id=wfr_id, wfv_id=wfv_id)
+    except Workflow.DoesNotExist as e:
+        logger.debug(e)  # silent unless debug
+    return workflow
