@@ -16,8 +16,9 @@ import logging
 
 from data_processors import services as srv
 from data_processors.exceptions import *
-from data_processors.pipeline.dto import WorkflowType, FastQReadType
+from data_processors.pipeline.dto import WorkflowType, FastQReadType, WorkflowStatus
 from data_processors.pipeline.workflow import WorkflowDomainModel, WorkflowSpecification
+from utils import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -30,7 +31,7 @@ IMPLEMENTED_ENS_TYPES = [GDS_FILES, BSSH_RUNS, WES_RUNS]
 
 def handler(event, context):
     logger.info("Start processing IAP ENS event")
-    logger.info(event)
+    logger.info(libjson.dumps(event))
 
     messages = event['Records']
 
@@ -76,7 +77,6 @@ def handler(event, context):
             # extract wfr_id from message and query Workflow from db
             wfr_id = message_body_json['WorkflowRun']['Id']
             wfv_id = message_body_json['WorkflowRun']['WorkflowVersion']['Id']
-            status: str = message_body_json['WorkflowRun']['Status']
             workflow = srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
 
             if workflow:
@@ -88,10 +88,12 @@ def handler(event, context):
                 spec.sequence_run = workflow.sequence_run
                 this_model: WorkflowDomainModel = WorkflowDomainModel(spec)
                 this_model.update(workflow)
+                this_model.send_slack_message()
 
                 # then depends on this_model workflow type and/or other pipeline decision factor/logic
                 # we may kick off next_model workflow i.e. WorkflowDomainModel(next_spec).launch()
-                if this_model.workflow_type == WorkflowType.BCL_CONVERT and "Succeeded".lower() == status.lower():
+                if this_model.workflow_type == WorkflowType.BCL_CONVERT and \
+                        this_model.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
                     germline_spec = WorkflowSpecification()
                     germline_spec.workflow_type = WorkflowType.GERMLINE
                     germline_spec.parents = [workflow]
@@ -104,4 +106,6 @@ def handler(event, context):
             else:
                 logger.info(f"Run ID '{wfr_id}' is not found in Portal workflow runs automation database. Skipping...")
 
-    logger.info("IAP ENS event processing complete")
+    _msg = f"IAP ENS event processing complete"
+    logger.info(_msg)
+    return _msg

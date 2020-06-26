@@ -30,11 +30,12 @@ We could leverage package like `slack-webhook`[3]. However, we will be using bui
 If unsure, start with Pass-through call.
 """
 import http.client
-import json
 import logging
 import os
+from enum import Enum
+from typing import List
 
-from utils import libssm
+from utils import libssm, libjson
 
 headers = {
     'Content-Type': 'application/json',
@@ -81,11 +82,34 @@ def call_slack_webhook(sender, topic, attachments, ssm=True, **kwargs):
         "icon_emoji": ":aws_logo:",
         "attachments": attachments
     }
-    logger.info(f"Slack POST data: {json.dumps(post_data)}")
+    logger.info(f"Slack POST data: {libjson.dumps(post_data)}")
 
-    connection.request("POST", slack_webhook_endpoint, json.dumps(post_data), headers)
+    connection.request("POST", slack_webhook_endpoint, libjson.dumps(post_data), headers)
     response = connection.getresponse()
     logger.info(f"Slack webhook response status: {response.status}")
     connection.close()
 
     return response.status
+
+
+class SlackColor(Enum):
+    GREEN = "#36a64f"
+    RED = "#ff0000"
+    BLUE = "#439FE0"
+    GRAY = "#dddddd"
+    BLACK = "#000000"
+
+
+class SlackField(object):
+    pass
+
+
+class SlackAttachment(object):
+    pass
+
+
+class SlackMessage(object):
+    def __init__(self, sender, topic, attachments):
+        self.sender: str = sender
+        self.topic: str = topic
+        self.attachments: List[SlackAttachment] = attachments

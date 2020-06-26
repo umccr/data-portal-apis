@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from unittest import TestCase
 
 from mockito import when, mock, verify, unstub
@@ -12,6 +13,7 @@ class LibSlackUnitTests(TestCase):
         os.environ['SLACK_CHANNEL'] = "#mock"
 
     def tearDown(self) -> None:
+        del os.environ['SLACK_CHANNEL']
         unstub()
 
     def test_call_slack_webhook(self):
@@ -21,6 +23,10 @@ class LibSlackUnitTests(TestCase):
             {
                 "title": "mock attachement",
                 "text": "test",
+            },
+            {
+                "title": "datetime",
+                "text": datetime.now(),
             },
         ]
         mock_response = mock(libslack.http.client.HTTPResponse)

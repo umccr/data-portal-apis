@@ -390,19 +390,13 @@ def create_or_update_sequence_run(payload: dict):
 
 
 def send_slack_message(sqr: SequenceRun, sqs_record_timestamp: int, aws_account: str):
-    # Colours
-    GREEN = '#36a64f'
-    RED = '#ff0000'
-    BLUE = '#439FE0'
-    GRAY = '#dddddd'
-    BLACK = '#000000'
 
     if sqr.status == 'Uploading' or sqr.status == 'Running':
-        slack_color = BLUE
+        slack_color = libslack.SlackColor.BLUE.value
     elif sqr.status == 'PendingAnalysis' or sqr.status == 'Complete':
-        slack_color = GREEN
+        slack_color = libslack.SlackColor.GREEN.value
     elif sqr.status == 'FailedUpload' or sqr.status == 'Failed' or sqr.status == 'TimedOut':
-        slack_color = RED
+        slack_color = libslack.SlackColor.RED.value
     else:
         logger.info(f"Unsupported status {sqr.status}. Not reporting to Slack!")
         return
@@ -493,13 +487,14 @@ def create_or_update_workflow(model: dict):
     qs = Workflow.objects.filter(wfl_id=wfl_id, wfr_id=wfr_id, wfv_id=wfv_id)
 
     if not qs.exists():
-        logger.info(f"Creating new {wfl_type} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
+        logger.info(f"Creating new {wfl_type.name} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
         workflow = Workflow()
         workflow.wfl_id = wfl_id
         workflow.wfr_id = wfr_id
         workflow.wfv_id = wfv_id
         workflow.type_name = wfl_type.name
         workflow.wfr_name = model.get('wfr_name')
+        workflow.sample_name = model.get('sample_name')
         workflow.version = model.get('version')
         workflow.input = json.dumps(model.get('input'))  # expect input in dict
         workflow.sequence_run = model.get('sequence_run')

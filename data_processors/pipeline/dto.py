@@ -13,6 +13,13 @@ class WorkflowType(Enum):
     GERMLINE = "germline"
 
 
+class WorkflowStatus(Enum):
+    RUNNING = "Running"
+    SUCCEEDED = "Succeeded"
+    FAILED = "Failed"
+    ABORTED = "Aborted"
+
+
 class FastQReadType(Enum):
     """Enum as in form of
     FRIENDLY_NAME_OF_SUPPORTED_FASTQ_READ_TYPE = NUMBER_OF_FASTQ_FILES_PRODUCE

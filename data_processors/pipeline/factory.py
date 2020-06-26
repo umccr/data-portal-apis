@@ -11,14 +11,17 @@ from data_processors.pipeline.eps import GDSInterface
 logger = logging.getLogger(__name__)
 
 
-def extract_sample_id(filename):
+def extract_fastq_sample_name(filename):
     """
     Extract sample_id from FASTQ file name based on BSSH FASTQ filename Naming Convention.
     https://emea.support.illumina.com/help/BaseSpace_OLH_009008/Content/Source/Informatics/BS/NamingConvention_FASTQ-files-swBS.htm
     :param filename:
-    :return: sample_id or None
+    :return: sample_name or None
     """
-    return re.split('S[0-9]', filename)[0].rstrip('_')
+    sample_name = re.split('_S[0-9]+_', filename)[0].rstrip('_')
+    if sample_name == filename:  # i.e. can't split by regex rule
+        return None
+    return sample_name
 
 
 class FastQBuilder(GDSInterface):
@@ -27,6 +30,7 @@ class FastQBuilder(GDSInterface):
     """
 
     def __init__(self, workflow: Workflow):
+        super().__init__()
         assert workflow.output is not None, f"{workflow.type_name} {workflow.wfr_id} has no output yet"
         self._workflow = workflow
 
@@ -60,13 +64,15 @@ class FastQBuilder(GDSInterface):
                         file: libgds.FileResponse = item
                         if not file.name.endswith('.fastq.gz'):
                             continue
-                        sample_id = extract_sample_id(file.name)
-                        if sample_id:
-                            if sample_id in fastq_map:
-                                fastq_map[sample_id]['fastq_list'].append(file.name)
+                        sample_name = extract_fastq_sample_name(file.name)
+                        if sample_name:
+                            if sample_name in fastq_map:
+                                fastq_map[sample_name]['fastq_list'].append(file.name)
                             else:
-                                fastq_map[sample_id]['fastq_list'] = [file.name]
-                                fastq_map[sample_id]['tags'] = []  # TODO tag SBJ ID
+                                fastq_map[sample_name]['fastq_list'] = [file.name]
+                                fastq_map[sample_name]['tags'] = []  # TODO tag SBJ ID
+                        else:
+                            logger.info(f"Failed to extract sample name from file: {file.name}")
 
                     page_token = file_list.next_page_token
                     if not file_list.next_page_token:

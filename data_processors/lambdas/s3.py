@@ -19,6 +19,7 @@ from dateutil.parser import parse
 from collections import defaultdict
 
 from data_processors.services import persist_s3_object, delete_s3_object, tag_s3_object
+from utils import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -52,7 +53,7 @@ def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
     :param event: SQS event
     """
     logger.info("Start processing S3 event")
-    logger.info(event)
+    logger.info(libjson.dumps(event))
     messages = event['Records']
     records = parse_raw_s3_event_records(messages)
     results = sync_s3_event_records(records)

@@ -1,37 +1,22 @@
 import json
-import logging
-import os
+from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.test import TestCase
-from mockito import when, unstub, mock
+from django.utils.timezone import make_aware
+from libiap.openapi import libwes
+from mockito import when
 
 from data_portal.models import GDSFile, SequenceRun, Workflow
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory
 from data_processors.exceptions import *
 from data_processors.lambdas import iap
-from data_processors.pipeline.dto import FastQ
+from data_processors.pipeline.dto import FastQ, WorkflowStatus
 from data_processors.pipeline.factory import FastQBuilder
 from data_processors.tests import _rand, _uuid
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+from data_processors.tests.case import WorkflowCase, logger
 
 
-class IAPLambdaTests(TestCase):
-
-    def setUp(self) -> None:
-        os.environ['IAP_BASE_URL'] = "http://localhost"
-        os.environ['IAP_AUTH_TOKEN'] = "mock"
-        os.environ['IAP_WES_WORKFLOW_ID'] = WorkflowFactory.wfl_id
-        os.environ['IAP_WES_WORKFLOW_VERSION_NAME'] = WorkflowFactory.version
-
-    def tearDown(self) -> None:
-        del os.environ['IAP_BASE_URL']
-        del os.environ['IAP_AUTH_TOKEN']
-        del os.environ['IAP_WES_WORKFLOW_ID']
-        del os.environ['IAP_WES_WORKFLOW_VERSION_NAME']
-        unstub()
+class IAPLambdaTests(WorkflowCase):
 
     def test_uploaded_gds_file_event(self):
 
@@ -315,17 +300,6 @@ class IAPLambdaTests(TestCase):
             ]
         }
 
-        # Comment the following mock to actually send slack message for this test case. i.e.
-        # export SLACK_CHANNEL=#arteria-dev
-        # python manage.py test data_processors.tests.test_iap.IAPLambdaTests.test_sequence_run_event
-        #
-        os.environ['SLACK_CHANNEL'] = "#mock"
-        mock_response = mock(iap.srv.libslack.http.client.HTTPResponse)
-        mock_response.status = 200
-        when(iap.srv.libslack.libssm).get_ssm_param(...).thenReturn("mock_webhook_id_123")
-        when(iap.srv.libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
-        when(iap.srv.libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
-
         iap.handler(sqs_event_message, None)
 
         qs = SequenceRun.objects.filter(run_id=mock_run_id)
@@ -345,6 +319,7 @@ class IAPLambdaTests(TestCase):
         So, need to mock these two states and put them into test db first.
         Then call iap lambda with the mock wes event message.
         """
+        self.verify()
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
         mock_fastq: FastQ = FastQ()
@@ -362,6 +337,11 @@ class IAPLambdaTests(TestCase):
             },
         }
         when(FastQBuilder).build().thenReturn(mock_fastq)
+
+        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
+        mock_workflow_run.time_stopped = make_aware(datetime.utcnow())
+        mock_workflow_run.status = WorkflowStatus.SUCCEEDED.value
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
 
         workflow_run_message = {
             "Timestamp": "2020-05-18T06:47:46.146Z",

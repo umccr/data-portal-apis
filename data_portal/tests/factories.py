@@ -1,13 +1,21 @@
 import json
 from datetime import datetime, timezone
+from enum import Enum
 
 import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
-from data_processors.pipeline.dto import WorkflowType, FastQReadType
+from data_processors.pipeline.dto import WorkflowType, FastQReadType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
+
+
+class TestConstant(Enum):
+    wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
+    wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
+    wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
+    version = "v1"
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):
@@ -117,10 +125,10 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
         model = Workflow
 
     sequence_run = factory.SubFactory(SequenceRunFactory)
-    wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
-    wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
-    wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
-    version = "v1"
+    wfr_id = TestConstant.wfr_id.value
+    wfv_id = TestConstant.wfv_id.value
+    wfl_id = TestConstant.wfl_id.value
+    version = TestConstant.version.value
     type_name = WorkflowType.BCL_CONVERT.name
     fastq_read_type_name = FastQReadType.PAIRED_END.name
     input = json.dumps({
@@ -138,7 +146,7 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
         }
     })
     end = make_aware(datetime.now())
-    end_status = "succeeded"
+    end_status = WorkflowStatus.SUCCEEDED.value
 
     wfr_name = factory.LazyAttribute(
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"

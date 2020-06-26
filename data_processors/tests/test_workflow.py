@@ -1,65 +1,50 @@
 import json
-import os
 
-from django.test import TestCase
-from mockito import when, unstub
+from libiap.openapi import libgds
+from mockito import when
 
 from data_portal.models import Workflow, SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, WorkflowFactory
 from data_processors.pipeline import workflow
 from data_processors.pipeline.dto import WorkflowType, FastQ
-from data_processors.pipeline.factory import FastQBuilder, extract_sample_id
+from data_processors.pipeline.factory import FastQBuilder, extract_fastq_sample_name
 from data_processors.tests import _rand
+from data_processors.tests.case import WorkflowCase, logger
 
 
-class WorkflowTest(TestCase):
-
-    def setUp(self) -> None:
-        os.environ['IAP_BASE_URL'] = "http://localhost"
-        os.environ['IAP_AUTH_TOKEN'] = "mock"
-        os.environ['IAP_WES_WORKFLOW_ID'] = WorkflowFactory.wfl_id
-        os.environ['IAP_WES_WORKFLOW_VERSION_NAME'] = WorkflowFactory.version
-
-    def tearDown(self) -> None:
-        del os.environ['IAP_BASE_URL']
-        del os.environ['IAP_AUTH_TOKEN']
-        del os.environ['IAP_WES_WORKFLOW_ID']
-        del os.environ['IAP_WES_WORKFLOW_VERSION_NAME']
-        unstub()
+class WorkflowTest(WorkflowCase):
 
     def test_parse_gds_path(self):
         gds_path = "gds://raw-sequence-data-dev/999999_Z99999_0010_AG2CTTAGCT/SampleSheet.csv"
         path_elements = gds_path.replace("gds://", "").split("/")
-        print(path_elements)
+        logger.info(path_elements)
+
         run_id = "300101_A99999_0020_AG2CTTAGYY"
         new_gds_path = f"gds://{path_elements[0]}/{run_id}/{path_elements[2]}"
-        print(new_gds_path)
+        logger.info(new_gds_path)
 
         volume_name = path_elements[0]
         path = path_elements[1:]
-        print(volume_name)
-        print(path)
-        print(f"/{'/'.join(path)}/*")
+        logger.info(volume_name)
+        logger.info(path)
+        logger.info(f"/{'/'.join(path)}/*")
         self.assertTrue(True)
 
     def test_model_asdict(self):
         spec = workflow.WorkflowSpecification()
         spec.workflow_type = WorkflowType.BCL_CONVERT
         model = workflow.WorkflowDomainModel(spec=spec)
-        model.wfr_id = "wfr.SOMETHING_MOCK"
-        print(vars(model))
-        print()
-        print(model.asdict())
-        print(WorkflowType.BCL_CONVERT)
-        print(type(WorkflowType.BCL_CONVERT))
-        print(WorkflowType.BCL_CONVERT.name)
-        print(type(WorkflowType.BCL_CONVERT.name))
-        print(WorkflowType.BCL_CONVERT.value)
-        print(type(WorkflowType.BCL_CONVERT.value))
-        print("WorkflowType.BCL_CONVERT" == WorkflowType.BCL_CONVERT)
-        print("BCL_CONVERT" == WorkflowType.BCL_CONVERT.name)
-        print(WorkflowType['BCL_CONVERT'])
-        self.assertTrue(True)
+        model.wfr_id = "wfr.SOMETHING_THAT_CAN_BE_MUTATED"
+        logger.info(vars(model))
+        logger.info(model.asdict())
+
+        logger.info((WorkflowType.BCL_CONVERT, type(WorkflowType.BCL_CONVERT)))
+        logger.info((WorkflowType.BCL_CONVERT.name, type(WorkflowType.BCL_CONVERT.name)))
+        logger.info((WorkflowType.BCL_CONVERT.value, type(WorkflowType.BCL_CONVERT.value)))
+
+        self.assertFalse("WorkflowType.BCL_CONVERT" == WorkflowType.BCL_CONVERT)
+        self.assertTrue("BCL_CONVERT" == WorkflowType.BCL_CONVERT.name)
+        self.assertEqual(WorkflowType['BCL_CONVERT'], WorkflowType.BCL_CONVERT)
 
     def test_fastq_map_build(self):
         workflow = Workflow()
@@ -75,11 +60,26 @@ class WorkflowTest(TestCase):
                 'listing': []
             }
         })
-        fastq: FastQ = FastQBuilder(workflow).build()
-        print(fastq)
-        self.assertTrue(True)
+        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
+        mock_file_list.items = [
+            libgds.FileResponse(name="NA12345 - 4KC_S7_R1_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345 - 4KC_S7_R2_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S1_R1_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S1_R2_001.fastq.gz"),
+            libgds.FileResponse(name="MDX199999_L1999999_topup_S2_R1_001.fastq.gz"),
+            libgds.FileResponse(name="MDX199999_L1999999_topup_S2_R2_001.fastq.gz"),
+            libgds.FileResponse(name="L9111111_topup_S3_R1_001.fastq.gz"),
+            libgds.FileResponse(name="L9111111_topup_S3_R2_001.fastq.gz"),
+        ]
+        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-    def test_fastq_extract_sample_id(self):
+        fastq: FastQ = FastQBuilder(workflow).build()
+        for sample_name, bag in fastq.fastq_map.items():
+            fastq_list = bag['fastq_list']
+            logger.info((sample_name, fastq_list))
+        self.assertIsNotNone(fastq)
+
+    def test_fastq_extract_sample_name(self):
         filenames = [
             "NA12345 - 4KC_S7_L001_R1_001.fastq.gz",
             "NA12345 - 4KC_S7_L001_R2_001.fastq.gz",
@@ -92,16 +92,21 @@ class WorkflowTest(TestCase):
             "L1000555_S3_R3_001.fastq.gz",
             "L3000666_S7_R1_001.fastq.gz",
             "L4000888_S99_R1_001.fastq.gz",
-            "L4000888_S99_R2_001.fastq.gz",
-            "L4000888_S99_I1_001.fastq.gz",
-            "L4000888_S99_I2_001.fastq.gz",
+            "L4000888_S3K_S99_R2_001.fastq.gz",
+            "L4000888_SK_S99_I1_001.fastq.gz",
+            "L400S888_S99_I2_001.fastq.gz",
+            "L400S888_S5-9_S99_I2_001.fastq.gz",
+            "PTC_TsqN999999_L9900001_S101_I2_001.fastq.gz",
+            "PRJ111119_L1900000_S102_I2_001.fastq.gz",
+            "MDX199999_L1999999_topup_S201_I2_001.fastq.gz",
         ]
 
         for name in filenames:
-            sample_id = extract_sample_id(name)
-            print(sample_id)
+            sample_name = extract_fastq_sample_name(name)
+            logger.info((sample_name, name))
+            self.assertTrue("_R" not in sample_name)
 
-        self.assertTrue(True)
+        self.assertIsNone(extract_fastq_sample_name("L1999999_topup_R1_001.fastq.gz"))
 
     def test_bcl_convert(self):
         mock_sqr: SequenceRun = SequenceRunFactory()
@@ -116,6 +121,7 @@ class WorkflowTest(TestCase):
         self.assertEqual(1, success_bcl_convert_workflow_runs.count())
 
     def test_germline(self):
+        self.verify()
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
         mock_fastq: FastQ = FastQ()
