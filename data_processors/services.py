@@ -15,7 +15,7 @@ from django.utils.timezone import make_aware, is_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
 from data_processors.pipeline.dto import WorkflowType, FastQReadType
-from utils import libgdrive, libssm, libs3, libslack, lookup
+from utils import libgdrive, libssm, libs3, libslack, lookup, libjson
 from utils.datetime import parse_lims_timestamp
 
 logger = logging.getLogger()
@@ -496,7 +496,7 @@ def create_or_update_workflow(model: dict):
         workflow.wfr_name = model.get('wfr_name')
         workflow.sample_name = model.get('sample_name')
         workflow.version = model.get('version')
-        workflow.input = json.dumps(model.get('input'))  # expect input in dict
+        workflow.input = libjson.dumps(model.get('input'))  # expect input in dict
         workflow.sequence_run = model.get('sequence_run')
 
         start = model.get('start')
@@ -518,7 +518,7 @@ def create_or_update_workflow(model: dict):
         workflow: Workflow = qs.get()
 
         if model.get('output'):
-            workflow.output = model.get('output')  # expect output in json
+            workflow.output = libjson.dumps(model.get('output'))  # expect output in dict
 
         if model.get('end_status'):
             workflow.end_status = model.get('end_status')
