@@ -71,6 +71,7 @@ class WorkflowDomainModel(object):
         self.end = None
         self.end_status = None
         self.sample_name = None
+        self.notified = None
 
     def asdict(self) -> dict:
         """
@@ -95,6 +96,7 @@ class WorkflowDomainModel(object):
             'parents': self._parents,
             'fastq_read_type': self._fastq_read_type,
             'sample_name': self.sample_name,
+            'notified': self.notified,
         }
 
     @property
@@ -161,22 +163,35 @@ class WorkflowDomainModel(object):
 
                 WorkflowLaunch(self)
 
-    def update(self, workflow: Workflow):
+    def synth(self, workflow: Workflow):
+        """Synthesize this WorkflowDomainModel instance to prep for updating its state into database"""
         assert self._workflow_id == workflow.wfl_id, "Workflow ID mis-match"
         assert self._workflow_version == workflow.version, "Workflow Version mis-match"
         assert self._workflow_type.name == workflow.type_name, "Workflow Type mis-match"
         self.wfr_id = workflow.wfr_id
         self.wfv_id = workflow.wfv_id
+        self.notified = workflow.notified
+
+        # no effect for db update, but for logging purpose
         self.start = workflow.start
         self.sample_name = workflow.sample_name
+
+    def update(self):
+        """Update Workflow Run status from WES endpoint"""
         WorkflowUpdate(self)
 
     def save(self):
         services.create_or_update_workflow(self.asdict())
 
-    def send_slack_message(self):
+    def notify(self):
         if not self.end_status:
-            logger.info(f"End status is '{self.end_status}'. Not reporting to Slack!")
+            logger.info(f"{self.workflow_type.name} '{self.wfr_id}' workflow end status is '{self.end_status}'. "
+                        f"Not reporting to Slack!")
+            return
+
+        if self.notified:
+            logger.info(f"{self.workflow_type.name} '{self.wfr_id}' workflow status '{self.end_status}' is "
+                        f"already notified once. Not reporting to Slack!")
             return
 
         _status: str = self.end_status.lower()
@@ -190,7 +205,8 @@ class WorkflowDomainModel(object):
         elif _status == WorkflowStatus.ABORTED.value.lower():
             slack_color = libslack.SlackColor.GRAY.value
         else:
-            logger.info(f"Unsupported status '{self.end_status}'. Not reporting to Slack!")
+            logger.info(f"{self.workflow_type.name} '{self.wfr_id}' workflow unsupported status '{self.end_status}'. "
+                        f"Not reporting to Slack!")
             return
 
         sender = "Portal Workflow Automation"
@@ -249,7 +265,13 @@ class WorkflowDomainModel(object):
             }
         ]
 
-        return libslack.call_slack_webhook(sender, topic, attachments)
+        resp = libslack.call_slack_webhook(sender, topic, attachments)
+
+        if resp:
+            self.notified = True
+            self.save()
+
+        return resp
 
 
 class WorkflowUpdate(WESInterface):

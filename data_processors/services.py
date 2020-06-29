@@ -496,8 +496,14 @@ def create_or_update_workflow(model: dict):
         workflow.wfr_name = model.get('wfr_name')
         workflow.sample_name = model.get('sample_name')
         workflow.version = model.get('version')
-        workflow.input = libjson.dumps(model.get('input'))  # expect input in dict
         workflow.sequence_run = model.get('sequence_run')
+
+        _input = model.get('input')
+        if _input:
+            if isinstance(_input, dict):
+                workflow.input = libjson.dumps(_input)  # if input is in dict
+            else:
+                workflow.input = _input  # expect input in raw json str
 
         start = model.get('start')
         if start is None:
@@ -517,15 +523,22 @@ def create_or_update_workflow(model: dict):
         logger.info(f"Updating existing {wfl_type} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
         workflow: Workflow = qs.get()
 
-        if model.get('output'):
-            workflow.output = libjson.dumps(model.get('output'))  # expect output in dict
+        _output = model.get('output')
+        if _output:
+            if isinstance(_output, dict):
+                workflow.output = libjson.dumps(_output)  # if output is in dict
+            else:
+                workflow.output = _output  # expect output in raw json str
 
         if model.get('end_status'):
             workflow.end_status = model.get('end_status')
 
-        end = model.get('end')
-        if end:
-            workflow.end = end if is_aware(end) else make_aware(end)
+        _end = model.get('end')
+        if _end:
+            workflow.end = _end if is_aware(_end) else make_aware(_end)
+
+        if model.get('notified'):
+            workflow.notified = model.get('notified')
 
     workflow.save()
 

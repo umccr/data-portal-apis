@@ -5,7 +5,7 @@ from django.test import TestCase
 from mockito import mock, when, unstub
 
 from data_portal.tests.factories import TestConstant
-from data_processors.lambdas import iap
+from utils import libslack
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -24,11 +24,11 @@ class WorkflowCase(TestCase):
         # python manage.py test data_processors.tests.test_iap.IAPLambdaTests.test_sequence_run_event
         #
         os.environ['SLACK_CHANNEL'] = "#mock"
-        mock_response = mock(iap.srv.libslack.http.client.HTTPResponse)
+        mock_response = mock(libslack.http.client.HTTPResponse)
         mock_response.status = 200
-        when(iap.srv.libslack.libssm).get_ssm_param(...).thenReturn("mock_webhook_id_123")
-        when(iap.srv.libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
-        when(iap.srv.libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
+        when(libslack.libssm).get_ssm_param(...).thenReturn("mock_webhook_id_123")
+        when(libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
+        when(libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
 
     def tearDown(self) -> None:
         del os.environ['IAP_BASE_URL']

@@ -33,6 +33,7 @@ import http.client
 import logging
 import os
 from enum import Enum
+from http import HTTPStatus
 from typing import List
 
 from utils import libssm, libjson
@@ -89,7 +90,11 @@ def call_slack_webhook(sender, topic, attachments, ssm=True, **kwargs):
     logger.info(f"Slack webhook response status: {response.status}")
     connection.close()
 
-    return response.status
+    # see https://api.slack.com/messaging/webhooks#handling_errors
+    if response.status == HTTPStatus.OK:
+        return response.status
+    else:
+        return None
 
 
 class SlackColor(Enum):

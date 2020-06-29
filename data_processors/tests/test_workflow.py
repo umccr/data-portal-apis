@@ -1,6 +1,7 @@
 import json
+from datetime import datetime
 
-from libiap.openapi import libgds
+from libiap.openapi import libgds, libwes
 from mockito import when
 
 from data_portal.models import Workflow, SequenceRun
@@ -78,6 +79,70 @@ class WorkflowTest(WorkflowCase):
             fastq_list = bag['fastq_list']
             logger.info((sample_name, fastq_list))
         self.assertIsNotNone(fastq)
+
+    def test_fastq_map_build_output_not_json(self):
+        workflow = Workflow()
+        workflow.wfr_id = f"wfr.{_rand(32)}"
+        workflow.type = WorkflowType.BCL_CONVERT
+        workflow.output = """
+        {
+            'main/fastqs': {
+                'location': f"gds://{workflow.wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert",
+                'basename': "out-dir-bclConvert",
+                'nameroot': "",
+                'nameext': "",
+                'class': "Directory",
+                'listing': []
+            }
+        }
+        """
+        """
+        Should raise similar to:
+        
+            [ERROR] JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+            Traceback (most recent call last):
+              File "/var/task/data_processors/lambdas/iap.py", line 105, in handler
+                next_model.launch()
+              File "/var/task/data_processors/pipeline/workflow.py", line 143, in launch
+                fastq: FastQ = FastQBuilder(parent).build()
+              File "/var/task/data_processors/pipeline/factory.py", line 39, in build
+                output_gds_path: str = json.loads(fastq_output)['main/fastqs']['location']
+              File "/var/lang/lib/python3.8/json/__init__.py", line 357, in loads
+                return _default_decoder.decode(s)
+              File "/var/lang/lib/python3.8/json/decoder.py", line 337, in decode
+                obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+              File "/var/lang/lib/python3.8/json/decoder.py", line 353, in raw_decode
+                obj, end = self.scan_once(s, idx)
+        
+        Storing models.Workflow.output into database should always be in JSON format. 
+        Fixed with this PR https://github.com/umccr/data-portal-apis/pull/90
+        """
+        try:
+            FastQBuilder(workflow).build()
+        except Exception as e:
+            logger.exception(e)
+        self.assertRaises(json.JSONDecodeError)
+
+    def test_workflow_output_format(self):
+        config = libwes.Configuration(
+            host="http://localhost",
+            api_key={
+                'Authorization': "mock"
+            },
+            api_key_prefix={
+                'Authorization': "Bearer"
+            },
+        )
+        with libwes.ApiClient(config) as api_client:
+            run_api = libwes.WorkflowRunsApi(api_client)
+            wfl_run: libwes.WorkflowRun = run_api.get_workflow_run(run_id="anything_work")
+            logger.info((wfl_run.output, type(wfl_run.output)))
+            logger.info((wfl_run.time_stopped, type(wfl_run.time_stopped)))
+            logger.info((wfl_run.status, type(wfl_run.status)))
+
+        self.assertTrue(isinstance(wfl_run.output, dict))
+        self.assertTrue(isinstance(wfl_run.time_stopped, datetime))
+        self.assertTrue(isinstance(wfl_run.status, str))
 
     def test_fastq_extract_sample_name(self):
         filenames = [

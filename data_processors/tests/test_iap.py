@@ -4,16 +4,116 @@ from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import make_aware
 from libiap.openapi import libwes
-from mockito import when
+from mockito import when, verify
 
 from data_portal.models import GDSFile, SequenceRun, Workflow
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory
 from data_processors.exceptions import *
 from data_processors.lambdas import iap
-from data_processors.pipeline.dto import FastQ, WorkflowStatus
+from data_processors.pipeline.dto import FastQ, WorkflowStatus, WorkflowType
 from data_processors.pipeline.factory import FastQBuilder
 from data_processors.tests import _rand, _uuid
 from data_processors.tests.case import WorkflowCase, logger
+from utils import libslack
+
+
+def _sqs_wes_event_message(wfv_id, wfr_id):
+    workflow_run_message = {
+        "Timestamp": "2020-05-18T06:47:46.146Z",
+        "EventType": "RunSucceeded",
+        "EventDetails": {},
+        "WorkflowRun": {
+            "TenantId": f"{_rand(82)}",
+            "Status": "Succeeded",
+            "TimeModified": "2020-05-18T06:47:19.20065",
+            "Acl": [
+                f"tid:{_rand(82)}",
+                f"wid:{_uuid()}"
+            ],
+            "WorkflowVersion": {
+                "Id": f"{wfv_id}",
+                "Language": {
+                    "Name": "CWL",
+                    "Version": "1.1"
+                },
+                "Version": "v1",
+                "Status": "Active",
+                "TimeCreated": "2020-05-18T06:26:05.070575",
+                "TimeModified": "2020-05-18T06:27:32.787349",
+                "TenantId": f"{_rand(82)}",
+                "Description": "Uses sambamba slice and samtools to extract bam region of interest.",
+                "CreatedBy": f"{_uuid()}",
+                "Href": f"https://aps2.platform.illumina.com/v1/workflows/"
+                        f"{WorkflowFactory.wfl_id}/versions/{WorkflowFactory.version}",
+                "Acl": [
+                    f"tid:{_rand(82)}",
+                    f"wid:{_uuid()}"
+                ],
+                "ModifiedBy": f"{_uuid()}"
+            },
+            "Id": f"{wfr_id}",
+            "TimeCreated": "2020-05-18T06:27:32.662549",
+            "StatusSummary": "",
+            "TimeStarted": "2020-05-18T06:27:32.956904",
+            "CreatedBy": f"{_uuid()}",
+            "Href": f"https://aps2.platform.illumina.com/v1/workflows/runs/{wfr_id}",
+            "TimeStopped": "2020-05-18T06:47:46.146+00:00",
+            "ModifiedBy": f"{_uuid()}"
+        }
+    }
+
+    ens_sqs_message_attributes = {
+        "action": {
+            "stringValue": "updated",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "actionDate": {
+            "stringValue": "2020-05-09T22:17:10.815Z",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "type": {
+            "stringValue": "wes.runs",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "producedBy": {
+            "stringValue": "WorkflowExecutionService",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "contentType": {
+            "stringValue": "application/json",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        }
+    }
+
+    sqs_event_message = {
+        "Records": [
+            {
+                "eventSource": "aws:sqs",
+                "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
+                "awsRegion": "ap-southeast-2",
+                "body": json.dumps(workflow_run_message),
+                "messageAttributes": ens_sqs_message_attributes,
+                "attributes": {
+                    "ApproximateReceiveCount": "3",
+                    "SentTimestamp": "1589509337523",
+                    "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
+                    "ApproximateFirstReceiveTimestamp": "1589509337535"
+                },
+            }
+        ]
+    }
+
+    return sqs_event_message
 
 
 class IAPLambdaTests(WorkflowCase):
@@ -343,106 +443,57 @@ class IAPLambdaTests(WorkflowCase):
         mock_workflow_run.status = WorkflowStatus.SUCCEEDED.value
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
 
-        workflow_run_message = {
-            "Timestamp": "2020-05-18T06:47:46.146Z",
-            "EventType": "RunSucceeded",
-            "EventDetails": {},
-            "WorkflowRun": {
-                "TenantId": f"{_rand(82)}",
-                "Status": "Succeeded",
-                "TimeModified": "2020-05-18T06:47:19.20065",
-                "Acl": [
-                    f"tid:{_rand(82)}",
-                    f"wid:{_uuid()}"
-                ],
-                "WorkflowVersion": {
-                    "Id": f"{mock_bcl_workflow.wfv_id}",
-                    "Language": {
-                        "Name": "CWL",
-                        "Version": "1.1"
-                    },
-                    "Version": "v1",
-                    "Status": "Active",
-                    "TimeCreated": "2020-05-18T06:26:05.070575",
-                    "TimeModified": "2020-05-18T06:27:32.787349",
-                    "TenantId": f"{_rand(82)}",
-                    "Description": "Uses sambamba slice and samtools to extract bam region of interest.",
-                    "CreatedBy": f"{_uuid()}",
-                    "Href": f"https://aps2.platform.illumina.com/v1/workflows/"
-                            f"{WorkflowFactory.wfl_id}/versions/{WorkflowFactory.version}",
-                    "Acl": [
-                        f"tid:{_rand(82)}",
-                        f"wid:{_uuid()}"
-                    ],
-                    "ModifiedBy": f"{_uuid()}"
-                },
-                "Id": f"{mock_bcl_workflow.wfr_id}",
-                "TimeCreated": "2020-05-18T06:27:32.662549",
-                "StatusSummary": "",
-                "TimeStarted": "2020-05-18T06:27:32.956904",
-                "CreatedBy": f"{_uuid()}",
-                "Href": f"https://aps2.platform.illumina.com/v1/workflows/runs/{mock_bcl_workflow.wfr_id}",
-                "TimeStopped": "2020-05-18T06:47:46.146+00:00",
-                "ModifiedBy": f"{_uuid()}"
-            }
-        }
-
-        ens_sqs_message_attributes = {
-            "action": {
-                "stringValue": "updated",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "actionDate": {
-                "stringValue": "2020-05-09T22:17:10.815Z",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "type": {
-                "stringValue": "wes.runs",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "producedBy": {
-                "stringValue": "WorkflowExecutionService",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "contentType": {
-                "stringValue": "application/json",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            }
-        }
-
-        sqs_event_message = {
-            "Records": [
-                {
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
-                    "awsRegion": "ap-southeast-2",
-                    "body": json.dumps(workflow_run_message),
-                    "messageAttributes": ens_sqs_message_attributes,
-                    "attributes": {
-                        "ApproximateReceiveCount": "3",
-                        "SentTimestamp": "1589509337523",
-                        "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
-                        "ApproximateFirstReceiveTimestamp": "1589509337535"
-                    },
-                }
-            ]
-        }
-
-        iap.handler(sqs_event_message, None)
+        iap.handler(_sqs_wes_event_message(wfv_id=mock_bcl_workflow.wfv_id, wfr_id=mock_bcl_workflow.wfr_id), None)
 
         # assert germline workflow launch success and save workflow runs in portal db
         success_germline_workflow_runs = Workflow.objects.all()
         self.assertEqual(3, success_germline_workflow_runs.count())
+
+        for wfl in success_germline_workflow_runs:
+            logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
+            if wfl.type_name == WorkflowType.BCL_CONVERT.name:
+                self.assertTrue(wfl.notified)
+
+        # should call to slack webhook once
+        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
+
+    def test_wes_runs_event_germline_alt(self):
+        self.verify()
+        mock_bcl_workflow: Workflow = WorkflowFactory()
+        mock_bcl_workflow.notified = True  # mock also consider scenario where bcl workflow has already notified before
+        mock_bcl_workflow.save()
+
+        mock_fastq: FastQ = FastQ()
+        mock_fastq.volume_name = f"{mock_bcl_workflow.wfr_id}"
+        mock_fastq.path = f"/bclConversion_launch/try-1/out-dir-bclConvert"
+        mock_fastq.gds_path = f"gds://{mock_fastq.volume_name}{mock_fastq.path}"
+        mock_fastq.fastq_map = {
+            'SAMPLE_ACGT1': {
+                'fastq_list': [
+                    'SAMPLE_ACGT1_S1_L001_R1_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R1_001.fastq.gz',
+                    'SAMPLE_ACGT1_S1_L001_R2_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R2_001.fastq.gz',
+                ],
+                'tags': ['SBJ00001'],
+            },
+        }
+        when(FastQBuilder).build().thenReturn(mock_fastq)
+
+        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
+        mock_workflow_run.time_stopped = make_aware(datetime.utcnow())
+        mock_workflow_run.status = WorkflowStatus.SUCCEEDED.value
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
+
+        iap.handler(_sqs_wes_event_message(wfv_id=mock_bcl_workflow.wfv_id, wfr_id=mock_bcl_workflow.wfr_id), None)
+
+        # assert germline workflow launch has skipped and won't save into portal db
+        all_workflow_runs = Workflow.objects.all()
+        self.assertEqual(1, all_workflow_runs.count())  # should contain only one bcl convert workflow
+
+        for wfl in all_workflow_runs:
+            logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
+
+        # should not call to slack webhook
+        verify(libslack.http.client.HTTPSConnection, times=0).request(...)
 
     def test_wes_runs_event_not_in_automation(self):
         """
@@ -451,90 +502,8 @@ class IAPLambdaTests(WorkflowCase):
         That is, it might have been launched elsewhere.
         """
         wfr_id = f"wfr.{_rand(32)}"
-        workflow_run_message = {
-            "Timestamp": "2020-05-18T06:47:46.146Z",
-            "EventType": "RunSucceeded",
-            "EventDetails": {},
-            "WorkflowRun": {
-                "TenantId": f"{_rand(82)}",
-                "Status": "Succeeded",
-                "TimeModified": "2020-05-18T06:47:19.20065",
-                "Acl": [
-                    f"tid:{_rand(82)}",
-                    f"wid:{_uuid()}"
-                ],
-                "WorkflowVersion": {
-                    "Id": f"wfv.{_rand(32)}",
-                    "Language": {
-                        "Name": "CWL",
-                        "Version": "1.1"
-                    },
-                    "Version": "v1",
-                    "Status": "Active",
-                    "TimeCreated": "2020-05-18T06:26:05.070575",
-                    "TimeModified": "2020-05-18T06:27:32.787349",
-                    "TenantId": f"{_rand(82)}",
-                    "Description": "Uses sambamba slice and samtools to extract bam region of interest.",
-                    "CreatedBy": f"{_uuid()}",
-                    "Href": f"https://aps2.platform.illumina.com/v1/workflows/"
-                            f"{WorkflowFactory.wfl_id}/versions/{WorkflowFactory.version}",
-                    "Acl": [
-                        f"tid:{_rand(82)}",
-                        f"wid:{_uuid()}"
-                    ],
-                    "ModifiedBy": f"{_uuid()}"
-                },
-                "Id": f"{wfr_id}",
-                "TimeCreated": "2020-05-18T06:27:32.662549",
-                "StatusSummary": "",
-                "TimeStarted": "2020-05-18T06:27:32.956904",
-                "CreatedBy": f"{_uuid()}",
-                "Href": f"https://aps2.platform.illumina.com/v1/workflows/runs/{wfr_id}",
-                "TimeStopped": "2020-05-18T06:47:46.146+00:00",
-                "ModifiedBy": f"{_uuid()}"
-            }
-        }
-
-        ens_sqs_message_attributes = {
-            "action": {
-                "stringValue": "updated",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "type": {
-                "stringValue": "wes.runs",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "producedBy": {
-                "stringValue": "WorkflowExecutionService",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-        }
-
-        sqs_event_message = {
-            "Records": [
-                {
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
-                    "awsRegion": "ap-southeast-2",
-                    "body": json.dumps(workflow_run_message),
-                    "messageAttributes": ens_sqs_message_attributes,
-                    "attributes": {
-                        "ApproximateReceiveCount": "3",
-                        "SentTimestamp": "1589509337523",
-                        "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
-                        "ApproximateFirstReceiveTimestamp": "1589509337535"
-                    },
-                }
-            ]
-        }
-
-        iap.handler(sqs_event_message, None)
+        wfv_id = f"wfv.{_rand(32)}"
+        iap.handler(_sqs_wes_event_message(wfv_id=wfv_id, wfr_id=wfr_id), None)
 
         # assert 0 workflow runs in portal db
         workflow_runs = Workflow.objects.all()

@@ -87,8 +87,9 @@ def handler(event, context):
                     spec.fastq_read_type = FastQReadType[workflow.fastq_read_type_name]
                 spec.sequence_run = workflow.sequence_run
                 this_model: WorkflowDomainModel = WorkflowDomainModel(spec)
-                this_model.update(workflow)
-                this_model.send_slack_message()
+                this_model.synth(workflow)
+                this_model.update()
+                this_model.notify()
 
                 # then depends on this_model workflow type and/or other pipeline decision factor/logic
                 # we may kick off next_model workflow i.e. WorkflowDomainModel(next_spec).launch()

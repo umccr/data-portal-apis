@@ -311,6 +311,7 @@ class Workflow(models.Model):
     output = models.TextField(null=True, blank=True)
     end = models.DateTimeField(null=True, blank=True)
     end_status = models.CharField(max_length=255, null=True, blank=True)
+    notified = models.BooleanField(null=True, blank=True)
 
     fastq_read_type_name = models.CharField(max_length=255, null=True, blank=True)
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
