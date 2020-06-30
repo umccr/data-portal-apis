@@ -24,6 +24,7 @@ class WorkflowSpecification(object):
         self.fastq_read_type: Optional[FastQReadType] = None
         self.sequence_run: Optional[SequenceRun] = None
         self.parents: Optional[List[Workflow]] = None
+        self.wfr_event: Optional[dict] = None
 
 
 class WorkflowDomainModel(object):
@@ -34,6 +35,7 @@ class WorkflowDomainModel(object):
         self._sqr: Optional[SequenceRun] = spec.sequence_run
         self._parents: Optional[List[Workflow]] = spec.parents
         self._fastq_read_type: Optional[FastQReadType] = spec.fastq_read_type
+        self._wfr_event: Optional[dict] = spec.wfr_event
 
         self._iap_workflow_prefix = "/iap/workflow"
         ssm_key_iap_workflow_prefix = os.getenv("SSM_KEY_NAME_IAP_WORKFLOW_PREFIX", None)
@@ -121,6 +123,10 @@ class WorkflowDomainModel(object):
 
     sequence_run: sqr
 
+    @property
+    def wfr_event(self) -> dict:
+        return self._wfr_event
+
     def build_ssm_path(self, attribute_name) -> libssm.SSMParamStore:
         return libssm.SSMParamStore(f"{self._iap_workflow_prefix}/{self._workflow_type.value}/{attribute_name}")
 
@@ -170,6 +176,8 @@ class WorkflowDomainModel(object):
         assert self._workflow_type.name == workflow.type_name, "Workflow Type mis-match"
         self.wfr_id = workflow.wfr_id
         self.wfv_id = workflow.wfv_id
+
+        self.end_status = workflow.end_status
         self.notified = workflow.notified
 
         # no effect for db update, but for logging purpose
@@ -177,7 +185,6 @@ class WorkflowDomainModel(object):
         self.sample_name = workflow.sample_name
 
     def update(self):
-        """Update Workflow Run status from WES endpoint"""
         WorkflowUpdate(self)
 
     def save(self):
@@ -275,16 +282,84 @@ class WorkflowDomainModel(object):
 
 
 class WorkflowUpdate(WESInterface):
+    """
+    First, it will attempt to update Workflow Run status from WES RUN endpoint.
+    If WES RUN API response disagree with SQS message WES EventType then it will attempt WES RUN History endpoint.
+    As last resort, it will update using SQS message WES EventType, EventDetails and Timestamp.
+    """
 
     def __init__(self, model: WorkflowDomainModel):
         super().__init__()
         with self.api_client:
             run_api = libwes.WorkflowRunsApi(self.api_client)
-            wfl_run: libwes.WorkflowRun = run_api.get_workflow_run(run_id=model.wfr_id)
-            model.output = wfl_run.output
-            model.end = wfl_run.time_stopped
-            model.end_status = wfl_run.status
-            model.save()
+
+            try:
+                wfl_run: libwes.WorkflowRun = run_api.get_workflow_run(run_id=model.wfr_id)
+
+                # expect to evaluate patterns "Failed in RunFailed", "Succeeded in RunSucceeded", ...
+                if model.wfr_event and wfl_run.status in model.wfr_event['event_type']:
+                    logger.info(f"Updating '{model.wfr_id}' status from WES RUN API endpoint.")
+                    self._status = wfl_run.status
+                    self._output = wfl_run.output
+                    self._end = wfl_run.time_stopped
+
+                else:
+                    run_events = []  # collect run events
+                    page_token = None
+                    while True:
+                        hist: libwes.WorkflowRunHistoryEventList = run_api.list_workflow_run_history(
+                            run_id=model.wfr_id,
+                            page_size=1000,
+                            page_token=page_token
+                        )
+                        for item in hist.items:
+                            run_event: libwes.WorkflowRunHistoryEvent = item
+                            if run_event.event_type.startswith("Run"):
+                                run_events.append(run_event)
+                        page_token = hist.next_page_token
+                        if not hist.next_page_token:
+                            break
+                    # end while
+
+                    # run events are sorted by event_id ASC, so grab the last event
+                    last_run_event: libwes.WorkflowRunHistoryEvent = run_events[-1] if run_events else None
+
+                    # perform same evaluation patterns but "RunFailed in RunFailed", "RunSucceeded in RunSucceeded", ...
+                    if last_run_event and last_run_event.event_type in model.wfr_event['event_type']:
+                        logger.info(f"Updating '{model.wfr_id}' status from WES RUN HISTORY API endpoint.")
+                        self._status = last_run_event.event_type[3:]        # expect first 3 char in Run*
+                        self._end = last_run_event.timestamp                # expect in datetime.datetime
+                        event_details: dict = last_run_event.event_details  # expect in dict
+                    else:
+                        # last resort, log raise warning as updating directly from event message is a bit of alarming!
+                        logger.warning(f"Updating '{model.wfr_id}' status directly from SQS WES RUN EVENT message.")
+                        self._status = model.wfr_event['event_type'][3:]        # expect first 3 char in Run*
+                        self._end = model.wfr_event['timestamp']                # expect in raw UTC datetime string
+                        event_details: dict = model.wfr_event['event_details']  # expect in dict
+
+                    if "output" in event_details:
+                        self._output = event_details['output']
+                    else:
+                        self._output = event_details
+
+                # now update the model
+                self._update(model)
+            except libwes.ApiException as e:
+                logger.error(f"Exception when calling get_workflow_run: \n{e}")
+
+    def _update(self, model):
+        # detect status has changed
+        if isinstance(model.end_status, str):
+            if model.end_status.lower() != self._status.lower() and model.notified:
+                logger.info(f"{model.workflow_type.name} '{model.wfr_id}' workflow status has changed "
+                            f"from '{model.end_status}' to '{self._status}'. "
+                            f"Reset notified from '{model.notified}' to 'False' for sending notification next.")
+                model.notified = False
+
+        model.output = self._output
+        model.end = self._end
+        model.end_status = self._status
+        model.save()
 
 
 class WorkflowLaunch(WESInterface):

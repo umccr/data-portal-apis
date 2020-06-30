@@ -17,14 +17,33 @@ from data_processors.tests.case import WorkflowCase, logger
 from utils import libslack
 
 
-def _sqs_wes_event_message(wfv_id, wfr_id):
+def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED):
+
+    event_details = {}
+    if workflow_status == WorkflowStatus.FAILED:
+        event_details = {
+            "Error": "Workflow.Failed",
+            "Cause": "Run Failed. Reason: task: [samplesheetSplit_launch] details: [Failed to submit TES Task. Reason "
+                     "[(500)\nReason: Internal Server Error\nHTTP response headers: HTTPHeaderDict({'Date': 'Mon, 29 "
+                     "Jun 2020 07:37:16 GMT', 'Content-Type': 'application/json', 'Server': 'Kestrel', "
+                     "'Transfer-Encoding': 'chunked'})\nHTTP response body: {\"code\":\"\",\"message\":\"We had an "
+                     "unexpected issue.  Please try your request again.  The issue has been logged and we are looking "
+                     "into it.\"}\n]]"
+        }
+    elif workflow_status == WorkflowStatus.ABORTED:
+        event_details = {
+            "Error": "Workflow.Engine",
+            "Cause": "Internal error while starting the run: DomainException: \n"
+                     "Launch workflow via. airflow execution service failed. ErrorCode: 1\n",
+        }
+
     workflow_run_message = {
         "Timestamp": "2020-05-18T06:47:46.146Z",
-        "EventType": "RunSucceeded",
-        "EventDetails": {},
+        "EventType": f"Run{workflow_status.value}",
+        "EventDetails": event_details,
         "WorkflowRun": {
             "TenantId": f"{_rand(82)}",
-            "Status": "Succeeded",
+            "Status": f"{workflow_status.value}",
             "TimeModified": "2020-05-18T06:47:19.20065",
             "Acl": [
                 f"tid:{_rand(82)}",
@@ -461,6 +480,7 @@ class IAPLambdaTests(WorkflowCase):
         self.verify()
         mock_bcl_workflow: Workflow = WorkflowFactory()
         mock_bcl_workflow.notified = True  # mock also consider scenario where bcl workflow has already notified before
+        mock_bcl_workflow.end_status = WorkflowStatus.SUCCEEDED.value
         mock_bcl_workflow.save()
 
         mock_fastq: FastQ = FastQ()
@@ -494,6 +514,205 @@ class IAPLambdaTests(WorkflowCase):
 
         # should not call to slack webhook
         verify(libslack.http.client.HTTPSConnection, times=0).request(...)
+
+    def test_wes_runs_event_run_succeeded(self):
+        """
+        Precondition:
+        BCL Convert workflow is Running. Had sent notification status Running to slack sometime before...
+
+        Scenario:
+        Now, WES Run Event message arrive with RunSucceeded.
+        However, checking into WES Run API endpoint says workflow is still Running status.
+        Simulating possible IAP sub-systems/components delay. (well most often the case!)
+        Should hit WES Run History Event and be able to update run Succeeded status without issue.
+
+        :return:
+        """
+        self.verify()
+        mock_bcl: Workflow = WorkflowFactory()
+        mock_bcl.notified = True  # mock also consider Running status has already notified
+        mock_bcl.save()
+
+        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
+        mock_workflow_run.status = WorkflowStatus.RUNNING.value
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
+
+        mock_wfl_run_history_event1: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
+        mock_wfl_run_history_event1.event_id = 0
+        mock_wfl_run_history_event1.timestamp = datetime.utcnow()
+        mock_wfl_run_history_event1.event_type = "RunStarted"
+        mock_wfl_run_history_event1.event_details = {}
+        # some more task events in between ...
+        mock_wfl_run_history_event2: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
+        mock_wfl_run_history_event2.event_id = 46586
+        mock_wfl_run_history_event2.timestamp = datetime.utcnow()
+        mock_wfl_run_history_event2.event_type = f"Run{WorkflowStatus.SUCCEEDED.value}"
+        mock_wfl_run_history_event2.event_details = {
+            "output": {
+                "main/fastqs": {
+                    "location": f"gds://{mock_bcl.wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert",
+                    "basename": "out-dir-bclConvert",
+                    "nameroot": "",
+                    "nameext": "",
+                    "class": "Directory",
+                    "listing": []
+                },
+                "main/split-sheets": {
+                    "location": f"gds://{mock_bcl.wfr_id}/samplesheetSplit_launch/try-1/out-dir-samplesheetSplit",
+                    "basename": "out-dir-samplesheetSplit",
+                    "nameroot": "",
+                    "nameext": "",
+                    "class": "Directory",
+                    "listing": []
+                }
+            }
+        }
+        mock_wfl_run_history_event_list: libwes.WorkflowRunHistoryEventList = libwes.WorkflowRunHistoryEventList()
+        mock_wfl_run_history_event_list.items = [mock_wfl_run_history_event1, mock_wfl_run_history_event2]
+        when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
+
+        # make Germline workflow launch skip
+        mock_fastq: FastQ = FastQ()
+        mock_fastq.volume_name = f"{mock_bcl.wfr_id}"
+        mock_fastq.path = f"/bclConversion_launch/try-1/out-dir-bclConvert"
+        mock_fastq.gds_path = f"gds://{mock_fastq.volume_name}{mock_fastq.path}"
+        mock_fastq.fastq_map = {
+            'SAMPLE_ACGT1': {
+                'fastq_list': [
+                    'SAMPLE_ACGT1_S1_L001_R1_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R1_001.fastq.gz',
+                    'SAMPLE_ACGT1_S1_L001_R2_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R2_001.fastq.gz',
+                ],
+                'tags': ['SBJ00001'],
+            },
+        }
+        when(FastQBuilder).build().thenReturn(mock_fastq)
+
+        iap.handler(_sqs_wes_event_message(
+            wfv_id=mock_bcl.wfv_id,
+            wfr_id=mock_bcl.wfr_id,
+            workflow_status=WorkflowStatus.SUCCEEDED
+        ), None)
+
+        # assert germline workflow launch has skipped and won't save into portal db
+        all_workflow_runs = Workflow.objects.all()
+        self.assertEqual(1, all_workflow_runs.count())  # should contain only one Succeeded bcl convert workflow
+
+        for wfl in all_workflow_runs:
+            logger.info((wfl.wfr_id, wfl.type_name, wfl.notified, wfl.end_status, wfl.end))
+            logger.info(wfl.output)
+            self.assertEqual(wfl.end_status, WorkflowStatus.SUCCEEDED.value)
+
+        # should call to slack webhook 1 time to notify RunSucceeded
+        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
+
+    def test_wes_runs_event_run_failed(self):
+        """
+        Precondition:
+        BCL Convert workflow is Running. Had sent notification status Running to slack sometime before...
+
+        Scenario:
+        Now, WES Run Event message arrive with RunFailed Internal Server Error 500.
+        However, checking into WES Run API endpoint says workflow is still Running status.
+        Simulating possible IAP sub-systems/components delay. (well most often the case!)
+        Should hit WES Run History Event and be able to update run Failed status without issue.
+
+        :return:
+        """
+        self.verify()
+        mock_bcl_workflow: Workflow = WorkflowFactory()
+        mock_bcl_workflow.notified = True  # mock also consider Running status has already notified
+        mock_bcl_workflow.save()
+
+        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
+        mock_workflow_run.status = WorkflowStatus.RUNNING.value
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
+
+        mock_wfl_run_history_event1: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
+        mock_wfl_run_history_event1.event_id = 0
+        mock_wfl_run_history_event1.timestamp = datetime.utcnow()
+        mock_wfl_run_history_event1.event_type = "RunStarted"
+        mock_wfl_run_history_event1.event_details = {}
+        # some more task events in between ...
+        mock_wfl_run_history_event2: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
+        mock_wfl_run_history_event2.event_id = 46586
+        mock_wfl_run_history_event2.timestamp = datetime.utcnow()
+        mock_wfl_run_history_event2.event_type = f"Run{WorkflowStatus.FAILED.value}"
+        mock_wfl_run_history_event2.event_details = {
+            "error": "Workflow.Failed",
+            "cause": "Run Failed. Reason: task: [samplesheetSplit_launch] details: [Failed to submit TES Task. "
+                     "Reason [(500)\nReason: Internal Server Error\nHTTP response headers: "
+                     "HTTPHeaderDict({'Date': 'Mon, 29 Jun 2020 07:37:16 GMT', 'Content-Type': 'application/json', "
+                     "'Server': 'Kestrel', 'Transfer-Encoding': 'chunked'})\nHTTP response body: "
+                     "{\"code\":\"\",\"message\":\"We had an unexpected issue.  Please try your request again.  "
+                     "The issue has been logged and we are looking into it.\"}\n]]"
+        }
+        mock_wfl_run_history_event_list: libwes.WorkflowRunHistoryEventList = libwes.WorkflowRunHistoryEventList()
+        mock_wfl_run_history_event_list.items = [mock_wfl_run_history_event1, mock_wfl_run_history_event2]
+        when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
+
+        iap.handler(_sqs_wes_event_message(
+            wfv_id=mock_bcl_workflow.wfv_id,
+            wfr_id=mock_bcl_workflow.wfr_id,
+            workflow_status=WorkflowStatus.FAILED
+        ), None)
+
+        # assert germline workflow launch has skipped and won't save into portal db
+        all_workflow_runs = Workflow.objects.all()
+        self.assertEqual(1, all_workflow_runs.count())  # should contain only one Failed bcl convert workflow
+
+        for wfl in all_workflow_runs:
+            logger.info((wfl.wfr_id, wfl.type_name, wfl.notified, wfl.end_status, wfl.end))
+            logger.info(wfl.output)
+            self.assertEqual(wfl.end_status, WorkflowStatus.FAILED.value)
+
+        # should call to slack webhook 1 time to notify RunFailed
+        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
+
+    def test_wes_runs_event_run_failed_alt(self):
+        """
+        Similar to above ^^^
+        But, both WES Run and Run History API event disagree (much more delay) with SQS message WES EventType!
+        Last resort test case for worst case scenario for most possibly RunFailed situation!
+        Ops should investigate when this happens.
+
+        :return:
+        """
+        self.verify()
+        mock_bcl_workflow: Workflow = WorkflowFactory()
+        mock_bcl_workflow.notified = True  # mock also consider Running status has already notified
+        mock_bcl_workflow.save()
+
+        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
+        mock_workflow_run.status = WorkflowStatus.RUNNING.value
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
+
+        mock_wfl_run_history_event1: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
+        mock_wfl_run_history_event1.event_id = 0
+        mock_wfl_run_history_event1.timestamp = datetime.utcnow()
+        mock_wfl_run_history_event1.event_type = "RunStarted"
+        mock_wfl_run_history_event1.event_details = {}
+
+        mock_wfl_run_history_event_list: libwes.WorkflowRunHistoryEventList = libwes.WorkflowRunHistoryEventList()
+        mock_wfl_run_history_event_list.items = [mock_wfl_run_history_event1]
+        when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
+
+        iap.handler(_sqs_wes_event_message(
+            wfv_id=mock_bcl_workflow.wfv_id,
+            wfr_id=mock_bcl_workflow.wfr_id,
+            workflow_status=WorkflowStatus.FAILED
+        ), None)
+
+        # assert germline workflow launch has skipped and won't save into portal db
+        all_workflow_runs = Workflow.objects.all()
+        self.assertEqual(1, all_workflow_runs.count())  # should contain only one Failed bcl convert workflow
+
+        for wfl in all_workflow_runs:
+            logger.info((wfl.wfr_id, wfl.type_name, wfl.notified, wfl.end_status, wfl.end))
+            logger.info(wfl.output)
+            self.assertEqual(wfl.end_status, WorkflowStatus.FAILED.value)
+
+        # should call to slack webhook 1 time to notify RunFailed
+        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
     def test_wes_runs_event_not_in_automation(self):
         """

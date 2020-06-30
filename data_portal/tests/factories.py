@@ -145,8 +145,8 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
             'listing': []
         }
     })
-    end = make_aware(datetime.now())
-    end_status = WorkflowStatus.SUCCEEDED.value
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
 
     wfr_name = factory.LazyAttribute(
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"

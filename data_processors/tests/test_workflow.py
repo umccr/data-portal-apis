@@ -120,7 +120,7 @@ class WorkflowTest(WorkflowCase):
         try:
             FastQBuilder(workflow).build()
         except Exception as e:
-            logger.exception(e)
+            logger.exception(f"THIS 'json.decoder.JSONDecodeError' IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(json.JSONDecodeError)
 
     def test_workflow_output_format(self):

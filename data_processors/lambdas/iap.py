@@ -73,19 +73,24 @@ def handler(event, context):
                     WorkflowDomainModel(spec).launch()
 
         if event_type == WES_RUNS:
-            # update workflow run output, end time and end status
+            wfr_event = {
+                'event_type': message_body_json['EventType'],
+                'event_details': message_body_json['EventDetails'],
+                'timestamp': message_body_json['Timestamp'],
+            }
             # extract wfr_id from message and query Workflow from db
             wfr_id = message_body_json['WorkflowRun']['Id']
             wfv_id = message_body_json['WorkflowRun']['WorkflowVersion']['Id']
             workflow = srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
 
             if workflow:
-                # if workflow is in Portal db then WorkflowDomainModel(spec).update(workflow)
+                # update workflow run output, end time and end status, and then notify if necessary
                 spec = WorkflowSpecification()
                 spec.workflow_type = WorkflowType[workflow.type_name]
                 if workflow.fastq_read_type_name is not None:
                     spec.fastq_read_type = FastQReadType[workflow.fastq_read_type_name]
                 spec.sequence_run = workflow.sequence_run
+                spec.wfr_event = wfr_event
                 this_model: WorkflowDomainModel = WorkflowDomainModel(spec)
                 this_model.synth(workflow)
                 this_model.update()

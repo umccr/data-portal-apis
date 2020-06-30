@@ -520,7 +520,7 @@ def create_or_update_workflow(model: dict):
                 ids.append(parent.id)
             workflow.parents = json.dumps({'parents': ids})
     else:
-        logger.info(f"Updating existing {wfl_type} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
+        logger.info(f"Updating existing {wfl_type.name} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
         workflow: Workflow = qs.get()
 
         _output = model.get('output')
@@ -535,7 +535,10 @@ def create_or_update_workflow(model: dict):
 
         _end = model.get('end')
         if _end:
-            workflow.end = _end if is_aware(_end) else make_aware(_end)
+            if isinstance(_end, datetime):
+                workflow.end = _end if is_aware(_end) else make_aware(_end)
+            else:
+                workflow.end = _end  # expect end in raw zone-aware UTC datetime string e.g. "2020-06-25T10:45:20.438Z"
 
         if model.get('notified'):
             workflow.notified = model.get('notified')
