@@ -20,6 +20,13 @@ class WorkflowStatus(Enum):
     ABORTED = "Aborted"
 
 
+class WorkflowRunEventType(Enum):
+    RUNSTARTED = "RunStarted"
+    RUNSUCCEEDED = "RunSucceeded"
+    RUNFAILED = "RunFailed"
+    RUNABORTED = "RunAborted"
+
+
 class FastQReadType(Enum):
     """Enum as in form of
     FRIENDLY_NAME_OF_SUPPORTED_FASTQ_READ_TYPE = NUMBER_OF_FASTQ_FILES_PRODUCE

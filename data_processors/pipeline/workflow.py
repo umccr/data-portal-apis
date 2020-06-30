@@ -8,7 +8,7 @@ from libiap.openapi import libwes
 
 from data_portal.models import SequenceRun, Workflow
 from data_processors import services
-from data_processors.pipeline.dto import WorkflowType, FastQReadType, FastQ, WorkflowStatus
+from data_processors.pipeline.dto import WorkflowType, FastQReadType, FastQ, WorkflowStatus, WorkflowRunEventType
 from data_processors.pipeline.eps import WESInterface
 from data_processors.pipeline.factory import FastQBuilder
 from data_processors.pipeline.input import BCLConvertInput, GermlineInput
@@ -296,8 +296,18 @@ class WorkflowUpdate(WESInterface):
             try:
                 wfl_run: libwes.WorkflowRun = run_api.get_workflow_run(run_id=model.wfr_id)
 
-                # expect to evaluate patterns "Failed in RunFailed", "Succeeded in RunSucceeded", ...
-                if model.wfr_event and wfl_run.status in model.wfr_event['event_type']:
+                # Running in RunStarted, a bit quirky nomenclature in API on EventType vs Status enum!
+                # if it is this pair, it is ok to update status from WES API endpoint response
+                if model.wfr_event and \
+                        wfl_run.status == WorkflowStatus.RUNNING.value and \
+                        model.wfr_event['event_type'] == WorkflowRunEventType.RUNSTARTED.value:
+                    logger.info(f"Updating '{model.wfr_id}' status from WES RUN API endpoint.")
+                    self._status = wfl_run.status
+                    self._output = wfl_run.output
+                    self._end = wfl_run.time_stopped
+
+                # evaluate patterns "Failed in RunFailed", "Succeeded in RunSucceeded", "Aborted in RunAborted"
+                elif model.wfr_event and wfl_run.status in model.wfr_event['event_type']:
                     logger.info(f"Updating '{model.wfr_id}' status from WES RUN API endpoint.")
                     self._status = wfl_run.status
                     self._output = wfl_run.output
@@ -324,7 +334,7 @@ class WorkflowUpdate(WESInterface):
                     # run events are sorted by event_id ASC, so grab the last event
                     last_run_event: libwes.WorkflowRunHistoryEvent = run_events[-1] if run_events else None
 
-                    # perform same evaluation patterns but "RunFailed in RunFailed", "RunSucceeded in RunSucceeded", ...
+                    # evaluation patterns "RunFailed in RunFailed", "RunSucceeded in RunSucceeded", ... should match
                     if last_run_event and last_run_event.event_type in model.wfr_event['event_type']:
                         logger.info(f"Updating '{model.wfr_id}' status from WES RUN HISTORY API endpoint.")
                         self._status = last_run_event.event_type[3:]        # expect first 3 char in Run*
