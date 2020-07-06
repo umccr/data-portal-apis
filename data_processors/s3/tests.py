@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.utils.timezone import now
 
 from data_portal.models import LIMSRow, S3Object, S3LIMS
-from data_processors.lambdas import s3
+from data_processors.s3 import lambdas
 
 
 class S3LambdaTests(TestCase):
@@ -95,7 +95,7 @@ class S3LambdaTests(TestCase):
             ]
         }
 
-        results = s3.handler(sqs_event, None)
+        results = lambdas.handler(sqs_event, None)
 
         self.assertEqual(results['removed_count'], 1)
         # We should expect the existing association removed as well
@@ -134,5 +134,5 @@ class S3LambdaTests(TestCase):
             ]
         }
 
-        s3.handler(sqs_event, None)
+        lambdas.handler(sqs_event, None)
         self.assertRaises(ObjectDoesNotExist)

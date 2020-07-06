@@ -18,10 +18,11 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 aws sso login --profile=dev
 export AWS_PROFILE=dev
 make up
+make start
 ```
 - REST API at: http://localhost:8000
 - MySQL Adminer at: http://localhost:8181
-
+- Look into `Makefile` for more dev routine targets
 
 #### Testing
 

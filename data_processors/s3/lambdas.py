@@ -18,7 +18,7 @@ from typing import List, Tuple, Union, Dict
 from dateutil.parser import parse
 from collections import defaultdict
 
-from data_processors.services import persist_s3_object, delete_s3_object, tag_s3_object
+from data_processors.s3.services import persist_s3_object, delete_s3_object, tag_s3_object
 from utils import libjson
 
 logger = logging.getLogger()

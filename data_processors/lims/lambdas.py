@@ -14,7 +14,7 @@ django.setup()
 import logging
 from typing import Dict
 
-from data_processors.services import persist_lims_data_from_google_drive
+from data_processors.lims.services import persist_lims_data_from_google_drive
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

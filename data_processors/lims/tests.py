@@ -5,7 +5,7 @@ from typing import List, Dict
 from django.test import TestCase
 
 from data_portal.models import LIMSRow
-from data_processors.services import persist_lims_data
+from data_processors.lims.services import persist_lims_data
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

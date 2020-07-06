@@ -1,20 +1,17 @@
-import json
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import make_aware
-from libiap.openapi import libwes
+from libiap.openapi import libwes, libgds
 from mockito import when, verify
 
 from data_portal.models import GDSFile, SequenceRun, Workflow
-from data_portal.tests.factories import GDSFileFactory, WorkflowFactory
-from data_processors.exceptions import *
-from data_processors.lambdas import iap
-from data_processors.pipeline.dto import FastQ, WorkflowStatus, WorkflowType
-from data_processors.pipeline.factory import FastQBuilder
-from data_processors.tests import _rand, _uuid
-from data_processors.tests.case import WorkflowCase, logger
-from utils import libslack
+from data_portal.tests.factories import GDSFileFactory, WorkflowFactory, TestConstant
+from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowRunEventType
+from data_processors.pipeline.lambdas import sqs_iap_event
+from data_processors.pipeline.tests import _rand, _uuid
+from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
+from utils import libslack, libjson
 
 
 def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED):
@@ -30,6 +27,7 @@ def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = Wor
                      "unexpected issue.  Please try your request again.  The issue has been logged and we are looking "
                      "into it.\"}\n]]"
         }
+
     elif workflow_status == WorkflowStatus.ABORTED:
         event_details = {
             "Error": "Workflow.Engine",
@@ -120,7 +118,7 @@ def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = Wor
                 "eventSource": "aws:sqs",
                 "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
                 "awsRegion": "ap-southeast-2",
-                "body": json.dumps(workflow_run_message),
+                "body": libjson.dumps(workflow_run_message),
                 "messageAttributes": ens_sqs_message_attributes,
                 "attributes": {
                     "ApproximateReceiveCount": "3",
@@ -135,9 +133,12 @@ def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = Wor
     return sqs_event_message
 
 
-class IAPLambdaTests(WorkflowCase):
+class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_uploaded_gds_file_event(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_uploaded_gds_file_event
+        """
 
         gds_file_message = {
             "id": "fil.8036f70c160549m1107500d7cf72d73p",
@@ -221,13 +222,13 @@ class IAPLambdaTests(WorkflowCase):
             "Records": [
                 {
                     "eventSource": "aws:sqs",
-                    "body": json.dumps(gds_file_message),
+                    "body": libjson.dumps(gds_file_message),
                     "messageAttributes": ens_sqs_message_attributes
                 }
             ]
         }
 
-        iap.handler(sqs_event_message, None)
+        sqs_iap_event.handler(sqs_event_message, None)
 
         volume = "umccr-compliance-volume-name-prod"
         path = "/Runs/200401_A00130_0134_BHT5N3DMXX/IntegrationTest.txt"
@@ -237,6 +238,10 @@ class IAPLambdaTests(WorkflowCase):
         logger.info(f"Asserted found GDSFile record from db: gds://{gds_file.volume_name}{gds_file.path}")
 
     def test_unsupported_ens_event_type(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_unsupported_ens_event_type
+        """
+        self.verify_local()
 
         ens_sqs_message_attributes = {
             "type": {
@@ -257,14 +262,12 @@ class IAPLambdaTests(WorkflowCase):
             ]
         }
 
-        try:
-            iap.handler(sqs_event_message, None)
-        except UnsupportedIAPEventNotificationServiceType as e:
-            logger.info(f"Raised: {e}")
-
-        self.assertRaises(UnsupportedIAPEventNotificationServiceType)
+        sqs_iap_event.handler(sqs_event_message, None)
 
     def test_deleted_gds_file_event(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_deleted_gds_file_event
+        """
 
         gds_file: GDSFile = GDSFileFactory()
 
@@ -307,16 +310,20 @@ class IAPLambdaTests(WorkflowCase):
             "Records": [
                 {
                     "eventSource": "aws:sqs",
-                    "body": json.dumps(gds_file_message),
+                    "body": libjson.dumps(gds_file_message),
                     "messageAttributes": ens_sqs_message_attributes
                 }
             ]
         }
 
-        iap.handler(sqs_event_message, None)
+        sqs_iap_event.handler(sqs_event_message, None)
         self.assertEqual(0, GDSFile.objects.count())
 
     def test_delete_non_existent_gds_file(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_delete_non_existent_gds_file
+        """
+
         gds_file_message = {
             "volumeName": "test",
             "path": "/this/does/not/exist/in/db/gds_file.path",
@@ -335,16 +342,19 @@ class IAPLambdaTests(WorkflowCase):
             "Records": [
                 {
                     "eventSource": "aws:sqs",
-                    "body": json.dumps(gds_file_message),
+                    "body": libjson.dumps(gds_file_message),
                     "messageAttributes": ens_sqs_message_attributes
                 }
             ]
         }
 
-        iap.handler(sqs_event_message, None)
+        sqs_iap_event.handler(sqs_event_message, None)
         self.assertRaises(ObjectDoesNotExist)
 
     def test_sequence_run_event(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_sequence_run_event
+        """
 
         mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
         mock_instrument_run_id = "200508_A01052_0001_AC5GT7ACGT"
@@ -406,7 +416,7 @@ class IAPLambdaTests(WorkflowCase):
             "Records": [
                 {
                     "eventSource": "aws:sqs",
-                    "body": json.dumps(sequence_run_message),
+                    "body": libjson.dumps(sequence_run_message),
                     "messageAttributes": ens_sqs_message_attributes,
                     "attributes": {
                         "ApproximateReceiveCount": "3",
@@ -419,7 +429,7 @@ class IAPLambdaTests(WorkflowCase):
             ]
         }
 
-        iap.handler(sqs_event_message, None)
+        sqs_iap_event.handler(sqs_event_message, None)
 
         qs = SequenceRun.objects.filter(run_id=mock_run_id)
         sqr = qs.get()
@@ -432,42 +442,50 @@ class IAPLambdaTests(WorkflowCase):
 
     def test_wes_runs_event_germline(self):
         """
-        Scenario:
-        In order to kick off germline workflow, bcl convert must be completed at least.
-        And also the related Sequence Run, quite implicitly.
-        So, need to mock these two states and put them into test db first.
-        Then call iap lambda with the mock wes event message.
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline
         """
-        self.verify()
+
+        self.verify_local()
+        logger.info(f"-"*32)
+
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
-        mock_fastq: FastQ = FastQ()
-        mock_fastq.volume_name = f"{mock_bcl_workflow.wfr_id}"
-        mock_fastq.path = f"/bclConversion_launch/try-1/out-dir-bclConvert"
-        mock_fastq.gds_path = f"gds://{mock_fastq.volume_name}{mock_fastq.path}"
-        mock_fastq.fastq_map = {
-            'SAMPLE_ACGT1': {
-                'fastq_list': ['SAMPLE_ACGT1_S1_L001_R1_001.fastq.gz', 'SAMPLE_ACGT1_S1_L001_R2_001.fastq.gz'],
-                'tags': ['SBJ00001'],
-            },
-            'SAMPLE_ACGT2': {
-                'fastq_list': ['SAMPLE_ACGT2_S2_L001_R1_001.fastq.gz', 'SAMPLE_ACGT2_S2_L001_R2_001.fastq.gz'],
-                'tags': ['SBJ00001'],
-            },
+        mock_wfl_run = libwes.WorkflowRun()
+        mock_wfl_run.id = TestConstant.wfr_id.value
+        mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
+        mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
+        mock_wfl_run.output = {
+            'main/fastqs': {
+                'location': f"gds://{TestConstant.wfr_id.value}/bclConversion_launch/try-1/out-dir-bclConvert",
+                'basename': "out-dir-bclConvert",
+                'nameroot': "",
+                'nameext': "",
+                'class': "Directory",
+                'listing': []
+            }
         }
-        when(FastQBuilder).build().thenReturn(mock_fastq)
+        workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
+        workflow_version.id = TestConstant.wfv_id.value
+        mock_wfl_run.workflow_version = workflow_version
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
-        mock_workflow_run.time_stopped = make_aware(datetime.utcnow())
-        mock_workflow_run.status = WorkflowStatus.SUCCEEDED.value
-        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
+        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
+        mock_file_list.items = [
+            libgds.FileResponse(name="NA12345_S7_R1_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_R2_001.fastq.gz"),
+        ]
+        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        iap.handler(_sqs_wes_event_message(wfv_id=mock_bcl_workflow.wfv_id, wfr_id=mock_bcl_workflow.wfr_id), None)
+        sqs_iap_event.handler(
+            _sqs_wes_event_message(wfv_id=mock_bcl_workflow.wfv_id, wfr_id=mock_bcl_workflow.wfr_id)
+            , None
+        )
 
         # assert germline workflow launch success and save workflow runs in portal db
         success_germline_workflow_runs = Workflow.objects.all()
-        self.assertEqual(3, success_germline_workflow_runs.count())
+        self.assertEqual(2, success_germline_workflow_runs.count())
 
+        logger.info(f"-"*32)
         for wfl in success_germline_workflow_runs:
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
             if wfl.type_name == WorkflowType.BCL_CONVERT.name:
@@ -477,38 +495,56 @@ class IAPLambdaTests(WorkflowCase):
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
     def test_wes_runs_event_germline_alt(self):
-        self.verify()
+        """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline_alt
+        """
+
+        self.verify_local()
+        logger.info(f"-" * 32)
+
         mock_bcl_workflow: Workflow = WorkflowFactory()
-        mock_bcl_workflow.notified = True  # mock also consider scenario where bcl workflow has already notified before
         mock_bcl_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_bcl_workflow.notified = True  # mock also consider scenario where bcl workflow has already notified before
         mock_bcl_workflow.save()
 
-        mock_fastq: FastQ = FastQ()
-        mock_fastq.volume_name = f"{mock_bcl_workflow.wfr_id}"
-        mock_fastq.path = f"/bclConversion_launch/try-1/out-dir-bclConvert"
-        mock_fastq.gds_path = f"gds://{mock_fastq.volume_name}{mock_fastq.path}"
-        mock_fastq.fastq_map = {
-            'SAMPLE_ACGT1': {
-                'fastq_list': [
-                    'SAMPLE_ACGT1_S1_L001_R1_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R1_001.fastq.gz',
-                    'SAMPLE_ACGT1_S1_L001_R2_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R2_001.fastq.gz',
-                ],
-                'tags': ['SBJ00001'],
-            },
+        mock_wfl_run = libwes.WorkflowRun()
+        mock_wfl_run.id = TestConstant.wfr_id.value
+        mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
+        mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
+        mock_wfl_run.output = {
+            'main/fastqs': {
+                'location': f"gds://{TestConstant.wfr_id.value}/bclConversion_launch/try-1/out-dir-bclConvert",
+                'basename': "out-dir-bclConvert",
+                'nameroot': "",
+                'nameext': "",
+                'class': "Directory",
+                'listing': []
+            }
         }
-        when(FastQBuilder).build().thenReturn(mock_fastq)
+        workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
+        workflow_version.id = TestConstant.wfv_id.value
+        mock_wfl_run.workflow_version = workflow_version
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
-        mock_workflow_run.time_stopped = make_aware(datetime.utcnow())
-        mock_workflow_run.status = WorkflowStatus.SUCCEEDED.value
-        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_workflow_run)
+        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
+        mock_file_list.items = [
+            libgds.FileResponse(name="NA12345_S7_L001_R1_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_L002_R1_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_L001_R2_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_L002_R2_001.fastq.gz"),
+        ]
+        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        iap.handler(_sqs_wes_event_message(wfv_id=mock_bcl_workflow.wfv_id, wfr_id=mock_bcl_workflow.wfr_id), None)
+        sqs_iap_event.handler(
+            _sqs_wes_event_message(wfv_id=mock_bcl_workflow.wfv_id, wfr_id=mock_bcl_workflow.wfr_id)
+            , None
+        )
 
         # assert germline workflow launch has skipped and won't save into portal db
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one bcl convert workflow
 
+        logger.info(f"-" * 32)
         for wfl in all_workflow_runs:
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
 
@@ -517,21 +553,20 @@ class IAPLambdaTests(WorkflowCase):
 
     def test_wes_runs_event_run_succeeded(self):
         """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_succeeded
+
         Precondition:
         BCL Convert workflow is Running. Had sent notification status Running to slack sometime before...
 
         Scenario:
         Now, WES Run Event message arrive with RunSucceeded.
         However, checking into WES Run API endpoint says workflow is still Running status.
-        Simulating possible IAP sub-systems/components delay. (well most often the case!)
         Should hit WES Run History Event and be able to update run Succeeded status without issue.
-
-        :return:
         """
-        self.verify()
+        self.verify_local()
+        logger.info(f"-" * 32)
+
         mock_bcl: Workflow = WorkflowFactory()
-        mock_bcl.notified = True  # mock also consider Running status has already notified
-        mock_bcl.save()
 
         mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
         mock_workflow_run.status = WorkflowStatus.RUNNING.value
@@ -546,7 +581,7 @@ class IAPLambdaTests(WorkflowCase):
         mock_wfl_run_history_event2: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
         mock_wfl_run_history_event2.event_id = 46586
         mock_wfl_run_history_event2.timestamp = datetime.utcnow()
-        mock_wfl_run_history_event2.event_type = f"Run{WorkflowStatus.SUCCEEDED.value}"
+        mock_wfl_run_history_event2.event_type = WorkflowRunEventType.RUNSUCCEEDED.value
         mock_wfl_run_history_event2.event_details = {
             "output": {
                 "main/fastqs": {
@@ -572,22 +607,16 @@ class IAPLambdaTests(WorkflowCase):
         when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
 
         # make Germline workflow launch skip
-        mock_fastq: FastQ = FastQ()
-        mock_fastq.volume_name = f"{mock_bcl.wfr_id}"
-        mock_fastq.path = f"/bclConversion_launch/try-1/out-dir-bclConvert"
-        mock_fastq.gds_path = f"gds://{mock_fastq.volume_name}{mock_fastq.path}"
-        mock_fastq.fastq_map = {
-            'SAMPLE_ACGT1': {
-                'fastq_list': [
-                    'SAMPLE_ACGT1_S1_L001_R1_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R1_001.fastq.gz',
-                    'SAMPLE_ACGT1_S1_L001_R2_001.fastq.gz', 'SAMPLE_ACGT1_S1_L002_R2_001.fastq.gz',
-                ],
-                'tags': ['SBJ00001'],
-            },
-        }
-        when(FastQBuilder).build().thenReturn(mock_fastq)
+        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
+        mock_file_list.items = [
+            libgds.FileResponse(name="NA12345_S7_L001_R1_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_L002_R1_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_L001_R2_001.fastq.gz"),
+            libgds.FileResponse(name="NA12345_S7_L002_R2_001.fastq.gz"),
+        ]
+        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        iap.handler(_sqs_wes_event_message(
+        sqs_iap_event.handler(_sqs_wes_event_message(
             wfv_id=mock_bcl.wfv_id,
             wfr_id=mock_bcl.wfr_id,
             workflow_status=WorkflowStatus.SUCCEEDED
@@ -597,6 +626,7 @@ class IAPLambdaTests(WorkflowCase):
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one Succeeded bcl convert workflow
 
+        logger.info(f"-" * 32)
         for wfl in all_workflow_runs:
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified, wfl.end_status, wfl.end))
             logger.info(wfl.output)
@@ -607,21 +637,20 @@ class IAPLambdaTests(WorkflowCase):
 
     def test_wes_runs_event_run_failed(self):
         """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_failed
+
         Precondition:
         BCL Convert workflow is Running. Had sent notification status Running to slack sometime before...
 
         Scenario:
         Now, WES Run Event message arrive with RunFailed Internal Server Error 500.
         However, checking into WES Run API endpoint says workflow is still Running status.
-        Simulating possible IAP sub-systems/components delay. (well most often the case!)
         Should hit WES Run History Event and be able to update run Failed status without issue.
-
-        :return:
         """
-        self.verify()
+        self.verify_local()
+        logger.info(f"-" * 32)
+
         mock_bcl_workflow: Workflow = WorkflowFactory()
-        mock_bcl_workflow.notified = True  # mock also consider Running status has already notified
-        mock_bcl_workflow.save()
 
         mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
         mock_workflow_run.status = WorkflowStatus.RUNNING.value
@@ -636,7 +665,7 @@ class IAPLambdaTests(WorkflowCase):
         mock_wfl_run_history_event2: libwes.WorkflowRunHistoryEvent = libwes.WorkflowRunHistoryEvent()
         mock_wfl_run_history_event2.event_id = 46586
         mock_wfl_run_history_event2.timestamp = datetime.utcnow()
-        mock_wfl_run_history_event2.event_type = f"Run{WorkflowStatus.FAILED.value}"
+        mock_wfl_run_history_event2.event_type = WorkflowRunEventType.RUNFAILED.value
         mock_wfl_run_history_event2.event_details = {
             "error": "Workflow.Failed",
             "cause": "Run Failed. Reason: task: [samplesheetSplit_launch] details: [Failed to submit TES Task. "
@@ -650,7 +679,7 @@ class IAPLambdaTests(WorkflowCase):
         mock_wfl_run_history_event_list.items = [mock_wfl_run_history_event1, mock_wfl_run_history_event2]
         when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
 
-        iap.handler(_sqs_wes_event_message(
+        sqs_iap_event.handler(_sqs_wes_event_message(
             wfv_id=mock_bcl_workflow.wfv_id,
             wfr_id=mock_bcl_workflow.wfr_id,
             workflow_status=WorkflowStatus.FAILED
@@ -660,6 +689,7 @@ class IAPLambdaTests(WorkflowCase):
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one Failed bcl convert workflow
 
+        logger.info(f"-" * 32)
         for wfl in all_workflow_runs:
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified, wfl.end_status, wfl.end))
             logger.info(wfl.output)
@@ -670,14 +700,15 @@ class IAPLambdaTests(WorkflowCase):
 
     def test_wes_runs_event_run_failed_alt(self):
         """
-        Similar to above ^^^
-        But, both WES Run and Run History API event disagree (much more delay) with SQS message WES EventType!
-        Last resort test case for worst case scenario for most possibly RunFailed situation!
-        Ops should investigate when this happens.
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_failed_alt
 
-        :return:
+        Similar to above ^^^
+        But, both WES Run and Run History API event disagree (may be much more delay) with SQS message WES EventType!
+        Last resort update status using WES EventType. Most possibly RunFailed situation.
         """
-        self.verify()
+        self.verify_local()
+        logger.info(f"-" * 32)
+
         mock_bcl_workflow: Workflow = WorkflowFactory()
         mock_bcl_workflow.notified = True  # mock also consider Running status has already notified
         mock_bcl_workflow.save()
@@ -696,7 +727,7 @@ class IAPLambdaTests(WorkflowCase):
         mock_wfl_run_history_event_list.items = [mock_wfl_run_history_event1]
         when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
 
-        iap.handler(_sqs_wes_event_message(
+        sqs_iap_event.handler(_sqs_wes_event_message(
             wfv_id=mock_bcl_workflow.wfv_id,
             wfr_id=mock_bcl_workflow.wfr_id,
             workflow_status=WorkflowStatus.FAILED
@@ -706,6 +737,7 @@ class IAPLambdaTests(WorkflowCase):
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one Failed bcl convert workflow
 
+        logger.info(f"-" * 32)
         for wfl in all_workflow_runs:
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified, wfl.end_status, wfl.end))
             logger.info(wfl.output)
@@ -716,13 +748,15 @@ class IAPLambdaTests(WorkflowCase):
 
     def test_wes_runs_event_not_in_automation(self):
         """
+        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_not_in_automation
+
         Scenario:
         Testing wes.runs event's workflow is not in Portal workflow runs automation database. Therefore, skip.
         That is, it might have been launched elsewhere.
         """
         wfr_id = f"wfr.{_rand(32)}"
         wfv_id = f"wfv.{_rand(32)}"
-        iap.handler(_sqs_wes_event_message(wfv_id=wfv_id, wfr_id=wfr_id), None)
+        sqs_iap_event.handler(_sqs_wes_event_message(wfv_id=wfv_id, wfr_id=wfr_id), None)
 
         # assert 0 workflow runs in portal db
         workflow_runs = Workflow.objects.all()

@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class WorkflowCase(TestCase):
+class PipelineUnitTestCase(TestCase):
 
     def setUp(self) -> None:
         os.environ['IAP_BASE_URL'] = "http://localhost"
@@ -21,12 +21,11 @@ class WorkflowCase(TestCase):
 
         # Comment the following mock to actually send slack message for this test case. i.e.
         # export SLACK_CHANNEL=#arteria-dev
-        # python manage.py test data_processors.tests.test_iap.IAPLambdaTests.test_sequence_run_event
         #
         os.environ['SLACK_CHANNEL'] = "#mock"
         mock_response = mock(libslack.http.client.HTTPResponse)
         mock_response.status = 200
-        when(libslack.libssm).get_ssm_param(...).thenReturn("mock_webhook_id_123")
+        when(libslack).get_slack_webhook_id_param_store(...).thenReturn("mock_webhook_id_123")
         when(libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
         when(libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
 
@@ -38,7 +37,7 @@ class WorkflowCase(TestCase):
         del os.environ['SLACK_CHANNEL']
         unstub()
 
-    def verify(self):
+    def verify_local(self):
         logger.info(f"IAP_BASE_URL={os.getenv('IAP_BASE_URL')}")
         logger.info(f"IAP_WES_WORKFLOW_ID={os.getenv('IAP_WES_WORKFLOW_ID')}")
         logger.info(f"IAP_WES_WORKFLOW_VERSION_NAME={os.getenv('IAP_WES_WORKFLOW_VERSION_NAME')}")
@@ -47,3 +46,7 @@ class WorkflowCase(TestCase):
         assert os.environ['IAP_WES_WORKFLOW_ID'] == TestConstant.wfl_id.value
         assert os.environ['IAP_WES_WORKFLOW_VERSION_NAME'] == TestConstant.version.value
         self.assertEqual(os.environ['IAP_BASE_URL'], "http://localhost")
+
+
+class PipelineIntegrationTestCase(TestCase):
+    pass

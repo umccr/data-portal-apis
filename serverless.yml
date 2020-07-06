@@ -205,26 +205,50 @@ functions:
           integration: lambda-proxy
           authorizer: aws_iam
           cors: true
-  sqs_s3_event_processor:
-    handler: data_processors.lambdas.s3.handler
-    events:
-      - sqs:
-          arn: ${env:S3_EVENT_SQS_ARN}
-  sqs_iap_event_processor:
-    handler: data_processors.lambdas.iap.handler
-    events:
-      - sqs:
-          arn: ${env:IAP_ENS_EVENT_SQS_ARN}
+  migrate:
+    handler: migrate.handler
+    timeout: 20
   lims_scheduled_update_processor:
-    handler: data_processors.lambdas.lims.scheduled_update_handler
+    handler: data_processors.lims.lambdas.scheduled_update_handler
     events:
       - schedule:
           rate: cron(0 12 * * ? *)
           enabled: ${self:custom.enabled.${opt:STAGE}, self.enabled.other}
     timeout: 28
-  migrate:
-    handler: migrate.handler
-    timeout: 20
+  sqs_s3_event_processor:
+    handler: data_processors.s3.lambdas.handler
+    events:
+      - sqs:
+          arn: ${env:S3_EVENT_SQS_ARN}
+  sqs_iap_event_processor:
+    handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
+    events:
+      - sqs:
+          arn: ${env:IAP_ENS_EVENT_SQS_ARN}
+  bcl_convert:
+    handler: data_processors.pipeline.lambdas.bcl_convert.handler
+    timeout: 28
+  germline:
+    handler: data_processors.pipeline.lambdas.germline.handler
+    timeout: 28
+  fastq:
+    handler: data_processors.pipeline.lambdas.fastq.handler
+    timeout: 28
+  demux:
+    handler: data_processors.pipeline.lambdas.demux.handler
+    timeout: 28
+  orchestrator:
+    handler: data_processors.pipeline.lambdas.orchestrator.handler
+    timeout: 28
+  workflow_update:
+    handler: data_processors.pipeline.lambdas.workflow_update.handler
+    timeout: 28
+  wes_launch:
+    handler: data_processors.pipeline.lambdas.wes_handler.launch
+    timeout: 28
+  wes_get_workflow_run:
+    handler: data_processors.pipeline.lambdas.wes_handler.get_workflow_run
+    timeout: 28
 
 custom:
   enabled:

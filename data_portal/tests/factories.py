@@ -6,7 +6,7 @@ import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
-from data_processors.pipeline.dto import WorkflowType, FastQReadType, WorkflowStatus
+from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 
@@ -130,21 +130,10 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
     type_name = WorkflowType.BCL_CONVERT.name
-    fastq_read_type_name = FastQReadType.PAIRED_END.name
     input = json.dumps({
         "mock": "must load template from ssm parameter store"
     })
     start = make_aware(datetime.now())
-    output = json.dumps({
-        'main/fastqs': {
-            'location': f"gds://{wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert",
-            'basename': "out-dir-bclConvert",
-            'nameroot': "",
-            'nameext': "",
-            'class': "Directory",
-            'listing': []
-        }
-    })
     end_status = WorkflowStatus.RUNNING.value
     notified = True
 

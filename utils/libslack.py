@@ -47,12 +47,17 @@ logger = logging.getLogger(__name__)
 DEFAULT_SLACK_WEBHOOK_SSM_KEY = "/slack/webhook/id"
 
 
+def get_slack_webhook_id_param_store(ssm_key):
+    if ssm_key is None:
+        ssm_key = DEFAULT_SLACK_WEBHOOK_SSM_KEY
+    slack_webhook_id = libssm.get_ssm_param(ssm_key)
+    return slack_webhook_id
+
+
 def call_slack_webhook(sender, topic, attachments, ssm=True, **kwargs):
     if ssm:
         ssm_key = kwargs.get('ssm_key', None)
-        if ssm_key is None:
-            ssm_key = DEFAULT_SLACK_WEBHOOK_SSM_KEY
-        slack_webhook_id = libssm.get_ssm_param(ssm_key)
+        slack_webhook_id = get_slack_webhook_id_param_store(ssm_key)
     else:
         slack_webhook_id = kwargs.get('webhook_id', None)
         if slack_webhook_id is None:

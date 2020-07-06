@@ -43,7 +43,7 @@ if __name__ == '__main__':
     import django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
     django.setup()
-    from data_processors import services
+    from data_processors.s3 import services
 
     # ---
 

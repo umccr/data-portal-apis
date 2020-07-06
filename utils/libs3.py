@@ -155,7 +155,7 @@ def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
     try:
         resp = s3.restore_object(Bucket=bucket, Key=key, RestoreRequest=restore_request)
         status_code = resp['ResponseMetadata']['HTTPStatusCode']
-        logger.info(f"Requested restore for the S3 object (s3://{bucket}{key}) with "
+        logger.info(f"Requested restore for the S3 object (s3://{bucket}/{key}) with "
                     f"{days} days, {tier} tier, {requested_by} at {requested_time}. "
                     f"Response HTTPStatusCode - {status_code}")
         return True, dict(status_code=status_code)
