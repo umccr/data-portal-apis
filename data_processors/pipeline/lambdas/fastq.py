@@ -22,12 +22,15 @@ from utils import libssm, libjson
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+DEFAULT_SSM_KEY_IAP_AUTH_TOKEN = "/iap/jwt-token"
+DEFAULT_IAP_BASE_URL = "https://aps2.platform.illumina.com"
+
 
 def configuration():
     iap_auth_token = os.getenv("IAP_AUTH_TOKEN", None)
     if iap_auth_token is None:
-        iap_auth_token = libssm.get_secret(os.getenv('SSM_KEY_NAME_IAP_AUTH_TOKEN', "/iap/jwt-token"))
-    iap_base_url = os.getenv("IAP_BASE_URL", "https://aps2.platform.illumina.com")
+        iap_auth_token = libssm.get_secret(os.getenv('SSM_KEY_NAME_IAP_AUTH_TOKEN', DEFAULT_SSM_KEY_IAP_AUTH_TOKEN))
+    iap_base_url = os.getenv("IAP_BASE_URL", DEFAULT_IAP_BASE_URL)
 
     config = libgds.Configuration(
         host=iap_base_url,
