@@ -25,7 +25,7 @@ SUPPORTED_DEMUX_WORKFLOWS = [
 ]
 
 
-def handler(event, context):
+def handler(event, context) -> dict:
     """event payload dict
     {
         'workflow_type': "germline",
@@ -48,16 +48,15 @@ def handler(event, context):
     if not workflow_type.lower() in SUPPORTED_DEMUX_WORKFLOWS:
         msg = f"Workflow type '{workflow_type}' is not yet supported for demux run"
         logger.info(msg)
-        return libjson.dumps({
+        return {
             'error': msg,
-        })
+        }
 
     gds_path: str = event['gds_path']
     seq_run_id: str = event.get('seq_run_id')
     seq_name: str = event.get('seq_name')
 
-    fastq_container_json = fastq.handler(event, context)
-    fastq_container = libjson.loads(fastq_container_json)
+    fastq_container = fastq.handler(event, context)
 
     fastq_map = fastq_container['fastq_map']
 
@@ -76,7 +75,7 @@ def handler(event, context):
             fastq1 = f"{gds_path}/{fastq_list[0]}"
             fastq2 = f"{gds_path}/{fastq_list[1]}"
 
-            wfr_germline_json = germline.handler({
+            wfr_germline = germline.handler({
                 'fastq1': fastq1,
                 'fastq2': fastq2,
                 'sample_name': sample_name,
@@ -84,9 +83,13 @@ def handler(event, context):
                 'seq_name': seq_name,
             }, context)
 
-            list_of_workflows_launched.append(libjson.loads(wfr_germline_json))
+            list_of_workflows_launched.append(wfr_germline)
 
-    return libjson.dumps({
+    result = {
         'workflow_type': workflow_type,
         'workflows': list_of_workflows_launched,
-    })
+    }
+
+    logger.info(libjson.dumps(result))
+
+    return result

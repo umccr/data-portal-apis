@@ -16,7 +16,12 @@ start:
 	@python manage.py runserver_plus --print-sql
 
 test:
+	@echo $$DJANGO_SETTINGS_MODULE
 	@python manage.py test
 
 migrate:
+	@echo $$DJANGO_SETTINGS_MODULE
 	@python manage.py migrate
+
+test_iap_mock:
+	@curl -s -H "Authorization: Bearer Test" -X GET http://localhost/v1/workflows/runs/wfr.anything_work | jq

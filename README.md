@@ -36,9 +36,18 @@ make test
 python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique_hash
 ```
 
+## Portal Lambdas
+
+```
+aws sso login --profile dev
+export AWS_PROFILE=dev
+aws lambda invoke --function-name data-portal-api-dev-migrate output.json
+aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_processor output.json
+```
+
 ## Serverless
 
-- You can serverless invoke or deploy from local dev. But favour over CodeBuild pipeline for deploying into production environment.
+- You can `serverless` invoke or deploy from local. But favour over CodeBuild pipeline for deploying into production environment.
 - Serverless deploy target only to AWS. Therefore need to setup AWS environment specific variables as follows:
 ```
 aws sso login --profile=dev
@@ -51,11 +60,6 @@ serverless info --STAGE dev
 serverless deploy --STAGE dev
 serverless invoke -f migrate --STAGE dev --noinput
 serverless invoke -f lims_scheduled_update_processor --STAGE dev --noinput
-
-(OR)
-
-aws lambda invoke --function-name data-portal-api-dev-migrate output.json
-aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_processor output.json
 ```
 
 ## Destroy

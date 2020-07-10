@@ -53,14 +53,13 @@ def handler(event, context):
 
 def update_step(wfr_id, wfv_id, wfr_event, context):
     # update workflow run output, end time, end status and notify if necessary
-    updated_workflow_json = workflow_update.handler({
+    updated_workflow: dict = workflow_update.handler({
         'wfr_id': wfr_id,
         'wfv_id': wfv_id,
         'wfr_event': wfr_event,
     }, context)
 
-    if updated_workflow_json:
-        updated_workflow: dict = libjson.loads(updated_workflow_json)
+    if updated_workflow:
         this_workflow: Workflow = services.get_workflow_by_ids(
             wfr_id=updated_workflow['wfr_id'],
             wfv_id=updated_workflow['wfv_id']
@@ -70,7 +69,7 @@ def update_step(wfr_id, wfv_id, wfr_event, context):
     return None
 
 
-def next_step(this_workflow, context):
+def next_step(this_workflow: Workflow, context):
     """determine next pipeline step based on this_workflow state from database
 
     :param this_workflow:

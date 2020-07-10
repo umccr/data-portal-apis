@@ -48,7 +48,7 @@ def configuration():
     return config
 
 
-def launch(event, context) -> str:
+def launch(event, context) -> dict:
     """event payload dict
     {
         'workflow_id': "wfl.xxx",
@@ -80,12 +80,12 @@ def launch(event, context) -> str:
             wfl_run: libwes.WorkflowRun = version_api.launch_workflow_version(workflow_id, workflow_version, body=body)
             wfl_run_json = libjson.dumps(wfl_run.to_dict())
             logger.info(f"WORKFLOW LAUNCH SUCCESS: \n{wfl_run_json}")
-            return wfl_run_json
+            return libjson.loads(wfl_run_json)  # make datetime serialized str into format "1972-09-21T07:48:02.120Z"
         except libwes.ApiException as e:
             logger.error(f"Exception when calling launch_workflow_version: \n{e}")
 
 
-def get_workflow_run(event, context) -> str:
+def get_workflow_run(event, context) -> dict:
     """event payload dict
     {
         'wfr_id': "wfr.xxx",
@@ -120,7 +120,10 @@ def get_workflow_run(event, context) -> str:
                 _status = wfl_run.status
                 _output = wfl_run.output
                 _end = wfl_run.time_stopped
-                return libjson.dumps({'status': _status, 'end': _end, 'output': _output})
+
+                result = {'status': _status, 'end': _end, 'output': _output}
+                logger.info(libjson.dumps(result))
+                return result
 
         except libwes.ApiException as e:
             logger.error(f"Exception when calling get_workflow_run: \n{e}")
@@ -193,4 +196,6 @@ def _extended_get_workflow_run(wfr_id, wfr_event, run_api):
         else:
             _output = event_details
 
-    return libjson.dumps({'status': _status, 'end': _end, 'output': _output})
+    result = {'status': _status, 'end': _end, 'output': _output}
+    logger.info(libjson.dumps(result))
+    return result

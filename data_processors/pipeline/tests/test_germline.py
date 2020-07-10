@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -19,7 +20,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
-        workflow_json = germline.handler({
+        workflow: dict = germline.handler({
             'fastq1': "SAMPLE_NAME_S1_R1_001.fastq.gz",
             'fastq2': "SAMPLE_NAME_S1_R2_001.fastq.gz",
             'sample_name': "SAMPLE_NAME",
@@ -27,7 +28,9 @@ class GermlineUnitTests(PipelineUnitTestCase):
             'seq_name': mock_sqr.name,
         }, None)
 
-        logger.info(workflow_json)
+        logger.info("-"*32)
+        logger.info("Example germline.handler lambda output:")
+        logger.info(json.dumps(workflow))
 
         # assert germline workflow launch success and save workflow run in db
         workflows = Workflow.objects.all()
@@ -48,7 +51,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
         mock_wfr.workflow_version = workflow_version
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
-        workflow_json = germline.handler({
+        workflow: dict = germline.handler({
             'fastq1': "SAMPLE_NAME_S1_R1_001.fastq.gz",
             'fastq2': "SAMPLE_NAME_S1_R2_001.fastq.gz",
             'sample_name': "SAMPLE_NAME",
@@ -56,9 +59,9 @@ class GermlineUnitTests(PipelineUnitTestCase):
             'seq_name': mock_sqr.name,
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example germline.handler lambda output:")
-        logger.info(workflow_json)
+        logger.info(json.dumps(workflow))
 
         # assert germline workflow launch success and save workflow run in db
         workflows = Workflow.objects.all()

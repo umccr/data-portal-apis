@@ -25,7 +25,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def handler(event, context) -> str:
+def handler(event, context) -> dict:
     """event payload dict
     {
         'gds_volume_name': "bssh.xxxx",
@@ -68,14 +68,12 @@ def handler(event, context) -> str:
     utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
     workflow_run_name = f"{run_name_prefix}__{WorkflowType.BCL_CONVERT.value}__{seq_name}__{seq_run_id}__{utc_now_ts}"
 
-    wfl_run_json = wes_handler.launch({
+    wfl_run: dict = wes_handler.launch({
         'workflow_id': workflow_id,
         'workflow_version': workflow_version,
         'workflow_run_name': workflow_run_name,
         'workflow_input': workflow_input,
     }, context)
-
-    wfl_run = libjson.loads(wfl_run_json)
 
     workflow: Workflow = services.create_or_update_workflow(
         {
@@ -94,10 +92,14 @@ def handler(event, context) -> str:
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
-    return libjson.dumps({
+    result = {
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
         'start': workflow.start,
-    })
+    }
+
+    logger.info(libjson.dumps(result))
+
+    return result

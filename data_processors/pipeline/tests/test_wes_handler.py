@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from libiap.openapi import libwes
@@ -7,7 +8,6 @@ from data_portal.tests.factories import TestConstant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowRunEventType
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
-from utils import libjson
 
 
 class WESHandlerUnitTests(PipelineUnitTestCase):
@@ -46,14 +46,14 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         Monitor mock container if you like:  docker logs -f iap_mock_wes_1
             [HTTP SERVER] post /v1/workflows/wfl.any_work_hitting_prism_dynamic_mock/versions/v1:launch Request received
         """
-        wfl_run_json = wes_handler.launch({
+        wfl_run: dict = wes_handler.launch({
             'workflow_id': "wfl.any_work_hitting_prism_dynamic_mock",
             'workflow_version': "v1",
             'workflow_run_name': "umccr__test__run",
             'workflow_input': {}
         }, None)
-        self.assertIsNotNone(wfl_run_json)
-        self.assertTrue(isinstance(wfl_run_json, str))
+        self.assertIsNotNone(wfl_run)
+        self.assertTrue(isinstance(wfl_run, dict))
 
     def test_launch_alt(self):
         """
@@ -64,20 +64,45 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         mock_wfl_run.name = "umccr__test__launch__alt"
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfl_run)
 
-        wfl_run_json = wes_handler.launch({
+        wfl_run: dict = wes_handler.launch({
             'workflow_id': f"{TestConstant.wfl_id.value}",
             'workflow_version': f"{TestConstant.version.value}",
             'workflow_run_name': mock_wfl_run.name,
             'workflow_input': {}
         }, None)
 
-        self.assertEqual(libjson.loads(wfl_run_json)['id'], TestConstant.wfr_id.value)
+        self.assertEqual(wfl_run['id'], TestConstant.wfr_id.value)
+
+    def test_launch_lambda_return_serialized(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_launch_lambda_return_serialized
+        """
+        wfl_run: dict = wes_handler.launch({
+            'workflow_id': "wfl.any_work_hitting_prism_dynamic_mock",
+            'workflow_version': "v1",
+            'workflow_run_name': "umccr__test__run",
+            'workflow_input': {}
+        }, None)
+        self.assertIsNotNone(wfl_run)
+        self.assertTrue(isinstance(wfl_run, dict))
+
+        logger.info("-"*32)
+        logger.info("Workflow run response dict:")
+        logger.info(wfl_run)
+
+        logger.info("Workflow run response dict should be lambda serializable:")
+        # https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
+        # If the handler returns objects that can't be serialized by json.dumps, the runtime returns an error.
+        lambda_serialized_json = json.dumps(wfl_run)  # test, must be able to json.dumps on the return dict
+        logger.info(lambda_serialized_json)
+
+        self.assertTrue(isinstance(wfl_run['time_started'], str))
 
     def test_get_workflow_run(self):
         """
         python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run
         """
-        wfl_run_status_json = wes_handler.get_workflow_run({
+        wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': "wfr.xxx",
             'wfr_event': {
                 'event_type': "RunSucceeded",
@@ -85,8 +110,8 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
                 'timestamp': "2020-06-24T11:27:35.1268588Z"
             }
         }, None)
-        self.assertIsNotNone(wfl_run_status_json)
-        self.assertTrue(isinstance(wfl_run_status_json, str))
+        self.assertIsNotNone(wfl_run_status)
+        self.assertTrue(isinstance(wfl_run_status, dict))
 
     def test_get_workflow_run_alt(self):
         """
@@ -100,12 +125,11 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         mock_wfl_run.output = {'main/fastq': "gds://volume/some/output"}
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        wfl_run_status_json = wes_handler.get_workflow_run({
+        wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': f"{mock_wfl_run.id}",
         }, None)
 
-        logger.info(wfl_run_status_json)
-        self.assertEqual(libjson.loads(wfl_run_status_json)['status'], WorkflowStatus.SUCCEEDED.value)
+        self.assertEqual(wfl_run_status['status'], WorkflowStatus.SUCCEEDED.value)
 
     def test_get_workflow_run_alt2(self):
         """
@@ -117,7 +141,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         mock_wfl_run.status = WorkflowStatus.RUNNING.value
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        wfl_run_status_json = wes_handler.get_workflow_run({
+        wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': f"{mock_wfl_run.id}",
             'wfr_event': {
                 'event_type': WorkflowRunEventType.RUNSTARTED.value,
@@ -126,8 +150,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
             }
         }, None)
 
-        logger.info(wfl_run_status_json)
-        self.assertEqual(libjson.loads(wfl_run_status_json)['status'], WorkflowStatus.RUNNING.value)
+        self.assertEqual(wfl_run_status['status'], WorkflowStatus.RUNNING.value)
 
     def test_get_workflow_run_alt3(self):
         """
@@ -139,7 +162,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         mock_wfl_run.status = WorkflowStatus.ABORTED.value
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        wfl_run_status_json = wes_handler.get_workflow_run({
+        wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': f"{mock_wfl_run.id}",
             'wfr_event': {
                 'event_type': WorkflowRunEventType.RUNABORTED.value,
@@ -148,8 +171,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
             }
         }, None)
 
-        logger.info(wfl_run_status_json)
-        self.assertEqual(libjson.loads(wfl_run_status_json)['status'], WorkflowStatus.ABORTED.value)
+        self.assertEqual(wfl_run_status['status'], WorkflowStatus.ABORTED.value)
 
     def test_get_workflow_run_alt4(self):
         """
@@ -183,7 +205,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         mock_hist.items = [mock_hist_event1, mock_hist_event2]
         when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_hist)
 
-        wfl_run_status_json = wes_handler.get_workflow_run({
+        wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': f"{mock_wfl_run.id}",
             'wfr_event': {
                 'event_type': WorkflowRunEventType.RUNFAILED.value,
@@ -192,8 +214,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
             }
         }, None)
 
-        logger.info(wfl_run_status_json)
-        self.assertEqual(libjson.loads(wfl_run_status_json)['status'], WorkflowStatus.FAILED.value)
+        self.assertEqual(wfl_run_status['status'], WorkflowStatus.FAILED.value)
 
     def test_get_workflow_run_alt5(self):
         """
@@ -229,7 +250,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         mock_hist.items = [mock_hist_event1, mock_hist_event2]
         when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_hist)
 
-        wfl_run_status_json = wes_handler.get_workflow_run({
+        wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': f"{mock_wfl_run.id}",
             'wfr_event': {
                 'event_type': WorkflowRunEventType.RUNFAILED.value,
@@ -241,6 +262,5 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
             }
         }, None)
 
-        logger.info(wfl_run_status_json)
-        self.assertEqual(libjson.loads(wfl_run_status_json)['status'], WorkflowStatus.FAILED.value)
-        self.assertEqual(libjson.loads(wfl_run_status_json)['end'], "2020-06-24T11:27:35.1268588Z")
+        self.assertEqual(wfl_run_status['status'], WorkflowStatus.FAILED.value)
+        self.assertEqual(wfl_run_status['end'], "2020-06-24T11:27:35.1268588Z")

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -19,14 +20,16 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
-        workflow_json = bcl_convert.handler({
+        workflow: dict = bcl_convert.handler({
             'gds_volume_name': mock_sqr.gds_volume_name,
             'gds_folder_path': mock_sqr.gds_folder_path,
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
         }, None)
 
-        logger.info(workflow_json)
+        logger.info("-"*32)
+        logger.info("Example bcl_convert.handler lambda output:")
+        logger.info(json.dumps(workflow))
 
         # assert bcl convert workflow launch success and save workflow run in db
         workflows = Workflow.objects.all()
@@ -47,16 +50,16 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         mock_wfr.workflow_version = workflow_version
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
-        workflow_json = bcl_convert.handler({
+        workflow = bcl_convert.handler({
             'gds_volume_name': mock_sqr.gds_volume_name,
             'gds_folder_path': mock_sqr.gds_folder_path,
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example bcl_convert.handler lambda output:")
-        logger.info(workflow_json)
+        logger.info(json.dumps(workflow))
 
         # assert bcl convert workflow launch success and save workflow runs in db
         success_bcl_convert_workflow_runs = Workflow.objects.all()

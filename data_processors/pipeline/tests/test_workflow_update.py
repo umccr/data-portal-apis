@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -10,7 +11,6 @@ from data_processors.pipeline.constant import WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
-from utils import libjson
 
 
 class WorkflowUpdateUnitTests(PipelineUnitTestCase):
@@ -40,7 +40,7 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
         mock_wfl_run.workflow_version = workflow_version
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        updated_workflow_json = workflow_update.handler({
+        updated_workflow: dict = workflow_update.handler({
             'wfr_id': mock_workflow.wfr_id,
             'wfv_id': mock_workflow.wfv_id,
             'wfr_event': {
@@ -50,11 +50,11 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
             }
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example workflow_update.handler lambda output:")
-        logger.info(updated_workflow_json)
+        logger.info(json.dumps(updated_workflow))
 
-        self.assertEqual(libjson.loads(updated_workflow_json)['end_status'], WorkflowStatus.SUCCEEDED.value)
+        self.assertEqual(updated_workflow['end_status'], WorkflowStatus.SUCCEEDED.value)
 
     def test_wfr_not_in_db(self):
         """
@@ -62,12 +62,12 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
         """
         mock_workflow: Workflow = WorkflowFactory()
 
-        updated_workflow_json = workflow_update.handler({
+        updated_workflow: dict = workflow_update.handler({
             'wfr_id': f"wfr.{_rand(32)}",
             'wfv_id': f"wfv.{_rand(32)}",
         }, None)
 
-        self.assertIsNone(updated_workflow_json)
+        self.assertIsNone(updated_workflow)
         self.assertEqual(1, Workflow.objects.all().count())
 
     def test_notified_status(self):
@@ -84,7 +84,7 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
         mock_wfl_run.workflow_version = workflow_version
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        updated_workflow_json = workflow_update.handler({
+        updated_workflow: dict = workflow_update.handler({
             'wfr_id': mock_workflow.wfr_id,
             'wfv_id': mock_workflow.wfv_id,
             'wfr_event': {
@@ -94,11 +94,11 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
             }
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example workflow_update.handler lambda output:")
-        logger.info(updated_workflow_json)
+        logger.info(json.dumps(updated_workflow))
 
-        self.assertEqual(libjson.loads(updated_workflow_json)['end_status'], WorkflowStatus.RUNNING.value)
+        self.assertEqual(updated_workflow['end_status'], WorkflowStatus.RUNNING.value)
 
 
 class WorkflowUpdateIntegrationTests(PipelineIntegrationTestCase):

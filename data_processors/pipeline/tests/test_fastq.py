@@ -6,7 +6,7 @@ from mockito import when
 from data_processors.pipeline.lambdas import fastq
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
-from utils import libssm, libjson
+from utils import libssm
 
 
 class FastQUnitTests(PipelineUnitTestCase):
@@ -85,9 +85,7 @@ class FastQUnitTests(PipelineUnitTestCase):
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        fastq_container_json = fastq.handler({'gds_path': gds_path}, None)
-
-        fastq_container = libjson.loads(fastq_container_json)
+        fastq_container: dict = fastq.handler({'gds_path': gds_path}, None)
 
         for sample_name, bag in fastq_container['fastq_map'].items():
             fastq_list = bag['fastq_list']
@@ -122,13 +120,9 @@ class FastQIntegrationTests(PipelineIntegrationTestCase):
             'gds_path': f"{fastq_gds_path_for_integration_test}"
         }
 
-        fastq_container_json = fastq.handler(event, None)
+        fastq_container: dict = fastq.handler(event, None)
 
-        fastq_container = libjson.loads(fastq_container_json)
-
-        logger.info("")
-        logger.info("Example fastq.handler lambda output:")
-        logger.info(fastq_container_json)
+        logger.info("-"*32)
         logger.info("Example accessing fastq_map:")
         for sample_name, bag in fastq_container['fastq_map'].items():
             fastq_list = bag['fastq_list']

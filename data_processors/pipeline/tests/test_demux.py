@@ -1,3 +1,5 @@
+import json
+
 from libiap.openapi import libgds
 from mockito import when
 
@@ -28,16 +30,16 @@ class DemuxUnitTests(PipelineUnitTestCase):
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        workflow_json = demux.handler({
+        demux_workflows: dict = demux.handler({
             'workflow_type': "germline",
             'gds_path': "gds://volume/path/to/fastq",
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example demux.handler lambda output:")
-        logger.info(workflow_json)
+        logger.info(json.dumps(demux_workflows))
 
         # assert demux germline workflows launch success and save workflow runs in db
         workflows = Workflow.objects.all()
@@ -48,16 +50,16 @@ class DemuxUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tests.test_demux.DemuxUnitTests.test_handler_unsupported_workflow
         """
 
-        workflow_json = demux.handler({
+        demux_workflows: dict = demux.handler({
             'workflow_type': "something_else",
             'gds_path': "gds://volume/path/to/fastq",
             'seq_run_id': "sequence run id",
             'seq_name': "sequence run name",
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example demux.handler lambda output:")
-        logger.info(workflow_json)
+        logger.info(json.dumps(demux_workflows))
 
         # assert no demux workflows launch and no workflow runs save in db
         workflows = Workflow.objects.all()
@@ -80,16 +82,16 @@ class DemuxUnitTests(PipelineUnitTestCase):
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        workflow_json = demux.handler({
+        demux_workflows: dict = demux.handler({
             'workflow_type': "germline",
             'gds_path': "gds://volume/path/to/fastq",
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
         }, None)
 
-        logger.info("")
+        logger.info("-"*32)
         logger.info("Example demux.handler lambda output:")
-        logger.info(workflow_json)
+        logger.info(json.dumps(demux_workflows))
 
         # assert demux germline workflows launch success and save workflow runs in db
         workflows = Workflow.objects.all()

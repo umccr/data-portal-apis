@@ -69,7 +69,7 @@ def parse_gds_path(gds_path):
     return volume_name, path_
 
 
-def handler(event, context) -> str:
+def handler(event, context) -> dict:
     """event payload dict
     {
         'gds_path': "gds://volume/path/to/fastq"
@@ -166,4 +166,6 @@ def handler(event, context) -> str:
         except libgds.ApiException as e:
             logger.error(f"Exception when calling list_files: \n{e}")
 
-    return libjson.dumps(fastq_container)
+    logger.info(libjson.dumps(fastq_container))
+
+    return fastq_container

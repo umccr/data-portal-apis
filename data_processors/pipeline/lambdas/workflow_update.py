@@ -53,12 +53,10 @@ def handler(event, context):
         logger.info(f"Run ID '{wfr_id}' is not found in Portal workflow runs automation database. Skipping...")
         return
 
-    wes_run_resp_json = wes_handler.get_workflow_run({
+    wes_run_resp = wes_handler.get_workflow_run({
         'wfr_id': wfr_id,
         'wfr_event': wfr_event,
     }, context)
-
-    wes_run_resp: dict = libjson.loads(wes_run_resp_json)
 
     _status = wes_run_resp['status']
     _end = wes_run_resp['end']
@@ -90,17 +88,19 @@ def handler(event, context):
     # notify workflow status
     services.notify_workflow_status(updated_workflow)
 
+    result = {
+        'id': updated_workflow.id,
+        'wfr_id': updated_workflow.wfr_id,
+        'wfv_id': updated_workflow.wfv_id,
+        'wfl_id': updated_workflow.wfl_id,
+        'end_status': updated_workflow.end_status,
+        'type_name': updated_workflow.type_name,
+        'sample_name': updated_workflow.sample_name,
+        'seq_run_id': updated_workflow.sequence_run.run_id if updated_workflow.sequence_run else None,
+        'seq_name': updated_workflow.sequence_run.name if updated_workflow.sequence_run else None,
+    }
+
+    logger.info(libjson.dumps(result))
+
     # return some useful workflow attributes for lambda caller
-    return libjson.dumps(
-        {
-            'id': updated_workflow.id,
-            'wfr_id': updated_workflow.wfr_id,
-            'wfv_id': updated_workflow.wfv_id,
-            'wfl_id': updated_workflow.wfl_id,
-            'end_status': updated_workflow.end_status,
-            'type_name': updated_workflow.type_name,
-            'sample_name': updated_workflow.sample_name,
-            'seq_run_id': updated_workflow.sequence_run.run_id if updated_workflow.sequence_run else None,
-            'seq_name': updated_workflow.sequence_run.name if updated_workflow.sequence_run else None,
-        }
-    )
+    return result
