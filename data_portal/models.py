@@ -55,11 +55,10 @@ class S3ObjectManager(models.Manager):
     def get_subject_results(self, subject_id: str, **kwargs) -> QuerySet:
         qs: QuerySet = self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake')
         bam = Q(key__iregex='wgs') & Q(key__iregex='ready') & Q(key__iregex='.bam$')
-        vcf = (Q(key__iregex='umccrised/[^(work)*]')
-               & Q(key__iregex='(somatic-ensemble|normal-ensemble-predispose_genes).vcf.gz$'))
+        vcf = (Q(key__iregex='umccrised/[^(work)*]') & Q(key__iregex='small_variants/[^\/]*(.vcf.gz$|.maf$)'))
         cancer = Q(key__iregex='umccrised') & Q(key__iregex='cancer_report.html$')
         qc = Q(key__iregex='umccrised') & Q(key__iregex='multiqc_report.html$')
-        pcgr = Q(key__iregex='umccrised') & Q(key__iregex='pcgr/') & Q(key__iregex='(pcgr|cpsr).html$')
+        pcgr = Q(key__iregex='umccrised/[^\/]*/[^\/]*(pcgr|cpsr).html$')
         coverage = Q(key__iregex='cacao') & Q(key__iregex='html') & Q(key__iregex='(cacao_normal|cacao_tumor)')
         circos = (Q(key__iregex='work/') & Q(key__iregex='purple/') & Q(key__iregex='circos')
                   & Q(key__iregex='baf') & Q(key__iregex='.png$'))
