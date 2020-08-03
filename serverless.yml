@@ -290,3 +290,7 @@ package:
     - docker-compose.override.yml
     - main.tf
     - .terraform/**
+    - iap-mock.yml
+    - haproxy.cfg
+    - start.sh
+    - loaddata.sh

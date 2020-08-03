@@ -2,21 +2,15 @@
   "name": "umccr-data-portal-api-serverless",
   "description": "UMCCR Data Portal API backend in cloud native serverless",
   "version": "0.1.0",
-  "dependencies": {
-    "serverless-domain-manager": "^4.1.1",
-    "serverless-plugin-scripts": "^1.0.2"
-  },
   "devDependencies": {
     "husky": "^4.2.5",
     "serverless-associate-waf": "^1.2.1",
     "serverless-aws-documentation": "^1.1.0",
+    "serverless-domain-manager": "^4.2.0",
+    "serverless-plugin-scripts": "^1.0.2",
     "serverless-python-requirements": "^5.1.0",
     "serverless-s3-batch": "^1.0.2",
-    "serverless-wsgi": "^1.7.5",
-    "yarn": "^1.22.4"
+    "serverless-wsgi": "^1.7.5"
   },
-  "resolutions": {
-    "minimist": ">=1.2.2",
-    "lodash": ">=4.17.17"
-  }
+  "resolutions": {}
 }

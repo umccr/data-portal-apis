@@ -10,15 +10,14 @@ Usage:
 3. export IAP_GDS_VOLUME=<volNameOrId>  e.g. umccr-temp-dev  Optional otherwise, see --volume
 
 (If run against AWS)
-1. ssoawsdev
-2. export AWS_PROFILE=dev
-3. terraform init .
-4. source mkvar.sh dev
-5. export DJANGO_SETTINGS_MODULE=data_portal.settings.aws
+1. aws sso login --profile dev && export AWS_PROFILE=dev
+2. source start.sh
+3. export DJANGO_SETTINGS_MODULE=data_portal.settings.aws
 
 (If run against local)
 1. export DJANGO_SETTINGS_MODULE=data_portal.settings.local
 
+(Then execute as follow)
 1. python -m data_processors.scripts.gdscrawler -h
 2. python -m data_processors.scripts.gdscrawler -v umccr-primary-data-dev -l
 """

@@ -508,7 +508,7 @@ lodash.values@^4.3.0:
   resolved "https://registry.yarnpkg.com/lodash.values/-/lodash.values-4.3.0.tgz#a3a6c2b0ebecc5c2cba1c17e6e620fe81b53d347"
   integrity sha1-o6bCsOvsxcLLocF+bmIP6BtT00c=
 
-lodash@>=4.17.17, lodash@^4.17.15:
+lodash@^4.17.15:
   version "4.17.19"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
   integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
@@ -519,11 +519,6 @@ minimatch@^3.0.4:
   integrity sha512-yJHVQEhyqPLUTgt9B83PXu6W3rx4MvvHvSUvToogpwoGDOUQ+yDrR0HRot+yOCdCO7u4hX3pWft6kWBBcqh0UA==
   dependencies:
     brace-expansion "^1.1.7"
-
-minimist@>=1.2.2:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
-  integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
 
 object-hash@^1.1.7:
   version "1.3.1"
@@ -711,10 +706,10 @@ serverless-aws-documentation@^1.1.0:
   dependencies:
     object-hash "^1.1.7"
 
-serverless-domain-manager@^4.1.1:
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/serverless-domain-manager/-/serverless-domain-manager-4.1.1.tgz#3ce3119cfa6fd46a70578f5f1a6bbf0189f04b7b"
-  integrity sha512-9cQC+aj7FD82ca7SC1fWLKZzyDyRufj+ez0SC89VeNQ43UfugstSSCqbJ6nOWSgSeLQdEKZzukY61vcOF957LA==
+serverless-domain-manager@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/serverless-domain-manager/-/serverless-domain-manager-4.2.0.tgz#f6f5dd8c8dbb558a2008ebc69466b56fe8ef42b8"
+  integrity sha512-FdWZyDC2v/rC/PCfMHoEqcL2u0OdgHAPGLW8KIBeiS83xgMEtyP7A4+ispBtQvZ4nsfJNyPiz4Bv5eO1RdMpXw==
   dependencies:
     aws-sdk "^2.490.0"
     chalk "^2.4.1"
@@ -933,8 +928,3 @@ yargs@^15.3.1:
     which-module "^2.0.0"
     y18n "^4.0.0"
     yargs-parser "^18.1.2"
-
-yarn@^1.22.4:
-  version "1.22.4"
-  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.22.4.tgz#01c1197ca5b27f21edc8bc472cd4c8ce0e5a470e"
-  integrity sha512-oYM7hi/lIWm9bCoDMEWgffW8aiNZXCWeZ1/tGy0DWrN6vmzjCXIKu2Y21o8DYVBUtiktwKcNoxyGl/2iKLUNGA==

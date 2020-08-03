@@ -15,6 +15,13 @@ start:
 	@python manage.py migrate
 	@python manage.py runserver_plus --print-sql
 
+.PHONY: syncdata, loaddata
+syncdata:
+	@. loaddata.sh; sync_db_dump
+
+loaddata:
+	@. loaddata.sh; copy_db_dump; load_db_dump
+
 test:
 	@echo $$DJANGO_SETTINGS_MODULE
 	@python manage.py test

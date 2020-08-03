@@ -126,7 +126,7 @@ def get_sequence_run_by_run_id(run_id):
         for sqr in sequence_runs:
             if sqr.status.lower() == "PendingAnalysis".lower() or sqr.status.lower() == "Complete".lower():
                 return sqr
-    except Workflow.DoesNotExist as e:
+    except SequenceRun.DoesNotExist as e:
         logger.debug(e)  # silent unless debug
     return sequence_run
 
