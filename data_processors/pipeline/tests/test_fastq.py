@@ -1,4 +1,5 @@
 import os
+from unittest import skip
 
 from libiap.openapi import libgds
 from mockito import when
@@ -104,6 +105,7 @@ class FastQUnitTests(PipelineUnitTestCase):
 class FastQIntegrationTests(PipelineIntegrationTestCase):
     # integration test cases are meant to hit IAP endpoints
 
+    @skip
     def test_fastq_handler(self):
         """
         python manage.py test data_processors.pipeline.tests.test_fastq.FastQIntegrationTests.test_fastq_handler
