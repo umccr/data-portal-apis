@@ -87,7 +87,10 @@ def handle_bssh_run_event(message, event_action, event_type, context):
         services.notify_sequence_run_status(sqr=sqr, sqs_record_timestamp=int(ts), aws_account=aws_account)
 
         # Once Sequence Run status is good, launch bcl convert workflow
-        if sqr.status.lower() == "PendingAnalysis".lower() or sqr.status.lower() == "Complete".lower():
+        # Using bssh.runs event status PendingAnalysis for now, See https://github.com/umccr-illumina/stratus/issues/95
+        # TODO improve handling of status PendingAnalysis and Complete by making use of the SequenceRun table e.g.
+        #  - skip if event is Complete and sqr.run_id and sqr.run_name are the same as existing PendingAnalysis record
+        if sqr.status.lower() == "PendingAnalysis".lower():
             bcl_convert.handler({
                 'gds_volume_name': sqr.gds_volume_name,
                 'gds_folder_path': sqr.gds_folder_path,
