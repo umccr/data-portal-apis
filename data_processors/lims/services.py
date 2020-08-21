@@ -10,8 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from data_portal.models import LIMSRow
-from utils import libgdrive, libssm
-from utils.datetime import parse_lims_timestamp
+from utils import libgdrive, libssm, libdt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -128,7 +127,7 @@ def __parse_lims_row(csv_row: dict, row_object: LIMSRow = None) -> LIMSRow:
         if parsed_value is not None:
             # Type conversion for a small number of columns
             if field_name == 'timestamp':
-                parsed_value = parse_lims_timestamp(parsed_value)
+                parsed_value = libdt.parse_lims_timestamp(parsed_value)
             elif field_name == 'run':
                 parsed_value = int(parsed_value)
 
