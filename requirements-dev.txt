@@ -1,3 +1,4 @@
 -r requirements-test.txt
 pipdeptree==1.0.0
 django_extensions==2.2.9
+boto3-stubs==1.14.60.0
