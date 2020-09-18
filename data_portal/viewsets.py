@@ -1,14 +1,17 @@
 import logging
+from datetime import datetime
 
 from django.db import InternalError
+from django.utils.http import parse_http_date_safe
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
-from utils import libs3
+from utils import libs3, libjson
 from .models import LIMSRow, S3Object, GDSFile
 from .pagination import StandardResultsSetPagination
+from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
     BucketIdSerializer, GDSFileModelSerializer
 
@@ -67,6 +70,65 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
         response = libs3.restore_s3_object(obj.bucket, obj.key, days=payload['days'], email=payload['email'])
         return Response(response[1])
 
+    @action(detail=True, methods=['get'], renderer_classes=content_renderers)
+    def content(self, request, pk=None):
+        request_headers = {}
+
+        range_header = request.META.get('HTTP_RANGE', None)
+        if range_header:
+            request_headers.update(Range=range_header)
+
+        version_id = request.META.get('HTTP_VERSIONID', None)
+        if version_id:
+            request_headers.update(VersionId=version_id)
+
+        if_match = request.META.get('HTTP_IF_MATCH', None)
+        if if_match:
+            request_headers.update(IfMatch=if_match)
+
+        if_none_match = request.META.get('HTTP_IF_NONE_MATCH', None)
+        if if_none_match:
+            request_headers.update(IfNoneMatch=if_none_match)
+
+        if_modified_since = request.META.get('HTTP_IF_MODIFIED_SINCE', None)
+        if if_modified_since:
+            if_modified_since = parse_http_date_safe(if_modified_since)
+            if if_modified_since:
+                request_headers.update(IfModifiedSince=datetime.fromtimestamp(if_modified_since))
+
+        if_unmodified_since = request.META.get('HTTP_IF_UNMODIFIED_SINCE', None)
+        if if_unmodified_since:
+            if_unmodified_since = parse_http_date_safe(if_unmodified_since)
+            if if_unmodified_since:
+                request_headers.update(IfUnmodifiedSince=datetime.fromtimestamp(if_unmodified_since))
+
+        obj: S3Object = self.get_object()
+
+        if len(request_headers) == 0:
+            resp = libs3.get_s3_object(obj.bucket, obj.key)
+        else:
+            resp = libs3.get_s3_object(obj.bucket, obj.key, **request_headers)
+
+        resp_ok = resp[0]
+        resp_data = resp[1]
+
+        if resp_ok:
+            response_headers = resp_data['ResponseMetadata']['HTTPHeaders']
+
+            if resp_data.get('Error'):
+                error_code = resp_data['Error']['Code']
+                if error_code == "304":
+                    return Response(headers=response_headers, status=status.HTTP_304_NOT_MODIFIED)
+
+            content_type = response_headers['content-type']
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            body = resp_data['Body']
+            return Response(body, headers=response_headers, content_type=content_type)
+
+        else:
+            return Response(libjson.dumps(resp_data), content_type='application/json')
+
 
 class GDSFileViewSet(ReadOnlyModelViewSet):
     queryset = GDSFile.objects.get_all()
@@ -107,29 +169,31 @@ class SubjectViewSet(ReadOnlyModelViewSet):
     ordering = ['-subject_id']
     search_fields = ordering_fields
 
+    def _base_url(self, data_lake):
+        abs_uri = self.request.build_absolute_uri()
+        return abs_uri + data_lake if abs_uri.endswith('/') else abs_uri + f"/{data_lake}"
+
     def retrieve(self, request, pk=None, **kwargs):
         results = S3Object.objects.get_subject_results(pk).all()
 
         features = []
         for obj in results:
-            p: S3Object = obj
-            if p.key.endswith('png'):
-                resp = libs3.presign_s3_file(p.bucket, p.key)
-                if resp[0]:
-                    features.append(resp[1])
+            o: S3Object = obj
+            if o.key.endswith('png'):
+                features.append(S3ObjectModelSerializer(o).data)
 
         data = {'id': pk}
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
-        _base_url = request.build_absolute_uri()
+
         data.update(
             s3={
                 'count': S3Object.objects.get_by_subject_id(pk).count(),
-                'next': _base_url + 's3' if _base_url.endswith('/') else _base_url + '/s3'
+                'next': self._base_url('s3')
             })
         data.update(
             gds={
                 'count': GDSFile.objects.get_by_subject_id(pk).count(),
-                'next': _base_url + 'gds' if _base_url.endswith('/') else _base_url + '/gds'
+                'next': self._base_url('gds')
             })
         data.update(features=features)
         data.update(results=S3ObjectModelSerializer(results, many=True).data)
