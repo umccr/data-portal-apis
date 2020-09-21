@@ -2,87 +2,92 @@ import os
 import json
 import logging
 import boto3
+import requests
 from botocore.exceptions import ClientError
 from google.oauth2 import service_account
 from gspread_pandas import Spread
 from datetime import datetime
 import libiap.openapi.libgds
 from libiap.openapi.libgds.rest import ApiException
-from utils import libssm
-
-# TODO: sort out env variables
-# TODO: sort out SSM parameters/secrets
+from sample_sheet import SampleSheet  # https://github.com/clintval/sample-sheet
 
 SAMPLE_ID_HEADER = 'Sample_ID (SampleSheet)'
-LAB_SHEET_ID = os.environ.get('LAB_SHEET_ID')  # TODO: maybe get from SSM ParameterStore?
-SSM_KEY_GOOGLE_ACCOUNT_INFO = os.environ.get('SSM_KEY_GOOGLE_ACCOUNT_INFO')
-IAP_API_KEY = os.environ.get('IAP_API_KEY')
+OVERRIDECYCLES_HEADER = 'OverrideCycles'
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+client = boto3.client("ssm")
 
-def upload_file(client, file_name: str, bucket: str, object_name: str):
-    """Upload a file to an S3 bucket
 
-    :param file_name: File to upload
-    :param bucket: Bucket to upload to
-    :param object_name: S3 object name
-    :return: True if file was uploaded, else False
+def get_secret(key) -> str:
     """
-
-    try:
-        client.upload_file(file_name, bucket, object_name)
-    except ClientError as e:
-        logger.error(e)
-        return False
-    return True
-
-
-def get_gds_upload_details(gds_path: str):
-    """Create a file placeholder in GDS and get S3 upload credentials
-
-    :param gds_path: the GDS path where to create file resource
+    Retrieve the secret value from SSM.
+    :param key: the key of the secret
+    :return: the secret value
     """
-    # call GDS create file endpoint and extract details for file upload
-    api_key = libssm.get_secret(IAP_API_KEY)
-    configuration = libiap.openapi.libgds.Configuration(
-        host="https://aps2.platform.illumina.com",
-        api_key={'Authorization': api_key})
-    configuration.api_key_prefix['Authorization'] = 'Bearer'
+    resp = client.get_parameter(
+        Name=key,
+        WithDecryption=True
+    )
+    return resp['Parameter']['Value']
 
-    with libiap.openapi.libgds.ApiClient(configuration) as api_client:
-        # Create an instance of the API class
+
+# TODO: use libssm from utils?
+LAB_SHEET_ID = get_secret('/umccr/google/drive/tracking_sheet_id')
+SSM_GOOGLE_ACCOUNT_INFO = get_secret('/data_portal/dev/google/lims_service_account_json')
+IAP_API_KEY = get_secret('/iap/jwt-token')
+IAP_CONF = libiap.openapi.libgds.Configuration(
+    host="https://aps2.platform.illumina.com",
+    api_key={'Authorization': IAP_API_KEY},
+    api_key_prefix={'Authorization': 'Bearer'})
+
+
+def download_gds_file(gds_volume: str, gds_path: str):
+    """Retrieve a GDS file to local (/tmp) storage
+
+    :param gds_path: the GDS path of the file to download
+    """
+    # TODO: could split into multiple methods
+    # call GDS files endpoint to get details (pre-signed URL) of the GDS file
+    print(f"Downloading file from GDS - volume:{gds_volume} - path:{gds_path}")
+    with libiap.openapi.libgds.ApiClient(IAP_CONF) as api_client:
         api_instance = libiap.openapi.libgds.FilesApi(api_client)
-        body = libiap.openapi.libgds.CreateFileRequest()
-        include = 'objectStoreAccess'
+        page_size = 5  # TODO: Should only have one file!
         try:
-            # Create a file entry in GDS and get temporary credentials for upload
-            api_response = api_instance.create_file(body, include=include)
+            api_response = api_instance.list_files(
+                volume_name=[gds_volume],
+                path=[gds_path],
+                page_size=page_size,
+                include="presignedUrl")
+            # print(f"ListFiles response: {api_response}")
         except ApiException as e:
-            print("Exception when calling FilesApi->create_file: %s\n" % e)
+            print("Exception when calling FilesApi->list_files: %s\n" % e)
+    if not api_response:
+        raise ValueError("No API response for list files request!")
+    # extract pre-signed URL
+    if api_response.item_count != 1:
+        raise ValueError(f"Unexpected number of files: {api_response.item_count}")
+    file_details = api_response.items[0]  # get the FileResponse object
+    if file_details.name != 'SampleSheet.csv':
+        raise ValueError(f"Got wrong file: {file_details.name}")
+    print(f"Pre-signed URL: {file_details.presigned_url}")
 
-    # parse API response
-    aws_creds = api_response['objectStoreAccess']['awsS3TemporaryUploadCredentials']
-    aws_access_key = aws_creds['access_Key_Id']
-    aws_secret_key = aws_creds['secret_Access_Key']
-    aws_session_token = aws_creds['session_Token']
-    aws_bucket = aws_creds['bucketName']
-    aws_path = aws_creds['keyPrefix']
+    # write the file content to a local path
+    r = requests.get(file_details.presigned_url)
+    filename = f"/tmp/SampleSheet-{datetime.now().timestamp()}.csv"
+    with open(filename, 'wb') as f:
+        f.write(r.content)
 
-    return aws_access_key, aws_secret_key, aws_session_token, aws_bucket, aws_path
+    return filename
 
 
-def get_gds_base_path(event):
-    # TODO: only placeholder, need to figure out what the event contains
-    # parse event to get the GDS base path (where to write the metadata file)
-    return event['gdsPath']
-
-
-def get_requested_ids(event):
-    # TODO: only placeholder, need to figure out what the event contains
-    # parse event to retrieve requested IDs (parsed from the SampleSheet)
-    return event['requestedIds']
+def get_sample_ids_from_samplesheet(path: str):
+    samplesheet = SampleSheet(path)
+    ids = set()
+    for sample in samplesheet:
+        ids.add(sample.Sample_ID)
+    return ids
 
 
 def download_metadata(account_info: str, year: int):
@@ -105,40 +110,10 @@ def extract_requested_rows(df, requested_ids: list):
     :param requested_ids: a list of IDs for which tho extract the metadata entries
     """
     # filter rows by requested ids
-    subset = df[df[SAMPLE_ID_HEADER].isin(requested_ids)]
-    # TODO: restrict to only needed columns
-    # TODO: future improvement: define metadata format for workflow (independent of metadata spreadsheet)
-    return subset
-
-
-def write_to_gds(df, gds_path: str):
-    """Write the metadata DF as CSV to GDS
-
-    This first writes a CSV file with the metadata to a local space (/tmp). Then creates a GDS
-    file placeholder and AWS access credentials to populate it, and finally upload the local 
-    file to S3 (backing GDS).
-
-    :param df: the metadata DataFrame to write
-    :param gds_path: the GDS location where to write the metadata file to
-    """
-    # TODO: that requires a samplesheet split script change, as that expects metadata in Excel format
-    # write DF to (Lambda) local temp file
-    filename = f"/tmp/metadata-{datetime.now()}.csv"
-    df.to_csv(filename, index=False)
-
-    # upload local file to GDS
-    aws_access_key, aws_secret_key, aws_session_token, aws_bucket, aws_path = get_gds_upload_details(gds_path)
-    s3_client = boto3.client(
-        service_name='s3',
-        region_name='ap-southeast-2',
-        aws_access_key_id=aws_access_key,
-        aws_secret_access_key=aws_secret_key,
-        aws_session_token=aws_session_token
-    )
-    upload_file(client=s3_client, file_name=filename, bucket=aws_bucket, object_name=aws_path)
-
-    # remove local file
-    os.remove(filename)
+    subset_rows = df[df[SAMPLE_ID_HEADER].isin(requested_ids)]
+    # filter colums by data needed for workflow
+    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER]]
+    return subset_cols
 
 
 def lambda_handler(event, context):
@@ -153,21 +128,25 @@ def lambda_handler(event, context):
       ('Sample_ID (SampleSheet)' column in the tracking sheet)
     - 'gdsPath': the GDS path to where the metadata file will be written
     """
-    # get Google credentials from secrets store
-    google_account_info = libssm.get_secret(SSM_KEY_GOOGLE_ACCOUNT_INFO)
-
     # extract list of sample IDs for which to include metadata
-    requested_ids = get_requested_ids(event)
-    # extract the GDS upload path for the metadata file
-    gds_base_path = get_gds_base_path(event)
+    gds_volume = event['gdsVolume']
+    gds_base_path = event['gdsBasePath']
+    samplesheet_path = event['gdsSamplesheet']
+    gds_samplesheet_path = os.path.join(gds_base_path, samplesheet_path)
+    print(f"GDS SS path: {gds_samplesheet_path}")
+    local_path = download_gds_file(gds_volume=gds_volume, gds_path=gds_samplesheet_path)
+    print(f"Local SS path: {local_path}")
+    sample_ids = get_sample_ids_from_samplesheet(local_path)
+    print(f"Sample IDs: {sample_ids}")
 
-    # download the metadata
-    # TODO: extend to cover multiple years
-    df_2019 = download_metadata(account_info=google_account_info, year='2019')
+    # download the lab metadata sheets
+    df_2019 = download_metadata(account_info=SSM_GOOGLE_ACCOUNT_INFO, year='2019')
+    df_2020 = download_metadata(account_info=SSM_GOOGLE_ACCOUNT_INFO, year='2020')
+    df_all = df_2019.append(df_2020)
 
     # extract required records from metadata
-    # TODO: cover multiple years
-    requested_metadata_df = extract_requested_rows(df=df_2019, requested_ids=requested_ids)
+    requested_metadata_df = extract_requested_rows(df=df_all, requested_ids=sample_ids)
+    print(requested_metadata_df)
 
-    # write metadata to GDS
-    write_to_gds(df=requested_metadata_df, gds_path=gds_base_path)
+    # TODO: turn metadata_df into format compatible with workflow input
+    # TODO: wire up with BCL Convert workflow execution
