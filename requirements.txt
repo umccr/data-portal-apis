@@ -12,4 +12,6 @@ google-api-python-client==1.9.3
 google-auth==1.18.0
 Werkzeug==1.0.1
 libiap==0.3.0
-gspread_pandas
+gspread==3.6.0
+gspread-pandas==2.2.3
+sample-sheet==0.12.0
