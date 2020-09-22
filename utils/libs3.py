@@ -136,7 +136,7 @@ def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
 
     :param bucket:
     :param key:
-    :param days:
+    :param kwargs:
     :return bool, dict: True if restore request is success, False otherwise with error message
     """
     allowed_tiers = ['Standard', 'Bulk']  # 'Standard' or 'Bulk' for DEEP_ARCHIVE
@@ -165,41 +165,24 @@ def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
         return False, dict(error=message)
 
 
-def get_s3_object(bucket: str, key: str) -> (bool, dict):
+def get_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
     """
     get_object API
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.get_object
 
     :param bucket:
     :param key:
+    :param kwargs:
     :return tuple (bool, dict): (true, dict object metadata) if success, otherwise (false, dict error message)
     """
     try:
-        return True, s3.get_object(Bucket=bucket, Key=key)
+        return True, s3.get_object(Bucket=bucket, Key=key, **kwargs)
     except ClientError as e:
+        if e.response['Error']['Code'] == "304":
+            return True, e.response
         message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
         logging.error(message)
         return False, dict(error=message)
-
-
-def read_s3_object_body(bucket: str, key: str) -> bytes:
-    """
-    (eagerly) Read the object (streaming) body and return the content
-
-    NOTE: Not optimise for reading very large file content. For that, look for alternate approaches, e.g.
-    Working with really large objects in S3
-    https://alexwlchan.net/2019/02/working-with-large-s3-objects/
-
-    :param bucket:
-    :param key:
-    :return:
-    """
-    client = boto3.client("s3")  # Note Moto need to temporary switch mock-S3-client-session in context
-    data_object = client.get_object(Bucket=bucket, Key=key)
-    body: StreamingBody = data_object['Body']  # Note the body data is lazy loaded
-    content = body.read()
-    body.close()
-    return content
 
 
 def get_s3_object_tagging(bucket: str, key: str):

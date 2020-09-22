@@ -359,7 +359,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
         mock_instrument_run_id = "200508_A01052_0001_AC5GT7ACGT"
         mock_date_modified = "2020-05-09T22:17:03.1015272Z"
-        mock_status = "Complete"
+        mock_status = "PendingAnalysis"
 
         sequence_run_message = {
             "gdsFolderPath": f"/Runs/{mock_instrument_run_id}_{mock_run_id}",

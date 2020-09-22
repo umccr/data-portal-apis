@@ -3,7 +3,7 @@
   "description": "UMCCR Data Portal API backend in cloud native serverless",
   "version": "0.1.0",
   "devDependencies": {
-    "husky": "^4.2.5",
+    "husky": "^4.3.0",
     "serverless-associate-waf": "^1.2.1",
     "serverless-aws-documentation": "^1.1.0",
     "serverless-domain-manager": "^4.2.0",

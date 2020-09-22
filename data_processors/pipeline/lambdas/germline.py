@@ -19,7 +19,7 @@ from data_portal.models import Workflow
 from data_processors.pipeline import services
 from data_processors.pipeline.constant import WorkflowType
 from data_processors.pipeline.lambdas import wes_handler
-from utils import libjson, libssm
+from utils import libjson, libssm, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -110,7 +110,7 @@ def handler(event, context) -> dict:
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
-        'start': workflow.start,
+        'start': libdt.serializable_datetime(workflow.start),
     }
 
     logger.info(libjson.dumps(result))

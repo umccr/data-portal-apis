@@ -15,3 +15,17 @@ def parse_lims_timestamp(date_raw: str) -> datetime:
     :param date_raw: date in raw string
     """
     return datetime.strptime(date_raw, '%Y-%m-%d')
+
+
+def serializable_datetime(dt) -> str:
+    """
+    Convert to serializable datetime iso format string, e.g. use in AWS Lambda call dict return object
+    :param dt:
+    :return:
+    """
+    if isinstance(dt, str):
+        return dt
+
+    if isinstance(dt, datetime):
+        _dt: datetime = dt
+        return _dt.isoformat()

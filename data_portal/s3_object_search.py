@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 
 from data_portal.search_query import FilterType, FilterTag, FilterTypeFactory, FilterMethod, SearchQueryHelper, \
     Filter, FilterMethodFactory, FilterTagFactory
-from utils.datetime import parse_last_modified_date
+from utils import libdt
 
 
 class S3FilterTag(FilterTag):
@@ -38,7 +38,7 @@ class S3FilterTagFactory(FilterTagFactory):
         # Register filter tags for S3 object search, in additional to base tags
         self.register(FilterTag(S3FilterTag.KEY, str, ('key',)))
         self.register(FilterTag(S3FilterTag.SIZE, int, ('size',)))
-        self.register(FilterTag(S3FilterTag.LAST_MODIFIED_DATE, parse_last_modified_date, ('last_modified_date',)))
+        self.register(FilterTag(S3FilterTag.LAST_MODIFIED_DATE, libdt.parse_last_modified_date, ('last_modified_date',)))
         self.register(FilterTag(
             S3FilterTag.SUBJECT_ID,
             str,

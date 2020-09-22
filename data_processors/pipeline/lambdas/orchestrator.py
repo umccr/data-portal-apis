@@ -48,7 +48,7 @@ def handler(event, context):
     wfr_event = event.get('wfr_event')  # wfr_event is optional
 
     this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)  # step1 update the workflow status
-    next_step(this_workflow, context)                                # step2 determine next step
+    return next_step(this_workflow, context)                         # step2 determine next step
 
 
 def update_step(wfr_id, wfv_id, wfr_event, context):
@@ -86,12 +86,53 @@ def next_step(this_workflow: Workflow, context):
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
 
-        # get this_workflow (bcl convert) output
-        output_gds_path: str = libjson.loads(this_workflow.output)['main/fastqs']['location']
+        assert this_workflow.output is not None, f"Workflow '{this_workflow.wfr_id}' output is None"
 
-        demux.handler({
-            'workflow_type': WorkflowType.GERMLINE.value,
-            'gds_path': output_gds_path,
-            'seq_run_id': this_sqr.run_id if this_sqr else None,
-            'seq_name': this_sqr.name if this_sqr else None,
-        }, context)
+        results = []
+        for output_gds_path in parse_bcl_convert_output(this_workflow.output):
+            demux_result = demux.handler({
+                'workflow_type': WorkflowType.GERMLINE.value,
+                'gds_path': output_gds_path,
+                'seq_run_id': this_sqr.run_id if this_sqr else None,
+                'seq_name': this_sqr.name if this_sqr else None,
+            }, context)
+
+            result = {
+                "fastq_location": output_gds_path,
+                "demux_result": demux_result
+            }
+            results.append(result)
+
+        return {
+            "results": results
+        }
+
+
+def parse_bcl_convert_output(output_json: str) -> list:
+    """
+    Given this_workflow (bcl convert) output (fastqs), return the list of fastq locations on gds
+
+    BCL Convert CWL output may be Directory or Directory[], See:
+    [1]: https://github.com/umccr-illumina/cwl-iap/blob/5ebe927b885a6f6d18ed220dba913d08eb45a67a/workflows/bclconversion/bclConversion-main.cwl#L30
+    [2]: https://github.com/umccr-illumina/cwl-iap/blob/1263e9d43cf08cfb7438dcfe42166e88b8456e54/workflows/bclconversion/1.0.4/bclConversion-main.cwl#L69
+    [3]: https://www.commonwl.org/v1.0/CommandLineTool.html#Directory
+
+    :param output_json: workflow run output in json format
+    :return locations: list of fastq output locations on gds
+    """
+    locations = []
+    output: dict = libjson.loads(output_json)
+    main_fastqs = output['main/fastqs']
+
+    if isinstance(main_fastqs, list):
+        for out in main_fastqs:
+            locations.append(out['location'])
+
+    elif isinstance(main_fastqs, dict):
+        locations.append(main_fastqs['location'])
+
+    else:
+        msg = f"BCL Convert output main/fastqs should be list or dict. Found type {type(main_fastqs)} -- {main_fastqs}"
+        raise ValueError(msg)
+
+    return locations
