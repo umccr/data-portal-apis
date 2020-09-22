@@ -148,5 +148,8 @@ def lambda_handler(event, context):
     requested_metadata_df = extract_requested_rows(df=df_all, requested_ids=sample_ids)
     print(requested_metadata_df)
 
-    # TODO: turn metadata_df into format compatible with workflow input
-    # TODO: wire up with BCL Convert workflow execution
+    # turn metadata_df into format compatible with workflow input
+    sample_array = requested_metadata_df[[SAMPLE_ID_HEADER]].values
+    orc_array = requested_metadata_df[[OVERRIDECYCLES_HEADER]].values
+
+    return sample_array, orc_array

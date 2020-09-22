@@ -52,6 +52,16 @@ def handler(event, context) -> dict:
     input_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/input")
     sample_sheet_gds_path = f"{run_folder}/SampleSheet.csv"
 
+    # TODO: call demux_metadata lambda (code) to retrieve metadata?
+    metadata_event = {
+        'gdsVolume': event['gds_volume_name'],
+        'gdsBasePath': event['gds_folder_path'],
+        'gdsSamplesheet': 'SampleSheet.csv'
+    }
+
+    samples, cycles = demux_metadata.lambda_handler(metadata_event, None)
+
+
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input['samplesheet-split']['location'] = sample_sheet_gds_path
     workflow_input['bcl-inDir']['location'] = run_folder
