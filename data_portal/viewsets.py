@@ -180,7 +180,10 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         for obj in results:
             o: S3Object = obj
             if o.key.endswith('png'):
-                features.append(S3ObjectModelSerializer(o).data)
+                # features.append(S3ObjectModelSerializer(o).data)
+                resp = libs3.presign_s3_file(o.bucket, o.key)
+                if resp[0]:
+                    features.append(resp[1])
 
         data = {'id': pk}
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
