@@ -31,8 +31,12 @@ OVERRIDECYCLES_HEADER = 'OverrideCycles'
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-LAB_SHEET_ID = libssm.get_secret('/umccr/google/drive/tracking_sheet_id')
-SSM_GOOGLE_ACCOUNT_INFO = libssm.get_secret('/data_portal/dev/google/lims_service_account_json')
+LAB_SHEET_ID = libssm.get_secret(
+    os.getenv('SSM_KEY_NAME_METADATA_TRACKING_SHEET_ID', '/umccr/google/drive/tracking_sheet_id')
+)
+SSM_GOOGLE_ACCOUNT_INFO = libssm.get_secret(
+    os.getenv('SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON', '/data_portal/dev/google/lims_service_account_json')
+)
 
 DEFAULT_SSM_KEY_IAP_AUTH_TOKEN = "/iap/jwt-token"
 DEFAULT_IAP_BASE_URL = "https://aps2.platform.illumina.com"
