@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class SampleSheetCSV(Enum):
+    NAME = "SampleSheet"
+    FILENAME = "SampleSheet.csv"
+
+
 class ENSEventType(Enum):
     """
     REF:

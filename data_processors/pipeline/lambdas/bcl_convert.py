@@ -17,8 +17,8 @@ from datetime import datetime, timezone
 
 from data_portal.models import Workflow
 from data_processors.pipeline import services
-from data_processors.pipeline.constant import WorkflowType
-from data_processors.pipeline.lambdas import wes_handler
+from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV
+from data_processors.pipeline.lambdas import wes_handler, demux_metadata
 from utils import libjson, libssm, libdt
 
 logger = logging.getLogger()
@@ -42,7 +42,10 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.BCL_CONVERT.name} event")
     logger.info(libjson.dumps(event))
 
-    run_folder = f"gds://{event['gds_volume_name']}{event['gds_folder_path']}"
+    gds_volume_name = event['gds_volume_name']
+    gds_folder_path = event['gds_folder_path']
+
+    run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
     seq_name = event.get('seq_name', None)
 
@@ -50,21 +53,34 @@ def handler(event, context) -> dict:
 
     # read input template from parameter store
     input_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/input")
-    sample_sheet_gds_path = f"{run_folder}/SampleSheet.csv"
+    sample_sheet_gds_path = f"{run_folder}/{SampleSheetCSV.FILENAME.value}"
 
-    # TODO: call demux_metadata lambda (code) to retrieve metadata?
-    metadata_event = {
-        'gdsVolume': event['gds_volume_name'],
-        'gdsBasePath': event['gds_folder_path'],
-        'gdsSamplesheet': 'SampleSheet.csv'
-    }
+    metadata: dict = demux_metadata.handler({
+        'gdsVolume': gds_volume_name,
+        'gdsBasePath': gds_folder_path,
+        'gdsSamplesheet': SampleSheetCSV.FILENAME.value
+    }, None)
+    metadata_samples = metadata.get('samples', None)
+    metadata_override_cycles = metadata.get('override_cycles', None)
 
-    samples, cycles = demux_metadata.lambda_handler(metadata_event, None)
+    if metadata_samples is None or len(metadata_samples) == 0:
+        reason = f"Abort launching BCL Convert workflow. " \
+              f"No samples found after metadata tracking sheet and sample sheet filtering step."
+        abort_message = {'message': reason}
+        logger.warning(libjson.dumps(abort_message))
+        services.notify_outlier(topic="No samples found", reason=reason, status="Aborted", event=event)
+        return abort_message
 
+    if metadata_override_cycles is None or len(metadata_override_cycles) == 0:
+        reason = f"No Override Cycles found after metadata tracking sheet and sample sheet filtering step."
+        logger.warning(libjson.dumps({'message': reason}))
+        services.notify_outlier(topic="No Override Cycles found", reason=reason, status="Continue", event=event)
 
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input['samplesheet-split']['location'] = sample_sheet_gds_path
-    workflow_input['bcl-inDir']['location'] = run_folder
+    workflow_input['samplesheet']['location'] = sample_sheet_gds_path
+    workflow_input['bcl-input-directory']['location'] = run_folder
+    workflow_input['samples'] = metadata_samples
+    workflow_input['override-cycles'] = metadata_override_cycles
 
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/id")

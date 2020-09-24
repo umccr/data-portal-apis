@@ -87,6 +87,9 @@ functions:
   wes_get_workflow_run:
     handler: data_processors.pipeline.lambdas.wes_handler.get_workflow_run
     timeout: 28
+  demux_metadata:
+    handler: data_processors.pipeline.lambdas.demux_metadata.handler
+    timeout: 28
 
 custom:
   enabled:

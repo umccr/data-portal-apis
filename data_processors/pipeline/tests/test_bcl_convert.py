@@ -8,11 +8,20 @@ from mockito import when
 from data_portal.models import SequenceRun, Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowStatus
-from data_processors.pipeline.lambdas import bcl_convert
+from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
 
 class BCLConvertUnitTests(PipelineUnitTestCase):
+
+    def setUp(self) -> None:
+        super(BCLConvertUnitTests, self).setUp()
+        when(demux_metadata).handler(...).thenReturn(
+            {
+                'samples': ['PTC_EXPn200908LL_L2000001'],
+                'override_cycles': ['Y100;I8N2;I8N2;Y100'],
+            }
+        )
 
     def test_handler(self):
         """

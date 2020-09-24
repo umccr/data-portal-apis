@@ -13,6 +13,9 @@ from utils import libslack, lookup, libjson
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+SLACK_SENDER_BADGE = "Portal Workflow Automation"
+SLACK_FOOTER_BADGE = "Automated Workflow Event"
+
 
 @transaction.atomic
 def delete_gds_file(payload: dict):
@@ -246,7 +249,7 @@ def notify_workflow_status(workflow: Workflow):
                     f"Not reporting to Slack!")
         return
 
-    sender = "Portal Workflow Automation"
+    sender = SLACK_SENDER_BADGE
     topic = f"Run Name: {workflow.wfr_name}"
     attachments = [
         {
@@ -297,7 +300,7 @@ def notify_workflow_status(workflow: Workflow):
                     "short": True
                 },
             ],
-            "footer": "Automated Workflow Event",
+            "footer": SLACK_FOOTER_BADGE,
             "ts": int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
         }
     ]
@@ -309,6 +312,39 @@ def notify_workflow_status(workflow: Workflow):
         workflow.save()
 
     return resp
+
+
+def notify_outlier(topic: str, reason: str, status: str, event: dict):
+
+    slack_color = libslack.SlackColor.GRAY.value
+
+    sender = SLACK_SENDER_BADGE
+    topic = f"Pipeline {status}: {topic}"
+
+    fields = []
+    if event:
+        for k, v in event.items():
+            f = {
+                'title': str(k).upper(),
+                'value': str(v),
+                'short': True
+            }
+            fields.append(f)
+
+    attachments = [
+        {
+            "fallback": topic,
+            "color": slack_color,
+            "pretext": f"Status: {status}",
+            "title": f"Reason: {reason}",
+            "text": "Event Attributes:",
+            "fields": fields if fields else "No attributes found. Please check CloudWatch logs.",
+            "footer": SLACK_FOOTER_BADGE,
+            "ts": int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
+        }
+    ]
+
+    return libslack.call_slack_webhook(sender, topic, attachments)
 
 
 @transaction.atomic

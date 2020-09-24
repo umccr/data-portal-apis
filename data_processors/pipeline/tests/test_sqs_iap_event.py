@@ -8,7 +8,7 @@ from mockito import when, verify
 from data_portal.models import GDSFile, SequenceRun, Workflow
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowRunEventType
-from data_processors.pipeline.lambdas import sqs_iap_event
+from data_processors.pipeline.lambdas import sqs_iap_event, demux_metadata
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 from utils import libslack, libjson
@@ -134,6 +134,15 @@ def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = Wor
 
 
 class SQSIAPEventUnitTests(PipelineUnitTestCase):
+
+    def setUp(self) -> None:
+        super(SQSIAPEventUnitTests, self).setUp()
+        when(demux_metadata).handler(...).thenReturn(
+            {
+                'samples': ['PTC_EXPn200908LL_L2000001'],
+                'override_cycles': ['Y100;I8N2;I8N2;Y100'],
+            }
+        )
 
     def test_uploaded_gds_file_event(self):
         """
