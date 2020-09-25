@@ -113,26 +113,34 @@ def parse_bcl_convert_output(output_json: str) -> list:
     Given this_workflow (bcl convert) output (fastqs), return the list of fastq locations on gds
 
     BCL Convert CWL output may be Directory or Directory[], See:
-    [1]: https://github.com/umccr-illumina/cwl-iap/blob/5ebe927b885a6f6d18ed220dba913d08eb45a67a/workflows/bclconversion/bclConversion-main.cwl#L30
-    [2]: https://github.com/umccr-illumina/cwl-iap/blob/1263e9d43cf08cfb7438dcfe42166e88b8456e54/workflows/bclconversion/1.0.4/bclConversion-main.cwl#L69
-    [3]: https://www.commonwl.org/v1.0/CommandLineTool.html#Directory
+    [1]: https://www.commonwl.org/v1.0/CommandLineTool.html#Directory
+    [2]: https://github.com/umccr-illumina/cwl-iap/blob/5ebe927b885a6f6d18ed220dba913d08eb45a67a/workflows/bclconversion/bclConversion-main.cwl#L30
+    [3]: https://github.com/umccr-illumina/cwl-iap/blob/1263e9d43cf08cfb7438dcfe42166e88b8456e54/workflows/bclconversion/1.0.4/bclConversion-main.cwl#L69
+    [4]: https://github.com/umccr-illumina/cwl-iap/blob/5b96a8cfafa5ac515ca46cf67aa20b40a716b4bd/workflows/bclconversion/1.0.6/bclConversion-main.1.0.6.cwl#L167
 
     :param output_json: workflow run output in json format
     :return locations: list of fastq output locations on gds
     """
     locations = []
     output: dict = libjson.loads(output_json)
-    main_fastqs = output['main/fastqs']
 
-    if isinstance(main_fastqs, list):
-        for out in main_fastqs:
-            locations.append(out['location'])
+    lookup_keys = ['main/fastqs', 'main/fastq-directories']
+    reduced_keys = list(filter(lambda k: k in lookup_keys, output.keys()))
+    if reduced_keys is None or len(reduced_keys) == 0:
+        raise KeyError(f"Unexpected BCL Convert CWL output format. Excepting {lookup_keys}. Found {output.keys()}")
 
-    elif isinstance(main_fastqs, dict):
-        locations.append(main_fastqs['location'])
+    for key in reduced_keys:
+        main_fastqs = output[key]
 
-    else:
-        msg = f"BCL Convert output main/fastqs should be list or dict. Found type {type(main_fastqs)} -- {main_fastqs}"
-        raise ValueError(msg)
+        if isinstance(main_fastqs, list):
+            for out in main_fastqs:
+                locations.append(out['location'])
+
+        elif isinstance(main_fastqs, dict):
+            locations.append(main_fastqs['location'])
+
+        else:
+            msg = f"BCL Convert FASTQ output should be list or dict. Found type {type(main_fastqs)} -- {main_fastqs}"
+            raise ValueError(msg)
 
     return locations
