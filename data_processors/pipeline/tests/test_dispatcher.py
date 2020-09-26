@@ -5,15 +5,15 @@ from mockito import when
 
 from data_portal.models import SequenceRun, Workflow
 from data_portal.tests.factories import SequenceRunFactory
-from data_processors.pipeline.lambdas import demux
+from data_processors.pipeline.lambdas import dispatcher
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
 
-class DemuxUnitTests(PipelineUnitTestCase):
+class DispatcherUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_demux.DemuxUnitTests.test_handler
+        python manage.py test data_processors.pipeline.tests.test_dispatcher.DispatcherUnitTests.test_handler
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -30,7 +30,7 @@ class DemuxUnitTests(PipelineUnitTestCase):
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        demux_workflows: dict = demux.handler({
+        dispatched_workflows: dict = dispatcher.handler({
             'workflow_type': "germline",
             'gds_path': "gds://volume/path/to/fastq",
             'seq_run_id': mock_sqr.run_id,
@@ -38,19 +38,19 @@ class DemuxUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-"*32)
-        logger.info("Example demux.handler lambda output:")
-        logger.info(json.dumps(demux_workflows))
+        logger.info("Example dispatcher.handler lambda output:")
+        logger.info(json.dumps(dispatched_workflows))
 
-        # assert demux germline workflows launch success and save workflow runs in db
+        # assert dispatcher launch germline workflows success and save workflow runs in db
         workflows = Workflow.objects.all()
         self.assertEqual(4, workflows.count())
 
     def test_handler_unsupported_workflow(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_demux.DemuxUnitTests.test_handler_unsupported_workflow
+        python manage.py test data_processors.pipeline.tests.test_dispatcher.DispatcherUnitTests.test_handler_unsupported_workflow
         """
 
-        demux_workflows: dict = demux.handler({
+        dispatched_workflows: dict = dispatcher.handler({
             'workflow_type': "something_else",
             'gds_path': "gds://volume/path/to/fastq",
             'seq_run_id': "sequence run id",
@@ -58,16 +58,16 @@ class DemuxUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-"*32)
-        logger.info("Example demux.handler lambda output:")
-        logger.info(json.dumps(demux_workflows))
+        logger.info("Example dispatcher.handler lambda output:")
+        logger.info(json.dumps(dispatched_workflows))
 
-        # assert no demux workflows launch and no workflow runs save in db
+        # assert no dispatcher launch workflows and no workflow runs save in db
         workflows = Workflow.objects.all()
         self.assertEqual(0, workflows.count())
 
     def test_handler_paired_end(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_demux.DemuxUnitTests.test_handler_paired_end
+        python manage.py test data_processors.pipeline.tests.test_dispatcher.DispatcherUnitTests.test_handler_paired_end
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -82,7 +82,7 @@ class DemuxUnitTests(PipelineUnitTestCase):
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        demux_workflows: dict = demux.handler({
+        dispatched_workflows: dict = dispatcher.handler({
             'workflow_type': "germline",
             'gds_path': "gds://volume/path/to/fastq",
             'seq_run_id': mock_sqr.run_id,
@@ -90,14 +90,14 @@ class DemuxUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-"*32)
-        logger.info("Example demux.handler lambda output:")
-        logger.info(json.dumps(demux_workflows))
+        logger.info("Example dispatcher.handler lambda output:")
+        logger.info(json.dumps(dispatched_workflows))
 
-        # assert demux germline workflows launch success and save workflow runs in db
+        # assert dispatcher launch germline workflows success and save workflow runs in db
         workflows = Workflow.objects.all()
         self.assertEqual(1, workflows.count())
 
 
-class DemuxIntegrationTests(PipelineIntegrationTestCase):
+class DispatcherIntegrationTests(PipelineIntegrationTestCase):
     # write test case here if to actually hit IAP endpoints
     pass

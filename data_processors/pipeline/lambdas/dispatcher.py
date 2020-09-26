@@ -20,7 +20,7 @@ from utils import libjson
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-SUPPORTED_DEMUX_WORKFLOWS = [
+SUPPORTED_WORKFLOWS = [
     WorkflowType.GERMLINE.value,
 ]
 
@@ -41,12 +41,12 @@ def handler(event, context) -> dict:
 
     workflow_type: str = event['workflow_type']
 
-    logger.info(f"Start processing {workflow_type} demux event")
+    logger.info(f"Start processing {workflow_type} workflow dispatcher event")
     logger.info(libjson.dumps(event))
 
     # early circuit breaker!
-    if not workflow_type.lower() in SUPPORTED_DEMUX_WORKFLOWS:
-        msg = f"Workflow type '{workflow_type}' is not yet supported for demux run"
+    if not workflow_type.lower() in SUPPORTED_WORKFLOWS:
+        msg = f"Workflow type '{workflow_type}' is not yet supported for workflow dispatcher"
         logger.info(msg)
         return {
             'error': msg,

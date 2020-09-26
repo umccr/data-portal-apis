@@ -73,8 +73,8 @@ functions:
   fastq:
     handler: data_processors.pipeline.lambdas.fastq.handler
     timeout: 28
-  demux:
-    handler: data_processors.pipeline.lambdas.demux.handler
+  dispatcher:
+    handler: data_processors.pipeline.lambdas.dispatcher.handler
     timeout: 28
   orchestrator:
     handler: data_processors.pipeline.lambdas.orchestrator.handler

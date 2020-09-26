@@ -16,7 +16,7 @@ import logging
 from data_portal.models import Workflow, SequenceRun
 from data_processors.pipeline import services
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, demux
+from data_processors.pipeline.lambdas import workflow_update, dispatcher
 from utils import libjson
 
 logger = logging.getLogger()
@@ -90,7 +90,7 @@ def next_step(this_workflow: Workflow, context):
 
         results = []
         for output_gds_path in parse_bcl_convert_output(this_workflow.output):
-            demux_result = demux.handler({
+            dispatcher_result = dispatcher.handler({
                 'workflow_type': WorkflowType.GERMLINE.value,
                 'gds_path': output_gds_path,
                 'seq_run_id': this_sqr.run_id if this_sqr else None,
@@ -99,7 +99,7 @@ def next_step(this_workflow: Workflow, context):
 
             result = {
                 "fastq_location": output_gds_path,
-                "demux_result": demux_result
+                "dispatcher_result": dispatcher_result
             }
             results.append(result)
 
