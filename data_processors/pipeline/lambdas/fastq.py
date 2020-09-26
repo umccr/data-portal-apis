@@ -86,12 +86,12 @@ def handler(event, context) -> dict:
         'gds_path': "gds://volume/path/to/fastq",
         'fastq_map': {
             'SAMPLE_NAME1': {
-                'fastq_list': ['SAMPLE_NAME1_S1_L001_R1_001.fastq.gz', 'SAMPLE_NAME1_S1_L001_R2_001.fastq.gz', ...],
+                'fastq_list': ['gds://vol/abs/path/SAMPLE_NAME1_S1_L001_R1_001.fastq.gz', 'gds://vol/abs/path/SAMPLE_NAME1_S1_L001_R2_001.fastq.gz', ...],
                 'tags': ['optional', 'aggregation', 'tag', 'for_example', 'SBJ00001', ...],
                 ...
             },
             'SAMPLE_NAME2': {
-                'fastq_list': ['SAMPLE_NAME2_S1_L001_R1_001.fastq.gz', 'SAMPLE_NAME2_S1_L001_R2_001.fastq.gz', ...],
+                'fastq_list': ['gds://vol/abs/path/SAMPLE_NAME2_S1_L001_R1_001.fastq.gz', 'gds://vol/abs/path/SAMPLE_NAME2_S1_L001_R2_001.fastq.gz', ...],
                 'tags': ['optional', 'aggregation', 'tag', 'for_example', 'SBJ00001', ...],
                 ...
             },
@@ -148,10 +148,11 @@ def handler(event, context) -> dict:
                         continue
                     sample_name = extract_fastq_sample_name(file.name)
                     if sample_name:
+                        file_abs_path = f"gds://{file.volume_name}{file.path}"  # transform to absolute gds path
                         if sample_name in fastq_map:
-                            fastq_map[sample_name]['fastq_list'].append(file.name)  # append more if same sample
+                            fastq_map[sample_name]['fastq_list'].append(file_abs_path)  # append more if the same sample
                         else:
-                            fastq_map[sample_name]['fastq_list'] = [file.name]  # first one
+                            fastq_map[sample_name]['fastq_list'] = [file_abs_path]  # first one
                             fastq_map[sample_name]['tags'] = []  # TODO tag SBJ ID from Portal LIMS database
                     else:
                         logger.info(f"Failed to extract sample name from file: {file.name}")

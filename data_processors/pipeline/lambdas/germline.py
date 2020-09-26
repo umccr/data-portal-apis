@@ -28,8 +28,8 @@ logger.setLevel(logging.INFO)
 def handler(event, context) -> dict:
     """event payload dict
     {
-        'fastq1': "SAMPLE_NAME_S1_R1_001.fastq.gz",
-        'fastq2': "SAMPLE_NAME_S1_R2_001.fastq.gz",
+        'fastq1': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R1_001.fastq.gz",
+        'fastq2': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R2_001.fastq.gz",
         'sample_name': "SAMPLE_NAME",
         'seq_run_id': "sequence run id",
         'seq_name': "sequence run name",

@@ -52,7 +52,6 @@ def handler(event, context) -> dict:
             'error': msg,
         }
 
-    gds_path: str = event['gds_path']
     seq_run_id: str = event.get('seq_run_id')
     seq_name: str = event.get('seq_name')
 
@@ -72,12 +71,9 @@ def handler(event, context) -> dict:
                                f"{FastQReadType.PAIRED_END}. FOUND: {fastq_list}")
                 continue
 
-            fastq1 = f"{gds_path}/{fastq_list[0]}"
-            fastq2 = f"{gds_path}/{fastq_list[1]}"
-
             wfr_germline = germline.handler({
-                'fastq1': fastq1,
-                'fastq2': fastq2,
+                'fastq1': fastq_list[0],
+                'fastq2': fastq_list[1],
                 'sample_name': sample_name,
                 'seq_run_id': seq_run_id,
                 'seq_name': seq_name,
