@@ -47,7 +47,7 @@ def handler(event, context) -> dict:
 
     run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
-    seq_name = event.get('seq_name', None)
+    seq_name = event.get('seq_name', None)  # TODO: can we assume this is always the sequencing run name?
 
     iap_workflow_prefix = "/iap/workflow"
 
@@ -82,6 +82,13 @@ def handler(event, context) -> dict:
     workflow_input['samples'] = metadata_samples
     workflow_input['override-cycles'] = metadata_override_cycles
 
+    # prepare engine_parameters
+    # TODO: handle defauls (no engine parameters)?
+    gds_fastq_vol = libssm.get_ssm_param('/iap/gds/fastq_vol')
+    engine_params_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/engine_parameters")
+    workflow_engine_params: dict = copy.deepcopy(libjson.loads(engine_params_template))
+    workflow_engine_params['outputDirectory'] = f"gds://{gds_fastq_vol}/{seq_name}"
+
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/id")
     workflow_version = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/version")
@@ -99,6 +106,7 @@ def handler(event, context) -> dict:
         'workflow_version': workflow_version,
         'workflow_run_name': workflow_run_name,
         'workflow_input': workflow_input,
+        'workflow_engine_parameters': workflow_engine_params
     }, context)
 
     workflow: Workflow = services.create_or_update_workflow(
