@@ -44,10 +44,10 @@ def handler(event, context) -> dict:
 
     gds_volume_name = event['gds_volume_name']
     gds_folder_path = event['gds_folder_path']
+    seq_name = event['seq_name']
 
     run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
-    seq_name = event.get('seq_name', None)  # TODO: can we assume this is always the sequencing run name?
 
     iap_workflow_prefix = "/iap/workflow"
 
@@ -83,7 +83,6 @@ def handler(event, context) -> dict:
     workflow_input['override-cycles'] = metadata_override_cycles
 
     # prepare engine_parameters
-    # TODO: handle defauls (no engine parameters)?
     gds_fastq_vol = libssm.get_ssm_param('/iap/gds/fastq_vol')
     engine_params_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/engine_parameters")
     workflow_engine_params: dict = copy.deepcopy(libjson.loads(engine_params_template))

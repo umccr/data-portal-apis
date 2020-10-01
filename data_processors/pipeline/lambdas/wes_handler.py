@@ -66,7 +66,6 @@ def launch(event, context) -> dict:
     logger.info(f"Start processing WES workflow launch event")
     logger.info(libjson.dumps(event))
 
-    # TODO: make engine parameters optional/check for presence?
     with libwes.ApiClient(configuration()) as api_client:
         version_api = libwes.WorkflowVersionsApi(api_client)
         workflow_id = event['workflow_id']
@@ -74,7 +73,7 @@ def launch(event, context) -> dict:
         body = libwes.LaunchWorkflowVersionRequest(
             name=event['workflow_run_name'],
             input=event['workflow_input'],
-            engine_parameters=event['workflow_engine_parameters']
+            engine_parameters=event.get('workflow_engine_parameters')
         )
 
         try:
