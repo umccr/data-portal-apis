@@ -12,10 +12,11 @@ django.setup()
 # ---
 
 import logging
+from datetime import datetime, timezone
 
 from data_processors.pipeline.constant import FastQReadType, WorkflowType
 from data_processors.pipeline.lambdas import fastq, germline
-from utils import libjson
+from utils import libjson, libslack
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -85,6 +86,31 @@ def handler(event, context) -> dict:
         'workflow_type': workflow_type,
         'workflows': list_of_workflows_launched,
     }
+
+    # FIXME quick fix send launch batch notification
+    if len(list_of_workflows_launched) > 0:
+        slack_color = libslack.SlackColor.BLUE.value
+
+        sender = "Portal Workflow Automation"
+        topic = f"IAP Pipeline: {str(workflow_type).upper()} workflows have launched"
+
+        mtx = ""
+        for wfl in list_of_workflows_launched:
+            mtx += f"{wfl['sample_name']}: {wfl['wfr_id']}\n"
+
+        attachments = [
+            {
+                "fallback": topic,
+                "color": slack_color,
+                "pretext": f"Status: RUNNING",
+                "title": f"Sequence Run: {seq_name}",
+                "text": mtx,
+                "footer": "Automated Workflow Event",
+                "ts": int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
+            }
+        ]
+
+        libslack.call_slack_webhook(sender, topic, attachments)
 
     logger.info(libjson.dumps(result))
 

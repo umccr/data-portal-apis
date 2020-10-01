@@ -500,8 +500,8 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             if wfl.type_name == WorkflowType.BCL_CONVERT.name:
                 self.assertTrue(wfl.notified)
 
-        # should call to slack webhook once
-        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
+        # should call to slack webhook once FIXME quick fix due to batch notification
+        verify(libslack.http.client.HTTPSConnection, times=2).request(...)
 
     def test_wes_runs_event_germline_alt(self):
         """

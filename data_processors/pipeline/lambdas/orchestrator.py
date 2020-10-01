@@ -98,14 +98,18 @@ def next_step(this_workflow: Workflow, context):
             }, context)
 
             result = {
-                "fastq_location": output_gds_path,
-                "dispatcher_result": dispatcher_result
+                'fastq_location': output_gds_path,
+                'dispatcher_result': dispatcher_result
             }
             results.append(result)
 
-        return {
-            "results": results
+        results_dict = {
+            'results': results
         }
+
+        logger.info(libjson.dumps(results_dict))
+
+        return results_dict
 
 
 def parse_bcl_convert_output(output_json: str) -> list:
