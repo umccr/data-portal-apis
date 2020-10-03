@@ -146,15 +146,15 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
         logger.info(f"Unsupported status {sqr.status}. Not reporting to Slack!")
         return
 
-    acl = sqr.acl
+    acl = list(filter(lambda s: s.startswith('wid'), sqr.acl))  # filter wid
     if len(acl) == 1:
         owner = lookup.get_wg_name_from_id(acl[0])
     else:
         logger.info("Multiple IDs in ACL, expected 1!")
         owner = 'undetermined'
 
-    sender = "Illumina Application Platform"
-    topic = f"Notification from {sqr.msg_attr_action_type} (Portal)"
+    sender = SLACK_SENDER_BADGE
+    topic = f"Notification from {sqr.msg_attr_action_type}"
     attachments = [
         {
             "fallback": f"Run {sqr.instrument_run_id}: {sqr.status}",
