@@ -47,8 +47,12 @@ def handler(event, context):
     wfv_id = event['wfv_id']
     wfr_event = event.get('wfr_event')  # wfr_event is optional
 
-    this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)  # step1 update the workflow status
-    return next_step(this_workflow, context)                         # step2 determine next step
+    # FIXME Only update workflow fow now, skip next_step auto launching while still improving implementation
+    update_step(wfr_id, wfv_id, wfr_event, context)
+
+    # FIXME temporary skip GERMLINE
+    # this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)  # step1 update the workflow status
+    # return next_step(this_workflow, context)                         # step2 determine next step
 
 
 def update_step(wfr_id, wfv_id, wfr_event, context):
