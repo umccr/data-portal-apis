@@ -86,11 +86,7 @@ def handler(event, context):
     )
 
     # notify workflow status
-    if updated_workflow.type_name.lower() == WorkflowType.GERMLINE.value.lower():
-        # FIXME quick fix skip notification for now
-        pass
-    else:
-        services.notify_workflow_status(updated_workflow)
+    services.notify_workflow_status(updated_workflow)
 
     result = {
         'id': updated_workflow.id,

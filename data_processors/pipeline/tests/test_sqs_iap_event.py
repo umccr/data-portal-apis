@@ -1,12 +1,11 @@
 from datetime import datetime
-from unittest import skip
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import make_aware
 from libiap.openapi import libwes, libgds
 from mockito import when, verify
 
-from data_portal.models import GDSFile, SequenceRun, Workflow
+from data_portal.models import GDSFile, SequenceRun, Workflow, BatchRun
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowRunEventType
 from data_processors.pipeline.lambdas import sqs_iap_event, demux_metadata
@@ -450,15 +449,12 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         success_bcl_convert_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, success_bcl_convert_workflow_runs.count())
 
-    # FIXME temporary skip GERMLINE
-    @skip
     def test_wes_runs_event_germline(self):
         """
         python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline
         """
 
         self.verify_local()
-        logger.info(f"-"*32)
 
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
@@ -467,14 +463,16 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
         mock_wfl_run.output = {
-            'main/fastqs': {
-                'location': f"gds://{TestConstant.wfr_id.value}/bclConversion_launch/try-1/out-dir-bclConvert",
-                'basename': "out-dir-bclConvert",
-                'nameroot': "",
-                'nameext': "",
-                'class': "Directory",
-                'listing': []
-            }
+            'main/fastq-directories': [
+                {
+                    'location': f"gds://{TestConstant.wfr_id.value}/outputs/OVERRIDE_CYCLES_ID_XZY",
+                    'basename': "OVERRIDE_CYCLES_ID_XZY",
+                    'nameroot': "",
+                    'nameext': "",
+                    'class': "Directory",
+                    'listing': []
+                },
+            ]
         }
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
         workflow_version.id = TestConstant.wfv_id.value
@@ -482,10 +480,23 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
         mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
-        mock_file_list.items = [
-            libgds.FileResponse(name="NA12345_S7_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_R2_001.fastq.gz"),
+        volume = f"{TestConstant.wfr_id.value}"
+        base = f"/outputs/OVERRIDE_CYCLES_ID_XZY/PROJECT"
+        mock_files = [
+            "NA12345 - 4KC_S7_R1_001.fastq.gz",
+            "NA12345 - 4KC_S7_R2_001.fastq.gz",
+            "PRJ111119_L1900000_S1_R1_001.fastq.gz",
+            "PRJ111119_L1900000_S1_R2_001.fastq.gz",
+            "MDX199999_L1999999_topup_S2_R1_001.fastq.gz",
+            "MDX199999_L1999999_topup_S2_R2_001.fastq.gz",
+            "L9111111_topup_S3_R1_001.fastq.gz",
+            "L9111111_topup_S3_R2_001.fastq.gz",
         ]
+        mock_file_list.items = []
+        for mock_file in mock_files:
+            mock_file_list.items.append(
+                libgds.FileResponse(volume_name=volume, path=f"{base}/{mock_file}", name=mock_file),
+            )
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
         sqs_iap_event.handler(
@@ -493,18 +504,17 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             , None
         )
 
-        # assert germline workflow launch success and save workflow runs in portal db
-        success_germline_workflow_runs = Workflow.objects.all()
-        self.assertEqual(2, success_germline_workflow_runs.count())
+        self.assertEqual(1, Workflow.objects.all().count())
+        self.assertEqual(1, BatchRun.objects.count())
 
         logger.info(f"-"*32)
-        for wfl in success_germline_workflow_runs:
+        for wfl in Workflow.objects.all():
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
             if wfl.type_name == WorkflowType.BCL_CONVERT.name:
                 self.assertTrue(wfl.notified)
 
-        # should call to slack webhook once FIXME quick fix due to batch notification
-        verify(libslack.http.client.HTTPSConnection, times=2).request(...)
+        # should call to slack webhook once for BCL Convert workflow
+        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
     def test_wes_runs_event_germline_alt(self):
         """
@@ -512,7 +522,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
 
         self.verify_local()
-        logger.info(f"-" * 32)
 
         mock_bcl_workflow: Workflow = WorkflowFactory()
         mock_bcl_workflow.end_status = WorkflowStatus.SUCCEEDED.value
@@ -576,7 +585,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         Should hit WES Run History Event and be able to update run Succeeded status without issue.
         """
         self.verify_local()
-        logger.info(f"-" * 32)
 
         mock_bcl: Workflow = WorkflowFactory()
 
@@ -660,7 +668,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         Should hit WES Run History Event and be able to update run Failed status without issue.
         """
         self.verify_local()
-        logger.info(f"-" * 32)
 
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
@@ -719,7 +726,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         Last resort update status using WES EventType. Most possibly RunFailed situation.
         """
         self.verify_local()
-        logger.info(f"-" * 32)
 
         mock_bcl_workflow: Workflow = WorkflowFactory()
         mock_bcl_workflow.notified = True  # mock also consider Running status has already notified

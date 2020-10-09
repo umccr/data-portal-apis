@@ -40,6 +40,11 @@ command -v docker-compose >/dev/null 2>&1 || {
   exit 1
 }
 
+aws sts get-caller-identity >/dev/null 2>&1 || {
+  echo >&2 "UNABLE TO LOCATE CREDENTIALS. YOUR SESSION MAY HAVE EXPIRED. PLEASE LOGIN. ABORTING..."
+  exit 1
+}
+
 # ---
 
 echo "...Base project directory at $(pwd)"
@@ -63,6 +68,30 @@ load_db_dump() {
     mysql -udata_portal -e"DROP DATABASE IF EXISTS data_portal;CREATE DATABASE IF NOT EXISTS data_portal;"
   docker exec -i -e MYSQL_PWD=data_portal "$db_container" \
     /bin/bash -c 'zcat data_portal.sql.gz | mysql -udata_portal data_portal'
+}
+
+load_localstack() {
+  echo "...Loading mock data to localstack container"
+  aws_local_cmd="aws --endpoint-url=http://localhost:4566"
+
+  BUCKET_EXISTS=$(aws --endpoint-url=http://localhost:4566 s3api head-bucket --bucket test1 2>&1 || true)
+  if [ -z "$BUCKET_EXISTS" ]; then
+    true
+  else
+    eval "$aws_local_cmd s3 mb s3://test1"
+  fi
+
+  eval "$aws_local_cmd s3 cp ./README.md s3://test1"
+  eval "$aws_local_cmd s3 ls"
+  eval "$aws_local_cmd s3 ls s3://test1/"
+
+  eval "$aws_local_cmd sqs create-queue --queue-name StdQueue"
+  eval "$aws_local_cmd sqs create-queue --queue-name MyQueue.fifo --attributes FifoQueue=true,ContentBasedDeduplication=true"
+
+  sqs_germline_queue_name=$(aws ssm get-parameter --name '/data_portal/backend/sqs_germline_queue_name' --with-decryption | jq -r .Parameter.Value)
+  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_germline_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
+
+  eval "$aws_local_cmd sqs list-queues"
 }
 
 if [ -n "$1" ] && [ "$1" = "sync" ]; then

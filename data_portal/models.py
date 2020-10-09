@@ -6,6 +6,7 @@ from django.db.models import Max, QuerySet, Q
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
+from data_processors.pipeline.constant import WorkflowStatus
 
 
 class S3ObjectManager(models.Manager):
@@ -104,6 +105,7 @@ class LIMSRow(models.Model):
     """
     Models a row in the LIMS data. Fields are the columns.
     """
+
     class Meta:
         unique_together = ['illumina_id', 'library_id']
 
@@ -147,6 +149,7 @@ class S3LIMS(models.Model):
     """
     Models the association between a S3 object and a LIMS row
     """
+
     class Meta:
         unique_together = ['s3_object', 'lims_row']
 
@@ -294,6 +297,78 @@ class SequenceRun(models.Model):
                f"Status '{self.status}'"
 
 
+class Batch(models.Model):
+    class Meta:
+        unique_together = ['name', 'created_by']
+
+    name = models.CharField(max_length=255)
+    created_by = models.CharField(max_length=255)
+    context_data = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"ID: {self.id}, NAME: {self.name}, CREATED_BY: {self.created_by}"
+
+
+class BatchRun(models.Model):
+    batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
+    step = models.CharField(max_length=255)
+    running = models.BooleanField(null=True, blank=True)
+
+    def __str__(self):
+        return f"ID: {self.id}, STEP: {self.step}, RUNNING: {self.running}, BATCH_ID: {self.batch.id}"
+
+
+class WorkflowManager(models.Manager):
+
+    def get_by_batch_run(self, batch_run: BatchRun) -> QuerySet:
+        qs: QuerySet = self.filter(batch_run=batch_run)
+        return qs
+
+    def get_running_by_batch_run(self, batch_run: BatchRun) -> QuerySet:
+        qs: QuerySet = self.filter(
+            batch_run=batch_run,
+            start__isnull=False,
+            end__isnull=True,
+            end_status__icontains=WorkflowStatus.RUNNING.value
+        )
+        return qs
+
+    def get_completed_by_batch_run(self, batch_run: BatchRun) -> QuerySet:
+        qs: QuerySet = self.filter(
+            batch_run=batch_run,
+            start__isnull=False,
+            end__isnull=False,
+            end_status__isnull=False,
+        ).exclude(end_status__icontains=WorkflowStatus.RUNNING.value)
+        return qs
+
+    def find_by_idempotent_matrix(self, **kwargs):
+        """
+        search workflow using: Workflow type_name, wfl_id, version, sample_name, sqr, batch_run_id
+        return any workflow matching: end=NULL && end_status=NULL && start=NOT_NULL && input=NOT_NULL
+        """
+        type_name = kwargs.get('type_name')
+        wfl_id = kwargs.get('wfl_id')
+        version = kwargs.get('version')
+        sample_name = kwargs.get('sample_name')
+        sequence_run = kwargs.get('sequence_run')
+        batch_run = kwargs.get('batch_run')
+
+        qs: QuerySet = self.filter(
+            type_name=type_name,
+            wfl_id=wfl_id,
+            version=version,
+            sample_name=sample_name,
+            sequence_run=sequence_run,
+            batch_run=batch_run,
+            end__isnull=True,
+            end_status__isnull=True,
+            start__isnull=False,
+            input__isnull=False,
+        )
+        return qs
+
+
 class Workflow(models.Model):
     class Meta:
         unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
@@ -312,6 +387,9 @@ class Workflow(models.Model):
     end_status = models.CharField(max_length=255, null=True, blank=True)
     notified = models.BooleanField(null=True, blank=True)
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
+    batch_run = models.ForeignKey(BatchRun, on_delete=models.SET_NULL, null=True, blank=True)
+
+    objects = WorkflowManager()
 
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"

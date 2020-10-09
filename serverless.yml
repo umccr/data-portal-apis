@@ -59,11 +59,19 @@ functions:
     events:
       - sqs:
           arn: ${env:S3_EVENT_SQS_ARN}
+    timeout: 28
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
     events:
       - sqs:
           arn: ${env:IAP_ENS_EVENT_SQS_ARN}
+    timeout: 28
+  sqs_germline_event_processor:
+    handler: data_processors.pipeline.lambdas.germline.sqs_handler
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_germline_queue_arn}
+    timeout: 28
   bcl_convert:
     handler: data_processors.pipeline.lambdas.bcl_convert.handler
     timeout: 28

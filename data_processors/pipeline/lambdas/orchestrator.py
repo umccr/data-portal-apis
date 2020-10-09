@@ -12,12 +12,13 @@ django.setup()
 # ---
 
 import logging
+from typing import List
 
-from data_portal.models import Workflow, SequenceRun
+from data_portal.models import Workflow, SequenceRun, Batch, BatchRun
 from data_processors.pipeline import services
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, dispatcher
-from utils import libjson
+from data_processors.pipeline.constant import WorkflowType, WorkflowStatus, FastQReadType
+from data_processors.pipeline.lambdas import workflow_update, fastq
+from utils import libjson, libsqs, libssm
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -47,12 +48,8 @@ def handler(event, context):
     wfv_id = event['wfv_id']
     wfr_event = event.get('wfr_event')  # wfr_event is optional
 
-    # FIXME Only update workflow fow now, skip next_step auto launching while still improving implementation
-    update_step(wfr_id, wfv_id, wfr_event, context)
-
-    # FIXME temporary skip GERMLINE
-    # this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)  # step1 update the workflow status
-    # return next_step(this_workflow, context)                         # step2 determine next step
+    this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)  # step1 update the workflow status
+    return next_step(this_workflow, context)                         # step2 determine next step
 
 
 def update_step(wfr_id, wfv_id, wfr_event, context):
@@ -86,34 +83,86 @@ def next_step(this_workflow: Workflow, context):
 
     this_sqr: SequenceRun = this_workflow.sequence_run
 
+    if this_workflow.output is None:
+        raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
+
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
 
-        assert this_workflow.output is not None, f"Workflow '{this_workflow.wfr_id}' output is None"
+        # create a batch if not exist
+        batch_name = this_sqr.name if this_sqr else f"{this_workflow.type_name}__{this_workflow.wfr_id}"
+        this_batch = services.get_or_create_batch(name=batch_name, created_by=this_workflow.wfr_id)
 
-        results = []
-        for output_gds_path in parse_bcl_convert_output(this_workflow.output):
-            dispatcher_result = dispatcher.handler({
-                'workflow_type': WorkflowType.GERMLINE.value,
-                'gds_path': output_gds_path,
-                'seq_run_id': this_sqr.run_id if this_sqr else None,
-                'seq_name': this_sqr.name if this_sqr else None,
-            }, context)
+        # register a new batch run for this_batch run step
+        this_batch_run = services.skip_or_create_batch_run(
+            batch=this_batch,
+            run_step=WorkflowType.GERMLINE.value.upper()
+        )
+        if this_batch_run is None:
+            # skip the request if there is on going existing batch_run for the same batch run step
+            # this is especially to fence off duplicate IAP WES events hitting multiple time to our IAP event lambda
+            return
 
-            result = {
-                'fastq_location': output_gds_path,
-                'dispatcher_result': dispatcher_result
-            }
-            results.append(result)
+        try:
+            if this_batch.context_data is None:
+                # parse bcl convert output and get all output locations
+                # build a sample info and its related fastq locations
+                fastq_locations = []
+                for location in parse_bcl_convert_output(this_workflow.output):
+                    fastq_container = fastq.handler({'gds_path': location}, None)
+                    fastq_locations.append(fastq_container)
 
-        results_dict = {
-            'results': results
+                # cache batch context data in db
+                this_batch = services.update_batch(this_batch.id, context_data=fastq_locations)
+
+            # prepare job list and dispatch to job queue
+            job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
+            queue_name = libssm.get_ssm_param('/data_portal/backend/sqs_germline_queue_name')
+            libsqs.dispatch_jobs(queue_name=queue_name, job_list=job_list)
+
+        except Exception as e:
+            services.update_batch_run(this_batch_run.id)  # reset running
+            raise e
+
+        return {
+            'batch_id': this_batch.id,
+            'batch_name': this_batch.name,
+            'batch_created_by': this_batch.created_by,
+            'batch_run_id': this_batch_run.id,
+            'batch_run_step': this_batch_run.step,
+            'batch_run_status': "RUNNING" if this_batch_run.running else "NOT_RUNNING"
         }
 
-        logger.info(libjson.dumps(results_dict))
 
-        return results_dict
+def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
+    job_list = []
+    fastq_locations: List[dict] = libjson.loads(this_batch.context_data)
+    for location in fastq_locations:
+        fastq_container: dict = location
+        fastq_map = fastq_container['fastq_map']
+        for sample_name, bag in fastq_map.items():
+            fastq_list = bag['fastq_list']
+
+            if len(fastq_list) > FastQReadType.PAIRED_END.value:
+                # pair_end only at the mo, log and skip
+                logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
+                               f"EXPECTING {FastQReadType.PAIRED_END.value} FASTQ FILES FOR "
+                               f"{FastQReadType.PAIRED_END}. FOUND: {fastq_list}")
+                continue
+
+            job = {
+                'fastq1': fastq_list[0],
+                'fastq2': fastq_list[1],
+                'sample_name': sample_name,
+                'seq_run_id': this_sqr.run_id if this_sqr else None,
+                'seq_name': this_sqr.name if this_sqr else None,
+                'batch_run_id': int(this_batch_run.id)
+            }
+
+            job_list.append(job)
+
+    return job_list
 
 
 def parse_bcl_convert_output(output_json: str) -> list:

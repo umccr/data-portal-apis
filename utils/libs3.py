@@ -16,13 +16,11 @@ If unsure, start with Pass-through call.
 import logging
 from datetime import datetime
 
-import boto3
 from botocore.exceptions import ClientError
-from botocore.response import StreamingBody
 
-logger = logging.getLogger()
+from utils import libaws
 
-s3 = boto3.client("s3")
+logger = logging.getLogger(__name__)
 
 
 def get_matching_s3_objects(bucket, prefix="", suffix=""):
@@ -36,7 +34,7 @@ def get_matching_s3_objects(bucket, prefix="", suffix=""):
     :param suffix: Only fetch objects whose keys end with
         this suffix (optional).
     """
-    paginator = s3.get_paginator("list_objects_v2")
+    paginator = libaws.s3_client().get_paginator("list_objects_v2")
 
     kwargs = {'Bucket': bucket}
 
@@ -84,7 +82,7 @@ def bucket_exists(bucket) -> bool:
     :return bool: True if bucket exists, False otherwise
     """
     try:
-        resp = s3.head_bucket(Bucket=bucket)
+        resp = libaws.s3_client().head_bucket(Bucket=bucket)
         return resp['ResponseMetadata']['HTTPStatusCode'] == 200
     except ClientError as e:
         logger.error(f"Bucket ({bucket}) not found or no permission. Exception: {e}")
@@ -103,7 +101,7 @@ def presign_s3_file(bucket: str, key: str) -> (bool, str):
     :return tuple (bool, str): (true, signed_url) if success, otherwise (false, error message)
     """
     try:
-        return True, s3.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key})
+        return True, libaws.s3_client().generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key})
     except ClientError as e:
         message = f"Failed to sign the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
         logging.error(message)
@@ -120,7 +118,7 @@ def head_s3_object(bucket: str, key: str) -> (bool, dict):
     :return tuple (bool, dict): (true, dict object metadata) if success, otherwise (false, dict error message)
     """
     try:
-        return True, s3.head_object(Bucket=bucket, Key=key)
+        return True, libaws.s3_client().head_object(Bucket=bucket, Key=key)
     except ClientError as e:
         message = f"Failed on HEAD request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
         logging.error(message)
@@ -153,7 +151,7 @@ def restore_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
     restore_request = {'Days': days, 'GlacierJobParameters': {'Tier': tier}}
 
     try:
-        resp = s3.restore_object(Bucket=bucket, Key=key, RestoreRequest=restore_request)
+        resp = libaws.s3_client().restore_object(Bucket=bucket, Key=key, RestoreRequest=restore_request)
         status_code = resp['ResponseMetadata']['HTTPStatusCode']
         logger.info(f"Requested restore for the S3 object (s3://{bucket}/{key}) with "
                     f"{days} days, {tier} tier, {requested_by} at {requested_time}. "
@@ -176,7 +174,7 @@ def get_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
     :return tuple (bool, dict): (true, dict object metadata) if success, otherwise (false, dict error message)
     """
     try:
-        return True, s3.get_object(Bucket=bucket, Key=key, **kwargs)
+        return True, libaws.s3_client().get_object(Bucket=bucket, Key=key, **kwargs)
     except ClientError as e:
         if e.response['Error']['Code'] == "304":
             return True, e.response
@@ -196,7 +194,7 @@ def get_s3_object_tagging(bucket: str, key: str):
     :param key:
     :return:
     """
-    return s3.get_object_tagging(Bucket=bucket, Key=key)
+    return libaws.s3_client().get_object_tagging(Bucket=bucket, Key=key)
 
 
 def put_s3_object_tagging(bucket: str, key: str, tagging: dict):
@@ -211,4 +209,4 @@ def put_s3_object_tagging(bucket: str, key: str, tagging: dict):
     :param tagging:
     :return:
     """
-    return s3.put_object_tagging(Bucket=bucket, Key=key, Tagging=tagging)
+    return libaws.s3_client().put_object_tagging(Bucket=bucket, Key=key, Tagging=tagging)

@@ -25,6 +25,41 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+def sqs_handler(event, context):
+    """event payload dict
+    {
+        'Records': [
+            {
+                'messageId': "11d6ee51-4cc7-4302-9e22-7cd8afdaadf5",
+                'body': "{\"JSON\": \"Formatted Message\"}",
+                'messageAttributes': {},
+                'md5OfBody': "e4e68fb7bd0e697a0ae8f1bb342846b3",
+                'eventSource': "aws:sqs",
+                'eventSourceARN': "arn:aws:sqs:us-east-2:123456789012:fifo.fifo",
+            },
+            ...
+        ]
+    }
+
+    Details event payload dict refer to https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+    Backing queue is FIFO queue and, guaranteed delivery-once, no duplication.
+
+    :param event:
+    :param context:
+    :return:
+    """
+    messages = event['Records']
+
+    results = []
+    for message in messages:
+        job = libjson.loads(message['body'])
+        results.append(handler(job, context))
+
+    return {
+        'results': results
+    }
+
+
 def handler(event, context) -> dict:
     """event payload dict
     {
@@ -33,6 +68,7 @@ def handler(event, context) -> dict:
         'sample_name': "SAMPLE_NAME",
         'seq_run_id': "sequence run id",
         'seq_name': "sequence run name",
+        'batch_run_id': "batch run id",
     }
 
     :param event:
@@ -48,6 +84,7 @@ def handler(event, context) -> dict:
     sample_name = event['sample_name']
     seq_run_id = event.get('seq_run_id', None)
     seq_name = event.get('seq_name', None)
+    batch_run_id = event.get('batch_run_id', None)
 
     iap_workflow_prefix = "/iap/workflow"
 
@@ -72,6 +109,39 @@ def handler(event, context) -> dict:
     workflow_version = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.GERMLINE.value}/version")
 
     sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
+    batch_run = services.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
+
+    matched_runs = services.search_matching_runs(
+        type_name=WorkflowType.GERMLINE.name,
+        wfl_id=workflow_id,
+        version=workflow_version,
+        sample_name=sample_name,
+        sequence_run=sqr,
+        batch_run=batch_run,
+    )
+
+    if len(matched_runs) > 0:
+        results = []
+        for workflow in matched_runs:
+            result = {
+                'sample_name': workflow.sample_name,
+                'id': workflow.id,
+                'wfr_id': workflow.wfr_id,
+                'wfr_name': workflow.wfr_name,
+                'status': workflow.end_status,
+                'start': libdt.serializable_datetime(workflow.start),
+                'sequence_run_id': workflow.sequence_run.id if sqr else None,
+                'batch_run_id': workflow.batch_run.id if batch_run else None,
+            }
+            results.append(result)
+        results_dict = {
+            'status': "SKIPPED",
+            'reason': "Matching workflow runs found",
+            'event': libjson.dumps(event),
+            'matched_runs': results
+        }
+        logger.info(libjson.dumps(results_dict))
+        return results_dict
 
     # construct and format workflow run name convention
     # [RUN_NAME_PREFIX]__[WORKFLOW_TYPE]__[SEQUENCE_RUN_NAME]__[SEQUENCE_RUN_ID]__[UTC_TIMESTAMP]
@@ -99,18 +169,20 @@ def handler(event, context) -> dict:
             'end_status': wfl_run.get('status'),
             'sequence_run': sqr,
             'sample_name': sample_name,
+            'batch_run': batch_run,
         }
     )
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
-        'sample_name': sample_name,
+        'sample_name': workflow.sample_name,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
         'start': libdt.serializable_datetime(workflow.start),
+        'batch_run_id': workflow.batch_run.id if batch_run else None,
     }
 
     logger.info(libjson.dumps(result))

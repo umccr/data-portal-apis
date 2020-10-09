@@ -5,7 +5,7 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -16,6 +16,7 @@ class TestConstant(Enum):
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
     version = "v1"
+    sqr_name = "200508_A01052_0001_BH5LY7ACGT"
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):
@@ -102,9 +103,9 @@ class SequenceRunFactory(factory.django.DjangoModelFactory):
         model = SequenceRun
 
     run_id = "r.ACGTlKjDgEy099ioQOeOWg"
-    date_modified = "2020-05-09T19:36:41.6573088Z"
-    status = "Complete"
-    instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
+    date_modified = make_aware(datetime.utcnow())
+    status = "PendingAnalysis"
+    instrument_run_id = TestConstant.sqr_name.value
     gds_folder_path = f"/Runs/{instrument_run_id}_{run_id}"
     gds_volume_name = "bssh.acgtacgt498038ed99fa94fe79523959"
     reagent_barcode = "NV9999999-RGSBS"
@@ -140,3 +141,21 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     wfr_name = factory.LazyAttribute(
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
     )
+
+
+class BatchFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Batch
+
+    name = TestConstant.sqr_name.value
+    created_by = TestConstant.wfr_id.value
+    context_data = None
+
+
+class BatchRunFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = BatchRun
+
+    batch = factory.SubFactory(BatchFactory)
+    step = WorkflowType.GERMLINE.name
+    running = True

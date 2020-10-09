@@ -1,12 +1,11 @@
 import json
 from datetime import datetime
-from unittest import skip
 
 from django.utils.timezone import make_aware
 from libiap.openapi import libwes, libgds
 from mockito import when
 
-from data_portal.models import Workflow
+from data_portal.models import Workflow, BatchRun, Batch
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
@@ -50,8 +49,6 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(json.JSONDecodeError)
 
-    # FIXME temporary skip GERMLINE
-    @skip
     def test_germline(self):
         """
         python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_germline
@@ -65,65 +62,10 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
         mock_wfl_run.output = {
-            'main/fastqs': {
-                'location': f"gds://{TestConstant.wfr_id.value}/bclConversion_launch/try-1/out-dir-bclConvert",
-                'basename': "out-dir-bclConvert",
-                'nameroot': "",
-                'nameext': "",
-                'class': "Directory",
-                'listing': []
-            }
-        }
-        workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
-        workflow_version.id = TestConstant.wfv_id.value
-        mock_wfl_run.workflow_version = workflow_version
-        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
-
-        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
-        mock_file_list.items = [
-            libgds.FileResponse(name="NA12345 - 4KC_S7_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345 - 4KC_S7_R2_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S1_R1_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S1_R2_001.fastq.gz"),
-            libgds.FileResponse(name="MDX199999_L1999999_topup_S2_R1_001.fastq.gz"),
-            libgds.FileResponse(name="MDX199999_L1999999_topup_S2_R2_001.fastq.gz"),
-            libgds.FileResponse(name="L9111111_topup_S3_R1_001.fastq.gz"),
-            libgds.FileResponse(name="L9111111_topup_S3_R2_001.fastq.gz"),
-        ]
-        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
-
-        result = orchestrator.handler({
-            'wfr_id': TestConstant.wfr_id.value,
-            'wfv_id': TestConstant.wfv_id.value,
-        }, None)
-
-        self.assertIsNotNone(result)
-        logger.info(f"Orchestrator lambda call output: \n{json.dumps(result)}")
-
-        workflows = Workflow.objects.all()
-        self.assertEqual(5, workflows.count())
-
-    # FIXME temporary skip GERMLINE
-    @skip
-    def test_germline_list(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_germline_list
-
-        Similar to ^^ test case but BCL Convert output main/fastqs in list of directories i.e. CWL type Directory[]
-        """
-        self.verify_local()
-
-        mock_bcl_workflow: Workflow = WorkflowFactory()
-
-        mock_wfl_run = libwes.WorkflowRun()
-        mock_wfl_run.id = TestConstant.wfr_id.value
-        mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
-        mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
-        mock_wfl_run.output = {
-            'main/fastqs': [
+            'main/fastq-directories': [
                 {
-                    'location': f"gds://{TestConstant.wfr_id.value}/bclConversion_launch/try-1/out-dir-bclConvert",
-                    'basename': "out-dir-bclConvert",
+                    'location': f"gds://{TestConstant.wfr_id.value}/outputs/OVERRIDE_CYCLES_ID_XZY",
+                    'basename': "OVERRIDE_CYCLES_ID_XZY",
                     'nameroot': "",
                     'nameext': "",
                     'class': "Directory",
@@ -137,16 +79,23 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
         mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
-        mock_file_list.items = [
-            libgds.FileResponse(name="NA12345 - 4KC_S7_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345 - 4KC_S7_R2_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S1_R1_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S1_R2_001.fastq.gz"),
-            libgds.FileResponse(name="MDX199999_L1999999_topup_S2_R1_001.fastq.gz"),
-            libgds.FileResponse(name="MDX199999_L1999999_topup_S2_R2_001.fastq.gz"),
-            libgds.FileResponse(name="L9111111_topup_S3_R1_001.fastq.gz"),
-            libgds.FileResponse(name="L9111111_topup_S3_R2_001.fastq.gz"),
+        volume = f"{TestConstant.wfr_id.value}"
+        base = f"/outputs/OVERRIDE_CYCLES_ID_XZY/PROJECT"
+        mock_files = [
+            "NA12345 - 4KC_S7_R1_001.fastq.gz",
+            "NA12345 - 4KC_S7_R2_001.fastq.gz",
+            "PRJ111119_L1900000_S1_R1_001.fastq.gz",
+            "PRJ111119_L1900000_S1_R2_001.fastq.gz",
+            "MDX199999_L1999999_topup_S2_R1_001.fastq.gz",
+            "MDX199999_L1999999_topup_S2_R2_001.fastq.gz",
+            "L9111111_topup_S3_R1_001.fastq.gz",
+            "L9111111_topup_S3_R2_001.fastq.gz",
         ]
+        mock_file_list.items = []
+        for mock_file in mock_files:
+            mock_file_list.items.append(
+                libgds.FileResponse(volume_name=volume, path=f"{base}/{mock_file}", name=mock_file),
+            )
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
         result = orchestrator.handler({
@@ -157,14 +106,17 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(result)
         logger.info(f"Orchestrator lambda call output: \n{json.dumps(result)}")
 
-        workflows = Workflow.objects.all()
-        self.assertEqual(5, workflows.count())
+        for b in Batch.objects.all():
+            logger.info(f"BATCH: {b}")
+        for br in BatchRun.objects.all():
+            logger.info(f"BATCH_RUN: {br}")
+        self.assertTrue(BatchRun.objects.all()[0].running)
 
     def test_germline_none(self):
         """
         python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_germline_none
 
-        Similar to ^^ test case but BCL Convert output main/fastqs None
+        Similar to ^^ test case but BCL Convert output is None
         """
         self.verify_local()
 
@@ -174,7 +126,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_wfl_run.id = TestConstant.wfr_id.value
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
-        mock_wfl_run.output = None
+        mock_wfl_run.output = None  # mock output is NONE while status is SUCCEEDED
 
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
         workflow_version.id = TestConstant.wfv_id.value
@@ -194,7 +146,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_bcl_unknown_type
 
-        Similar to ^^ test case but BCL Convert output main/fastqs is not list nor dict
+        Similar to ^^ test case but BCL Convert output is not list nor dict
         """
         self.verify_local()
 
@@ -219,7 +171,14 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
                 'wfv_id': TestConstant.wfv_id.value,
             }, None)
         except Exception as e:
+            for b in Batch.objects.all():
+                logger.info(f"BATCH: {b}")
+            for br in BatchRun.objects.all():
+                logger.info(f"BATCH_RUN: {br}")
+            self.assertFalse(BatchRun.objects.all()[0].running)
+
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+
         self.assertRaises(json.JSONDecodeError)
 
 

@@ -1,15 +1,25 @@
-import boto3
+# -*- coding: utf-8 -*-
+"""libssm module
 
-client = boto3.client("ssm")
+Mainly interface with SSM Parameter Store and, LRU cache for hit less to AWS endpoint if any
+"""
+import logging
+
+from cachetools.func import lru_cache
+
+from utils import libaws
+
+logger = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=64)
 def get_secret(key) -> str:
     """
     Retrieve the secret value from SSM.
     :param key: the key of the secret
     :return: the secret value
     """
-    resp = client.get_parameter(
+    resp = libaws.ssm_client().get_parameter(
         Name=key,
         WithDecryption=True
     )
