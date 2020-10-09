@@ -35,6 +35,7 @@ phases:
       - which python3
       - which serverless
       - docker-compose -f it-mock.yml -p it_mock up -d
+      - make load_localstack
       - python3 manage.py test
       - docker-compose -f it-mock.yml -p it_mock down
       - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
