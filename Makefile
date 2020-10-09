@@ -17,15 +17,15 @@ start:
 
 .PHONY: syncdata, loaddata
 syncdata:
-	@. loaddata.sh; sync_db_dump
+	@. ./loaddata.sh; sync_db_dump
 
 loaddata:
-	@. loaddata.sh; copy_db_dump; load_db_dump; load_localstack
+	@. ./loaddata.sh; copy_db_dump; load_db_dump; load_localstack
 
 load_data: loaddata
 
 load_localstack:
-	@. loaddata.sh; load_localstack
+	@. ./loaddata.sh; load_localstack
 
 test: load_localstack
 	@pip install -r requirements-test.txt
