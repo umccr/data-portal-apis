@@ -34,8 +34,8 @@ phases:
       - which docker-compose
       - which python3
       - which serverless
-      - docker-compose -f iap-mock.yml -p iap_mock up -d
+      - docker-compose -f it-mock.yml -p it_mock up -d
       - python3 manage.py test
-      - docker-compose -f iap-mock.yml -p iap_mock down
+      - docker-compose -f it-mock.yml -p it_mock down
       - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
       - SLS_DEBUG=true serverless deploy --STAGE $STAGE

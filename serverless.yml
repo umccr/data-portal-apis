@@ -140,7 +140,7 @@ package:
     - docker-compose.override.yml
     - main.tf
     - .terraform/**
-    - iap-mock.yml
+    - it-mock.yml
     - haproxy.cfg
     - start.sh
     - loaddata.sh

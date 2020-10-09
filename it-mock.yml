@@ -53,3 +53,22 @@ services:
       - 4014:4010
     volumes:
       - ./swagger:/swagger
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+      - "4572:4572"
+      - "4576:4576"
+      - "${PORT_WEB_UI-8282}:${PORT_WEB_UI-8080}"
+    environment:
+      - DEFAULT_REGION=${AWS_DEFAULT_REGION-ap-southeast-2}
+      - SERVICES=sqs,s3
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+      - PORT_WEB_UI=${PORT_WEB_UI- }
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOST_TMP_FOLDER=${TMPDIR}
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
