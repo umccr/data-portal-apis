@@ -24,9 +24,9 @@ class PipelineUnitTestCase(TestCase):
         # export SLACK_CHANNEL=#arteria-dev
         #
         os.environ['SLACK_CHANNEL'] = "#mock"
+        os.environ['SLACK_WEBHOOK_ID'] = "mock_webhook_id_123"
         mock_response = mock(libslack.http.client.HTTPResponse)
         mock_response.status = 200
-        when(libslack).get_slack_webhook_id_param_store(...).thenReturn("mock_webhook_id_123")
         when(libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
         when(libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
 
@@ -46,6 +46,7 @@ class PipelineUnitTestCase(TestCase):
         del os.environ['IAP_WES_WORKFLOW_ID']
         del os.environ['IAP_WES_WORKFLOW_VERSION_NAME']
         del os.environ['SLACK_CHANNEL']
+        del os.environ['SLACK_WEBHOOK_ID']
         unstub()
 
     def verify_local(self):
