@@ -81,14 +81,15 @@ def next_step(this_workflow: Workflow, context):
         # skip if update_step has skipped
         return
 
-    this_sqr: SequenceRun = this_workflow.sequence_run
-
-    if this_workflow.output is None:
-        raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
-
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+
+        this_sqr: SequenceRun = this_workflow.sequence_run
+
+        # bcl convert workflow run must have output in order to continue next step
+        if this_workflow.output is None:
+            raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
 
         # create a batch if not exist
         batch_name = this_sqr.name if this_sqr else f"{this_workflow.type_name}__{this_workflow.wfr_id}"
