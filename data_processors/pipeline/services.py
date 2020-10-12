@@ -318,16 +318,14 @@ def notify_workflow_status(workflow: Workflow):
 
     def process_batch_messaging(state, qs):
 
-        slack_color = libslack.SlackColor.GRAY.value
         _topic = f"Batch: {batch_run.batch.name}, Step: {batch_run.step.upper()}, " \
                  f"Label: {batch_run.batch.id}:{batch_run.id}"
 
-        if state == "Running".lower():
+        slack_color = libslack.SlackColor.GRAY.value
+        if state.lower() == "Running".lower():
             slack_color = libslack.SlackColor.BLUE.value
-            _topic = f"{_topic} have launched"
-        elif state == "Completed".lower():
+        elif state.lower() == "Completed".lower():
             slack_color = libslack.SlackColor.GREEN.value
-            _topic = f"{_topic} have completed"
 
         list_of_workflows = qs.all()
 
