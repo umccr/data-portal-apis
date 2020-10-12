@@ -17,13 +17,16 @@ logger.setLevel(logging.INFO)
 
 
 @transaction.atomic
-def persist_lims_data_from_google_drive(account_info_ssm_key: str, file_id_ssm_key: str) -> Dict[str, int]:
+def persist_lims_data_from_google_drive() -> Dict[str, int]:
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LIMS data from google drive at {requested_time}")
 
+    lims_sheet_id = libssm.get_secret('/umccr/google/drive/lims_sheet_id')
+    account_info = libssm.get_secret('/umccr/google/drive/lims_service_account_json')
+
     bytes_data = libgdrive.download_sheet1_csv(
-        account_info=libssm.get_secret(account_info_ssm_key),
-        file_id=libssm.get_secret(file_id_ssm_key),
+        account_info=account_info,
+        file_id=lims_sheet_id,
     )
     csv_input = BytesIO(bytes_data)
     return persist_lims_data(csv_input)

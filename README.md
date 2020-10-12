@@ -56,15 +56,15 @@ make loaddata
 
 #### Husky & Git
 
-> NOTE: [husky](.huskyrc.json) :dog2: will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encourage to fix those. If you wish to skip this for good reason, you can by-pass husky by using [`--no-verify`](https://github.com/typicode/husky/issues/124) flag in `git` command.
+> NOTE: [husky](.huskyrc.json) 🐕 will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encourage to fix those. If you wish to skip this for good reason, you can by-pass husky by using [`--no-verify`](https://github.com/typicode/husky/issues/124) flag in `git` command.
 
 - The default branch is `dev`. Any merges are CI/CD to `DEV` account environment.
-- The `master` branch is production. Any merges are CI/CD to `PROD` account environment.
-- Merge to `master` should be fast-forward merge from `dev` to maintain sync and linearity as follow:
+- The `main` branch is production. Any merges are CI/CD to `PROD` account environment.
+- Merge to `main` should be fast-forward merge from `dev` to maintain sync and linearity as follow:
 ```
-git checkout master
+git checkout main
 git merge --ff-only dev
-git push origin master
+git push origin main
 ```
 
 ## Portal Lambdas
@@ -80,7 +80,7 @@ aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_proc
 
 ## Serverless
 
-> :hand: Above :point_up: sections are good enough for up and running Portal backend for local development purpose. You can take on Serverless and Deployment sections below for, when you want to extend some aspect of Portal backend REST API or lambda functions and, deploying of those features.
+> 🙋‍♂️ Above ☝️ sections are good enough for up and running Portal backend for local development purpose. You can take on Serverless and Deployment sections below for, when you want to extend some aspect of Portal backend REST API or lambda functions and, deploying of those features.
 
 - First, install `serverless` CLI and its plugins dependencies:
 ```
@@ -92,12 +92,9 @@ yarn global add serverless
 yarn install
 ```
 - You can `serverless` invoke or deploy from local. But favour over [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
-- Serverless deployment targets only to AWS. Therefore, it needs to setup AWS environment specific variables by sourcing `start.sh` script as follows if you are planning to invoke/deploy directly from your local (laptop):
+- Serverless deployment targets only to AWS. AWS account specific variables will be loaded from SSM Parameter Store of respective login session:
 ```
-aws sso login --profile dev
-export AWS_PROFILE=dev
-
-source start.sh
+aws sso login --profile dev && export AWS_PROFILE=dev
 
 serverless info --STAGE dev
 serverless invoke -f migrate --STAGE dev --noinput
@@ -105,23 +102,20 @@ serverless invoke -f lims_scheduled_update_processor --STAGE dev --noinput
 serverless deploy --STAGE dev
 ```
 
-> If lambda timeout error then try again. Lambda needs warm-up time and LIMS rows are growing.
+> Caveat: If lambda timeout error occur then please try again. Lambda needs warm-up time and LIMS rows are growing, for example.
 
 ## Deployment
 
 1. A **FRESH** deployment has to _first_ done with [Terraform Data Portal stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal), as IaC for longer-live infrastructure artifacts/services deployment.
 
-2. Then, this API (shorter-live, a more repetitive backend stack) is provisioned by the Serverless framework (see [`serverless.yml`](serverless.yml)), within AWS CodeBuild and CodePipeline CI/CD build setup (see [`buildspec.yml`](buildspec.yml)) -- whereas **AWS specific environment variables** originated from `Terraform > CodeBuild > Serverless`.
+2. Then, this API (shorter-live, a more repetitive backend stack) is provisioned by the Serverless framework (see [`serverless.yml`](serverless.yml)), within AWS CodeBuild and CodePipeline CI/CD build setup (see [`buildspec.yml`](buildspec.yml)) -- whereas **AWS specific environment variables** originated from `Terraform > CodeBuild > Serverless`, if any.
 
 ## Destroy
 
 - Before tear down [Terraform stack](https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal), it is required to run `serverless remove` to remove Lambda, API Gateway, API domain, ... resources created by this serverless stack.
 - Example as follows:
 ```
-aws sso login --profile dev
-export AWS_PROFILE=dev
-
-source start.sh
+aws sso login --profile dev && export AWS_PROFILE=dev
 
 SLS_DEBUG=true serverless delete_domain --STAGE dev
 SLS_DEBUG=true serverless remove --STAGE dev

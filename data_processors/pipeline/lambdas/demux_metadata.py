@@ -31,21 +31,13 @@ OVERRIDECYCLES_HEADER = 'OverrideCycles'
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-LAB_SHEET_ID = libssm.get_secret(
-    os.getenv('SSM_KEY_NAME_METADATA_TRACKING_SHEET_ID', '/umccr/google/drive/tracking_sheet_id')
-)
-SSM_GOOGLE_ACCOUNT_INFO = libssm.get_secret(
-    os.getenv('SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON', '/data_portal/dev/google/lims_service_account_json')
-)
-
-DEFAULT_SSM_KEY_IAP_AUTH_TOKEN = "/iap/jwt-token"
 DEFAULT_IAP_BASE_URL = "https://aps2.platform.illumina.com"
 
 
 def configuration():
     iap_auth_token = os.getenv("IAP_AUTH_TOKEN", None)
     if iap_auth_token is None:
-        iap_auth_token = libssm.get_secret(os.getenv('SSM_KEY_NAME_IAP_AUTH_TOKEN', DEFAULT_SSM_KEY_IAP_AUTH_TOKEN))
+        iap_auth_token = libssm.get_secret('/iap/jwt-token')
     iap_base_url = os.getenv("IAP_BASE_URL", DEFAULT_IAP_BASE_URL)
 
     config = libgds.Configuration(
@@ -126,15 +118,17 @@ def get_sample_ids_from_samplesheet(path: str):
     return ids
 
 
-def download_metadata(account_info: str, year: int):
+def download_metadata(year: int):
     """Download the full original metadata from which to extract the required information
 
-    :param account_info: the Google json file required for accessing the API
     :param year: the sheet in the metadata spreadsheet to load
     """
+    lab_sheet_id = libssm.get_secret('/umccr/google/drive/tracking_sheet_id')
+    account_info = libssm.get_secret('/umccr/google/drive/lims_service_account_json')
+
     scopes = ['https://www.googleapis.com/auth/drive.readonly']
     credentials = service_account.Credentials.from_service_account_info(json.loads(account_info))
-    spread = Spread(spread=LAB_SHEET_ID, creds=credentials.with_scopes(scopes))
+    spread = Spread(spread=lab_sheet_id, creds=credentials.with_scopes(scopes))
     metadata_df = spread.sheet_to_df(sheet=year, index=0, header_rows=1, start_row=1)
     return metadata_df
 
@@ -194,8 +188,8 @@ def handler(event, context):
     logger.info(f"Sample IDs: {sample_ids}")
 
     # download the lab metadata sheets
-    df_2019 = download_metadata(account_info=SSM_GOOGLE_ACCOUNT_INFO, year='2019')
-    df_2020 = download_metadata(account_info=SSM_GOOGLE_ACCOUNT_INFO, year='2020')
+    df_2019 = download_metadata(year='2019')
+    df_2020 = download_metadata(year='2020')
     df_all = df_2019.append(df_2020)
 
     # extract required records from metadata

@@ -13,25 +13,18 @@ provider:
   runtime: python3.8
   stage: ${opt:STAGE}
   region: ap-southeast-2
-  deploymentBucket: ${env:SERVERLESS_DEPLOYMENT_BUCKET}
-  role: ${env:LAMBDA_IAM_ROLE_ARN}
+  deploymentBucket: ${ssm:/data_portal/backend/serverless_deployment_bucket}
+  role: ${ssm:/data_portal/backend/lambda_iam_role_arn}
   vpc:
     securityGroupIds:
       "Fn::Split":
         - ","
-        - ${env:LAMBDA_SECURITY_GROUP_IDS}
+        - ${ssm:/data_portal/backend/lambda_security_group_ids}
     subnetIds:
       "Fn::Split":
         - ","
-        - ${env:LAMBDA_SUBNET_IDS}
+        - ${ssm:/data_portal/backend/lambda_subnet_ids}
   environment:
-    SSM_KEY_NAME_METADATA_TRACKING_SHEET_ID: ${env:SSM_KEY_NAME_METADATA_TRACKING_SHEET_ID}
-    SSM_KEY_NAME_LIMS_SPREADSHEET_ID: ${env:SSM_KEY_NAME_LIMS_SPREADSHEET_ID}
-    SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON: ${env:SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON}
-    SSM_KEY_NAME_DJANGO_SECRET_KEY: ${env:SSM_KEY_NAME_DJANGO_SECRET_KEY}
-    SSM_KEY_NAME_FULL_DB_URL: ${env:SSM_KEY_NAME_FULL_DB_URL}
-    SSM_KEY_NAME_IAP_AUTH_TOKEN: ${env:SSM_KEY_NAME_IAP_AUTH_TOKEN}
-    SLACK_CHANNEL: ${env:SLACK_CHANNEL}
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
 
 functions:
@@ -58,13 +51,13 @@ functions:
     handler: data_processors.s3.lambdas.handler
     events:
       - sqs:
-          arn: ${env:S3_EVENT_SQS_ARN}
+          arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
     timeout: 28
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
     events:
       - sqs:
-          arn: ${env:IAP_ENS_EVENT_SQS_ARN}
+          arn: ${ssm:/data_portal/backend/iap_ens_event_sqs_arn}
     timeout: 28
   sqs_germline_event_processor:
     handler: data_processors.pipeline.lambdas.germline.sqs_handler
@@ -80,9 +73,6 @@ functions:
     timeout: 28
   fastq:
     handler: data_processors.pipeline.lambdas.fastq.handler
-    timeout: 28
-  dispatcher:
-    handler: data_processors.pipeline.lambdas.dispatcher.handler
     timeout: 28
   orchestrator:
     handler: data_processors.pipeline.lambdas.orchestrator.handler
@@ -119,13 +109,13 @@ custom:
        - '**/*.py[c|o]'
        - '**/__pycache__*'
   customDomain:
-    domainName: ${env:API_DOMAIN_NAME}
+    domainName: ${ssm:/data_portal/backend/api_domain_name}
     basePath: ''
     stage: ${self:provider.stage}
     createRoute53Record: true
-    certificateArn: ${env:CERTIFICATE_ARN}
+    certificateArn: ${ssm:/data_portal/backend/certificate_arn}
   associateWaf:
-    name: ${env:WAF_NAME}
+    name: ${ssm:/data_portal/backend/waf_name}
 package:
   exclude:
     - node_modules/**

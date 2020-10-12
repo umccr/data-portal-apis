@@ -40,7 +40,4 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
     logger.info("Start processing LIMS update event")
     logger.info(libjson.dumps(event))
 
-    return persist_lims_data_from_google_drive(
-        account_info_ssm_key=os.environ['SSM_KEY_NAME_LIMS_SERVICE_ACCOUNT_JSON'],
-        file_id_ssm_key=os.environ['SSM_KEY_NAME_LIMS_SPREADSHEET_ID'],
-    )
+    return persist_lims_data_from_google_drive()

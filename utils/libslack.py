@@ -76,6 +76,8 @@ def call_slack_webhook(sender, topic, attachments, ssm=True, **kwargs):
     slack_channel = kwargs.get('channel', None)
     if slack_channel is None:
         slack_channel = os.getenv('SLACK_CHANNEL', None)
+    elif slack_channel is None:
+        slack_channel = libssm.get_ssm_param('/data_portal/backend/slack_channel')
 
     assert slack_channel is not None, "SLACK_CHANNEL is not defined"
 
