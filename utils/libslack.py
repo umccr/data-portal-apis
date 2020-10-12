@@ -44,24 +44,14 @@ headers = {
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SLACK_WEBHOOK_SSM_KEY = "/slack/webhook/id"
 
+def call_slack_webhook(sender, topic, attachments, **kwargs):
 
-def get_slack_webhook_id_param_store(ssm_key):
-    if ssm_key is None:
-        ssm_key = DEFAULT_SLACK_WEBHOOK_SSM_KEY
-    slack_webhook_id = libssm.get_ssm_param(ssm_key)
-    return slack_webhook_id
-
-
-def call_slack_webhook(sender, topic, attachments, ssm=True, **kwargs):
-    if ssm:
-        ssm_key = kwargs.get('ssm_key', None)
-        slack_webhook_id = get_slack_webhook_id_param_store(ssm_key)
-    else:
-        slack_webhook_id = kwargs.get('webhook_id', None)
-        if slack_webhook_id is None:
-            slack_webhook_id = os.getenv('SLACK_WEBHOOK_ID', None)
+    slack_webhook_id = kwargs.get('webhook_id', None)
+    if slack_webhook_id is None:
+        slack_webhook_id = os.getenv('SLACK_WEBHOOK_ID', None)
+    if slack_webhook_id is None:
+        slack_webhook_id = libssm.get_ssm_param('/slack/webhook/id')
 
     assert slack_webhook_id is not None, "SLACK_WEBHOOK_ID is not defined"
 
@@ -76,7 +66,12 @@ def call_slack_webhook(sender, topic, attachments, ssm=True, **kwargs):
     slack_channel = kwargs.get('channel', None)
     if slack_channel is None:
         slack_channel = os.getenv('SLACK_CHANNEL', None)
-    elif slack_channel is None:
+
+    # NOTE: it strikes me that `elif` check for None won't work here! ;O
+    # elif slack_channel is None:
+    #     slack_channel = libssm.get_ssm_param('/data_portal/backend/slack_channel')
+
+    if slack_channel is None:
         slack_channel = libssm.get_ssm_param('/data_portal/backend/slack_channel')
 
     assert slack_channel is not None, "SLACK_CHANNEL is not defined"
