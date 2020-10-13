@@ -41,7 +41,7 @@ command -v docker-compose >/dev/null 2>&1 || {
 }
 
 aws sts get-caller-identity >/dev/null 2>&1 || {
-  echo >&2 "UNABLE TO LOCATE CREDENTIALS. YOUR SESSION MAY HAVE EXPIRED. PLEASE LOGIN. ABORTING..."
+  echo >&2 "UNABLE TO LOCATE CREDENTIALS. YOUR AWS LOGIN SESSION HAVE EXPIRED. PLEASE LOGIN. ABORTING..."
   exit 1
 }
 

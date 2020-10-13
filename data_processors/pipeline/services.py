@@ -367,6 +367,8 @@ def notify_workflow_status(workflow: Workflow):
                 wfl.notified = True
                 wfl.save()
 
+            update_batch_run_notified(batch_run_id=batch_run.id, notified=True)
+
         return _resp
 
     if workflow.batch_run:
@@ -381,12 +383,30 @@ def notify_workflow_status(workflow: Workflow):
         # workout batch notification
         total_count = total_workflows_in_batch_run.count()
         if total_count == completed_workflows_in_batch_run.count():
-            logger.info(f"[COMPLETED] Batch Run ID [{batch_run.id}]. Processing notification.")
+            # load batch_run state from db at this point
+            br_in_db = get_batch_run(batch_run_id=batch_run.id)
+
+            # detect status change
+            if br_in_db.running and br_in_db.notified:
+                # it is completed now, reset notified to False
+                update_batch_run_notified(batch_run_id=batch_run.id, notified=False)
+
             # reset running flag
-            update_batch_run(batch_run.id)
+            reset_batch_run(batch_run.id)
+
+            if get_batch_run(batch_run_id=batch_run.id).notified:
+                logger.info(f"[SKIP] Batch Run ID [{batch_run.id}] is already notified once. Not reporting to Slack!")
+                return
+
             # notify all completed
+            logger.info(f"[COMPLETED] Batch Run ID [{batch_run.id}]. Processing notification.")
             return process_batch_messaging(state="Completed", qs=completed_workflows_in_batch_run)
+
         elif total_count == running_workflows_in_batch_run.count():
+            if get_batch_run(batch_run_id=batch_run.id).notified:
+                logger.info(f"[SKIP] Batch Run ID [{batch_run.id}] is already notified once. Not reporting to Slack!")
+                return
+
             logger.info(f"[RUNNING] Batch Run ID [{batch_run.id}]. Processing notification.")
             # notify all running
             return process_batch_messaging(state="Running", qs=running_workflows_in_batch_run)
@@ -591,10 +611,22 @@ def get_batch_run(batch_run_id):
 
 
 @transaction.atomic
-def update_batch_run(batch_run_id, **kwargs):
+def reset_batch_run(batch_run_id):
     try:
         batch_run = BatchRun.objects.get(pk=batch_run_id)
-        batch_run.running = kwargs.get('running', False)
+        batch_run.running = False
+        batch_run.save()
+        return batch_run
+    except BatchRun.DoesNotExist as e:
+        logger.debug(e)
+    return None
+
+
+@transaction.atomic
+def update_batch_run_notified(batch_run_id, notified: bool):
+    try:
+        batch_run = BatchRun.objects.get(pk=batch_run_id)
+        batch_run.notified = notified
         batch_run.save()
         return batch_run
     except BatchRun.DoesNotExist as e:

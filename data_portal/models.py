@@ -313,9 +313,11 @@ class BatchRun(models.Model):
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
     step = models.CharField(max_length=255)
     running = models.BooleanField(null=True, blank=True)
+    notified = models.BooleanField(null=True, blank=True)
 
     def __str__(self):
-        return f"ID: {self.id}, STEP: {self.step}, RUNNING: {self.running}, BATCH_ID: {self.batch.id}"
+        return f"ID: {self.id}, STEP: {self.step}, RUNNING: {self.running}, " \
+               f"NOTIFIED: {self.notified}, BATCH_ID: {self.batch.id}"
 
 
 class WorkflowManager(models.Manager):

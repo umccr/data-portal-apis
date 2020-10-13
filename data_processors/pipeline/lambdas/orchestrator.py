@@ -123,7 +123,7 @@ def next_step(this_workflow: Workflow, context):
             libsqs.dispatch_jobs(queue_name=queue_name, job_list=job_list)
 
         except Exception as e:
-            services.update_batch_run(this_batch_run.id)  # reset running
+            services.reset_batch_run(this_batch_run.id)  # reset running
             raise e
 
         return {
