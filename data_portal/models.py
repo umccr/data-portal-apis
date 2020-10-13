@@ -337,8 +337,6 @@ class WorkflowManager(models.Manager):
         qs: QuerySet = self.filter(
             batch_run=batch_run,
             start__isnull=False,
-            end__isnull=False,
-            end_status__isnull=False,
         ).exclude(end_status__icontains=WorkflowStatus.RUNNING.value)
         return qs
 
