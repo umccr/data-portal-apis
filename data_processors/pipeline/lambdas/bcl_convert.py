@@ -81,6 +81,7 @@ def handler(event, context) -> dict:
     workflow_input['bcl-input-directory']['location'] = run_folder
     workflow_input['samples'] = metadata_samples
     workflow_input['override-cycles'] = metadata_override_cycles
+    workflow_input['runfolder-name'] = seq_name
 
     # prepare engine_parameters
     gds_fastq_vol = libssm.get_ssm_param('/iap/gds/fastq_vol')
