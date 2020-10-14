@@ -3,11 +3,9 @@ DJANGO_SETTINGS_MODULE = data_portal.settings.local
 
 up:
 	@docker-compose up -d
-	@docker-compose -f it-mock.yml -p it_mock up -d
 
 down:
 	@docker-compose down
-	@docker-compose -f it-mock.yml -p it_mock down
 
 start:
 	@pip install -r requirements-dev.txt

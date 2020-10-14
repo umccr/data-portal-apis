@@ -128,9 +128,6 @@ package:
     - docker-compose.yml
     - docker-compose.override.sample.yml
     - docker-compose.override.yml
-    - main.tf
-    - .terraform/**
-    - it-mock.yml
     - haproxy.cfg
     - start.sh
     - loaddata.sh
