@@ -7,7 +7,7 @@ from mockito import when
 
 from data_portal.models import Workflow, SequenceRun, BatchRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchRunFactory
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowType
+from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import germline
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libjson, libssm
@@ -75,11 +75,12 @@ class GermlineUnitTests(PipelineUnitTestCase):
         mock_sqr: SequenceRun = SequenceRunFactory()
         mock_batch_run: BatchRun = BatchRunFactory()
 
+        wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
+
         mock_germline = Workflow()
         mock_germline.type_name = WorkflowType.GERMLINE.name
-        iap_workflow_prefix = "/iap/workflow"
-        mock_germline.wfl_id = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.GERMLINE.value}/id")
-        mock_germline.version = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.GERMLINE.value}/version")
+        mock_germline.wfl_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
+        mock_germline.version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
         mock_germline.sample_name = "SAMPLE_NAME"
         mock_germline.sequence_run = mock_sqr
         mock_germline.batch_run = mock_batch_run

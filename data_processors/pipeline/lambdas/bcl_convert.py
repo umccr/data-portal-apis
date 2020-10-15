@@ -16,8 +16,8 @@ import logging
 from datetime import datetime, timezone
 
 from data_portal.models import Workflow
-from data_processors.pipeline import services
-from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV
+from data_processors.pipeline import services, constant
+from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler, demux_metadata
 from utils import libjson, libssm, libdt
 
@@ -49,10 +49,10 @@ def handler(event, context) -> dict:
     run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
 
-    iap_workflow_prefix = "/iap/workflow"
+    wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT.value)
 
     # read input template from parameter store
-    input_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/input")
+    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     sample_sheet_gds_path = f"{run_folder}/{SampleSheetCSV.FILENAME.value}"
 
     metadata: dict = demux_metadata.handler({
@@ -84,14 +84,14 @@ def handler(event, context) -> dict:
     workflow_input['runfolder-name'] = seq_name
 
     # prepare engine_parameters
-    gds_fastq_vol = libssm.get_ssm_param('/iap/gds/fastq_vol')
-    engine_params_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/engine_parameters")
+    gds_fastq_vol = libssm.get_ssm_param(constant.IAP_GDS_FASTQ_VOL)
+    engine_params_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_engine_parameters())
     workflow_engine_params: dict = copy.deepcopy(libjson.loads(engine_params_template))
     workflow_engine_params['outputDirectory'] = f"gds://{gds_fastq_vol}/{seq_name}"
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/id")
-    workflow_version = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.BCL_CONVERT.value}/version")
+    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
+    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
     sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
 

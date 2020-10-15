@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 from data_portal.models import Workflow
 from data_processors.pipeline import services
-from data_processors.pipeline.constant import WorkflowType
+from data_processors.pipeline.constant import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
 from utils import libjson, libssm, libdt
 
@@ -86,10 +86,10 @@ def handler(event, context) -> dict:
     seq_name = event.get('seq_name', None)
     batch_run_id = event.get('batch_run_id', None)
 
-    iap_workflow_prefix = "/iap/workflow"
+    wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
 
     # read input template from parameter store
-    input_template = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.GERMLINE.value}/input")
+    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input['fq1-dragen']['location'] = fastq1
     workflow_input['fq2-dragen']['location'] = fastq2
@@ -105,8 +105,8 @@ def handler(event, context) -> dict:
     workflow_input['outputDir-somalier'] = f"out-dir-{sample_name}"
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.GERMLINE.value}/id")
-    workflow_version = libssm.get_ssm_param(f"{iap_workflow_prefix}/{WorkflowType.GERMLINE.value}/version")
+    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
+    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
     sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
     batch_run = services.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None

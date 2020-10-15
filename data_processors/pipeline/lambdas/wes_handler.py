@@ -15,20 +15,19 @@ import logging
 
 from libiap.openapi import libwes
 
+from data_processors.pipeline import constant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowRunEventType
 from utils import libssm, libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-DEFAULT_IAP_BASE_URL = "https://aps2.platform.illumina.com"
-
 
 def configuration():
     iap_auth_token = os.getenv("IAP_AUTH_TOKEN", None)
     if iap_auth_token is None:
-        iap_auth_token = libssm.get_secret('/iap/jwt-token')
-    iap_base_url = os.getenv("IAP_BASE_URL", DEFAULT_IAP_BASE_URL)
+        iap_auth_token = libssm.get_secret(constant.IAP_JWT_TOKEN)
+    iap_base_url = os.getenv("IAP_BASE_URL", constant.IAP_BASE_URL)
 
     config = libwes.Configuration(
         host=iap_base_url,

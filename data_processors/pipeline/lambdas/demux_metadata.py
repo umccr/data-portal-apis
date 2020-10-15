@@ -21,7 +21,7 @@ from gspread_pandas import Spread
 from libiap.openapi import libgds
 from sample_sheet import SampleSheet
 
-from data_processors.pipeline import services
+from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import SampleSheetCSV
 from utils import libssm, libjson
 
@@ -31,14 +31,12 @@ OVERRIDECYCLES_HEADER = 'OverrideCycles'
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-DEFAULT_IAP_BASE_URL = "https://aps2.platform.illumina.com"
-
 
 def configuration():
     iap_auth_token = os.getenv("IAP_AUTH_TOKEN", None)
     if iap_auth_token is None:
-        iap_auth_token = libssm.get_secret('/iap/jwt-token')
-    iap_base_url = os.getenv("IAP_BASE_URL", DEFAULT_IAP_BASE_URL)
+        iap_auth_token = libssm.get_secret(constant.IAP_JWT_TOKEN)
+    iap_base_url = os.getenv("IAP_BASE_URL", constant.IAP_BASE_URL)
 
     config = libgds.Configuration(
         host=iap_base_url,
@@ -123,8 +121,8 @@ def download_metadata(year: int):
 
     :param year: the sheet in the metadata spreadsheet to load
     """
-    lab_sheet_id = libssm.get_secret('/umccr/google/drive/tracking_sheet_id')
-    account_info = libssm.get_secret('/umccr/google/drive/lims_service_account_json')
+    lab_sheet_id = libssm.get_secret(constant.TRACKING_SHEET_ID)
+    account_info = libssm.get_secret(constant.GDRIVE_SERVICE_ACCOUNT)
 
     scopes = ['https://www.googleapis.com/auth/drive.readonly']
     credentials = service_account.Credentials.from_service_account_info(json.loads(account_info))

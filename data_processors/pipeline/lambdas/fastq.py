@@ -15,6 +15,7 @@ import logging
 import re
 from collections import defaultdict
 
+from data_processors.pipeline import constant
 from libiap.openapi import libgds
 
 from utils import libssm, libjson
@@ -22,14 +23,12 @@ from utils import libssm, libjson
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-DEFAULT_IAP_BASE_URL = "https://aps2.platform.illumina.com"
-
 
 def configuration():
     iap_auth_token = os.getenv("IAP_AUTH_TOKEN", None)
     if iap_auth_token is None:
-        iap_auth_token = libssm.get_secret('/iap/jwt-token')
-    iap_base_url = os.getenv("IAP_BASE_URL", DEFAULT_IAP_BASE_URL)
+        iap_auth_token = libssm.get_secret(constant.IAP_JWT_TOKEN)
+    iap_base_url = os.getenv("IAP_BASE_URL", constant.IAP_BASE_URL)
 
     config = libgds.Configuration(
         host=iap_base_url,
