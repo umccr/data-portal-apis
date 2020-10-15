@@ -159,3 +159,4 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
     batch = factory.SubFactory(BatchFactory)
     step = WorkflowType.GERMLINE.name
     running = True
+    notified = True

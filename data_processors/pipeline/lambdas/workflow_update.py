@@ -14,10 +14,10 @@ django.setup()
 import logging
 
 from data_portal.models import Workflow
-from data_processors.pipeline import services
+from data_processors.pipeline import services, constant
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.constant import WorkflowType
-from utils import libjson
+from utils import libjson, libssm, libsqs
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -85,8 +85,20 @@ def handler(event, context):
         }
     )
 
-    # notify workflow status
-    services.notify_workflow_status(updated_workflow)
+    # notification phase
+
+    if updated_workflow.batch_run:
+        if updated_workflow.notified:
+            logger.info(f"{updated_workflow.type_name} '{updated_workflow.wfr_id}' workflow status "
+                        f"'{updated_workflow.end_status}' is already notified once. Not reporting to Slack!")
+        else:
+            queue_arn = libssm.get_ssm_param(constant.SQS_NOTIFICATION_QUEUE_ARN)
+            message = {
+                'batch_run_id': updated_workflow.batch_run.id,
+            }
+            libsqs.dispatch_notification(queue_arn=queue_arn, message=message, group_id="BATCH_RUN")
+    else:
+        services.notify_workflow_status(updated_workflow)
 
     result = {
         'id': updated_workflow.id,

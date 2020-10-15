@@ -15,7 +15,7 @@ import logging
 from typing import List
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun
-from data_processors.pipeline import services
+from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus, FastQReadType
 from data_processors.pipeline.lambdas import workflow_update, fastq
 from utils import libjson, libsqs, libssm
@@ -119,8 +119,8 @@ def next_step(this_workflow: Workflow, context):
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
-            queue_name = libssm.get_ssm_param('/data_portal/backend/sqs_germline_queue_name')
-            libsqs.dispatch_jobs(queue_name=queue_name, job_list=job_list)
+            queue_arn = libssm.get_ssm_param(constant.SQS_GERMLINE_QUEUE_ARN)
+            libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
 
         except Exception as e:
             services.reset_batch_run(this_batch_run.id)  # reset running

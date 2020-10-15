@@ -2,7 +2,7 @@
 """module for pipeline constants
 
 Let's be Pythonic 💪 let's not mutate CAP_VAR elsewhere!
-Consider Enum, if there's a need for (name:value) and better protected tuple pair.
+Consider Enum, if there's a need for (name, value) and better protected tuple pair.
 Or consider Helper class-ing where composite builder is needed.
 """
 from enum import Enum
@@ -17,6 +17,7 @@ TRACKING_SHEET_ID = "/umccr/google/drive/tracking_sheet_id"
 GDRIVE_SERVICE_ACCOUNT = "/umccr/google/drive/lims_service_account_json"
 
 SQS_GERMLINE_QUEUE_ARN = "/data_portal/backend/sqs_germline_queue_arn"
+SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"
 
 
 class SampleSheetCSV(Enum):

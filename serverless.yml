@@ -65,6 +65,12 @@ functions:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_germline_queue_arn}
     timeout: 28
+  sqs_notification_event_processor:
+    handler: data_processors.pipeline.lambdas.notification.sqs_handler
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_notification_queue_arn}
+    timeout: 28
   bcl_convert:
     handler: data_processors.pipeline.lambdas.bcl_convert.handler
     timeout: 28
@@ -88,6 +94,9 @@ functions:
     timeout: 28
   demux_metadata:
     handler: data_processors.pipeline.lambdas.demux_metadata.handler
+    timeout: 28
+  notification:
+    handler: data_processors.pipeline.lambdas.notification.handler
     timeout: 28
 
 custom:

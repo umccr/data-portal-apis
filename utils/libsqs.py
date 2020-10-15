@@ -17,7 +17,45 @@ logger = logging.getLogger(__name__)
 MAX_BATCH_SIZE = 10
 
 
-def dispatch_jobs(queue_name, job_list, batch_size=10):
+def _build(queue_arn):
+    client = libaws.sqs_client()
+    queue_url = client.get_queue_url(QueueName=arn_to_name(queue_arn))['QueueUrl']
+    return client, queue_url
+
+
+def arn_to_name(arn: str):
+    """Get queue name from given SQS ARN"""
+    arr = arn.split(':')
+    if isinstance(arr, list):
+        return arr[-1]
+    return None
+
+
+def dispatch_notification(queue_arn: str, message: dict, group_id: str):
+    """
+    Note: backing notification queue is FIFO Delay queue with ContentBasedDeduplication enabled.
+    Hence, if sha256(message) is the same, it will get dedup.
+    If group_id is set to the same value, message will be enqueue in FIFO order.
+
+    The main use case here is to serialize simultaneous distributed event messages into a batch notification aggregate.
+
+    :param queue_arn:
+    :param message:
+    :param group_id:
+    :return:
+    """
+
+    response = enqueue_message(
+        queue_arn=queue_arn,
+        MessageBody=libjson.dumps(message),
+        MessageGroupId=group_id,
+    )
+
+    logger.info(f"NOTIFICATION QUEUE RESPONSE: \n{libjson.dumps(response)}")
+    return response
+
+
+def dispatch_jobs(queue_arn, job_list, batch_size=10):
     """
     Queue job in batch of given size
 
@@ -41,7 +79,7 @@ def dispatch_jobs(queue_name, job_list, batch_size=10):
     [1]: https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
     [2]: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html
 
-    :param queue_name:
+    :param queue_arn:
     :param job_list:
     :param batch_size:
     :return:
@@ -59,21 +97,32 @@ def dispatch_jobs(queue_name, job_list, batch_size=10):
                 'MessageGroupId': group_id,
             }
             entries.append(entry)
-        resp = queue_messages(queue_name, entries)
+        resp = enqueue_messages(queue_arn, entries)
         responses[group_id] = {k: v for k, v in resp.items() if k.startswith('Successful') or k.startswith('Failed')}
 
     logger.info(f"JOB QUEUE RESPONSE: \n{libjson.dumps(responses)}")
     return responses
 
 
-def queue_messages(queue_name: str, entries: List[dict]):
+def enqueue_messages(queue_arn: str, entries: List[dict]):
     """
-    Queue message entries to given queue name
+    Enqueue batch message entries into given queue
 
-    :param queue_name:
+    :param queue_arn:
     :param entries:
     :return:
     """
-    client = libaws.sqs_client()
-    queue_url = client.get_queue_url(QueueName=queue_name)['QueueUrl']
+    client, queue_url = _build(queue_arn=queue_arn)
     return client.send_message_batch(QueueUrl=queue_url, Entries=entries)
+
+
+def enqueue_message(queue_arn: str, **kwargs):
+    """
+    Enqueue a message
+
+    :param queue_arn:
+    :param kwargs:
+    :return:
+    """
+    client, queue_url = _build(queue_arn=queue_arn)
+    return client.send_message(QueueUrl=queue_url, **kwargs)

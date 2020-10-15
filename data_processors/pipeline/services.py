@@ -235,188 +235,151 @@ def notify_workflow_status(workflow: Workflow):
                     f"already notified once. Not reporting to Slack!")
         return
 
-    def process_single_messaging():
+    _status: str = workflow.end_status.lower()
 
-        _status: str = workflow.end_status.lower()
-
-        if _status == WorkflowStatus.RUNNING.value.lower():
-            slack_color = libslack.SlackColor.BLUE.value
-        elif _status == WorkflowStatus.SUCCEEDED.value.lower():
-            slack_color = libslack.SlackColor.GREEN.value
-        elif _status == WorkflowStatus.FAILED.value.lower():
-            slack_color = libslack.SlackColor.RED.value
-        elif _status == WorkflowStatus.ABORTED.value.lower():
-            slack_color = libslack.SlackColor.GRAY.value
-        else:
-            logger.info(
-                f"{workflow.type_name} '{workflow.wfr_id}' workflow unsupported status '{workflow.end_status}'. "
-                f"Not reporting to Slack!")
-            return
-
-        _topic = f"Run Name: {workflow.wfr_name}"
-        _attachments = [
-            {
-                "fallback": f"RunID: {workflow.wfr_id}, Status: {_status.upper()}",
-                "color": slack_color,
-                "pretext": f"Status: {_status.upper()}",
-                "title": f"RunID: {workflow.wfr_id}",
-                "text": "Workflow Attributes:",
-                "fields": [
-                    {
-                        "title": "Workflow Type",
-                        "value": workflow.type_name,
-                        "short": True
-                    },
-                    {
-                        "title": "Workflow ID",
-                        "value": workflow.wfl_id,
-                        "short": True
-                    },
-                    {
-                        "title": "Workflow Version",
-                        "value": workflow.version,
-                        "short": True
-                    },
-                    {
-                        "title": "Workflow Version ID",
-                        "value": workflow.wfv_id,
-                        "short": True
-                    },
-                    {
-                        "title": "Start Time",
-                        "value": workflow.start,
-                        "short": True
-                    },
-                    {
-                        "title": "End Time",
-                        "value": workflow.end if workflow.end else "Not Applicable",
-                        "short": True
-                    },
-                    {
-                        "title": "Sequence Run",
-                        "value": workflow.sequence_run.name if workflow.sequence_run else "Not Applicable",
-                        "short": True
-                    },
-                    {
-                        "title": "Sample Name",
-                        "value": workflow.sample_name if workflow.sample_name else "Not Applicable",
-                        "short": True
-                    },
-                ],
-                "footer": SLACK_FOOTER_BADGE,
-                "ts": libdt.get_utc_now_ts()
-            }
-        ]
-
-        _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
-
-        if _resp:
-            workflow.notified = True
-            workflow.save()
-
-        return _resp
-
-    def process_batch_messaging(state, qs):
-
-        _topic = f"Batch: {batch_run.batch.name}, Step: {batch_run.step.upper()}, " \
-                 f"Label: {batch_run.batch.id}:{batch_run.id}"
-
+    if _status == WorkflowStatus.RUNNING.value.lower():
+        slack_color = libslack.SlackColor.BLUE.value
+    elif _status == WorkflowStatus.SUCCEEDED.value.lower():
+        slack_color = libslack.SlackColor.GREEN.value
+    elif _status == WorkflowStatus.FAILED.value.lower():
+        slack_color = libslack.SlackColor.RED.value
+    elif _status == WorkflowStatus.ABORTED.value.lower():
         slack_color = libslack.SlackColor.GRAY.value
-        if state.lower() == "Running".lower():
-            slack_color = libslack.SlackColor.BLUE.value
-        elif state.lower() == "Completed".lower():
-            slack_color = libslack.SlackColor.GREEN.value
-
-        list_of_workflows = qs.all()
-
-        cnt = 0
-        stats = {
-            WorkflowStatus.SUCCEEDED.value: 0,
-            WorkflowStatus.FAILED.value: 0,
-            WorkflowStatus.ABORTED.value: 0,
-            WorkflowStatus.RUNNING.value: 0,
-        }
-        mtx = ""
-        for wfl in list_of_workflows:
-            mtx += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
-            cnt += 1
-            stats[wfl.end_status] += 1
-
-        _title = f"Total: {cnt} " \
-                 f"| Running: {stats[WorkflowStatus.RUNNING.value]} " \
-                 f"| Succeeded: {stats[WorkflowStatus.SUCCEEDED.value]} " \
-                 f"| Failed: {stats[WorkflowStatus.FAILED.value]} " \
-                 f"| Aborted: {stats[WorkflowStatus.ABORTED.value]}"
-
-        _attachments = [
-            {
-                "fallback": _topic,
-                "color": slack_color,
-                "pretext": f"Status: {state.upper()}, Workflow: {workflow.type_name.upper()}@{workflow.version}",
-                "title": _title,
-                "text": mtx,
-                "footer": SLACK_FOOTER_BADGE,
-                "ts": libdt.get_utc_now_ts()
-            }
-        ]
-
-        _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
-
-        if _resp:
-            for wfl in list_of_workflows:
-                wfl.notified = True
-                wfl.save()
-
-            update_batch_run_notified(batch_run_id=batch_run.id, notified=True)
-
-        return _resp
-
-    if workflow.batch_run:
-        batch_run = workflow.batch_run
-        # get all workflows belong to this batch run
-        total_workflows_in_batch_run = Workflow.objects.get_by_batch_run(batch_run=batch_run)
-        # search all completed workflows for this batch
-        completed_workflows_in_batch_run = Workflow.objects.get_completed_by_batch_run(batch_run=batch_run)
-        # search all running workflows for this batch
-        running_workflows_in_batch_run = Workflow.objects.get_running_by_batch_run(batch_run=batch_run)
-
-        # workout batch notification
-        total_count = total_workflows_in_batch_run.count()
-        if total_count == completed_workflows_in_batch_run.count():
-            # load batch_run state from db at this point
-            br_in_db = get_batch_run(batch_run_id=batch_run.id)
-
-            # detect status change
-            if br_in_db.running and br_in_db.notified:
-                # it is completed now, reset notified to False
-                update_batch_run_notified(batch_run_id=batch_run.id, notified=False)
-
-            # reset running flag
-            reset_batch_run(batch_run.id)
-
-            if get_batch_run(batch_run_id=batch_run.id).notified:
-                logger.info(f"[SKIP] Batch Run ID [{batch_run.id}] is already notified once. Not reporting to Slack!")
-                return
-
-            # notify all completed
-            logger.info(f"[COMPLETED] Batch Run ID [{batch_run.id}]. Processing notification.")
-            return process_batch_messaging(state="Completed", qs=completed_workflows_in_batch_run)
-
-        elif total_count == running_workflows_in_batch_run.count():
-            if get_batch_run(batch_run_id=batch_run.id).notified:
-                logger.info(f"[SKIP] Batch Run ID [{batch_run.id}] is already notified once. Not reporting to Slack!")
-                return
-
-            logger.info(f"[RUNNING] Batch Run ID [{batch_run.id}]. Processing notification.")
-            # notify all running
-            return process_batch_messaging(state="Running", qs=running_workflows_in_batch_run)
-        else:
-            logger.info(f"[SKIP] Batch Run ID [{batch_run.id}] notification. Waiting other samples in batch run.")
-            # otherwise skip to wait until the last workflow in the batch has arrived
-            return
     else:
-        # if not in batch, proceed per normal single workflow notification flow as usual
-        return process_single_messaging()
+        logger.info(
+            f"{workflow.type_name} '{workflow.wfr_id}' workflow unsupported status '{workflow.end_status}'. "
+            f"Not reporting to Slack!")
+        return
+
+    _topic = f"Run Name: {workflow.wfr_name}"
+    _attachments = [
+        {
+            "fallback": f"RunID: {workflow.wfr_id}, Status: {_status.upper()}",
+            "color": slack_color,
+            "pretext": f"Status: {_status.upper()}",
+            "title": f"RunID: {workflow.wfr_id}",
+            "text": "Workflow Attributes:",
+            "fields": [
+                {
+                    "title": "Workflow Type",
+                    "value": workflow.type_name,
+                    "short": True
+                },
+                {
+                    "title": "Workflow ID",
+                    "value": workflow.wfl_id,
+                    "short": True
+                },
+                {
+                    "title": "Workflow Version",
+                    "value": workflow.version,
+                    "short": True
+                },
+                {
+                    "title": "Workflow Version ID",
+                    "value": workflow.wfv_id,
+                    "short": True
+                },
+                {
+                    "title": "Start Time",
+                    "value": workflow.start,
+                    "short": True
+                },
+                {
+                    "title": "End Time",
+                    "value": workflow.end if workflow.end else "Not Applicable",
+                    "short": True
+                },
+                {
+                    "title": "Sequence Run",
+                    "value": workflow.sequence_run.name if workflow.sequence_run else "Not Applicable",
+                    "short": True
+                },
+                {
+                    "title": "Sample Name",
+                    "value": workflow.sample_name if workflow.sample_name else "Not Applicable",
+                    "short": True
+                },
+            ],
+            "footer": SLACK_FOOTER_BADGE,
+            "ts": libdt.get_utc_now_ts()
+        }
+    ]
+
+    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
+
+    if _resp:
+        workflow.notified = True
+        workflow.save()
+
+    return _resp
+
+
+@transaction.atomic
+def notify_batch_run_status(batch_run_id):
+
+    batch_run = get_batch_run(batch_run_id=batch_run_id)
+
+    if batch_run.notified:
+        logger.info(f"[SKIP] Batch Run ID [{batch_run.id}] is already notified once. Not reporting to Slack!")
+        return
+
+    _topic = f"Batch: {batch_run.batch.name}, Step: {batch_run.step.upper()}, " \
+             f"Label: {batch_run.batch.id}:{batch_run.id}"
+
+    # at the mo, BatchRun has only two states, RUNNING or not
+    if batch_run.running:
+        state = "running"
+        slack_color = libslack.SlackColor.BLUE.value
+    else:
+        state = "completed"
+        slack_color = libslack.SlackColor.GREEN.value
+
+    workflows = Workflow.objects.get_by_batch_run(batch_run=batch_run)
+    workflow = workflows[0]  # pick one for convenience
+
+    cnt = 0
+    stats = {
+        WorkflowStatus.SUCCEEDED.value: 0,
+        WorkflowStatus.FAILED.value: 0,
+        WorkflowStatus.ABORTED.value: 0,
+        WorkflowStatus.RUNNING.value: 0,
+    }
+    mtx = ""
+    for wfl in workflows:
+        mtx += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
+        cnt += 1
+        stats[wfl.end_status] += 1
+
+    _title = f"Total: {cnt} " \
+             f"| Running: {stats[WorkflowStatus.RUNNING.value]} " \
+             f"| Succeeded: {stats[WorkflowStatus.SUCCEEDED.value]} " \
+             f"| Failed: {stats[WorkflowStatus.FAILED.value]} " \
+             f"| Aborted: {stats[WorkflowStatus.ABORTED.value]}"
+
+    _attachments = [
+        {
+            "fallback": _topic,
+            "color": slack_color,
+            "pretext": f"Status: {state.upper()}, Workflow: {workflow.type_name.upper()}@{workflow.version}",
+            "title": _title,
+            "text": mtx,
+            "footer": SLACK_FOOTER_BADGE,
+            "ts": libdt.get_utc_now_ts()
+        }
+    ]
+
+    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
+
+    if _resp:
+        for wfl in workflows:
+            wfl.notified = True
+            wfl.save()
+
+        batch_run.notified = True
+        batch_run.save()
+
+    return _resp
 
 
 def notify_outlier(topic: str, reason: str, status: str, event: dict):
@@ -623,12 +586,45 @@ def reset_batch_run(batch_run_id):
 
 
 @transaction.atomic
-def update_batch_run_notified(batch_run_id, notified: bool):
-    try:
-        batch_run = BatchRun.objects.get(pk=batch_run_id)
-        batch_run.notified = notified
+def get_batch_run_none_or_all_completed(batch_run_id):
+
+    # load batch_run state from db at this point
+    batch_run = get_batch_run(batch_run_id=batch_run_id)
+
+    # get all workflows belong to this batch run
+    total_workflows_in_batch_run = Workflow.objects.get_by_batch_run(batch_run=batch_run)
+
+    # search all completed workflows for this batch
+    completed_workflows_in_batch_run = Workflow.objects.get_completed_by_batch_run(batch_run=batch_run)
+
+    def is_status_change():
+        return total_workflows_in_batch_run.count() == completed_workflows_in_batch_run.count() \
+               and batch_run.running and batch_run.notified
+
+    if is_status_change():
+        # it is completed now, reset notified to False to send notification next
+        batch_run.notified = False
+        # also reset running flag
+        batch_run.running = False
         batch_run.save()
         return batch_run
-    except BatchRun.DoesNotExist as e:
-        logger.debug(e)
+
+    return None
+
+
+@transaction.atomic
+def get_batch_run_none_or_all_running(batch_run_id):
+
+    # load batch_run state from db at this point
+    batch_run = get_batch_run(batch_run_id=batch_run_id)
+
+    # get all workflows belong to this batch run
+    total_workflows_in_batch_run = Workflow.objects.get_by_batch_run(batch_run=batch_run)
+
+    # search all running workflows for this batch
+    running_workflows_in_batch_run = Workflow.objects.get_running_by_batch_run(batch_run=batch_run)
+
+    if total_workflows_in_batch_run.count() == running_workflows_in_batch_run.count():
+        return batch_run
+
     return None
