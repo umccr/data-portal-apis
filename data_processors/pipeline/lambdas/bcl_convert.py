@@ -25,6 +25,47 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+def _build_error_message(reason) -> dict:
+    error_message = {'message': reason}
+    logger.error(libjson.dumps(error_message))
+    return error_message
+
+
+def validate_metadata(event, md_samples, md_override_cycles):
+    prefix = f"Abort launching BCL Convert workflow."
+    suffix = f"after lab metadata tracking sheet and sample sheet filtering step."
+
+    if md_samples is None or len(md_samples) == 0:
+        reason = f"{prefix} No samples found {suffix}"
+        services.notify_outlier(topic="No samples found", reason=reason, status="Aborted", event=event)
+        return reason
+
+    if md_override_cycles is None or len(md_override_cycles) == 0:
+        reason = f"{prefix} No Override Cycles found {suffix}"
+        services.notify_outlier(topic="No Override Cycles found", reason=reason, status="Aborted", event=event)
+        return reason
+
+    if len(md_samples) != len(md_override_cycles):
+        reason = f"{prefix} " \
+                 f"Number of Samples ({len(md_samples)}) is not equal to " \
+                 f"number of Override Cycles ({len(md_override_cycles)}) {suffix}"
+        topic = "Samples size and Override Cycles size mismatch"
+        services.notify_outlier(topic=topic, reason=reason, status="Aborted", event=event)
+        return reason
+
+    if '' in md_samples:
+        reason = f"{prefix} Sample list contain blank value {suffix}"
+        services.notify_outlier(topic="Blank Sample_ID found", reason=reason, status="Aborted", event=event)
+        return reason
+
+    if '' in md_override_cycles:
+        reason = f"{prefix} Override Cycles contain blank value {suffix}"
+        services.notify_outlier(topic="Blank Override Cycles found", reason=reason, status="Aborted", event=event)
+        return reason
+
+    pass
+
+
 def handler(event, context) -> dict:
     """event payload dict
     {
@@ -60,27 +101,18 @@ def handler(event, context) -> dict:
         'gdsBasePath': gds_folder_path,
         'gdsSamplesheet': SampleSheetCSV.FILENAME.value
     }, None)
-    metadata_samples = metadata.get('samples', None)
-    metadata_override_cycles = metadata.get('override_cycles', None)
+    md_samples = metadata.get('samples', None)
+    md_override_cycles = metadata.get('override_cycles', None)
 
-    if metadata_samples is None or len(metadata_samples) == 0:
-        reason = f"Abort launching BCL Convert workflow. " \
-              f"No samples found after metadata tracking sheet and sample sheet filtering step."
-        abort_message = {'message': reason}
-        logger.warning(libjson.dumps(abort_message))
-        services.notify_outlier(topic="No samples found", reason=reason, status="Aborted", event=event)
-        return abort_message
-
-    if metadata_override_cycles is None or len(metadata_override_cycles) == 0:
-        reason = f"No Override Cycles found after metadata tracking sheet and sample sheet filtering step."
-        logger.warning(libjson.dumps({'message': reason}))
-        services.notify_outlier(topic="No Override Cycles found", reason=reason, status="Continue", event=event)
+    failure_reason = validate_metadata(event=event, md_samples=md_samples, md_override_cycles=md_override_cycles)
+    if failure_reason is not None:
+        return _build_error_message(failure_reason)
 
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input['samplesheet']['location'] = sample_sheet_gds_path
     workflow_input['bcl-input-directory']['location'] = run_folder
-    workflow_input['samples'] = metadata_samples
-    workflow_input['override-cycles'] = metadata_override_cycles
+    workflow_input['samples'] = md_samples
+    workflow_input['override-cycles'] = md_override_cycles
     workflow_input['runfolder-name'] = seq_name
 
     # prepare engine_parameters
