@@ -95,6 +95,7 @@ def handler(event, context):
             queue_arn = libssm.get_ssm_param(constant.SQS_NOTIFICATION_QUEUE_ARN)
             message = {
                 'batch_run_id': updated_workflow.batch_run.id,
+                'workflow_id': updated_workflow.id,
             }
             libsqs.dispatch_notification(queue_arn=queue_arn, message=message, group_id="BATCH_RUN")
     else:
