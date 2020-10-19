@@ -253,7 +253,6 @@ class RunViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def retrieve(self, request, pk=None, **kwargs):
-        volume_name = self.request.query_params.get('volume_name', 'umccr-run-data-dev')  # FIXME
         data = {
             'id': pk,
             'lims': {
@@ -263,7 +262,7 @@ class RunViewSet(ReadOnlyModelViewSet):
                 'count': S3Object.objects.get_by_illumina_id(pk).count()
             },
             'gds': {
-                'count': GDSFile.objects.get_by_illumina_id(pk, volume_name=volume_name).count()
+                'count': GDSFile.objects.get_by_illumina_id(pk).count()
             },
         }
         return Response(data)
@@ -298,7 +297,7 @@ class RunDataGDSFileViewSet(ReadOnlyModelViewSet):
     search_fields = ['$path']
 
     def get_queryset(self):
-        volume_name = self.request.query_params.get('volume_name', 'umccr-run-data-dev')  # FIXME
+        volume_name = self.request.query_params.get('volume_name', None)
         return GDSFile.objects.get_by_illumina_id(self.kwargs['run_pk'], volume_name=volume_name)
 
     def handle_exception(self, exc):
