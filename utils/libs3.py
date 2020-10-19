@@ -104,7 +104,7 @@ def presign_s3_file(bucket: str, key: str) -> (bool, str):
         return True, libaws.s3_client().generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key})
     except ClientError as e:
         message = f"Failed to sign the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
-        logging.error(message)
+        logger.error(message)
         return False, message
 
 
@@ -121,7 +121,7 @@ def head_s3_object(bucket: str, key: str) -> (bool, dict):
         return True, libaws.s3_client().head_object(Bucket=bucket, Key=key)
     except ClientError as e:
         message = f"Failed on HEAD request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
-        logging.error(message)
+        logger.error(message)
         return False, dict(error=message)
 
 
@@ -179,7 +179,7 @@ def get_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
         if e.response['Error']['Code'] == "304":
             return True, e.response
         message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
-        logging.error(message)
+        logger.error(message)
         return False, dict(error=message)
 
 
