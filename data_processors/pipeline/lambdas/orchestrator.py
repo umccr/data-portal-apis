@@ -119,8 +119,9 @@ def next_step(this_workflow: Workflow, context):
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
-            queue_arn = libssm.get_ssm_param(constant.SQS_GERMLINE_QUEUE_ARN)
-            libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
+            if job_list:
+                queue_arn = libssm.get_ssm_param(constant.SQS_GERMLINE_QUEUE_ARN)
+                libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
 
         except Exception as e:
             services.reset_batch_run(this_batch_run.id)  # reset running
