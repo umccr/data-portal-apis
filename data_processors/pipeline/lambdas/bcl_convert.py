@@ -115,6 +115,8 @@ def handler(event, context) -> dict:
     workflow_input['override-cycles'] = md_override_cycles
     if 'runfolder-name' in workflow_input:
         workflow_input['runfolder-name'] = seq_name
+    if 'dummyFile-multiqc' in workflow_input:
+        workflow_input['dummyFile-multiqc']['location'] = sample_sheet_gds_path  # can be any file in GDS path
 
     # prepare engine_parameters
     gds_fastq_vol = libssm.get_ssm_param(constant.IAP_GDS_FASTQ_VOL)
