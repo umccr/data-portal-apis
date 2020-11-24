@@ -435,3 +435,21 @@ class Report(models.Model):
     sigs_signature = models.CharField(max_length=5)
     sigs_contribution = models.IntegerField()
     sigs_freq = models.IntegerField()
+
+    # sv/{0..8}_sv_{(un)melted|(no)BND}_{main|other|manygenes|manytranscripts}.json.gz
+    sv_vcfnum = models.IntegerField()
+    sv_tiertop = models.IntegerField()
+    sv_start = models.TextField()
+    sv_end = models.TextField()
+    sv_type = models.TextField()
+    sv_id = models.TextField()
+    sv_pr_alt = models.IntegerField()
+    sv_sr_pr_ref = models.TextField()
+    sv_ploidy = models.TextField() # TODO: No floats in underlying DB?
+    sv_af_purple = models.TextField()
+    sv_af_bpi = models.TextField()
+    sv_cnc = models.TextField()
+    sv_cn = models.TextField()
+    sv_sscore = models.IntegerField()
+    sv_nann = models.IntegerField()
+    sv_annotation = models.TextField()
