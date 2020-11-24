@@ -393,3 +393,45 @@ class Workflow(models.Model):
 
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
+
+
+class Report(models.Model):
+    # hrd/chord_hrdectect.json.gz
+    hrd_hrdetect = models.TextField(null=True, blank=True)
+    hrd_results_hrdetect = models.IntegerField(null=True, blank=True)
+    hrd_chord = models.TextField(null=True, blank=True)
+    hrd_chord2 = models.IntegerField(null=True, blank=True)
+    hrd_results_chord = models.TextField(null=True, blank=True)
+    hrd_results_chord2 = models.IntegerField(null=True, blank=True)
+
+    # purple/purple_cnv_{germ|som}.json.gz
+    purple_sample_type = models.CharField(max_length=4) # TODO: germ || som, not in original report schema, just 2?
+    purple_chr = models.CharField(max_length=10)
+    purple_start = models.BigIntegerField()
+    purple_end = models.BigIntegerField()
+    purple_CN = models.IntegerField()
+    purple_ploidy_min_maj = models.CharField(max_length=3)
+    purple_start_end_segsupport = models.TextField(null=True, blank=True)
+    purple_method = models.TextField(null=True, blank=True)
+    purple_BAF_count = models.TextField(null=True, blank=True)
+    purple_GC_window_count = models.TextField(null=True, blank=True)
+
+    # purple/purple_cnv_som_gene.json.gz
+    purple_gene = models.TextField(null=True, blank=True)
+    purple_minCN = models.TextField(null=True, blank=True)
+    purple_maxCN = models.TextField(null=True, blank=True)
+    purple_chr_band = models.TextField(null=True, blank=True)
+    purple_onco_or_ts = models.TextField(null=True, blank=True)
+    purple_transcript_id = models.TextField(null=True, blank=True)
+    purple_min_minor_allele_ploidy = models.TextField(null=True, blank=True)
+    purple_som_reg = models.TextField(null=True, blank=True)
+    purple_gem_del_reg = models.TextField(null=True, blank=True)
+    purple_min_reg = models.TextField(null=True, blank=True)
+    purple_min_reg_start_end = models.TextField(null=True, blank=True)
+    purple_min_reg_supported_start_end_method = models.TextField(null=True, blank=True)
+
+    # sigs/mutsig{1|2}.json.gz
+    sigs_rank = models.IntegerField()
+    sigs_signature = models.CharField(max_length=5)
+    sigs_contribution = models.IntegerField()
+    sigs_freq = models.IntegerField()
