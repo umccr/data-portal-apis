@@ -243,7 +243,7 @@ class SubjectGDSFileViewSet(ReadOnlyModelViewSet):
 
 
 class RunViewSet(ReadOnlyModelViewSet):
-    queryset = Report.objects.values_list('sample_id', named=True).filter(sample_id__isnull=False).distinct()
+    queryset = LIMSRow.objects.values_list('illumina_id', named=True).filter(illumina_id__isnull=False).distinct()
     serializer_class = RunIdSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -268,7 +268,7 @@ class RunViewSet(ReadOnlyModelViewSet):
 
 
 class ReportViewSet(ReadOnlyModelViewSet):
-    queryset = LIMSRow.objects.values_list('sample_id', named=True).filter(illumina_id__isnull=False).distinct()
+    queryset = Report.objects.values_list('sample_id', named=True).filter(sample_id__isnull=False).distinct()
     serializer_class = ReportIdSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
