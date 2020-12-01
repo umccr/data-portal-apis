@@ -2,11 +2,12 @@ import logging
 from datetime import datetime
 from typing import Tuple
 
+from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import ExpressionWrapper, Value, CharField, Q, F
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS
+from data_portal.models import S3Object, LIMSRow, S3LIMS, Report
 from utils import libs3
 
 logger = logging.getLogger(__name__)
@@ -143,3 +144,21 @@ def tag_s3_object(bucket_name: str, key: str):
     else:
         # sound of silence
         pass
+
+def deserialize_sequencing_report(key: str):
+    # TODO:
+    #  1. Check input sizes and adjust lambda runtimes?
+    #  2. SQS queue it instead of firing lambda from here
+    data = serializers.deserialize("json", str)
+    Report.save(data)
+
+def process_sequencing_report(bucket_name: str, key: str):
+    if key.endswith('.json.gz'):
+        # TODO: Make sure we have a stable naming to detect those S3 report events properly
+        if key.__contains__("reports"):
+            payload = libs3.get_s3_object(bucket=bucket_name, key=key)
+            if payload['ResponseMetadata']['HTTPStatusCode'] == 200:
+                logger.info(f"Found sequencing report, importing into database: {key}")
+                deserialize_sequencing_report(key)
+            else:
+                logger.error(f"Failed to retrieve sequecing report: {key}")
