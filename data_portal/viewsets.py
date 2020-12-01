@@ -279,7 +279,7 @@ class ReportViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, pk=None, **kwargs):
         data = {
             'id': pk,
-            'lims': {
+            'reports': {
                 'count': Report.objects.filter(sample_id=pk).count()
             },
         }
