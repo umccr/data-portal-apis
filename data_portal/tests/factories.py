@@ -5,7 +5,7 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, Report
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -160,3 +160,8 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
     step = WorkflowType.GERMLINE.name
     running = True
     notified = True
+
+
+class ReportsFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Report
