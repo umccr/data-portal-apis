@@ -9,11 +9,11 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from utils import libs3, libjson, iap
-from .models import LIMSRow, S3Object, GDSFile
+from .models import LIMSRow, S3Object, GDSFile, Report
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
-    BucketIdSerializer, GDSFileModelSerializer
+    BucketIdSerializer, GDSFileModelSerializer, ReportIdSerializer
 
 logger = logging.getLogger()
 
@@ -262,6 +262,25 @@ class RunViewSet(ReadOnlyModelViewSet):
             },
             'gds': {
                 'count': GDSFile.objects.get_by_illumina_id(pk).count()
+            },
+        }
+        return Response(data)
+
+
+class ReportViewSet(ReadOnlyModelViewSet):
+    queryset = LIMSRow.objects.values_list('sample_id', named=True).filter(illumina_id__isnull=False).distinct()
+    serializer_class = ReportIdSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = ['sample_id']
+    ordering = ['-sample_id']
+    search_fields = ordering_fields
+
+    def retrieve(self, request, pk=None, **kwargs):
+        data = {
+            'id': pk,
+            'lims': {
+                'count': Report.objects.filter(sample_id=pk).count()
             },
         }
         return Response(data)
