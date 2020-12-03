@@ -13,6 +13,7 @@ API directly. i.e. No more import boto3, but just import libs3 instead.
 
 If unsure, start with Pass-through call.
 """
+import gzip
 import logging
 from datetime import datetime
 
@@ -181,6 +182,21 @@ def get_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
         message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
         logger.error(message)
         return False, dict(error=message)
+
+
+def get_s3_object_to_bytes(bucket: str, key: str, **kwargs) -> (bytes):
+    """
+    get_object_to_bytes API, with on-the-fly gzip detection and decompression
+
+    :param bucket:
+    :param key:
+    :param kwargs:
+    :return tuple (bytes): the bytes from the S3 object body
+    """
+    obj_bytes = libaws.s3_client().get_object(Bucket=bucket, Key=key, **kwargs)['Body'].read()
+    if obj_bytes[0:1] == "\x1f\x8b": # Gzip 2 byte header
+        obj_bytes = gzip.decompress(obj_bytes)
+    return obj_bytes
 
 
 def get_s3_object_tagging(bucket: str, key: str):
