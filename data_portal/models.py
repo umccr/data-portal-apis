@@ -396,8 +396,8 @@ class Workflow(models.Model):
 
 
 class Report(models.Model):
-    report_id = models.IntegerField(auto_created=True); # TODO PK?
-    sample_id = models.ForeignKey(LIMSRow, on_delete=models.CASCADE)
+    report_id = models.IntegerField(auto_created=True);
+    sample_id = models.ForeignKey(LIMSRow, on_delete=models.CASCADE, null=True, blank=True)
 
     # hrd/chord_hrdectect.json.gz
     hrd_hrdetect = models.TextField(null=True, blank=True)
@@ -408,7 +408,7 @@ class Report(models.Model):
     hrd_results_chord2 = models.IntegerField(null=True, blank=True)
 
     # purple/purple_cnv_{germ|som}.json.gz
-    purple_sample_type = models.CharField(max_length=4) # TODO: germ || som, not in original report schema, just 2?
+    purple_sample_type = models.CharField(max_length=4)
     purple_chr = models.CharField(max_length=10)
     purple_start = models.BigIntegerField(null=True, blank=True)
     purple_end = models.BigIntegerField(null=True, blank=True)
