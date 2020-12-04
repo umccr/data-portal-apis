@@ -22,9 +22,9 @@ class GermlineUnitTests(PipelineUnitTestCase):
         mock_sqr: SequenceRun = SequenceRunFactory()
 
         workflow: dict = germline.handler({
-            'fastq1': "SAMPLE_NAME_S1_R1_001.fastq.gz",
-            'fastq2': "SAMPLE_NAME_S1_R2_001.fastq.gz",
             'sample_name': "SAMPLE_NAME",
+            'fastq_directory': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/UMCCR/",
+            'fastq_list_csv': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/Reports/fastq_list.csv",
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
         }, None)
@@ -53,9 +53,9 @@ class GermlineUnitTests(PipelineUnitTestCase):
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
         workflow: dict = germline.handler({
-            'fastq1': "SAMPLE_NAME_S1_R1_001.fastq.gz",
-            'fastq2': "SAMPLE_NAME_S1_R2_001.fastq.gz",
             'sample_name': "SAMPLE_NAME",
+            'fastq_directory': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/UMCCR/",
+            'fastq_list_csv': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/Reports/fastq_list.csv",
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
         }, None)
@@ -89,9 +89,9 @@ class GermlineUnitTests(PipelineUnitTestCase):
         mock_germline.save()
 
         result: dict = germline.handler({
-            'fastq1': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R1_001.fastq.gz",
-            'fastq2': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R2_001.fastq.gz",
             'sample_name': "SAMPLE_NAME",
+            'fastq_directory': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/UMCCR/",
+            'fastq_list_csv': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/Reports/fastq_list.csv",
             'seq_run_id': mock_sqr.run_id,
             'seq_name': mock_sqr.name,
             'batch_run_id': mock_batch_run.id,
@@ -110,9 +110,9 @@ class GermlineUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tests.test_germline.GermlineUnitTests.test_sqs_handler
         """
         mock_job = {
-            'fastq1': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R1_001.fastq.gz",
-            'fastq2': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R2_001.fastq.gz",
             'sample_name': "SAMPLE_NAME",
+            'fastq_directory': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/UMCCR/",
+            'fastq_list_csv': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/Reports/fastq_list.csv",
             'seq_run_id': "sequence run id",
             'seq_name': "sequence run name",
             'batch_run_id': 1,

@@ -1,4 +1,3 @@
-import os
 from unittest import skip
 
 from libiap.openapi import libgds
@@ -7,7 +6,6 @@ from mockito import when
 from data_processors.pipeline.lambdas import fastq
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
-from utils import libssm
 
 
 class FastQUnitTests(PipelineUnitTestCase):
@@ -71,7 +69,7 @@ class FastQUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tests.test_fastq.FastQUnitTests.test_fastq_map_build
         """
         wfr_id = f"wfr.{_rand(32)}"
-        gds_path = f"gds://{wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert"
+        locations = [f"gds://{wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert", ]
 
         mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
         mock_file_list.items = [
@@ -86,7 +84,7 @@ class FastQUnitTests(PipelineUnitTestCase):
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
-        fastq_container: dict = fastq.handler({'gds_path': gds_path}, None)
+        fastq_container: dict = fastq.handler({'locations': locations}, None)
 
         for sample_name, bag in fastq_container['fastq_map'].items():
             fastq_list = bag['fastq_list']
@@ -98,8 +96,8 @@ class FastQUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tests.test_fastq.FastQUnitTests.test_fastq_handler
         """
         self.verify_local()
-        fastq.handler({'gds_path': "gds://anything/work/for/hitting/prism/dynamic/mock"}, None)
-        # monitor mock container if you like:  docker logs -f iap_mock_gds_1
+        fastq.handler({'locations': ["gds://anything/work/for/hitting/prism/dynamic/mock", ]}, None)
+        # monitor mock container if you like:  docker logs -f data-portal-apis_gds_1
 
 
 class FastQIntegrationTests(PipelineIntegrationTestCase):
@@ -109,27 +107,15 @@ class FastQIntegrationTests(PipelineIntegrationTestCase):
     def test_fastq_handler(self):
         """
         python manage.py test data_processors.pipeline.tests.test_fastq.FastQIntegrationTests.test_fastq_handler
-
-        For quick ad-hoc local testing purpose, you could overwrite:
-            fastq_gds_path_for_integration_test = "gds://some_volume/some/path/to/fastq"
         """
 
-        fastq_gds_path_for_integration_test = libssm.get_ssm_param(
-            os.getenv('SSM_KEY_NAME_IAP_IT_FASTQ_GDS_PATH', "/iap/it/fastq/gds_path")
-        )
-
         event = {
-            'gds_path': f"{fastq_gds_path_for_integration_test}"
+            'locations': [
+                "gds://umccr-fastq-data-prod/201021_A01052_0025_BHF2WTDSXY",
+            ]
         }
 
         fastq_container: dict = fastq.handler(event, None)
 
-        logger.info("-"*32)
-        logger.info("Example accessing fastq_map:")
-        for sample_name, bag in fastq_container['fastq_map'].items():
-            fastq_list = bag['fastq_list']
-            logger.info((sample_name, fastq_list))  # print in tuple as example
-
-        # assert sample count
-        # 8 is deterministic test harness value, modify appropriately as it depends on number of samples in gds_path
-        self.assertEqual(8, len(fastq_container['fastq_map'].keys()))
+        self.assertIsNotNone(fastq_container)
+        # self.assertEqual(8, len(fastq_container['fastq_map'].keys()))

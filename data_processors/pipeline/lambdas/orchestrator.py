@@ -16,7 +16,7 @@ from typing import List
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun
 from data_processors.pipeline import services, constant
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus, FastQReadType
+from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq
 from utils import libjson, libsqs, libssm
 
@@ -109,13 +109,12 @@ def next_step(this_workflow: Workflow, context):
             if this_batch.context_data is None:
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
-                fastq_locations = []
-                for location in parse_bcl_convert_output(this_workflow.output):
-                    fastq_container = fastq.handler({'gds_path': location}, None)
-                    fastq_locations.append(fastq_container)
+                fastq_containers = []
+                fastq_container = fastq.handler({'locations': parse_bcl_convert_output(this_workflow.output)}, None)
+                fastq_containers.append(fastq_container)
 
                 # cache batch context data in db
-                this_batch = services.update_batch(this_batch.id, context_data=fastq_locations)
+                this_batch = services.update_batch(this_batch.id, context_data=fastq_containers)
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
@@ -139,24 +138,28 @@ def next_step(this_workflow: Workflow, context):
 
 def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
     job_list = []
-    fastq_locations: List[dict] = libjson.loads(this_batch.context_data)
-    for location in fastq_locations:
-        fastq_container: dict = location
+    fastq_containers: List[dict] = libjson.loads(this_batch.context_data)
+    for fastq_container in fastq_containers:
         fastq_map = fastq_container['fastq_map']
         for sample_name, bag in fastq_map.items():
             fastq_list = bag['fastq_list']
 
-            if len(fastq_list) > FastQReadType.PAIRED_END.value:
-                # pair_end only at the mo, log and skip
+            fastq_directories = bag['fastq_directories']
+            if len(fastq_directories) != 1:
                 logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
-                               f"EXPECTING {FastQReadType.PAIRED_END.value} FASTQ FILES FOR "
-                               f"{FastQReadType.PAIRED_END}. FOUND: {fastq_list}")
+                               f"EXPECTING ONLY ONE FASTQ DIRECTORY. FOUND: {fastq_directories}")
+                continue
+
+            fastq_list_csv = bag['fastq_list_csv']
+            if len(fastq_list_csv) != 1:
+                logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
+                               f"EXPECTING ONLY ONE FASTQ LIST CSV. FOUND: {fastq_list_csv}")
                 continue
 
             job = {
-                'fastq1': fastq_list[0],
-                'fastq2': fastq_list[1],
                 'sample_name': sample_name,
+                'fastq_directory': f"{fastq_directories[0]}/",
+                'fastq_list_csv': fastq_list_csv[0],
                 'seq_run_id': this_sqr.run_id if this_sqr else None,
                 'seq_name': this_sqr.name if this_sqr else None,
                 'batch_run_id': int(this_batch_run.id)

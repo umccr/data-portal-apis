@@ -63,9 +63,9 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        'fastq1': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R1_001.fastq.gz",
-        'fastq2': "gds://vol/absolute/path/to/SAMPLE_NAME_S1_R2_001.fastq.gz",
         'sample_name': "SAMPLE_NAME",
+        'fastq_directory': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/UMCCR/",
+        'fastq_list_csv': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/Reports/fastq_list.csv",
         'seq_run_id': "sequence run id",
         'seq_name': "sequence run name",
         'batch_run_id': "batch run id",
@@ -79,9 +79,10 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.GERMLINE.name} event")
     logger.info(libjson.dumps(event))
 
-    fastq1 = event['fastq1']
-    fastq2 = event['fastq2']
     sample_name = event['sample_name']
+    fastq_directory = event['fastq_directory']
+    fastq_list_csv = event['fastq_list_csv']
+
     seq_run_id = event.get('seq_run_id', None)
     seq_name = event.get('seq_name', None)
     batch_run_id = event.get('batch_run_id', None)
@@ -91,18 +92,9 @@ def handler(event, context) -> dict:
     # read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input['fq1-dragen']['location'] = fastq1
-    workflow_input['fq2-dragen']['location'] = fastq2
-    workflow_input['outdir-dragen'] = f"dragenGermline-{sample_name}"
-    workflow_input['rgid-dragen'] = f"{sample_name}"
-    workflow_input['rgsm-dragen'] = f"{sample_name}"
-    workflow_input['outprefix-dragen'] = f"{sample_name}"
-    workflow_input['outputDir-mulitqc'] = f"out-dir-{sample_name}"
-    workflow_input['subset-bam-name-sambamba'] = f"{sample_name}-subset.hla.bam"
     workflow_input['sample-name'] = f"{sample_name}"
-    workflow_input['output-dirname'] = f"{sample_name}_HLA_calls"
-    workflow_input['outPrefix-somalier'] = f"{sample_name}"
-    workflow_input['outputDir-somalier'] = f"out-dir-{sample_name}"
+    workflow_input['fastq-directory']['location'] = f"{fastq_directory}"
+    workflow_input['fastq-list']['location'] = f"{fastq_list_csv}"
 
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
