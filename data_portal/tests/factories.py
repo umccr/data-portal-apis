@@ -165,3 +165,4 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
 class ReportsFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Report
+
