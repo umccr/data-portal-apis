@@ -32,6 +32,7 @@ from utils import libaws
 
 logger = logging.getLogger(__name__)
 
+
 class S3EventType(Enum):
     """
     See S3 Supported Event Types
@@ -52,6 +53,7 @@ class S3EventRecord:
         self.event_time = event_time
         self.s3_bucket_name = s3_bucket_name
         self.s3_object_meta = s3_object_meta
+
 
 def get_matching_s3_objects(bucket, prefix="", suffix=""):
     """
@@ -297,6 +299,7 @@ def sync_s3_event_records(records: List[S3EventRecord], orm: object) -> dict:
     """
     Synchronise s3 event records to the db.
     :param records: records to be processed
+    :param orm: ORM records/objects where this S3 object deletion should be synced with
     :return results of synchronisation
     """
     results = defaultdict(int)
@@ -305,13 +308,13 @@ def sync_s3_event_records(records: List[S3EventRecord], orm: object) -> dict:
         if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
             removed_count, records_removed_count = sync_s3_event_record_removed(record, orm)
             results['removed_count'] += removed_count
-            # TODO Where to fetch 's3_lims' string from ORM?
+            # TODO Where to fetch 's3_lims' string from ORM in a generic and backwards compatible way? .model() or similar?
             results[orm.__name__+'_removed_count'] += records_removed_count
 
         elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
             created_count, records_created_count = sync_s3_event_record_created(record, orm)
             results['created_count'] += created_count
-            # TODO Where to fetch 's3_lims' string from ORM?
+            # TODO Where to fetch 's3_lims' string from ORM in a generic and backwards compatible way? .model() or similar?
             results[orm.__name__+'_created_count'] += records_created_count
         else:
             logger.info(f"Found unsupported S3 event type: {record.event_type}")
@@ -325,7 +328,7 @@ def delete_s3_object(bucket_name: str, key: str, orm: object) -> Tuple[int, int]
     Delete a S3 object record from db
     :param bucket_name: s3 bucket name
     :param key: s3 object key
-    :param orm: ORM records/objects where this S3 object deletion should be sync'd with
+    :param orm: ORM records/objects where this S3 object deletion should be synced with
     :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     try:
@@ -388,10 +391,10 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
     #lims_assoc_rows()
 
 
-def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
+def sync_s3_event_record_created(record: S3EventRecord, orm) -> Tuple[int, int]:
     """
     Synchronise a S3 event (CREATED) record to db
-    :return: number of s3 object created, number of s3-lims association records created
+    :return: number of s3 object created, number of database association records created
     """
     bucket_name = record.s3_bucket_name
     key = record.s3_object_meta['key']
@@ -401,7 +404,7 @@ def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     tag_s3_object(bucket_name, key, "bam")
 
     return persist_s3_object(
-        bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag
+        bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag, orm=orm
     )
 
 
@@ -410,7 +413,7 @@ def delete_s3_object(bucket_name: str, key: str, orm: object) -> Tuple[int, int]
     Delete a S3 object record from db
     :param bucket_name: s3 bucket name
     :param key: s3 object key
-    :param orm: ORM records/objects where this S3 object deletion should be sync'd with
+    :param orm: ORM records/objects where this S3 object deletion should be synced with
     :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     try:
