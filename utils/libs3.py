@@ -387,7 +387,7 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
     if not new:
         return 0, 0
 
-    # TODO: Also remove accompanying LIMS objects
+    # TODO: Also persist accompanying LIMS ORM objects elsewhere, not here, part of s3/services.py refactor
     #lims_assoc_rows()
 
 
