@@ -396,8 +396,7 @@ class Workflow(models.Model):
 
 
 class Report(models.Model):
-    report_id = models.IntegerField(auto_created=True);
-    sample_id = models.ForeignKey(LIMSRow, on_delete=models.CASCADE, null=True, blank=True)
+    lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
 
     # hrd/chord_hrdectect.json.gz
     hrd_hrdetect = models.TextField(null=True, blank=True)
