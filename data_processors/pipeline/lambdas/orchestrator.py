@@ -103,7 +103,10 @@ def next_step(this_workflow: Workflow, context):
         if this_batch_run is None:
             # skip the request if there is on going existing batch_run for the same batch run step
             # this is especially to fence off duplicate IAP WES events hitting multiple time to our IAP event lambda
-            return
+            msg = f"SKIP. THERE IS EXISTING ON GOING RUN FOR BATCH " \
+                  f"ID: {this_batch.id}, NAME: {this_batch.name}, CREATED_BY: {this_batch.created_by}"
+            logger.warning(msg)
+            return {'message': msg}
 
         try:
             if this_batch.context_data is None:
@@ -121,6 +124,8 @@ def next_step(this_workflow: Workflow, context):
             if job_list:
                 queue_arn = libssm.get_ssm_param(constant.SQS_GERMLINE_QUEUE_ARN)
                 libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
+            else:
+                services.reset_batch_run(this_batch_run.id)  # reset running if job_list is empty
 
         except Exception as e:
             services.reset_batch_run(this_batch_run.id)  # reset running
@@ -137,23 +142,48 @@ def next_step(this_workflow: Workflow, context):
 
 
 def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
+    """
+    NOTE: as of GERMLINE CWL workflow version 0.2-inputcsv-redir-19ddeb3
+
+    GERMLINE CWL workflow only support _single_ FASTQ directory and _single_ fastq_list.csv, See:
+    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/production/wfl.d6f51b67de5b4d309dddf4e411362be7/0.2-inputcsv-redir-19ddeb3.md
+    https://github.com/umccr-illumina/cwl-iap/blob/19ddeb38f89bbd8d6ba2b72a7da6c9fe51145fa5/workflows/dragen-qc-hla/0.2/dragen-qc-hla-inputCSV.redirect.cwl#L59
+
+    Portal fastq lambda is now able to construct FASTQ listing from multiple gds locations, See:
+    https://github.com/umccr/data-portal-apis/pull/137
+
+    Since downstream CWL workflow cannot take multiple fastq_directories and fastq_list_csv,
+    hence, skipping if Portal detect this.
+
+    :param this_batch:
+    :param this_batch_run:
+    :param this_sqr:
+    :return:
+    """
     job_list = []
     fastq_containers: List[dict] = libjson.loads(this_batch.context_data)
     for fastq_container in fastq_containers:
         fastq_map = fastq_container['fastq_map']
         for sample_name, bag in fastq_map.items():
-            fastq_list = bag['fastq_list']
+            sample_name_str: str = sample_name
+
+            # skip sample start with NTC_
+            if sample_name_str.startswith("NTC_"):
+                logger.warning(f"SKIP NTC SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
+                continue
+
+            fastq_list = bag['fastq_list']  # GERMLINE CWL workflow does not use this absolute gds path list, at the mo
 
             fastq_directories = bag['fastq_directories']
             if len(fastq_directories) != 1:
                 logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
-                               f"EXPECTING ONLY ONE FASTQ DIRECTORY. FOUND: {fastq_directories}")
+                               f"GERMLINE CWL WORKFLOW EXPECT ONE FASTQ DIRECTORY. FOUND: {fastq_directories}")
                 continue
 
             fastq_list_csv = bag['fastq_list_csv']
             if len(fastq_list_csv) != 1:
                 logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
-                               f"EXPECTING ONLY ONE FASTQ LIST CSV. FOUND: {fastq_list_csv}")
+                               f"GERMLINE CWL WORKFLOW EXPECT ONE FASTQ LIST CSV. FOUND: {fastq_list_csv}")
                 continue
 
             job = {

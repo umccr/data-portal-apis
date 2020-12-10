@@ -90,6 +90,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             "MDX199999_L1999999_topup_S2_R2_001.fastq.gz",
             "L9111111_topup_S3_R1_001.fastq.gz",
             "L9111111_topup_S3_R2_001.fastq.gz",
+            "NTC_L111111_S4_R1_001.fastq.gz",
+            "NTC_L111111_S4_R2_001.fastq.gz",
         ]
         mock_file_list.items = []
         for mock_file in mock_files:
