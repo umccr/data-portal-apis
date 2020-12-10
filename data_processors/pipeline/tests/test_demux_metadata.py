@@ -1,6 +1,7 @@
 import json
 import tempfile
 import warnings
+from unittest import skip
 
 import pandas as pd
 import requests
@@ -10,7 +11,7 @@ from mockito import when, mock
 from data_portal.models import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory
 from data_processors.pipeline.lambdas import demux_metadata
-from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
+from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
 
 class DemuxMetaDataTests(PipelineUnitTestCase):
@@ -128,3 +129,16 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
         """
         local_path = demux_metadata.download_gds_file(gds_volume="you-cannot", gds_path="/find/me/SampleSheet.csv")
         self.assertIsNone(local_path)
+
+
+class DemuxMetaDataIntegrationTests(PipelineIntegrationTestCase):
+
+    @skip
+    def test_download_metadata(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_demux_metadata.DemuxMetaDataIntegrationTests.test_download_metadata
+        """
+        my_df: pd.DataFrame = demux_metadata.download_metadata("2021")
+        print(my_df)
+        self.assertIsNotNone(my_df)
+        self.assertTrue(not my_df.empty)
