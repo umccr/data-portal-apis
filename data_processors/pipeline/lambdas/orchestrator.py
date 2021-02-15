@@ -17,7 +17,7 @@ from typing import List
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, fastq
+from data_processors.pipeline.lambdas import workflow_update, fastq, demux_metadata
 from utils import libjson, libsqs, libssm
 
 logger = logging.getLogger()
@@ -162,24 +162,47 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     """
     job_list = []
     fastq_containers: List[dict] = libjson.loads(this_batch.context_data)
+
+    gds_volume_name = this_sqr.gds_volume_name
+    gds_folder_path = this_sqr.gds_folder_path
+    sample_sheet_name = this_sqr.sample_sheet_name
+
+    metadata: dict = demux_metadata.handler({
+        'gdsVolume': gds_volume_name,
+        'gdsBasePath': gds_folder_path,
+        'gdsSamplesheet': sample_sheet_name,
+    }, None)
+
     for fastq_container in fastq_containers:
         fastq_map = fastq_container['fastq_map']
         for sample_name, bag in fastq_map.items():
+            fastq_list = bag['fastq_list']  # GERMLINE CWL workflow does not use this absolute gds path list, at the mo
             sample_name_str: str = sample_name
+
+            # skip Undetermined samples
+            if sample_name_str == "Undetermined":
+                logger.warning(f"SKIP '{sample_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
+                continue
 
             # skip sample start with NTC_
             if sample_name_str.startswith("NTC_"):
                 logger.warning(f"SKIP NTC SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
                 continue
 
-            fastq_list = bag['fastq_list']  # GERMLINE CWL workflow does not use this absolute gds path list, at the mo
+            # skip germline if assay type is not WGS
+            assay_type = metadata['types'][metadata['samples'].index(sample_name_str)]
+            if assay_type != "WGS":
+                logger.warning(f"SKIP {assay_type} SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
+                continue
 
+            # skip GERMLINE CWL workflow does not take multiple fastq_directories
             fastq_directories = bag['fastq_directories']
             if len(fastq_directories) != 1:
                 logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
                                f"GERMLINE CWL WORKFLOW EXPECT ONE FASTQ DIRECTORY. FOUND: {fastq_directories}")
                 continue
 
+            # skip GERMLINE CWL workflow does not take multiple fastq_list_csv inputs
             fastq_list_csv = bag['fastq_list_csv']
             if len(fastq_list_csv) != 1:
                 logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "

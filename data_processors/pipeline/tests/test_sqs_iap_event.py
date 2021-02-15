@@ -139,8 +139,36 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         super(SQSIAPEventUnitTests, self).setUp()
         when(demux_metadata).handler(...).thenReturn(
             {
-                'samples': ['PTC_EXPn200908LL_L2000001'],
-                'override_cycles': ['Y100;I8N2;I8N2;Y100'],
+                'samples': [
+                    "NA12345 - 4KC",
+                    "NA12345 - 4KC",
+                    "PRJ111119_L1900000",
+                    "PRJ111119_L1900000",
+                    "MDX199999_L1999999_topup",
+                    "MDX199999_L1999999_topup",
+                    "L9111111_topup",
+                    "L9111111_topup",
+                ],
+                'override_cycles': [
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                    "Y100;I8N2;I8N2;Y100",
+                ],
+                'types': [
+                    "WGS",
+                    "WGS",
+                    "WGS",
+                    "WGS",
+                    "WGS",
+                    "WGS",
+                    "WGS",
+                    "WGS",
+                ],
             }
         )
 
@@ -549,10 +577,10 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
         mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
         mock_file_list.items = [
-            libgds.FileResponse(name="NA12345_S7_L001_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_L002_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_L001_R2_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_L002_R2_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L001_R1_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L002_R1_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L001_R2_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L002_R2_001.fastq.gz"),
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
@@ -629,10 +657,10 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         # make Germline workflow launch skip
         mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
         mock_file_list.items = [
-            libgds.FileResponse(name="NA12345_S7_L001_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_L002_R1_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_L001_R2_001.fastq.gz"),
-            libgds.FileResponse(name="NA12345_S7_L002_R2_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L001_R1_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L002_R1_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L001_R2_001.fastq.gz"),
+            libgds.FileResponse(name="PRJ111119_L1900000_S7_L002_R2_001.fastq.gz"),
         ]
         when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 

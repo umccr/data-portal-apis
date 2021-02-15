@@ -53,7 +53,10 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
             ],
             demux_metadata.OVERRIDECYCLES_HEADER: [
                 "Y100;I8N2;I8N2;Y100",
-            ]
+            ],
+            demux_metadata.TYPE_HEADER: [
+                "WGS",
+            ],
         }
         self.mock_metadata_df = pd.DataFrame(data=d)
 
@@ -142,3 +145,18 @@ class DemuxMetaDataIntegrationTests(PipelineIntegrationTestCase):
         print(my_df)
         self.assertIsNotNone(my_df)
         self.assertTrue(not my_df.empty)
+
+    @skip
+    def test_handler(self):
+        """
+        aws sso login --profile dev && export AWS_PROFILE=dev
+        python manage.py test data_processors.pipeline.tests.test_demux_metadata.DemuxMetaDataIntegrationTests.test_handler
+        """
+        result: pd.DataFrame = demux_metadata.handler({
+            'gdsVolume': "umccr-raw-sequence-data-dev",
+            'gdsBasePath': "/200612_A01052_0017_BH5LYWDSXY",
+            'gdsSamplesheet': "SampleSheet.csv",
+        }, None)
+
+        print(json.dumps(result))
+        self.assertIsNotNone(result)

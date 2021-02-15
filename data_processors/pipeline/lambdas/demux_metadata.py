@@ -29,6 +29,7 @@ from utils import libssm, libjson, iap
 
 SAMPLE_ID_HEADER = 'Sample_ID (SampleSheet)'
 OVERRIDECYCLES_HEADER = 'OverrideCycles'
+TYPE_HEADER = 'Type'
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -123,7 +124,7 @@ def extract_requested_rows(df, requested_ids: list):
     # filter rows by requested ids
     subset_rows = df[df[SAMPLE_ID_HEADER].isin(requested_ids)]
     # filter colums by data needed for workflow
-    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER]]
+    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER]]
     return subset_cols
 
 
@@ -185,8 +186,10 @@ def handler(event, context):
     # turn metadata_df into format compatible with workflow input
     sample_array = requested_metadata_df[SAMPLE_ID_HEADER].values.tolist()
     orc_array = requested_metadata_df[OVERRIDECYCLES_HEADER].values.tolist()
+    type_array = requested_metadata_df[TYPE_HEADER].values.tolist()
 
     return {
         'samples': sample_array,
         'override_cycles': orc_array,
+        'types': type_array,
     }
