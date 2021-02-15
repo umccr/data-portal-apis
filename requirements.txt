@@ -17,5 +17,5 @@ gspread==3.6.0
 gspread-pandas==2.2.3
 sample-sheet==0.12.0
 requests==2.24.0
-pandas==1.1.2
+pandas==1.2.2
 cachetools==4.1.1
