@@ -306,9 +306,9 @@ def _extract_report_unique_key(key) -> Tuple:
     p = re.compile('(SBJ\d+)__(SBJ\d+)_(MDX\d+)_(L\d+)', re.IGNORECASE)
     m = p.match(key)
 
-    subject_id = m.group(1)
-    sample_id = m.group(2)
-    library_id = m.group(3)
+    subject_id = m.group(2)
+    sample_id = m.group(3)
+    library_id = m.group(4)
 
     return subject_id, sample_id, library_id
 
