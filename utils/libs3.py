@@ -13,6 +13,7 @@ API directly. i.e. No more import boto3, but just import libs3 instead.
 
 If unsure, start with Pass-through call.
 """
+import re
 import gzip
 import logging
 from datetime import datetime
@@ -25,10 +26,10 @@ from dateutil.parser import parse
 from collections import defaultdict
 
 # TODO: treat libs3 as more generic (as abstraction) or ORM methods are fine here?
-from data_portal.models import S3Object
+from data_portal.models import S3Object, Report
 from django.core.exceptions import ObjectDoesNotExist
 
-from utils import libaws
+from utils import libaws, libjson
 
 logger = logging.getLogger(__name__)
 
@@ -293,6 +294,52 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
             ))
 
     return s3_event_records
+
+def _extract_report_unique_key(key) -> Tuple:
+    """
+    Matches our special sauce key sequencing identifiers @UMCCR, i.e:
+    "SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary.json.gz"
+    :param key: S3 key string
+    :return: subject_id, sample_id and library_id strings
+    """
+    # TODO: Make this regexp workright for all cases, subjects and whatnot :)
+    p = re.compile('(SBJ\d+)__(SBJ\d+)_(MDX\d+)_(L\d+)', re.IGNORECASE)
+    m = p.match(key)
+
+    subject_id = m.group(1)
+    sample_id = m.group(2)
+    library_id = m.group(3)
+
+    return subject_id, sample_id, library_id
+
+
+def filter_and_fanout(records: List[S3EventRecord]) -> bool:
+    """
+    Filters and distributes particular S3 objects for further processing.
+
+    s3://clinical-patient-data-bucket/['subject_id', 'sample_id', 'library_id']/cancer_report_tables/json/{hrd|purple|sigs|sv}
+
+    :param records: S3 events to be processed coming from the SQS queue
+    :return: The serialization of the JSON records was successfully imported into the ORM (or not)
+    """
+
+    for record in records:
+        # TODO: Filter by bucket?
+        # if record.s3_bucket_name
+        bucket = record.s3_bucket_name;
+        key = record.s3_object_meta['key']
+        if "cancer_report_tables" in key:
+            if ".gz" in key:
+                # TODO: Test whether this JSON decompression works well within the lambda (different filesizes?)
+                json_bytes = get_s3_object_to_bytes(bucket, key)
+                json_report = libjson.dumps(json_bytes)
+
+                # Adds attributes from JSON to Django Report model
+                # TODO: Not only deserialize the whole JSON, but also side-load the 3 attributes
+                #  that make Report unique, namely: (['subject_id', 'sample_id', 'library_id'])
+                subject_id, sample_id, library_id = _extract_report_unique_key(key)
+
+                report: Report = Report.objects.put(json_report)
 
 
 def sync_s3_event_records(records: List[S3EventRecord], orm: object) -> dict:

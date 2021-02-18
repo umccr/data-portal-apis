@@ -396,9 +396,17 @@ class Workflow(models.Model):
 
 
 class Report(models.Model):
-    lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
+    #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
+    class Meta:
+        unique_together = ['subject_id', 'sample_id', 'library_id']
 
-    # hrd/chord_hrdectect.json.gz
+    # Comes from S3 event/patient/sample_id
+    # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
+    subject_id = models.TextField(null=True, blank=True)
+    sample_id = models.TextField(null=True, blank=True)
+    library_id = models.TextField(null=True, blank=True)
+
+    #hrd/chord_hrdectect.json.gz
     hrd_hrdetect = models.TextField(null=True, blank=True)
     hrd_results_hrdetect = models.IntegerField(null=True, blank=True)
     hrd_chord = models.TextField(null=True, blank=True)
@@ -407,51 +415,51 @@ class Report(models.Model):
     hrd_results_chord2 = models.IntegerField(null=True, blank=True)
 
     # purple/purple_cnv_{germ|som}.json.gz
-    purple_sample_type = models.CharField(max_length=4)
-    purple_chr = models.CharField(max_length=10)
-    purple_start = models.BigIntegerField(null=True, blank=True)
-    purple_end = models.BigIntegerField(null=True, blank=True)
-    purple_CN = models.IntegerField(null=True, blank=True)
-    purple_ploidy_min_maj = models.CharField(max_length=3)
-    purple_start_end_segsupport = models.TextField(null=True, blank=True)
-    purple_method = models.TextField(null=True, blank=True)
-    purple_BAF_count = models.TextField(null=True, blank=True)
-    purple_GC_window_count = models.TextField(null=True, blank=True)
+    # purple_sample_type = models.CharField(max_length=4)
+    # purple_chr = models.CharField(max_length=10)
+    # purple_start = models.BigIntegerField(null=True, blank=True)
+    # purple_end = models.BigIntegerField(null=True, blank=True)
+    # purple_CN = models.IntegerField(null=True, blank=True)
+    # purple_ploidy_min_maj = models.CharField(max_length=3)
+    # purple_start_end_segsupport = models.TextField(null=True, blank=True)
+    # purple_method = models.TextField(null=True, blank=True)
+    # purple_BAF_count = models.TextField(null=True, blank=True)
+    # purple_GC_window_count = models.TextField(null=True, blank=True)
 
     # purple/purple_cnv_som_gene.json.gz
-    purple_gene = models.TextField(null=True, blank=True)
-    purple_minCN = models.TextField(null=True, blank=True)
-    purple_maxCN = models.TextField(null=True, blank=True)
-    purple_chr_band = models.TextField(null=True, blank=True)
-    purple_onco_or_ts = models.TextField(null=True, blank=True)
-    purple_transcript_id = models.TextField(null=True, blank=True)
-    purple_min_minor_allele_ploidy = models.TextField(null=True, blank=True)
-    purple_som_reg = models.TextField(null=True, blank=True)
-    purple_gem_del_reg = models.TextField(null=True, blank=True)
-    purple_min_reg = models.TextField(null=True, blank=True)
-    purple_min_reg_start_end = models.TextField(null=True, blank=True)
-    purple_min_reg_supported_start_end_method = models.TextField(null=True, blank=True)
+    # purple_gene = models.TextField(null=True, blank=True)
+    # purple_minCN = models.TextField(null=True, blank=True)
+    # purple_maxCN = models.TextField(null=True, blank=True)
+    # purple_chr_band = models.TextField(null=True, blank=True)
+    # purple_onco_or_ts = models.TextField(null=True, blank=True)
+    # purple_transcript_id = models.TextField(null=True, blank=True)
+    # purple_min_minor_allele_ploidy = models.TextField(null=True, blank=True)
+    # purple_som_reg = models.TextField(null=True, blank=True)
+    # purple_gem_del_reg = models.TextField(null=True, blank=True)
+    # purple_min_reg = models.TextField(null=True, blank=True)
+    # purple_min_reg_start_end = models.TextField(null=True, blank=True)
+    # purple_min_reg_supported_start_end_method = models.TextField(null=True, blank=True)
 
     # sigs/mutsig{1|2}.json.gz
-    sigs_rank = models.IntegerField(null=True, blank=True)
-    sigs_signature = models.CharField(max_length=5)
-    sigs_contribution = models.IntegerField(null=True, blank=True)
-    sigs_freq = models.IntegerField(null=True, blank=True)
+    # sigs_rank = models.IntegerField(null=True, blank=True)
+    # sigs_signature = models.CharField(max_length=5)
+    # sigs_contribution = models.IntegerField(null=True, blank=True)
+    # sigs_freq = models.IntegerField(null=True, blank=True)
 
     # sv/{0..8}_sv_{(un)melted|(no)BND}_{main|other|manygenes|manytranscripts}.json.gz
-    sv_vcfnum = models.IntegerField(null=True, blank=True)
-    sv_tiertop = models.IntegerField(null=True, blank=True)
-    sv_start = models.TextField(null=True, blank=True)
-    sv_end = models.TextField(null=True, blank=True)
-    sv_type = models.TextField(null=True, blank=True)
-    sv_id = models.TextField(null=True, blank=True)
-    sv_pr_alt = models.IntegerField(null=True, blank=True)
-    sv_sr_pr_ref = models.TextField(null=True, blank=True)
-    sv_ploidy = models.TextField(null=True, blank=True) # TODO: No floats in underlying DB?
-    sv_af_purple = models.TextField(null=True, blank=True)
-    sv_af_bpi = models.TextField(null=True, blank=True)
-    sv_cnc = models.TextField(null=True, blank=True)
-    sv_cn = models.TextField(null=True, blank=True)
-    sv_sscore = models.IntegerField(null=True, blank=True)
-    sv_nann = models.IntegerField(null=True, blank=True)
-    sv_annotation = models.TextField(null=True, blank=True)
+    # sv_vcfnum = models.IntegerField(null=True, blank=True)
+    # sv_tiertop = models.IntegerField(null=True, blank=True)
+    # sv_start = models.TextField(null=True, blank=True)
+    # sv_end = models.TextField(null=True, blank=True)
+    # sv_type = models.TextField(null=True, blank=True)
+    # sv_id = models.TextField(null=True, blank=True)
+    # sv_pr_alt = models.IntegerField(null=True, blank=True)
+    # sv_sr_pr_ref = models.TextField(null=True, blank=True)
+    # sv_ploidy = models.TextField(null=True, blank=True) # TODO: No floats in underlying DB?
+    # sv_af_purple = models.TextField(null=True, blank=True)
+    # sv_af_bpi = models.TextField(null=True, blank=True)
+    # sv_cnc = models.TextField(null=True, blank=True)
+    # sv_cn = models.TextField(null=True, blank=True)
+    # sv_sscore = models.IntegerField(null=True, blank=True)
+    # sv_nann = models.IntegerField(null=True, blank=True)
+    # sv_annotation = models.TextField(null=True, blank=True)
