@@ -30,8 +30,8 @@ def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
     messages = event['Records']
     records = parse_raw_s3_event_records(messages)
     results = sync_s3_event_records(records)
-    # Distribute special cases to other queues
-    serialize_to_cancer_report(records);
+    # TODO: Distribute special cases to other queues
+    serialize_to_cancer_report(records)
 
     logger.info("S3 event processing complete")
     return results
