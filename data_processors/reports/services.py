@@ -8,6 +8,7 @@ from utils import libs3, libjson
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 def _extract_report_unique_key(key) -> Tuple:
     """
     Matches our special sauce key sequencing identifiers @UMCCR, i.e:
@@ -49,14 +50,16 @@ def serialize_to_cancer_report(records: List[libs3.S3EventRecord]) -> bool:
         bucket = record.s3_bucket_name
         key = record.s3_object_meta['key']
         try:
-            obj_bytes = libs3.get_s3_object_to_bytes(bucket, key)
-            json_dict = libjson.loads(obj_bytes)
-            json_dict['subject_id'], json_dict['sample_id'], json_dict['library_id'] = _extract_report_unique_key(key)
+            if 'cancer_report_tables' in key:
+                if 'json.gz' in key:
+                    # Fetches S3 object and decompresses/deserializes it
+                    obj_bytes = libs3.get_s3_object_to_bytes(bucket, key)
+                    json_dict = libjson.loads(obj_bytes)
+                    json_dict['subject_id'], json_dict['sample_id'], json_dict['library_id'] = _extract_report_unique_key(key)
 
-            # Adds attributes from JSON to Django Report model
-            json_report = libjson.dumps(json_dict)
-            report: Report = Report.objects.put(json_report)
-
+                    # Adds attributes from JSON to Django Report model
+                    json_report = libjson.dumps(json_dict)
+                    report: Report = Report.objects.put(json_report)
             return True
         except:
             return False

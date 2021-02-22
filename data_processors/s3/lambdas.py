@@ -14,7 +14,9 @@ django.setup()
 import logging
 from typing import Union, Dict
 from utils import libjson
-from utils.libs3 import parse_raw_s3_event_records, sync_s3_event_records, serialize_to_cancer_report
+from utils.libs3 import parse_raw_s3_event_records, sync_s3_event_records
+
+from ..reports.services import serialize_to_cancer_report
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
