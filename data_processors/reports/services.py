@@ -1,40 +1,62 @@
+import re
 import logging
-import json
+from typing import List, Tuple
 
 from data_portal.models import Report
-from utils import libs3
+from utils import libs3, libjson
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+def _extract_report_unique_key(key) -> Tuple:
+    """
+    Matches our special sauce key sequencing identifiers @UMCCR, i.e:
+    "SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary.json.gz"
+    :param key: S3 key string
+    :return: subject_id, sample_id and library_id strings
+    """
+    subject_id_pattern = 'SBJ\d{5}'
+    sample_id_pattern = '(?:PRJ|CCR|MDX)\d{6}'
+    library_id_int_pattern = 'L\d{7}'
+    library_id_ext_pattern = 'L' + sample_id_pattern
+    library_id_extension_pattern = '(?:_topup\d?|_rerun\d?)'
+    library_id_pattern = '(?:' + library_id_int_pattern + '|' + library_id_ext_pattern + ')' + library_id_extension_pattern + '?'
 
-def persist_sequencing_report(bucket: str, key: str, payload: object):
-    # TODO:
-    #  1. Check input sizes and adjust lambda runtimes?
-    query_set = Report.objects.filter(bucket=bucket, key=key)
-    new = not query_set.exists()
+    regex_key = re.compile('.+.umccrised.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern +').+')
 
-    if new:
-        logger.info(f"Creating a new Report key={key}")
-        report = Report(
-            bucket=bucket,
-            key=key
-        )
-    else:
-        logger.info(f"Updating a existing Report (bucket={bucket}, key={key})")
-        report: Report = query_set.get()
+    match = regex_key.fullmatch(key)
 
-    # TODO: Cleanup/validate json attribute slurping
-    report_json = json.loads(libs3.get_s3_object_to_bytes(bucket=bucket, key=key))
-    report.save(report_json)
+    if match:
+        match_groups = match.groups()
+        subject_id = match_groups[0]
+        sample_id = match_groups[1]
+        library_id = match_groups[2]
 
-def process_sequencing_report(bucket: str, key: str):
-    if key.endswith('.json.gz'):
-        # TODO: Make sure we have a stable naming to detect those S3 report events properly
-        if "reports" in key:
-            payload = libs3.get_s3_object(bucket=bucket, key=key)
-            if payload['ResponseMetadata']['HTTPStatusCode'] == 200:
-                logger.info(f"Found sequencing report, importing into database: {key}")
-                persist_sequencing_report(bucket, key, payload)
-            else:
-                logger.error(f"Failed to retrieve sequecing report: {key}")
+    return subject_id, sample_id, library_id
+
+
+def serialize_to_cancer_report(records: List[libs3.S3EventRecord]) -> bool:
+    """
+    Filters and distributes particular S3 objects for further processing.
+
+    s3://clinical-patient-data-bucket/['subject_id', 'sample_id', 'library_id']/cancer_report_tables/json/{hrd|purple|sigs|sv}
+
+    :param records: S3 events to be processed coming from the SQS queue
+    :return: The serialization of the JSON records was successfully imported into the ORM (or not)
+    """
+
+    for record in records:
+        bucket = record.s3_bucket_name
+        key = record.s3_object_meta['key']
+        try:
+            obj_bytes = libs3.get_s3_object_to_bytes(bucket, key)
+            json_dict = libjson.loads(obj_bytes)
+            json_dict['subject_id'], json_dict['sample_id'], json_dict['library_id'] = _extract_report_unique_key(key)
+
+            # Adds attributes from JSON to Django Report model
+            json_report = libjson.dumps(json_dict)
+            report: Report = Report.objects.put(json_report)
+
+            return True
+        except:
+            return False
