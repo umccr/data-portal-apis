@@ -225,10 +225,9 @@ def get_s3_object_to_bytes(bucket: str, key: str, **kwargs) -> bytes:
     :param kwargs:
     :return tuple (bytes): the bytes from the S3 object body
     """
-    obj_bytes = libaws.s3_client().get_object(Bucket=bucket, Key=key, **kwargs)['Body'].read()
-    if obj_bytes[0:1] == "\x1f\x8b": # Gzip 2 byte header
-        obj_bytes = gzip.decompress(obj_bytes)
-    return obj_bytes
+    obj_body = libaws.resource('s3').Object(bucket, key).get()['Body']
+    obj_bytes = gzip.decompress(obj_body.read())
+    return libjson.loads(obj_bytes)
 
 
 def get_s3_object_tagging(bucket: str, key: str):
@@ -295,6 +294,7 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
 
     return s3_event_records
 
+
 def _extract_report_unique_key(key) -> Tuple:
     """
     Matches our special sauce key sequencing identifiers @UMCCR, i.e:
@@ -302,18 +302,27 @@ def _extract_report_unique_key(key) -> Tuple:
     :param key: S3 key string
     :return: subject_id, sample_id and library_id strings
     """
-    # TODO: Make this regexp workright for all cases, subjects and whatnot :)
-    p = re.compile('(SBJ\d+)__(SBJ\d+)_(MDX\d+)_(L\d+)', re.IGNORECASE)
-    m = p.match(key)
+    subject_id_pattern = 'SBJ\d{5}'
+    sample_id_pattern = '(?:PRJ|CCR|MDX)\d{6}'
+    library_id_int_pattern = 'L\d{7}'
+    library_id_ext_pattern = 'L' + sample_id_pattern
+    library_id_extension_pattern = '(?:_topup\d?|_rerun\d?)'
+    library_id_pattern = '(?:' + library_id_int_pattern + '|' + library_id_ext_pattern + ')' + library_id_extension_pattern + '?'
 
-    subject_id = m.group(2)
-    sample_id = m.group(3)
-    library_id = m.group(4)
+    regex_key = re.compile('.+.umccrised.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern +').+')
+
+    match = regex_key.fullmatch(key)
+
+    if match:
+        match_groups = match.groups()
+        subject_id = match_groups[0]
+        sample_id = match_groups[1]
+        library_id = match_groups[2]
 
     return subject_id, sample_id, library_id
 
 
-def filter_and_fanout(records: List[S3EventRecord]) -> bool:
+def serialize_to_cancer_report(records: List[S3EventRecord]) -> bool:
     """
     Filters and distributes particular S3 objects for further processing.
 
@@ -324,22 +333,20 @@ def filter_and_fanout(records: List[S3EventRecord]) -> bool:
     """
 
     for record in records:
-        # TODO: Filter by bucket?
-        # if record.s3_bucket_name
-        bucket = record.s3_bucket_name;
+        bucket = record.s3_bucket_name
         key = record.s3_object_meta['key']
-        if "cancer_report_tables" in key:
-            if ".gz" in key:
-                # TODO: Test whether this JSON decompression works well within the lambda (different filesizes?)
-                json_bytes = get_s3_object_to_bytes(bucket, key)
-                json_report = libjson.dumps(json_bytes)
+        try:
+            obj_bytes = get_s3_object_to_bytes(bucket, key)
+            json_dict = libjson.loads(obj_bytes)
+            json_dict['subject_id'], json_dict['sample_id'], json_dict['library_id'] = _extract_report_unique_key(key)
 
-                # Adds attributes from JSON to Django Report model
-                # TODO: Not only deserialize the whole JSON, but also side-load the 3 attributes
-                #  that make Report unique, namely: (['subject_id', 'sample_id', 'library_id'])
-                subject_id, sample_id, library_id = _extract_report_unique_key(key)
+            # Adds attributes from JSON to Django Report model
+            json_report = libjson.dumps(json_dict)
+            report: Report = Report.objects.put(json_report)
 
-                report: Report = Report.objects.put(json_report)
+            return True
+        except:
+            return False
 
 
 def sync_s3_event_records(records: List[S3EventRecord], orm: object) -> dict:
