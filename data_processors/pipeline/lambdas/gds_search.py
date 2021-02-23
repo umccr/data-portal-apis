@@ -3,6 +3,7 @@ try:
 except ImportError:
     pass
 
+import os
 import django
 import logging
 from data_processors.pipeline import services
@@ -10,8 +11,6 @@ from utils import libjson
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
-
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -75,3 +74,5 @@ def handler(event, context):
     if presigned:
         for file in results['files']:
             file['presigned_url'] = get_presigned_url(volume=gds_volume_name, file=file['path'])
+
+    return results
