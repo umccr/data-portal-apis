@@ -3,15 +3,18 @@ try:
 except ImportError:
     pass
 
-import os
 import django
+import os
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
+django.setup()
+
+# ---
+
 import logging
 from data_processors.pipeline import services
 from libiap.openapi import libgds
 from utils import libjson, iap
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
-django.setup()
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -22,7 +25,7 @@ def get_presigned_url(file_id: str):
     with libgds.ApiClient(iap.configuration(libgds)) as api_client:
         file_api = libgds.FilesApi(api_client)
     try:
-        file_details = libgds.FileListResponse = file_api.get_file(file_id=file_id)
+        file_details: libgds.FileListResponse = file_api.get_file(file_id=file_id)
     except libgds.ApiException as e:
         logger.info("Exception when calling FilesApi: %s\n" % e)
 

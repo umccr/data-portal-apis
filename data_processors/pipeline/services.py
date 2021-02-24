@@ -18,6 +18,7 @@ SLACK_SENDER_BADGE = "Portal Workflow Automation"
 SLACK_FOOTER_BADGE = "Automated Workflow Event"
 
 
+@transaction.atomic
 def get_gds_files_for_path_tokens(volume_name: str, path_tokens: list):
     """
     Find GDS files in a specific GDS volume with defined string tokens in the path.
@@ -34,6 +35,7 @@ def get_gds_files_for_path_tokens(volume_name: str, path_tokens: list):
     return qs
 
 
+@transaction.atomic
 def get_gds_files_for_regex(volume_name: str, pattern: str):
     """
     Find GDS files in a specific GDS volume with defined string tokens in the path.
