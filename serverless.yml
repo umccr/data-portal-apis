@@ -98,6 +98,9 @@ functions:
   notification:
     handler: data_processors.pipeline.lambdas.notification.handler
     timeout: 28
+  gds_search:
+    handler: data_processors.pipeline.lambdas.gds_search.handler
+    timeout: 28
 
 custom:
   enabled:
