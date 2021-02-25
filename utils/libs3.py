@@ -25,8 +25,10 @@ from typing import List, Tuple
 from dateutil.parser import parse
 from collections import defaultdict
 
-from data_portal.models import S3Object, Report, LIMSRow
+from data_portal.models import S3Object, LIMSRow, S3LIMS, Report
 from django.core.exceptions import ObjectDoesNotExist
+
+from django.db import transaction
 
 from utils import libaws, libjson
 
@@ -304,21 +306,21 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
 
     for record in records:
         if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
-            removed_count, records_removed_count = sync_s3_event_record_removed(record)
+            removed_count, s3_lims_removed_count = sync_s3_event_record_removed(record)
             results['removed_count'] += removed_count
-            results[LIMSRow.__name__+'_removed_count'] += records_removed_count
+            results['s3_lims_removed_count'] += s3_lims_removed_count
 
         elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
-            created_count, records_created_count = sync_s3_event_record_created(record)
+            created_count, s3_lims_created_count = sync_s3_event_record_created(record)
             results['created_count'] += created_count
-            results[LIMSRow.__name__+'_created_count'] += records_created_count
+            results['s3_lims_created_count'] += s3_lims_created_count
         else:
             logger.info(f"Found unsupported S3 event type: {record.event_type}")
             results['unsupported_count'] += 1
 
     return results
 
-
+@transaction.atomic
 def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     Delete a S3 object record from db
@@ -328,16 +330,15 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     try:
         s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-        records = S3Object.objects.filter(s3_object=s3_object)
-        records_count = records.count()
-        records.delete()
+        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
+        s3_lims_count = s3_lims_records.count()
+        s3_lims_records.delete()
         s3_object.delete()
         logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")
-        return 1, records_count
+        return 1, s3_lims_count
     except ObjectDoesNotExist as e:
         logger.info(f"No deletion required. Non-existent S3Object (bucket={bucket_name}, key={key}): {str(e)}")
         return 0, 0
-
 
 def sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
     """
@@ -400,26 +401,6 @@ def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     return persist_s3_object(
         bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag
     )
-
-
-def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
-    """
-    Delete a S3 object record from db
-    :param bucket_name: s3 bucket name
-    :param key: s3 object key
-    :return: number of s3 records deleted, number of s3-lims association records deleted
-    """
-    try:
-        s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-        records = s3_object.objects.filter(s3_object=s3_object)
-        records_count = records.count()
-        records.delete()
-        s3_object.delete()
-        logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")
-        return 1, records_count
-    except ObjectDoesNotExist as e:
-        logger.info(f"No deletion required. Non-existent S3Object (bucket={bucket_name}, key={key}): {str(e)}")
-        return 0, 0
 
 
 def tag_s3_object(bucket_name: str, key: str, extension: str):
