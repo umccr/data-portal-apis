@@ -91,4 +91,4 @@ class ReportsTests(TestCase):
             ]
         }
 
-        results = lambdas.handler(sqs_event, None)
+        _ = lambdas.handler(sqs_event, None)

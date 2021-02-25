@@ -26,7 +26,7 @@ from dateutil.parser import parse
 from collections import defaultdict
 
 # TODO: treat libs3 as more generic (as abstraction) or ORM methods are fine here?
-from data_portal.models import S3Object, Report
+from data_portal.models import S3Object, Report, LIMSRow
 from django.core.exceptions import ObjectDoesNotExist
 
 from utils import libaws, libjson
@@ -295,7 +295,7 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
     return s3_event_records
 
 
-def sync_s3_event_records(records: List[S3EventRecord], orm: object) -> dict:
+def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     """
     Synchronise s3 event records to the db.
     :param records: records to be processed
@@ -308,14 +308,12 @@ def sync_s3_event_records(records: List[S3EventRecord], orm: object) -> dict:
         if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
             removed_count, records_removed_count = sync_s3_event_record_removed(record, orm)
             results['removed_count'] += removed_count
-            # TODO Where to fetch 's3_lims' string from ORM in a generic and backwards compatible way? .model() or similar?
-            results[orm.__name__+'_removed_count'] += records_removed_count
+            results[LIMSRow.__name__+'_removed_count'] += records_removed_count
 
         elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
             created_count, records_created_count = sync_s3_event_record_created(record, orm)
             results['created_count'] += created_count
-            # TODO Where to fetch 's3_lims' string from ORM in a generic and backwards compatible way? .model() or similar?
-            results[orm.__name__+'_created_count'] += records_created_count
+            results[LIMSRow.__name__+'_created_count'] += records_created_count
         else:
             logger.info(f"Found unsupported S3 event type: {record.event_type}")
             results['unsupported_count'] += 1
