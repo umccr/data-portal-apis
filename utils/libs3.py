@@ -25,7 +25,6 @@ from typing import List, Tuple
 from dateutil.parser import parse
 from collections import defaultdict
 
-# TODO: treat libs3 as more generic (as abstraction) or ORM methods are fine here?
 from data_portal.models import S3Object, Report, LIMSRow
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -299,19 +298,18 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     """
     Synchronise s3 event records to the db.
     :param records: records to be processed
-    :param orm: ORM records/objects where this S3 object deletion should be synced with
     :return results of synchronisation
     """
     results = defaultdict(int)
 
     for record in records:
         if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
-            removed_count, records_removed_count = sync_s3_event_record_removed(record, orm)
+            removed_count, records_removed_count = sync_s3_event_record_removed(record)
             results['removed_count'] += removed_count
             results[LIMSRow.__name__+'_removed_count'] += records_removed_count
 
         elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
-            created_count, records_created_count = sync_s3_event_record_created(record, orm)
+            created_count, records_created_count = sync_s3_event_record_created(record)
             results['created_count'] += created_count
             results[LIMSRow.__name__+'_created_count'] += records_created_count
         else:
@@ -321,17 +319,16 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     return results
 
 
-def delete_s3_object(bucket_name: str, key: str, orm: object) -> Tuple[int, int]:
+def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     Delete a S3 object record from db
     :param bucket_name: s3 bucket name
     :param key: s3 object key
-    :param orm: ORM records/objects where this S3 object deletion should be synced with
     :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     try:
         s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-        records = orm.objects.filter(s3_object=s3_object)
+        records = S3Object.objects.filter(s3_object=s3_object)
         records_count = records.count()
         records.delete()
         s3_object.delete()
@@ -342,16 +339,15 @@ def delete_s3_object(bucket_name: str, key: str, orm: object) -> Tuple[int, int]
         return 0, 0
 
 
-def sync_s3_event_record_removed(record: S3EventRecord, orm: object) -> Tuple[int, int]:
+def sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
     """
     Synchronise a S3 event (REMOVED) record to db
     :param record: record to be synced
-    :param orm: ORM entity that the deleted records are related to
     :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     bucket_name = record.s3_bucket_name
     key = record.s3_object_meta['key']
-    return delete_s3_object(bucket_name, key, orm)
+    return delete_s3_object(bucket_name, key)
 
 
 def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size: int, e_tag: str) -> Tuple[int, int]:
@@ -389,7 +385,7 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
     #lims_assoc_rows()
 
 
-def sync_s3_event_record_created(record: S3EventRecord, orm) -> Tuple[int, int]:
+def sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     """
     Synchronise a S3 event (CREATED) record to db
     :return: number of s3 object created, number of database association records created
@@ -402,21 +398,20 @@ def sync_s3_event_record_created(record: S3EventRecord, orm) -> Tuple[int, int]:
     tag_s3_object(bucket_name, key, "bam")
 
     return persist_s3_object(
-        bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag, orm=orm
+        bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag
     )
 
 
-def delete_s3_object(bucket_name: str, key: str, orm: object) -> Tuple[int, int]:
+def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     Delete a S3 object record from db
     :param bucket_name: s3 bucket name
     :param key: s3 object key
-    :param orm: ORM records/objects where this S3 object deletion should be synced with
     :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     try:
         s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-        records = orm.objects.filter(s3_object=s3_object)
+        records = S3Object.objects.filter(s3_object=s3_object)
         records_count = records.count()
         records.delete()
         s3_object.delete()
