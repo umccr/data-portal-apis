@@ -407,14 +407,16 @@ class Report(models.Model):
     library_id = models.TextField(null=True, blank=True)
 
     #hrd/chord_hrdectect.json.gz
-    hrd_hrdetect = models.TextField(null=True, blank=True)
-    hrd_results_hrdetect = models.IntegerField(null=True, blank=True)
-    hrd_chord = models.TextField(null=True, blank=True)
-    hrd_chord2 = models.IntegerField(null=True, blank=True)
-    hrd_results_chord = models.TextField(null=True, blank=True)
-    hrd_results_chord2 = models.IntegerField(null=True, blank=True)
+    hrd_probability = models.FloatField(null=True, blank=True)
+    hrd_intercept = models.FloatField(null=True, blank=True)
+    hrd_del_mh_prop = models.FloatField(null=True, blank=True)
+    hrd_SNV3 = models.FloatField(null=True, blank=True)
+    hrd_SV3 = models.FloatField(null=True, blank=True)
+    hrd_SV5 = models.FloatField(null=True, blank=True)
+    hrd_hrdloh_index = models.FloatField(null=True, blank=True)
+    hrd_SNV8 = models.FloatField(null=True, blank=True)
 
-    # purple/purple_cnv_{germ|som}.json.gz
+# purple/purple_cnv_{germ|som}.json.gz
     # purple_sample_type = models.CharField(max_length=4)
     # purple_chr = models.CharField(max_length=10)
     # purple_start = models.BigIntegerField(null=True, blank=True)

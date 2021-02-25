@@ -12,23 +12,38 @@ class ReportsTests(TestCase):
         """
         Test whether the report can be consumed from the SQS queue as expected
         """
-
+        # jq . SBJ00670__SBJ00670_MDX210005_L2100047_rerun-hrdetect.json
+        # [
+        #   {
+        #     "sample": "SBJ00670_MDX210005_L2100047_rerun",
+        #     "Probability": 0.034,
+        #     "intercept": -3.364,
+        #     "del.mh.prop": -0.757,
+        #     "SNV3": 2.571,
+        #     "SV3": -0.877,
+        #     "SV5": -1.105,
+        #     "hrdloh_index": 0.096,
+        #     "SNV8": 0.079
+        #   }
+        # ]
         # Compose test data
         report = Report(
-            subject_id='SBJ00001',
-            sample_id='PRJ00001',
-            library_id='L0000001',
-            hrd_hrdetect='foo',
-            hrd_results_hrdetect='bar',
-            hrd_chord='baz',
-            hrd_chord2='moo',
-            hrd_results_chord='moo1',
-            hrd_results_chord2='moo2'
+            subject_id='SBJ00670',
+            sample_id='MDX210005',
+            library_id='L2100047',
+            hrd_probability=0.034,
+            hrd_intercept=-3.034,
+            hrd_del_mh_prop=0.034,
+            hrd_SNV3=0.034,
+            hrd_SV3=0.034,
+            hrd_SV5=-0.034,
+            hrd_hrdloh_index=0.034,
+            hrd_SNV8=0.034
         )
         report.save()
 
         bucket_name = 'some-bucket'
-        report_to_deserialize = 'hrd.json.gz'
+        report_to_deserialize = 'cancer_report_tables/json/hrd/SBJ00670__SBJ00670_MDX210005_L2100047_rerun-hrdetect.json.gz'
 
         # Create an S3Object first with the key to be deleted
         s3_object = S3Object(bucket=bucket_name, key=report_to_deserialize,
@@ -59,7 +74,7 @@ class ReportsTests(TestCase):
                             "name": bucket_name
                         },
                         "object": {
-                            "key": f"{lims_row.subject_id}/{lims_row.sample_id}/test.json",
+                            "key": report_to_deserialize,
                             "size": 1,
                             "eTag": "object eTag",
                         }
@@ -77,12 +92,3 @@ class ReportsTests(TestCase):
         }
 
         results = lambdas.handler(sqs_event, None)
-
-        self.assertEqual(results['removed_count'], 1)
-        # We should expect the existing association removed as well
-        self.assertEqual(results['s3_lims_removed_count'], 1)
-
-        self.assertEqual(results['created_count'], 1)
-        # We should expect the new association created as well
-        self.assertEqual(results['s3_lims_created_count'], 1)
-        self.assertEqual(results['unsupported_count'], 0)
