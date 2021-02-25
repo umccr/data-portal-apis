@@ -31,6 +31,9 @@ test: load_localstack
 	@python manage.py migrate
 	@python manage.py test
 
+fastest:
+	@python manage.py test data_processors.reports.tests.ReportsTests
+
 migrate:
 	@echo $$DJANGO_SETTINGS_MODULE
 	@python manage.py migrate
