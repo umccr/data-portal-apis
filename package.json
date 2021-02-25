@@ -1,7 +1,7 @@
 {
   "name": "umccr-data-portal-api-serverless",
   "description": "UMCCR Data Portal API backend in cloud native serverless",
-  "license": "GPLv3",
+  "license": "GPL-3.0-or-later",
   "version": "0.1.0",
   "devDependencies": {
     "husky": "^4.3.0",
