@@ -13,17 +13,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='report',
             name='library_id',
-            field=models.TextField(blank=True, null=True),
+            field=models.CharField(unique=True, null=True, blank=False, max_length=15),
         ),
         migrations.AddField(
             model_name='report',
             name='subject_id',
-            field=models.TextField(blank=True, null=True),
+            field=models.CharField(unique=True, null=True, blank=False, max_length=15),
         ),
         migrations.AlterField(
             model_name='report',
             name='sample_id',
-            field=models.TextField(blank=True, null=True),
+            field=models.CharField(unique=True, null=True, blank=False, max_length=15),
         ),
         migrations.AlterUniqueTogether(
             name='report',
