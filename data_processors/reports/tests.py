@@ -8,6 +8,11 @@ from data_processors.s3 import lambdas
 
 class ReportsTests(TestCase):
 
+    def setUp(self) -> None:
+        super(GdsSearchLambdaUnitTests, self).setUp()
+        factories.GDSFileFactory()  # this create a mock GDSFile record in db
+
+
     def test_sqs_s3_event_processor(self) -> None:
         """
         Test whether the report can be consumed from the SQS queue as expected
