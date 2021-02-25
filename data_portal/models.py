@@ -406,59 +406,62 @@ class HRDReport(models.Model):
     hrd_hrdloh_index = models.FloatField(null=True, blank=True)
     hrd_SNV8 = models.FloatField(null=True, blank=True)
 
-class PurpleReport(models.model):
-    # purple/purple_cnv_{germ|som}.json.gz
-    # purple_sample_type = models.CharField(max_length=4)
-    # purple_chr = models.CharField(max_length=10)
-    # purple_start = models.BigIntegerField(null=True, blank=True)
-    # purple_end = models.BigIntegerField(null=True, blank=True)
-    # purple_CN = models.IntegerField(null=True, blank=True)
-    # purple_ploidy_min_maj = models.CharField(max_length=3)
-    # purple_start_end_segsupport = models.CharField(null=True, blank=True)
-    # purple_method = models.CharField(null=True, blank=True)
-    # purple_BAF_count = models.CharField(null=True, blank=True)
-    # purple_GC_window_count = models.CharField(null=True, blank=True)
 
-    # purple/purple_cnv_som_gene.json.gz
-    # purple_gene = models.CharField(null=True, blank=True)
-    # purple_minCN = models.CharField(null=True, blank=True)
-    # purple_maxCN = models.CharField(null=True, blank=True)
-    # purple_chr_band = models.CharField(null=True, blank=True)
-    # purple_onco_or_ts = models.CharField(null=True, blank=True)
-    # purple_transcript_id = models.CharField(null=True, blank=True)
-    # purple_min_minor_allele_ploidy = models.CharField(null=True, blank=True)
-    # purple_som_reg = models.CharField(null=True, blank=True)
-    # purple_gem_del_reg = models.CharField(null=True, blank=True)
-    # purple_min_reg = models.CharField(null=True, blank=True)
-    # purple_min_reg_start_end = models.CharField(null=True, blank=True)
-    # purple_min_reg_supported_start_end_method = models.CharField(null=True, blank=True)
+# class PurpleReport(models.model):
+#     # purple/purple_cnv_{germ|som}.json.gz
+#     # purple_sample_type = models.CharField(max_length=4)
+#     # purple_chr = models.CharField(max_length=10)
+#     # purple_start = models.BigIntegerField(null=True, blank=True)
+#     # purple_end = models.BigIntegerField(null=True, blank=True)
+#     # purple_CN = models.IntegerField(null=True, blank=True)
+#     # purple_ploidy_min_maj = models.CharField(max_length=3)
+#     # purple_start_end_segsupport = models.CharField(null=True, blank=True)
+#     # purple_method = models.CharField(null=True, blank=True)
+#     # purple_BAF_count = models.CharField(null=True, blank=True)
+#     # purple_GC_window_count = models.CharField(null=True, blank=True)
 
-class SigsReport(models.Model):
-    # sigs/mutsig{1|2}.json.gz
-    # sigs_rank = models.IntegerField(null=True, blank=True)
-    # sigs_signature = models.CharField(max_length=5)
-    # sigs_contribution = models.IntegerField(null=True, blank=True)
-    # sigs_freq = models.IntegerField(null=True, blank=True)
+#     # purple/purple_cnv_som_gene.json.gz
+#     # purple_gene = models.CharField(null=True, blank=True)
+#     # purple_minCN = models.CharField(null=True, blank=True)
+#     # purple_maxCN = models.CharField(null=True, blank=True)
+#     # purple_chr_band = models.CharField(null=True, blank=True)
+#     # purple_onco_or_ts = models.CharField(null=True, blank=True)
+#     # purple_transcript_id = models.CharField(null=True, blank=True)
+#     # purple_min_minor_allele_ploidy = models.CharField(null=True, blank=True)
+#     # purple_som_reg = models.CharField(null=True, blank=True)
+#     # purple_gem_del_reg = models.CharField(null=True, blank=True)
+#     # purple_min_reg = models.CharField(null=True, blank=True)
+#     # purple_min_reg_start_end = models.CharField(null=True, blank=True)
+#     # purple_min_reg_supported_start_end_method = models.CharField(null=True, blank=True)
 
 
-class SVReport(models.Model):
-    # sv/{0..8}_sv_{(un)melted|(no)BND}_{main|other|manygenes|manytranscripts}.json.gz
-    # sv_vcfnum = models.IntegerField(null=True, blank=True)
-    # sv_tiertop = models.IntegerField(null=True, blank=True)
-    # sv_start = models.CharField(null=True, blank=True)
-    # sv_end = models.CharField(null=True, blank=True)
-    # sv_type = models.CharField(null=True, blank=True)
-    # sv_id = models.CharField(null=True, blank=True)
-    # sv_pr_alt = models.IntegerField(null=True, blank=True)
-    # sv_sr_pr_ref = models.CharField(null=True, blank=True)
-    # sv_ploidy = models.CharField(null=True, blank=True) # TODO: No floats in underlying DB?
-    # sv_af_purple = models.CharField(null=True, blank=True)
-    # sv_af_bpi = models.CharField(null=True, blank=True)
-    # sv_cnc = models.CharField(null=True, blank=True)
-    # sv_cn = models.CharField(null=True, blank=True)
-    # sv_sscore = models.IntegerField(null=True, blank=True)
-    # sv_nann = models.IntegerField(null=True, blank=True)
-    # sv_annotation = models.CharField(null=True, blank=True)
+# class SigsReport(models.Model):
+#     # sigs/mutsig{1|2}.json.gz
+#     # sigs_rank = models.IntegerField(null=True, blank=True)
+#     # sigs_signature = models.CharField(max_length=5)
+#     # sigs_contribution = models.IntegerField(null=True, blank=True)
+#     # sigs_freq = models.IntegerField(null=True, blank=True)
+
+
+# class SVReport(models.Model):
+#     # sv/{0..8}_sv_{(un)melted|(no)BND}_{main|other|manygenes|manytranscripts}.json.gz
+#     # sv_vcfnum = models.IntegerField(null=True, blank=True)
+#     # sv_tiertop = models.IntegerField(null=True, blank=True)
+#     # sv_start = models.CharField(null=True, blank=True)
+#     # sv_end = models.CharField(null=True, blank=True)
+#     # sv_type = models.CharField(null=True, blank=True)
+#     # sv_id = models.CharField(null=True, blank=True)
+#     # sv_pr_alt = models.IntegerField(null=True, blank=True)
+#     # sv_sr_pr_ref = models.CharField(null=True, blank=True)
+#     # sv_ploidy = models.CharField(null=True, blank=True) # TODO: No floats in underlying DB?
+#     # sv_af_purple = models.CharField(null=True, blank=True)
+#     # sv_af_bpi = models.CharField(null=True, blank=True)
+#     # sv_cnc = models.CharField(null=True, blank=True)
+#     # sv_cn = models.CharField(null=True, blank=True)
+#     # sv_sscore = models.IntegerField(null=True, blank=True)
+#     # sv_nann = models.IntegerField(null=True, blank=True)
+#     # sv_annotation = models.CharField(null=True, blank=True)
+
 
 class Report(models.Model):
     #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
@@ -472,6 +475,6 @@ class Report(models.Model):
 
     report_components = []
     report_components.append(HRDReport()) # TODO: How to cobble all sub-models here?
-    report_components.append(PurpleReport())
-    report_components.append(SigsReport())
-    report_components.append(SVReport())
+    # report_components.append(PurpleReport())
+    # report_components.append(SigsReport())
+    # report_components.append(SVReport())
