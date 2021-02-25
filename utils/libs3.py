@@ -411,7 +411,7 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     try:
         s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-        records = S3Object.objects.filter(s3_object=s3_object)
+        records = s3_object.objects.filter(s3_object=s3_object)
         records_count = records.count()
         records.delete()
         s3_object.delete()
