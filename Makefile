@@ -7,6 +7,9 @@ up:
 down:
 	@docker-compose down
 
+stop:
+	@docker-compose down
+
 start:
 	@pip install -r requirements-dev.txt
 	@echo $$DJANGO_SETTINGS_MODULE
@@ -31,7 +34,7 @@ test: load_localstack
 	@python manage.py migrate
 	@python manage.py test
 
-fastest:
+fastest: # fist run test!
 	@python manage.py test data_processors.reports.tests.ReportsTests
 
 migrate:
