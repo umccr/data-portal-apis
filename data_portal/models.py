@@ -1,3 +1,4 @@
+import uuid
 import random
 from typing import Union
 
@@ -394,9 +395,20 @@ class Workflow(models.Model):
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
 
+class Report(models.Model):
+    #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
+    class Meta:
+        unique_together = ['subject_id', 'sample_id', 'library_id']
 
-class HRDReport(models.Model):
+    report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
+    subject_id = models.CharField(max_length=255)
+    sample_id = models.CharField(max_length=255)
+    library_id = models.CharField(max_length=255)
+
+class HRDReport(Report):
     #hrd/chord_hrdectect.json.gz
+    hrd_report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     hrd_probability = models.FloatField(null=True, blank=True)
     hrd_intercept = models.FloatField(null=True, blank=True)
     hrd_del_mh_prop = models.FloatField(null=True, blank=True)
@@ -407,7 +419,7 @@ class HRDReport(models.Model):
     hrd_SNV8 = models.FloatField(null=True, blank=True)
 
 
-# class PurpleReport(models.model):
+# class PurpleReport(Report):
 #     # purple/purple_cnv_{germ|som}.json.gz
 #     # purple_sample_type = models.CharField(max_length=4)
 #     # purple_chr = models.CharField(max_length=10)
@@ -435,7 +447,7 @@ class HRDReport(models.Model):
 #     # purple_min_reg_supported_start_end_method = models.CharField(null=True, blank=True)
 
 
-# class SigsReport(models.Model):
+# class SigsReport(Report):
 #     # sigs/mutsig{1|2}.json.gz
 #     # sigs_rank = models.IntegerField(null=True, blank=True)
 #     # sigs_signature = models.CharField(max_length=5)
@@ -443,7 +455,7 @@ class HRDReport(models.Model):
 #     # sigs_freq = models.IntegerField(null=True, blank=True)
 
 
-# class SVReport(models.Model):
+# class SVReport(Report):
 #     # sv/{0..8}_sv_{(un)melted|(no)BND}_{main|other|manygenes|manytranscripts}.json.gz
 #     # sv_vcfnum = models.IntegerField(null=True, blank=True)
 #     # sv_tiertop = models.IntegerField(null=True, blank=True)
@@ -461,20 +473,3 @@ class HRDReport(models.Model):
 #     # sv_sscore = models.IntegerField(null=True, blank=True)
 #     # sv_nann = models.IntegerField(null=True, blank=True)
 #     # sv_annotation = models.CharField(null=True, blank=True)
-
-
-class Report(models.Model):
-    #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
-    class Meta:
-        unique_together = ['subject_id', 'sample_id', 'library_id']
-    
-    # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
-    subject_id = models.CharField(unique=True, null=True, blank=False, max_length=10)
-    sample_id = models.CharField(null=False, blank=False, max_length=10)
-    library_id = models.CharField(null=False, blank=False, max_length=10)
-
-    report_components = []
-    report_components.append(HRDReport()) # TODO: How to cobble all sub-models here?
-    # report_components.append(PurpleReport())
-    # report_components.append(SigsReport())
-    # report_components.append(SVReport())
