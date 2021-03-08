@@ -11,16 +11,25 @@ django.setup()
 
 # ---
 
+# Standards
 import copy
 import logging
 from datetime import datetime, timezone
+import pandas as pd
+from urllib.parse import urlparse
+from pathlib import Path
 
+# Data portal imports
 from data_portal.models import Workflow
 from data_processors.pipeline import services
 from data_processors.pipeline.constant import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
-from utils import libjson, libssm, libdt
 
+# Utils imports
+from utils import libjson, libssm, libdt
+from utils.libgds import download_gds_file
+
+# Set loggers
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -60,6 +69,38 @@ def sqs_handler(event, context):
     }
 
 
+def fastq_csv_to_rows(fastq_list_df: pd.DataFrame, fastq_directory_mount: str, fastq_directory_volume: str) -> list:
+    """
+    Creates list of dics rows with fastq list schema
+    """
+
+    # Convert Read1File and Read2File to path objects
+    fastq_list_df["Read1FileFullPath"] = fastq_list_df["Read1File"].apply(
+        lambda x: fastq_directory_mount / Path(x))
+    fastq_list_df["Read2FileFullPath"] = fastq_list_df["Read2File"].apply(
+        lambda x: fastq_directory_mount / Path(x))
+
+    # Set GDS locations
+    fastq_list_df["Read1GDSLocation"] = fastq_list_df["Read1FileFullPath"].apply(
+        lambda x: "gds://{}/{}".format(fastq_directory_volume, x))
+    fastq_list_df["Read2GDSLocation"] = fastq_list_df["Read2FileFullPath"].apply(
+        lambda x: "gds://{}/{}".format(fastq_directory_volume, x))
+
+    # Convert Read1File and Read2File to dict objects
+    fastq_list_df["Read1File"] = fastq_list_df["Read1GDSLocation"].apply(
+        lambda x: {"class": "File", "location": x})
+    fastq_list_df["Read2File"] = fastq_list_df["Read2GDSLocation"].apply(
+        lambda x: {"class": "File", "location": x})
+
+    # Drop all unncessary columns
+    fastq_list_df.drop(columns=["Read1FileFullPath", "Read2FileFullPath",
+                                "Read1GDSLocation", "Read2GDSLocation"],
+                       inplace=True)
+
+    # Return as a list of dicts
+    return fastq_list_df.to_dict(orient="records")
+
+
 def handler(event, context) -> dict:
     """event payload dict
     {
@@ -83,21 +124,64 @@ def handler(event, context) -> dict:
     fastq_directory = event['fastq_directory']
     fastq_list_csv = event['fastq_list_csv']
 
+    # Download fastq list csv
+    fastq_list_file_obj = download_gds_file(gds_volume_name=urlparse(fastq_list_csv).netloc,
+                                            gds_path=urlparse(fastq_list_csv).path)
+
+    # Open fastq list file in pandas
+    fastq_list_df = pd.read_csv(fastq_list_file_obj.name, header=0,
+                                usecols=["RGID", "RGLB", "RGSM", "Read1File", "Read2File"])
+
+    # Fastq list mount directory
+    fastq_directory_volume = urlparse(fastq_directory).netloc
+    fastq_directory_mount = Path(urlparse(fastq_directory).path).parent
+
+    fastq_list_rows = fastq_csv_to_rows(fastq_list_df, fastq_directory_mount, fastq_directory_volume)
+
+    # Set sequence run id
     seq_run_id = event.get('seq_run_id', None)
     seq_name = event.get('seq_name', None)
+    # Set batch run id
     batch_run_id = event.get('batch_run_id', None)
 
+    # Set workflow helper
     wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
 
     # read input template from parameter store
+    # FIXME - update workflow template
+    # New workflow template should look like this
+    """
+    {
+        "sample_name": null,
+        "fastq_list_rows": null,
+        "sites_somalier": {
+            "class": "File",
+            "location": "gds://umccr-refdata-dev/somalier/sites.hg38.vcf.gz"
+        },
+        "genome_version": "hg38",
+        "hla_reference_fasta": {
+            "class": "File",
+            "location": "gds://umccr-refdata-dev/optitype/hla_reference_dna.fasta"
+        },
+        "reference_fasta": {
+            "class": "File",
+            "location": "gds://umccr-refdata-dev/dragen/genomes/hg38/hg38.fa"
+        },
+        "reference_tar_dragen": {
+            "class": "File",
+            "location": "gds://lucattini-dev/dragen/ref_data/hg38_alt_ht_3_7_5.tar.gz"
+        }
+    }
+    """
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input['sample-name'] = f"{sample_name}"
-    workflow_input['fastq-directory']['location'] = f"{fastq_directory}"
-    workflow_input['fastq-list']['location'] = f"{fastq_list_csv}"
+    workflow_input["sample_name"] = f"{sample_name}"
+    workflow_input["fastq_list_rows"] = fastq_list_rows
 
     # read workflow id and version from parameter store
+    # FIXME - update workflow id ssm value
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
+    # FIXME - update workflow version name ssm value
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
     sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
