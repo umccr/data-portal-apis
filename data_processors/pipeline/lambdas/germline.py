@@ -27,7 +27,7 @@ from data_processors.pipeline.lambdas import wes_handler
 
 # Utils imports
 from utils import libjson, libssm, libdt
-from utils.libgds import download_gds_file
+from utils.gds import download_gds_file
 
 # Set loggers
 logger = logging.getLogger()

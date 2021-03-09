@@ -21,13 +21,6 @@ def get_gds_file_id_from_gds_path(volume_name: str, path: str) -> (str, None):
     One can then use the file id to collect other metadata on a file
     """
 
-    configuration = libgds.Configuration(
-        host="https://aps2.platform.illumina.com",
-        api_key={
-            'Authorization': 'YOUR_API_KEY'
-        }
-    )
-
     with libgds.ApiClient(ica.configuration(libgds)) as api_client:
         api_instance = libgds.FilesApi(api_client)
 
