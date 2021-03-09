@@ -2,16 +2,18 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 from django.utils.timezone import now
 
+from data_portal.tests import factories
 from data_portal.models import Report, S3Object
 from data_processors.s3 import lambdas
+from data_processors.reports.tests.case import logger
+
 
 
 class ReportsTests(TestCase):
 
     def setUp(self) -> None:
-        super(GdsSearchLambdaUnitTests, self).setUp()
-        factories.GDSFileFactory()  # this create a mock GDSFile record in db
-
+        super(ReportsTests, self).setUp()
+        factories.HRDReport()
 
     def test_sqs_s3_event_processor(self) -> None:
         """
@@ -32,7 +34,7 @@ class ReportsTests(TestCase):
         #   }
         # ]
         # Compose test data
-        report = Report(
+        report = HRDFile(
             subject_id='SBJ00670',
             sample_id='MDX210005',
             library_id='L2100047',
