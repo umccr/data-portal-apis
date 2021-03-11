@@ -3,6 +3,7 @@ import logging
 from typing import List, Tuple
 
 from data_portal.models import Report
+from data_processors.s3.helper import S3EventRecord
 from utils import libs3, libjson
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def _extract_report_unique_key(key) -> Tuple:
     return subject_id, sample_id, library_id
 
 
-def serialize_to_cancer_report(records: List[libs3.S3EventRecord]) -> bool:
+def serialize_to_cancer_report(records: List[S3EventRecord]) -> bool:
     """
     Filters and distributes particular S3 objects for further processing.
 

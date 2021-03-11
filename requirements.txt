@@ -12,7 +12,7 @@ google-api-python-client==1.12.1
 google-auth==1.21.1
 Werkzeug==1.0.1
 # Note: when bump libiap version, see swagger/README.md
-libiap==0.4.0
+libiap==0.3.0
 gspread==3.6.0
 gspread-pandas==2.2.3
 sample-sheet==0.12.0

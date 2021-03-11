@@ -162,23 +162,24 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
     notified = True
 
 
-# class ReportsFactory(factory.django.DjangoModelFactory):
-#     class Meta:
-#         model = Report
+class ReportFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Report
+
+    subject_id = "SBJ00670"
+    sample_id = "MDX210005"
+    library_id = "L2100047"
 
 
-class HRDReportFactory(factory.django.DjangoModelFactory):
+class HRDReportFactory(ReportFactory):
     class Meta:
         model = HRDReport
 
-        subject_id='SBJ00670'
-        sample_id='MDX210005'
-        library_id='L2100047'
-        hrd_probability=0.034
-        hrd_intercept=-3.034
-        hrd_del_mh_prop=0.034
-        hrd_SNV3=0.034
-        hrd_SV3=0.034
-        hrd_SV5=-0.034
-        hrd_hrdloh_index=0.034
-        hrd_SNV8=0.034
+    hrd_probability = 0.034
+    hrd_intercept = -3.034
+    hrd_del_mh_prop = 0.034
+    hrd_SNV3 = 0.034
+    hrd_SV3 = 0.034
+    hrd_SV5 = -0.034
+    hrd_hrdloh_index = 0.034
+    hrd_SNV8 = 0.034

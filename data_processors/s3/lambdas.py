@@ -14,9 +14,9 @@ django.setup()
 import logging
 from typing import Union, Dict
 from utils import libjson
-from utils.libs3 import parse_raw_s3_event_records, sync_s3_event_records
+from data_processors.s3 import helper
 
-from ..reports.services import serialize_to_cancer_report
+from data_processors.reports.services import serialize_to_cancer_report
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -30,8 +30,8 @@ def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
     logger.info("Start processing S3 event")
     logger.info(libjson.dumps(event))
     messages = event['Records']
-    records = parse_raw_s3_event_records(messages)
-    results = sync_s3_event_records(records)
+    records = helper.parse_raw_s3_event_records(messages)
+    results = helper.sync_s3_event_records(records)
     # TODO: Distribute special cases to other queues
     serialize_to_cancer_report(records)
 

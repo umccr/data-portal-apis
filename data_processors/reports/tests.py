@@ -1,22 +1,21 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 from django.utils.timezone import now
 
+from data_portal.models import S3Object
 from data_portal.tests import factories
-from data_portal.models import Report, S3Object
 from data_processors.s3 import lambdas
-from data_processors.reports.tests.case import logger
-
 
 
 class ReportsTests(TestCase):
 
     def setUp(self) -> None:
         super(ReportsTests, self).setUp()
-        self.report = factories.HRDReportFactory()
+        self.hrd_report = factories.HRDReportFactory()
 
     def test_sqs_s3_event_processor(self) -> None:
         """
+        python manage.py test data_processors.reports.tests.ReportsTests.test_sqs_s3_event_processor
+
         Test whether the report can be consumed from the SQS queue as expected
         """
         # jq . SBJ00670__SBJ00670_MDX210005_L2100047_rerun-hrdetect.json
@@ -35,7 +34,9 @@ class ReportsTests(TestCase):
         # ]
         # Compose test data
 
-        # self.report
+        print('-' * 32)
+        print('\t\t >>> ', self.hrd_report)
+        print('-' * 32)
 
         bucket_name = 'some-bucket'
         report_to_deserialize = 'cancer_report_tables/json/hrd/SBJ00670__SBJ00670_MDX210005_L2100047_rerun-hrdetect.json.gz'
