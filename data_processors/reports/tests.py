@@ -13,7 +13,7 @@ class ReportsTests(TestCase):
 
     def setUp(self) -> None:
         super(ReportsTests, self).setUp()
-        factories.HRDReport()
+        self.report = factories.HRDReportFactory()
 
     def test_sqs_s3_event_processor(self) -> None:
         """
@@ -34,20 +34,8 @@ class ReportsTests(TestCase):
         #   }
         # ]
         # Compose test data
-        report = HRDFile(
-            subject_id='SBJ00670',
-            sample_id='MDX210005',
-            library_id='L2100047',
-            hrd_probability=0.034,
-            hrd_intercept=-3.034,
-            hrd_del_mh_prop=0.034,
-            hrd_SNV3=0.034,
-            hrd_SV3=0.034,
-            hrd_SV5=-0.034,
-            hrd_hrdloh_index=0.034,
-            hrd_SNV8=0.034
-        )
-        report.save()
+
+        # self.report
 
         bucket_name = 'some-bucket'
         report_to_deserialize = 'cancer_report_tables/json/hrd/SBJ00670__SBJ00670_MDX210005_L2100047_rerun-hrdetect.json.gz'
