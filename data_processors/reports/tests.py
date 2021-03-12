@@ -11,6 +11,7 @@ class ReportsTests(TestCase):
     def setUp(self) -> None:
         super(ReportsTests, self).setUp()
         self.hrd_report = factories.HRDReportFactory()
+        self.purple_report = factories.HRDReportFactory()
 
     def test_sqs_s3_event_processor(self) -> None:
         """

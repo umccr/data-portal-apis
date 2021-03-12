@@ -5,7 +5,8 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, Report, HRDReport
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun \
+    Report, HRDReport, PurpleReport
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -183,3 +184,32 @@ class HRDReportFactory(ReportFactory):
     hrd_SV5 = -0.034
     hrd_hrdloh_index = 0.034
     hrd_SNV8 = 0.034
+
+class PurpleReportFactory(ReportFactory):
+    class Meta:
+        model = PurpleReport
+
+    purple_sample_type = "bar"
+    purple_chr = "bar"
+    purple_start = "bar"
+    purple_end = "bar"
+    purple_CN = "bar"
+    purple_ploidy_min_maj = "bar"
+    purple_start_end_segsupport = "bar"
+    purple_method = "bar"
+    purple_BAF_count = "bar"
+    purple_GC_window_count = "bar"
+
+    #purple/purple_cnv_som_gene.json.gz
+    purple_gene = "foo"
+    purple_minCN = "foo"
+    purple_maxCN = "foo"
+    purple_chr_band = "foo"
+    purple_onco_or_ts = "foo"
+    purple_transcript_id = "foo"
+    purple_min_minor_allele_ploidy = "foo"
+    purple_som_reg = "foo"
+    purple_gem_del_reg = "foo"
+    purple_min_reg = "foo"
+    purple_min_reg_start_end = "foo"
+    purple_min_reg_supported_start_end_method = "foo"

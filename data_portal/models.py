@@ -419,32 +419,33 @@ class HRDReport(Report):
     hrd_SNV8 = models.FloatField(null=True, blank=True)
 
 
-# class PurpleReport(Report):
-#     # purple/purple_cnv_{germ|som}.json.gz
-#     # purple_sample_type = models.CharField(max_length=4)
-#     # purple_chr = models.CharField(max_length=10)
-#     # purple_start = models.BigIntegerField(null=True, blank=True)
-#     # purple_end = models.BigIntegerField(null=True, blank=True)
-#     # purple_CN = models.IntegerField(null=True, blank=True)
-#     # purple_ploidy_min_maj = models.CharField(max_length=3)
-#     # purple_start_end_segsupport = models.CharField(null=True, blank=True)
-#     # purple_method = models.CharField(null=True, blank=True)
-#     # purple_BAF_count = models.CharField(null=True, blank=True)
-#     # purple_GC_window_count = models.CharField(null=True, blank=True)
+class PurpleReport(Report):
+    #purple/purple_cnv_{germ|som}.json.gz
+    purple_report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    purple_sample_type = models.CharField(max_length=255)
+    purple_chr = models.CharField(max_length=255)
+    purple_start = models.BigIntegerField(null=True, blank=True)
+    purple_end = models.BigIntegerField(null=True, blank=True)
+    purple_CN = models.IntegerField(null=True, blank=True)
+    purple_ploidy_min_maj = models.CharField(max_length=255)
+    purple_start_end_segsupport = models.CharField(max_length=255, null=True, blank=True)
+    purple_method = models.CharField(max_length=255, null=True, blank=True)
+    purple_BAF_count = models.CharField(max_length=255, null=True, blank=True)
+    purple_GC_window_count = models.CharField(max_length=255, null=True, blank=True)
 
-#     # purple/purple_cnv_som_gene.json.gz
-#     # purple_gene = models.CharField(null=True, blank=True)
-#     # purple_minCN = models.CharField(null=True, blank=True)
-#     # purple_maxCN = models.CharField(null=True, blank=True)
-#     # purple_chr_band = models.CharField(null=True, blank=True)
-#     # purple_onco_or_ts = models.CharField(null=True, blank=True)
-#     # purple_transcript_id = models.CharField(null=True, blank=True)
-#     # purple_min_minor_allele_ploidy = models.CharField(null=True, blank=True)
-#     # purple_som_reg = models.CharField(null=True, blank=True)
-#     # purple_gem_del_reg = models.CharField(null=True, blank=True)
-#     # purple_min_reg = models.CharField(null=True, blank=True)
-#     # purple_min_reg_start_end = models.CharField(null=True, blank=True)
-#     # purple_min_reg_supported_start_end_method = models.CharField(null=True, blank=True)
+    #purple/purple_cnv_som_gene.json.gz
+    purple_gene = models.CharField(max_length=255, null=True, blank=True)
+    purple_minCN = models.CharField(max_length=255, null=True, blank=True)
+    purple_maxCN = models.CharField(max_length=255, null=True, blank=True)
+    purple_chr_band = models.CharField(max_length=255, null=True, blank=True)
+    purple_onco_or_ts = models.CharField(max_length=255, null=True, blank=True)
+    purple_transcript_id = models.CharField(max_length=255, null=True, blank=True)
+    purple_min_minor_allele_ploidy = models.CharField(max_length=255, null=True, blank=True)
+    purple_som_reg = models.CharField(max_length=255, null=True, blank=True)
+    purple_gem_del_reg = models.CharField(max_length=255, null=True, blank=True)
+    purple_min_reg = models.CharField(max_length=255, null=True, blank=True)
+    purple_min_reg_start_end = models.CharField(max_length=255, null=True, blank=True)
+    purple_min_reg_supported_start_end_method = models.CharField(max_length=255, null=True, blank=True)
 
 
 # class SigsReport(Report):
