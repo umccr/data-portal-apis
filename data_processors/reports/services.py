@@ -2,7 +2,7 @@ import re
 import logging
 from typing import List, Tuple
 
-from data_portal.models import Report
+from data_portal.models import HRDReport, PurpleReport
 from data_processors.s3.helper import S3EventRecord
 from utils import libs3, libjson
 
@@ -60,7 +60,7 @@ def serialize_to_cancer_report(records: List[S3EventRecord]) -> bool:
 
                     # Adds attributes from JSON to Django Report model
                     json_report = libjson.dumps(json_dict)
-                    report: Report = Report.objects.put(json_report)
+                    report: HRDReport = HRDReport.objects.put(json_report)
             return True
         except:
             return False

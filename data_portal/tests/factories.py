@@ -5,8 +5,8 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun \
-    Report, HRDReport, PurpleReport
+from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, \
+    HRDReport, PurpleReport
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())

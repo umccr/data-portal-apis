@@ -395,20 +395,19 @@ class Workflow(models.Model):
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
 
-class Report(models.Model):
-    #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
+
+class HRDReport(models.Model):
     class Meta:
         unique_together = ['subject_id', 'sample_id', 'library_id']
 
     report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
     library_id = models.CharField(max_length=255)
 
-class HRDReport(Report):
     #hrd/chord_hrdectect.json.gz
-    hrd_report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     hrd_probability = models.FloatField(null=True, blank=True)
     hrd_intercept = models.FloatField(null=True, blank=True)
     hrd_del_mh_prop = models.FloatField(null=True, blank=True)
@@ -419,9 +418,18 @@ class HRDReport(Report):
     hrd_SNV8 = models.FloatField(null=True, blank=True)
 
 
-class PurpleReport(Report):
+class PurpleReport(models.Model):
+    class Meta:
+        unique_together = ['subject_id', 'sample_id', 'library_id']
+
+    report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
+    subject_id = models.CharField(max_length=255)
+    sample_id = models.CharField(max_length=255)
+    library_id = models.CharField(max_length=255)
+
     #purple/purple_cnv_{germ|som}.json.gz
-    purple_report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     purple_sample_type = models.CharField(max_length=255)
     purple_chr = models.CharField(max_length=255)
     purple_start = models.BigIntegerField(null=True, blank=True)
