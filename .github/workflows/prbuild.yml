@@ -24,9 +24,8 @@ jobs:
         which docker
         which docker-compose
         which python3
-        which make
         docker-compose up -d
-        make load_localstack
+        source ./loaddata.sh; load_localstack
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
