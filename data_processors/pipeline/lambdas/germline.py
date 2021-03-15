@@ -148,29 +148,28 @@ def handler(event, context) -> dict:
     wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
 
     # read input template from parameter store
-    # FIXME - update workflow template
-    # New workflow template should look like this
+    # template looks like this:
     """
     {
-        "sample_name": null,
-        "fastq_list_rows": null,
-        "sites_somalier": {
-            "class": "File",
-            "location": "gds://umccr-refdata-dev/somalier/sites.hg38.vcf.gz"
-        },
-        "genome_version": "hg38",
-        "hla_reference_fasta": {
-            "class": "File",
-            "location": "gds://umccr-refdata-dev/optitype/hla_reference_dna.fasta"
-        },
-        "reference_fasta": {
-            "class": "File",
-            "location": "gds://umccr-refdata-dev/dragen/genomes/hg38/hg38.fa"
-        },
-        "reference_tar_dragen": {
-            "class": "File",
-            "location": "gds://lucattini-dev/dragen/ref_data/hg38_alt_ht_3_7_5.tar.gz"
-        }
+      "sample_name": null,
+      "fastq_list_rows": null,
+      "sites_somalier": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/somalier/sites.hg38.vcf.gz"
+      },
+      "genome_version": "hg38",
+      "hla_reference_fasta": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/optitype/hla_reference_dna.fasta"
+      }
+      "reference_fasta": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/dragen/genomes/hg38/hg38.fa"
+      },
+      "reference_tar_dragen": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/dragen/genomes/hg38/3.7.5/hg38_alt_ht_3_7_5.tar.gz"
+      }
     }
     """
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
@@ -179,9 +178,7 @@ def handler(event, context) -> dict:
     workflow_input["fastq_list_rows"] = fastq_list_rows
 
     # read workflow id and version from parameter store
-    # FIXME - update workflow id ssm value
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-    # FIXME - update workflow version name ssm value
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
     sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
