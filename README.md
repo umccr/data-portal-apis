@@ -22,7 +22,7 @@ make start
 ```
 
 - REST API at: http://localhost:8000
-- MySQL Adminer at: http://localhost:8181  (u/p: data_portal)
+- MySQL phpMyAdmin at: http://localhost:8181  (u/p: root)
     - You may also try [PyCharm Database explorer](https://www.jetbrains.com/help/pycharm/connecting-to-a-database.html)
     - You may also wish to try with [JetBrains DataGrip](https://www.jetbrains.com/datagrip/)
 - Look into `Makefile` for more dev routine targets
@@ -51,8 +51,6 @@ make syncdata
 ```
 make loaddata
 ```
-
-- If you are on MySQL Adminer, at Database list view press [`Refresh`](http://localhost:8181/?server=db&username=data_portal&refresh=1).
 
 #### Husky & Git
 
