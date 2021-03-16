@@ -395,66 +395,24 @@ class Workflow(models.Model):
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
 
-
-class HRDReport(models.Model):
+class Report(models.Model):
+    #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
     class Meta:
         unique_together = ['subject_id', 'sample_id', 'library_id']
 
     report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
     # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
     library_id = models.CharField(max_length=255)
 
+class HRDReport(Report):
     #hrd/chord_hrdectect.json.gz
-    hrd_probability = models.FloatField(null=True, blank=True)
-    hrd_intercept = models.FloatField(null=True, blank=True)
-    hrd_del_mh_prop = models.FloatField(null=True, blank=True)
-    hrd_SNV3 = models.FloatField(null=True, blank=True)
-    hrd_SV3 = models.FloatField(null=True, blank=True)
-    hrd_SV5 = models.FloatField(null=True, blank=True)
-    hrd_hrdloh_index = models.FloatField(null=True, blank=True)
-    hrd_SNV8 = models.FloatField(null=True, blank=True)
+    hrd = models.JSONField(null=True, blank=True)
 
-
-class PurpleReport(models.Model):
-    class Meta:
-        unique_together = ['subject_id', 'sample_id', 'library_id']
-
-    report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
-    subject_id = models.CharField(max_length=255)
-    sample_id = models.CharField(max_length=255)
-    library_id = models.CharField(max_length=255)
-
+class PurpleReport(Report):
     #purple/purple_cnv_{germ|som}.json.gz
-    purple_sample_type = models.CharField(max_length=255)
-    purple_chr = models.CharField(max_length=255)
-    purple_start = models.BigIntegerField(null=True, blank=True)
-    purple_end = models.BigIntegerField(null=True, blank=True)
-    purple_CN = models.IntegerField(null=True, blank=True)
-    purple_ploidy_min_maj = models.CharField(max_length=255)
-    purple_start_end_segsupport = models.CharField(max_length=255, null=True, blank=True)
-    purple_method = models.CharField(max_length=255, null=True, blank=True)
-    purple_BAF_count = models.CharField(max_length=255, null=True, blank=True)
-    purple_GC_window_count = models.CharField(max_length=255, null=True, blank=True)
-
-    #purple/purple_cnv_som_gene.json.gz
-    purple_gene = models.CharField(max_length=255, null=True, blank=True)
-    purple_minCN = models.CharField(max_length=255, null=True, blank=True)
-    purple_maxCN = models.CharField(max_length=255, null=True, blank=True)
-    purple_chr_band = models.CharField(max_length=255, null=True, blank=True)
-    purple_onco_or_ts = models.CharField(max_length=255, null=True, blank=True)
-    purple_transcript_id = models.CharField(max_length=255, null=True, blank=True)
-    purple_min_minor_allele_ploidy = models.CharField(max_length=255, null=True, blank=True)
-    purple_som_reg = models.CharField(max_length=255, null=True, blank=True)
-    purple_gem_del_reg = models.CharField(max_length=255, null=True, blank=True)
-    purple_min_reg = models.CharField(max_length=255, null=True, blank=True)
-    purple_min_reg_start_end = models.CharField(max_length=255, null=True, blank=True)
-    purple_min_reg_supported_start_end_method = models.CharField(max_length=255, null=True, blank=True)
-
+    purple = models.JSONField(null=True, blank=True)
 
 # class SigsReport(Report):
 #     # sigs/mutsig{1|2}.json.gz

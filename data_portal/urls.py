@@ -4,7 +4,7 @@ from rest_framework_nested import routers
 from data_portal import views
 from .viewsets import LIMSRowViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, SubjectS3ObjectViewSet, \
     RunViewSet, PresignedUrlViewSet, RunDataLIMSViewSet, RunDataS3ObjectViewSet, SubjectGDSFileViewSet, \
-    RunDataGDSFileViewSet, GDSFileViewSet, HRDReportViewSet, PurpleReport
+    RunDataGDSFileViewSet, GDSFileViewSet, ReportViewSet
 from .routers import OptionalSlashDefaultRouter
 
 router = OptionalSlashDefaultRouter()
@@ -14,7 +14,7 @@ router.register(r'gds', GDSFileViewSet, basename='gds')
 router.register(r'buckets', BucketViewSet, basename='buckets')
 router.register(r'subjects', SubjectViewSet, basename='subjects')
 router.register(r'runs', RunViewSet, basename='runs')
-router.register(r'hrd', HRDReportViewSet, basename='reports')
+router.register(r'reports', ReportViewSet, basename='reports')
 router.register(r'presign', PresignedUrlViewSet, basename='presign')
 
 
