@@ -13,11 +13,12 @@ django.setup()
 
 import logging
 from typing import List
+import pandas as pd
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, fastq, demux_metadata
+from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
 from utils import libjson, libsqs, libssm
 
 logger = logging.getLogger()
@@ -112,12 +113,16 @@ def next_step(this_workflow: Workflow, context):
             if this_batch.context_data is None:
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
-                fastq_containers = []
-                fastq_container = fastq.handler({'locations': parse_bcl_convert_output(this_workflow.output)}, None)
-                fastq_containers.append(fastq_container)
+                fastq_list_rows = fastq_list_row.handler({'fastq_list_rows': parse_bcl_convert_output(this_workflow.output),
+                                                          'sequence_run_id': this_sqr.run_id}, None)
 
                 # cache batch context data in db
-                this_batch = services.update_batch(this_batch.id, context_data=fastq_containers)
+                this_batch = services.update_batch(this_batch.id, context_data=fastq_list_rows)
+
+                # Initialise fastq list rows object in model
+                for row in fastq_list_rows:
+                    this_batch = services.create_fastq_list_row(row,
+                                                                sequence_run=this_sqr.run_id)
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
@@ -161,8 +166,13 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     :return:
     """
     job_list = []
-    fastq_containers: List[dict] = libjson.loads(this_batch.context_data)
+    fastq_list_rows: List[dict] = libjson.loads(this_batch.context_data)
 
+    # Convert to pandas dataframe
+    fastq_list_df = pd.DataFrame(fastq_list_rows)
+
+    # Get metadata for determining which sample types need to be run through
+    # the germline workflow
     gds_volume_name = this_sqr.gds_volume_name
     gds_folder_path = this_sqr.gds_folder_path
     sample_sheet_name = this_sqr.sample_sheet_name
@@ -173,57 +183,46 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         'gdsSamplesheet': sample_sheet_name,
     }, None)
 
-    for fastq_container in fastq_containers:
-        fastq_map = fastq_container['fastq_map']
-        for sample_name, bag in fastq_map.items():
-            fastq_list = bag['fastq_list']  # GERMLINE CWL workflow does not use this absolute gds path list, at the mo
-            sample_name_str: str = sample_name
+    # Iterate through each sample
+    for sample_name, sample_df in fastq_list_df.groupby("rgsm"):
+        # skip Undetermined samples
+        if sample_name == "Undetermined":
+            logger.warning(f"SKIP '{sample_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
+            continue
 
-            # skip Undetermined samples
-            if sample_name_str == "Undetermined":
-                logger.warning(f"SKIP '{sample_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
-                continue
+        # skip sample start with NTC_
+        if sample_name.startswith("NTC_"):
+            logger.warning(f"SKIP NTC SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
+            continue
 
-            # skip sample start with NTC_
-            if sample_name_str.startswith("NTC_"):
-                logger.warning(f"SKIP NTC SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
-                continue
+        # Iterate through libraries for this sample, ensure that they're the same type
+        # TODO place in try catch
+        sample_library_name = "{}_{}".format(sample_name, sample_df.rglb.unique().item())
 
-            # skip germline if assay type is not WGS
-            assay_type = metadata['types'][metadata['samples'].index(sample_name_str)]
-            if assay_type != "WGS":
-                logger.warning(f"SKIP {assay_type} SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
-                continue
+        assay_type = metadata['types'][metadata['samples'].index(sample_library_name)]
 
-            # skip GERMLINE CWL workflow does not take multiple fastq_directories
-            fastq_directories = bag['fastq_directories']
-            if len(fastq_directories) != 1:
-                logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
-                               f"GERMLINE CWL WORKFLOW EXPECT ONE FASTQ DIRECTORY. FOUND: {fastq_directories}")
-                continue
+        if assay_type != "WGS":
+            logger.warning(f"SKIP {assay_type} SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
+            continue
 
-            # skip GERMLINE CWL workflow does not take multiple fastq_list_csv inputs
-            fastq_list_csv = bag['fastq_list_csv']
-            if len(fastq_list_csv) != 1:
-                logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. "
-                               f"GERMLINE CWL WORKFLOW EXPECT ONE FASTQ LIST CSV. FOUND: {fastq_list_csv}")
-                continue
+        # Convert read_1 and read_2 to dicts
+        sample_df["read_1"] = sample_df["read_1"].apply(cwl_file_path_as_string_to_dict)
+        sample_df["read_2"] = sample_df["read_2"].apply(cwl_file_path_as_string_to_dict)
 
-            job = {
-                'sample_name': sample_name,
-                'fastq_directory': f"{fastq_directories[0]}/",
-                'fastq_list_csv': fastq_list_csv[0],
-                'seq_run_id': this_sqr.run_id if this_sqr else None,
-                'seq_name': this_sqr.name if this_sqr else None,
-                'batch_run_id': int(this_batch_run.id)
-            }
+        # Convert sample_df into fastq_list_row
+        sample_df.reset_index(inplace=True)
 
-            job_list.append(job)
+        job = {
+            'fastq_list_rows': sample_df.to_dict("records")
+        }
+
+        job_list.append(job)
 
     return job_list
 
 
 def parse_bcl_convert_output(output_json: str) -> list:
+    # FIXME - should just check / return the fastq_list_rows object
     """
     Given this_workflow (bcl convert) output (fastqs), return the list of fastq locations on gds
 
@@ -234,28 +233,22 @@ def parse_bcl_convert_output(output_json: str) -> list:
     [4]: https://github.com/umccr-illumina/cwl-iap/blob/5b96a8cfafa5ac515ca46cf67aa20b40a716b4bd/workflows/bclconversion/1.0.6/bclConversion-main.1.0.6.cwl#L167
 
     :param output_json: workflow run output in json format
-    :return locations: list of fastq output locations on gds
+    :return fastq_list_rows: list of fastq list rows in fastq list format
     """
-    locations = []
     output: dict = libjson.loads(output_json)
 
-    lookup_keys = ['main/fastqs', 'main/fastq-directories']
-    reduced_keys = list(filter(lambda k: k in lookup_keys, output.keys()))
-    if reduced_keys is None or len(reduced_keys) == 0:
-        raise KeyError(f"Unexpected BCL Convert CWL output format. Excepting {lookup_keys}. Found {output.keys()}")
+    look_up_key = 'main/fastq_list_rows'
+    if look_up_key not in output.keys():
+        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting {look_up_key}. Found {output.keys()}")
 
-    for key in reduced_keys:
-        main_fastqs = output[key]
+    return output[look_up_key]
 
-        if isinstance(main_fastqs, list):
-            for out in main_fastqs:
-                locations.append(out['location'])
 
-        elif isinstance(main_fastqs, dict):
-            locations.append(main_fastqs['location'])
+def cwl_file_path_as_string_to_dict(file_path):
+    """
+    Convert "gds://path/to/file" to {"class": "File", "location": "gds://path/to/file"}
+    :param file_path:
+    :return:
+    """
 
-        else:
-            msg = f"BCL Convert FASTQ output should be list or dict. Found type {type(main_fastqs)} -- {main_fastqs}"
-            raise ValueError(msg)
-
-    return locations
+    return {"class": "File", "location": file_path}

@@ -297,6 +297,25 @@ class SequenceRun(models.Model):
                f"Status '{self.status}'"
 
 
+class FastqListRow(models.Model):
+    class Meta:
+        unique_together = ["rgid"]
+
+    rgid = models.CharField(max_length=255)
+    rgsm = models.CharField(max_length=255)
+    rglb = models.CharField(max_length=255)
+    lane = models.IntegerField()
+    read_1 = models.TextField()
+    read_2 = models.TextField()
+
+    sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return "RGID: {}, RGSM: {}, RGLB: {}".format(
+          self.rgid, self.rgsm, self.rglb
+        )
+
+
 class Batch(models.Model):
     class Meta:
         unique_together = ['name', 'created_by']

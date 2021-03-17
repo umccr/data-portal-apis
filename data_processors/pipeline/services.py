@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
-from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun
+from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from utils import libslack, lookup, libjson, libdt
 
@@ -659,3 +659,28 @@ def get_batch_run_none_or_all_running(batch_run_id):
         return batch_run
 
     return None
+
+
+@transaction.atomic
+def create_fastq_list_row(fastq_list_row, sequence_run=None):
+    """
+    A fastq list row contains the following elements
+    rgid,
+    rgsm
+    rglb
+    read_1
+    read_2
+    :param fastq_list_row:
+    :param sequence_run_id
+    :return:
+    """
+
+    fastq_list_row_obj = FastqListRow()
+
+    # Add each of rgid, rgsm, rglb, read_1 and read_2 to object row
+    for key, value in fastq_list_row.items():
+        setattr(fastq_list_row_obj, key, value)
+
+    # Add sequence run id
+    fastq_list_row_obj.sequence_run = sequence_run
+    fastq_list_row_obj.save()
