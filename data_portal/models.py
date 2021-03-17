@@ -1,5 +1,6 @@
 import uuid
 import random
+from enum import Enum
 from typing import Union
 
 from django.db import models
@@ -395,48 +396,40 @@ class Workflow(models.Model):
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
 
-class Report(models.Model):
-    #lims_row = models.ForeignKey(LIMSRow, on_delete=models.SET_NULL(), null=True, blank=True)
-    class Meta:
-        unique_together = ['subject_id', 'sample_id', 'library_id']
 
-    report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # i.e: SBJ00670__SBJ00670_MDX210005_L2100047
+class Report(models.Model):
+    class Meta:
+        unique_together = ['subject_id', 'sample_id', 'library_id', 'type', 'date_created']
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
     library_id = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
+    date_created = models.DateTimeField()
+    created_by = models.CharField(max_length=255, null=True, blank=True)
+    data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
 
-class HRDReport(Report):
-    #hrd/chord_hrdectect.json.gz
-    hrd = models.JSONField(null=True, blank=True)
-
-class PurpleReport(Report):
-    #purple/purple_cnv_{germ|som}.json.gz
-    purple = models.JSONField(null=True, blank=True)
-
-# class SigsReport(Report):
-#     # sigs/mutsig{1|2}.json.gz
-#     # sigs_rank = models.IntegerField(null=True, blank=True)
-#     # sigs_signature = models.CharField(max_length=5)
-#     # sigs_contribution = models.IntegerField(null=True, blank=True)
-#     # sigs_freq = models.IntegerField(null=True, blank=True)
+    def __str__(self):
+        return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}, " \
+               f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}, DATE_CREATED: {self.date_created}"
 
 
-# class SVReport(Report):
-#     # sv/{0..8}_sv_{(un)melted|(no)BND}_{main|other|manygenes|manytranscripts}.json.gz
-#     # sv_vcfnum = models.IntegerField(null=True, blank=True)
-#     # sv_tiertop = models.IntegerField(null=True, blank=True)
-#     # sv_start = models.CharField(null=True, blank=True)
-#     # sv_end = models.CharField(null=True, blank=True)
-#     # sv_type = models.CharField(null=True, blank=True)
-#     # sv_id = models.CharField(null=True, blank=True)
-#     # sv_pr_alt = models.IntegerField(null=True, blank=True)
-#     # sv_sr_pr_ref = models.CharField(null=True, blank=True)
-#     # sv_ploidy = models.CharField(null=True, blank=True) # TODO: No floats in underlying DB?
-#     # sv_af_purple = models.CharField(null=True, blank=True)
-#     # sv_af_bpi = models.CharField(null=True, blank=True)
-#     # sv_cnc = models.CharField(null=True, blank=True)
-#     # sv_cn = models.CharField(null=True, blank=True)
-#     # sv_sscore = models.IntegerField(null=True, blank=True)
-#     # sv_nann = models.IntegerField(null=True, blank=True)
-#     # sv_annotation = models.CharField(null=True, blank=True)
+class ReportType(Enum):
+    HRD_CHORD = "hrd_chord"
+    HRD_HRDETECT = "hrd_hrdetect"
+    PURPLE_CNV_GERM = "purple_cnv_germ"
+    PURPLE_CNV_SOM = "purple_cnv_som"
+    PURPLE_CNV_SOM_GENE = "purple_cnv_som_gene"
+    SIGS_DBS = "sigs_dbs"
+    SIGS_INDEL = "sigs_indel"
+    SIGS_SNV_2015 = "sigs_snv_2015"
+    SIGS_SNV_2020 = "sigs_snv_2020"
+    SV_UNMELTED = "sv_unmelted"
+    SV_MELTED = "sv_melted"
+    SV_BND_MAIN = "sv_bnd_main"
+    SV_BND_PURPLEINF = "sv_bnd_purpleinf"
+    SV_NOBND_MAIN = "sv_nobnd_main"
+    SV_NOBND_OTHER = "sv_nobnd_other"
+    SV_NOBND_MANYGENES = "sv_nobnd_manygenes"
+    SV_NOBND_MANYTRANSCRIPTS = "sv_nobnd_manytranscripts"
