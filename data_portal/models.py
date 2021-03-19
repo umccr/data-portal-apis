@@ -396,26 +396,7 @@ class Workflow(models.Model):
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
 
-
-class Report(models.Model):
-    class Meta:
-        unique_together = ['subject_id', 'sample_id', 'library_id', 'type', 'date_created']
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    subject_id = models.CharField(max_length=255)
-    sample_id = models.CharField(max_length=255)
-    library_id = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)
-    date_created = models.DateTimeField()
-    created_by = models.CharField(max_length=255, null=True, blank=True)
-    data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
-
-    def __str__(self):
-        return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}, " \
-               f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}, DATE_CREATED: {self.date_created}"
-
-
-class ReportType(Enum):
+class ReportType(models.TextChoices):
     HRD_CHORD = "hrd_chord"
     HRD_HRDETECT = "hrd_hrdetect"
     PURPLE_CNV_GERM = "purple_cnv_germ"
@@ -433,3 +414,20 @@ class ReportType(Enum):
     SV_NOBND_OTHER = "sv_nobnd_other"
     SV_NOBND_MANYGENES = "sv_nobnd_manygenes"
     SV_NOBND_MANYTRANSCRIPTS = "sv_nobnd_manytranscripts"
+
+class Report(models.Model):
+    class Meta:
+        unique_together = ['subject_id', 'sample_id', 'library_id', 'type', 'date_created']
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    subject_id = models.CharField(max_length=255)
+    sample_id = models.CharField(max_length=255)
+    library_id = models.CharField(max_length=255)
+    type = models.CharField(choices=ReportType.choices, max_length=255)
+    date_created = models.DateTimeField()
+    created_by = models.CharField(max_length=255, null=True, blank=True)
+    data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
+
+    def __str__(self):
+        return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}, " \
+               f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}, DATE_CREATED: {self.date_created}"

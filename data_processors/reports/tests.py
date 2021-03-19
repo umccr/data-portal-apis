@@ -89,6 +89,8 @@ class ReportsTests(TestCase):
         }
 
         results = lambdas.handler(sqs_event, None)
+        logger.info("MOOOOOOOO")
+        logger.info(results)
         self.assertIsNotNone(results)
 
     def test_umccrise_report_model(self):
