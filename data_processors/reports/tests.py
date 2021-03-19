@@ -89,8 +89,6 @@ class ReportsTests(TestCase):
         }
 
         results = lambdas.handler(sqs_event, None)
-        logger.info("MOOOOOOOO")
-        logger.info(results)
         self.assertIsNotNone(results)
 
     def test_umccrise_report_model(self):
@@ -176,7 +174,7 @@ class ReportsTests(TestCase):
             subject_id="SBJ00001",
             sample_id="MDX111111",
             library_id="L12345678",
-            type=ReportType.PURPLE_CNV_SOM.name,
+            type=ReportType.PURPLE_CNV_SOM,
             date_created=make_aware(datetime.now()),
             created_by="me",
             data=mock_data,
