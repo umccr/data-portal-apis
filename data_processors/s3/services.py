@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""s3 object services module
+Impl in here contains some transactional boundary or business logic
+that specific to this application context and package purpose. Typically,
+some logic to be applied or called at this service layer, before hitting
+to database for persisting. May involve concerting one or more of backing
+Models or entities, in this case, our S3Object model, and/or some aspect of
+direct mutation to the actual S3 object itself, etc.
+"""
 import logging
 from datetime import datetime
 from typing import Tuple
@@ -10,7 +19,6 @@ from data_portal.models import S3Object, LIMSRow, S3LIMS
 from utils import libs3
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 @transaction.atomic
@@ -100,31 +108,32 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
         return 0, 0
 
 
-def tag_s3_object(bucket_name: str, key: str):
+def tag_s3_object(bucket_name: str, key: str, extension: str):
     """
-    Tag S3 Object if extension is .bam
+    Tag S3 Object if extension is <extension>
 
     NOTE: You can associate up to 10 tags with an object. See
     https://docs.aws.amazon.com/AmazonS3/latest/dev/object-tagging.html
     :param bucket_name:
     :param key:
+    :param extension: File type or extension without dots, i.e: "bam", "vcf", "tsv", "csv", etc...
     """
 
-    if key.endswith('.bam'):
+    if key.endswith(extension):
         response = libs3.get_s3_object_tagging(bucket=bucket_name, key=key)
         tag_set = response.get('TagSet', [])
 
         tag_archive = {'Key': 'Archive', 'Value': 'true'}
-        tag_bam = {'Key': 'Filetype', 'Value': 'bam'}
+        tag_extension = {'Key': 'Filetype', 'Value': extension}
 
         if len(tag_set) == 0:
             tag_set.append(tag_archive)
-            tag_set.append(tag_bam)
+            tag_set.append(tag_extension)
         else:
             # have existing tags
             immutable_tags = tuple(tag_set)  # have immutable copy first
-            if tag_bam not in immutable_tags:
-                tag_set.append(tag_bam)  # just add tag_bam
+            if tag_extension not in immutable_tags:
+                tag_set.append(tag_extension)  # just add tag_bam
             if tag_archive not in immutable_tags:
                 values = set()
                 for tag in immutable_tags:

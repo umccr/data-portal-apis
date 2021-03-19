@@ -10,6 +10,8 @@ class S3LambdaTests(TestCase):
 
     def test_sqs_s3_event_processor(self) -> None:
         """
+        python manage.py test data_processors.s3.tests.S3LambdaTests.test_sqs_s3_event_processor
+
         Test whether SQS S3 event processor can process event data as expected
         """
 
@@ -107,6 +109,9 @@ class S3LambdaTests(TestCase):
         self.assertEqual(results['unsupported_count'], 0)
 
     def test_delete_non_existent_s3_object(self):
+        """
+        python manage.py test data_processors.s3.tests.S3LambdaTests.test_delete_non_existent_s3_object
+        """
         s3_event_message = {
             "Records": [
                 {

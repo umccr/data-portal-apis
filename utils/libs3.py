@@ -12,13 +12,19 @@ Goal is, so that else where in code, it does not need to depends on boto3
 API directly. i.e. No more import boto3, but just import libs3 instead.
 
 If unsure, start with Pass-through call.
+
+What impl should include in this module:
+    Consider, we can take this libs3 to another application and, these impls
+    are still meaningful in that totally different application context there!
+    Consider, we can package and distribute these impls as standalone SDK/lib.
 """
+import gzip
 import logging
 from datetime import datetime
 
 from botocore.exceptions import ClientError
 
-from utils import libaws
+from utils import libaws, libjson
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +187,20 @@ def get_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
         message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key}). Exception - {e}"
         logger.error(message)
         return False, dict(error=message)
+
+
+def get_s3_object_to_bytes(bucket: str, key: str, **kwargs) -> bytes:
+    """
+    get_object_to_bytes API, with on-the-fly gzip detection and decompression
+
+    :param bucket:
+    :param key:
+    :param kwargs:
+    :return tuple (bytes): the bytes from the S3 object body
+    """
+    obj_body = libaws.resource('s3').Object(bucket, key).get()['Body']
+    obj_bytes = gzip.decompress(obj_body.read())
+    return libjson.loads(obj_bytes)
 
 
 def get_s3_object_tagging(bucket: str, key: str):

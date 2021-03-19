@@ -69,7 +69,7 @@ if __name__ == '__main__':
     if uin == 'y':
         cnt = 0
         for key in libs3.get_matching_s3_keys(bucket, suffix=FILTER_SUFFIX):
-            logger.info(f"s3://{bucket}/{key}") if args.dry else services.tag_s3_object(bucket, key)
+            logger.info(f"s3://{bucket}/{key}") if args.dry else services.tag_s3_object(bucket, key, "bam")
             cnt += 1
         logger.info(f"Total {cnt} objects have been tagged from s3://{bucket}")
     else:
