@@ -1,17 +1,20 @@
 {
   "name": "umccr-data-portal-api-serverless",
   "description": "UMCCR Data Portal API backend in cloud native serverless",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "version": "0.1.0",
   "devDependencies": {
-    "husky": "^4.3.0",
+    "husky": "^5.2.0",
     "serverless-associate-waf": "^1.2.1",
     "serverless-aws-documentation": "^1.1.0",
-    "serverless-domain-manager": "^4.2.0",
+    "serverless-domain-manager": "^5.1.0",
     "serverless-plugin-scripts": "^1.0.2",
     "serverless-python-requirements": "^5.1.0",
     "serverless-s3-batch": "^1.0.2",
-    "serverless-wsgi": "^1.7.5"
+    "serverless-wsgi": "^1.7.6"
   },
-  "resolutions": {}
+  "resolutions": {},
+  "scripts": {
+    "prepare": "husky install"
+  }
 }

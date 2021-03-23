@@ -26,11 +26,14 @@ provider:
         - ${ssm:/data_portal/backend/lambda_subnet_ids}
   environment:
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
-    AWS_XRAY_SDK_ENABLED: False
+    AWS_XRAY_SDK_ENABLED: false
 
 functions:
+
   api:
     handler: wsgi_handler.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - http:
           path: /{proxy+}
@@ -38,69 +41,118 @@ functions:
           integration: lambda-proxy
           authorizer: aws_iam
           cors: true
+    timeout: 28
+
   migrate:
     handler: migrate.handler
-    timeout: 20
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
   lims_scheduled_update_processor:
     handler: data_processors.lims.lambdas.scheduled_update_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - schedule:
           rate: cron(0 12 * * ? *)
           enabled: ${self:custom.enabled.${opt:STAGE}, self.enabled.other}
     timeout: 28
+
   sqs_s3_event_processor:
     handler: data_processors.s3.lambdas.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
     timeout: 28
+
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/iap_ens_event_sqs_arn}
     timeout: 28
+
   sqs_germline_event_processor:
     handler: data_processors.pipeline.lambdas.germline.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_germline_queue_arn}
     timeout: 28
+
   sqs_notification_event_processor:
     handler: data_processors.pipeline.lambdas.notification.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_notification_queue_arn}
     timeout: 28
+
   bcl_convert:
     handler: data_processors.pipeline.lambdas.bcl_convert.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   germline:
     handler: data_processors.pipeline.lambdas.germline.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   fastq:
     handler: data_processors.pipeline.lambdas.fastq.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   orchestrator:
     handler: data_processors.pipeline.lambdas.orchestrator.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   workflow_update:
     handler: data_processors.pipeline.lambdas.workflow_update.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   wes_launch:
     handler: data_processors.pipeline.lambdas.wes_handler.launch
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   wes_get_workflow_run:
     handler: data_processors.pipeline.lambdas.wes_handler.get_workflow_run
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   demux_metadata:
     handler: data_processors.pipeline.lambdas.demux_metadata.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   notification:
     handler: data_processors.pipeline.lambdas.notification.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
+
   gds_search:
     handler: data_processors.pipeline.lambdas.gds_search.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
 
 custom:
@@ -115,12 +167,14 @@ custom:
     hooks:
       'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
-     zip: true
-     slim: true
-     slimPatternsAppendDefaults: false
-     slimPatterns:
-       - '**/*.py[c|o]'
-       - '**/__pycache__*'
+    layer: true
+    dockerizePip: non-linux
+    zip: true
+    slim: true
+    slimPatternsAppendDefaults: false
+    slimPatterns:
+      - '**/*.py[c|o]'
+      - '**/__pycache__*'
   customDomain:
     domainName: ${ssm:/data_portal/backend/api_domain_name}
     basePath: ''
