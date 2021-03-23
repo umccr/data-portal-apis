@@ -2,7 +2,8 @@
 import logging
 import requests
 from tempfile import NamedTemporaryFile
-from datetime import datetime
+from urllib.parse import urlparse
+
 
 # ICA imports
 from libica.openapi import libgds
@@ -13,6 +14,24 @@ from utils import ica
 
 # Get logger
 logger = logging.getLogger()
+
+
+def check_gds_file(gds_path: str) -> None:
+    """
+    Check gds path exists, raise error if otherwise
+    :param gds_path:
+    """
+
+    # Extract parts
+    volume_name, path_ = parse_gds_path(gds_path)
+
+    # Verify file exists  # TODO try - catch etc
+    get_gds_file_list(volume_name=volume_name, path=path_)
+
+
+def parse_gds_path(gds_path):
+    gds_url_obj = urlparse(gds_path)
+    return gds_url_obj.netloc, gds_url_obj.path
 
 
 def get_volume_name_from_volume_id(volume_id) -> (str, None):

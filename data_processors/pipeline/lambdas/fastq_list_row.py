@@ -6,7 +6,6 @@ except ImportError:
 import django
 import os
 import pandas as pd
-from urllib.parse import urlparse
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -16,7 +15,7 @@ django.setup()
 import logging
 from typing import List
 
-from utils.gds import get_gds_file_list
+from utils.gds import check_gds_file
 from utils.regex_globals import SAMPLE_REGEX_OBJS
 
 from utils import libjson
@@ -63,9 +62,9 @@ def handler(event, context) -> dict:
     """
 
     logger.info(f"Start processing fastq list rows event")
-    logger.info(libjson.dumps(event))
+    logger.debug(libjson.dumps(event))
 
-    fastq_list_rows: List[dict] = event['fastq_list_rows']
+    fastq_list_rows: list = event['fastq_list_rows']
     sequence_run_id: str = event["sequence_run_id"]
 
     # Easier to work this as a dataframe and iterate through each row
@@ -79,13 +78,13 @@ def handler(event, context) -> dict:
         new_row = row.copy()
 
         # Check read_1 and read_2 exist on gds and set to location attributes
-        check_gds_file(row['read_1'].location)
-        new_row["read_1"] = row["read_1"].location
+        check_gds_file(row['read_1']["location"])
+        new_row["read_1"] = row["read_1"]["location"]
 
         # First read_2 exists
         if "read_2" in row.keys() and not row["read_2"] is None and not row["read_2"] == "":
-            check_gds_file(row['read_2'].location)
-            new_row["read_2"] = row["read_2"].location
+            check_gds_file(row['read_2']["location"])
+            new_row["read_2"] = row["read_2"]["location"]
         else:
             # Set to null value
             new_row["read_2"] = None
@@ -122,27 +121,9 @@ def handler(event, context) -> dict:
         new_rows.append(new_row)
 
     # Convert to df and then to list[dict]
-    new_fastq_list_df = pd.concat(new_rows)
+    new_fastq_list_df = pd.concat(new_rows, axis="columns").transpose()
 
     # Convert back to a list of dicts
     new_fastq_list = new_fastq_list_df.to_dict(orient="records")
 
     return new_fastq_list
-
-
-def check_gds_file(gds_path: str) -> None:
-    """
-    Check gds path exists, raise error if otherwise
-    :param gds_path:
-    """
-
-    # Extract parts
-    volume_name, path_ = parse_gds_path(gds_path)
-
-    # Verify file exists  # TODO try - catch etc
-    get_gds_file_list(volume_name=volume_name, path=path_)
-
-
-def parse_gds_path(gds_path):
-    gds_url_obj = urlparse(gds_path)
-    return gds_url_obj.netloc, gds_url_obj.path

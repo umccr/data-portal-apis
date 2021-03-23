@@ -44,6 +44,8 @@ SAMPLE_REGEX_OBJS = {
     "unique_id": re.compile("({})_({})".format(SAMPLE_ID_REGEX_STR["sample_id"], LIBRARY_REGEX_STR["id"])),
     # https://regex101.com/r/pkqI1n/1
     "topup": re.compile(EXPERIMENT_REGEX_STR["top_up"]),
+    # TODO - add regex 101
+    "rerun": re.compile(EXPERIMENT_REGEX_STR["rerun"]),
     # https://regex101.com/r/nNPwQu/1
     "year": re.compile(LIBRARY_REGEX_STR["year"])
 }
