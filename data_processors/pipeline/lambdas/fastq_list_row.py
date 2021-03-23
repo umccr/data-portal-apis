@@ -6,7 +6,6 @@ except ImportError:
 import django
 import os
 import pandas as pd
-import re
 from urllib.parse import urlparse
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
@@ -15,8 +14,6 @@ django.setup()
 # ---
 
 import logging
-import re
-from collections import defaultdict
 from typing import List
 
 from utils.gds import get_gds_file_list
@@ -56,9 +53,7 @@ def handler(event, context) -> dict:
 
     3. The same regex is used to remove the library id from RGSM, which is then just truncated to the sample name
 
-    4. RGID is then extended from index1.index2.lane to index1.index2.lane.run_id
-
-    5. In the event of a top up (denoted by _topup) in the sample name, RGID is extended to _topup
+    4. RGID is then extended from index1.index2.lane to index1.index2.lane.run_id.unique_id
 
     The modified fastq_list_rows object is then returned
 
@@ -70,10 +65,11 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing fastq list rows event")
     logger.info(libjson.dumps(event))
 
-    fastq_list_rows: List[str] = event['fastq_list_rows']
+    fastq_list_rows: List[dict] = event['fastq_list_rows']
     sequence_run_id: str = event["sequence_run_id"]
 
-    # Easier to work this as a dataframe
+    # Easier to work this as a dataframe and iterate through each row
+    # Particularly if something comes up where we need to work over a column
     fastq_list_df = pd.DataFrame(fastq_list_rows)
 
     # Iterate thorugh each row and update fastq_list_row object
@@ -82,30 +78,56 @@ def handler(event, context) -> dict:
         # Copy out old row
         new_row = row.copy()
 
-        # Check read_1 and read_2 exist on gds
-        check_gds_file(row['read_1'])
-        check_gds_file(row['read_2'])
+        # Check read_1 and read_2 exist on gds and set to location attributes
+        check_gds_file(row['read_1'].location)
+        new_row["read_1"] = row["read_1"].location
 
-        # Get values from library regex
+        # First read_2 exists
+        if "read_2" in row.keys() and not row["read_2"] is None and not row["read_2"] == "":
+            check_gds_file(row['read_2'].location)
+            new_row["read_2"] = row["read_2"].location
+        else:
+            # Set to null value
+            new_row["read_2"] = None
+
+        # Get values from sample regex
         sample_match = SAMPLE_REGEX_OBJS["unique_id"].match(row["rgsm"])
 
-        # Check sample_match isn't none (otherwise we're in trouble)  # TODO
+        # Check sample_match isn't none (otherwise we're in trouble)
+        if sample_match is None:
+            logger.warning("Could not match sample \"{}\" to split sample and library, skipping sample".format(row["rgsm"]))
+            continue
 
         # Get new rgsm value
         new_row["rgsm"] = sample_match.group(1)
 
-        # Get new rglb value
-        new_row["rglb"] = sample_match.group(2)
+        # Get new rglb value and then split on topup
+        rglb = sample_match.group(2)
 
-        # Get new rgid value
-        new_row["rgid"] = "{}.{}".format(row["rgid"], sequence_run_id)
+        # Split out _topup$
+        rglb = SAMPLE_REGEX_OBJS["topup"].split(rglb, 1)[0]
 
-        # Extend rgid value if topup
-        topup_match = SAMPLE_REGEX_OBJS["topup"].match(row["rgsm"])
+        # Split out _rerun$
+        rglb = SAMPLE_REGEX_OBJS["rerun"].split(rglb, 1)[0]
 
-        # Check if we have a match to topup
-        if topup_match is not None:
-            new_row["rgid"] = "{}.{}".format(new_row["rgid"], "topup")
+        # Assign to new row attr
+        new_row["rglb"] = rglb
+
+        # Get new rgid value, which now appends the run id and the unique rgsm value for this sample
+        # This becomes 'index1.index2.lane.seq_id.uniq_id'
+        new_row["rgid"] = ".".join(map(str, [
+            row["rgid"], sequence_run_id, row["rgsm"]
+        ]))
+
+        new_rows.append(new_row)
+
+    # Convert to df and then to list[dict]
+    new_fastq_list_df = pd.concat(new_rows)
+
+    # Convert back to a list of dicts
+    new_fastq_list = new_fastq_list_df.to_dict(orient="records")
+
+    return new_fastq_list
 
 
 def check_gds_file(gds_path: str) -> None:

@@ -183,7 +183,7 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         'gdsSamplesheet': sample_sheet_name,
     }, None)
 
-    # Iterate through each sample
+    # Iterate through each sample by grouping by the RGSM value
     for sample_name, sample_df in fastq_list_df.groupby("rgsm"):
         # skip Undetermined samples
         if sample_name == "Undetermined":
@@ -196,10 +196,21 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
             continue
 
         # Iterate through libraries for this sample, ensure that they're the same type
-        # TODO place in try catch
-        sample_library_name = "{}_{}".format(sample_name, sample_df.rglb.unique().item())
+        sample_library_names = ["{}_{}".format(sample_name, sample_library)
+                                 for sample_library in sample_df.rglb.unique().tolist()]
+        assay_types = []
 
-        assay_type = metadata['types'][metadata['samples'].index(sample_library_name)]
+        # Assign assay types by library
+        for sample_library_name in sample_library_names:
+            assay_types.append(metadata['types'][metadata['samples'].index(sample_library_name)])
+
+        # Ensure only one assay type
+        if not list(set(assay_types)) == 1:
+            logger.warning("Skipping sample \"{}\", received multiple assay types".format(sample_name))
+            continue
+
+        # Assign the single assay type
+        assay_type = list(set(assay_types))[0]
 
         if assay_type != "WGS":
             logger.warning(f"SKIP {assay_type} SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
@@ -209,20 +220,22 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         sample_df["read_1"] = sample_df["read_1"].apply(cwl_file_path_as_string_to_dict)
         sample_df["read_2"] = sample_df["read_2"].apply(cwl_file_path_as_string_to_dict)
 
-        # Convert sample_df into fastq_list_row
-        sample_df.reset_index(inplace=True)
-
+        # Initialise job
         job = {
-            'fastq_list_rows': sample_df.to_dict("records")
+            "sample_name": sample_name,
+            "fastq_list_rows": sample_df.to_dict(orient="records"),
+            "seq_run_id": this_sqr.run_id if this_sqr else None,
+            "seq_name": this_sqr.name if this_sqr else None,
+            "batch_run_id": int(this_batch_run.id)
         }
 
+        # Append job to job_list
         job_list.append(job)
 
     return job_list
 
 
 def parse_bcl_convert_output(output_json: str) -> list:
-    # FIXME - should just check / return the fastq_list_rows object
     """
     Given this_workflow (bcl convert) output (fastqs), return the list of fastq locations on gds
 

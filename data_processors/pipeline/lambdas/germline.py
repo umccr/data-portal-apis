@@ -11,16 +11,25 @@ django.setup()
 
 # ---
 
+# Standards
 import copy
 import logging
 from datetime import datetime, timezone
+import pandas as pd
+from urllib.parse import urlparse
+from pathlib import Path
 
+# Data portal imports
 from data_portal.models import Workflow
 from data_processors.pipeline import services
 from data_processors.pipeline.constant import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
-from utils import libjson, libssm, libdt
 
+# Utils imports
+from utils import libjson, libssm, libdt
+from utils.gds import download_gds_file
+
+# Set loggers
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -63,12 +72,24 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        'sample_name': "SAMPLE_NAME",
-        'fastq_directory': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/UMCCR/",
-        'fastq_list_csv': "gds://some-fastq-data/11111/Y100_I9_I9_Y100/Reports/fastq_list.csv",
-        'seq_run_id': "sequence run id",
-        'seq_name': "sequence run name",
-        'batch_run_id': "batch run id",
+        "sample_name": sample_name,
+        "fastq_list_rows": [{
+            "rgid": "index1.index2.lane",
+            "rgsm": "sample_name",
+            "rglb": "UnknownLibrary",
+            "lane": int,
+            "read_1": {
+              "class": "File",
+              "location": "gds://path/to/read_1.fastq.gz"
+            },
+            "read_2": {
+              "class": "File",
+              "location": "gds://path/to/read_2.fastq.gz"
+            }
+        }],
+        "seq_run_id": "sequence run id",
+        "seq_name": "sequence run name",
+        "batch_run_id": "batch run id",
     }
 
     :param event:
@@ -79,22 +100,48 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.GERMLINE.name} event")
     logger.info(libjson.dumps(event))
 
+    # Extract name of sample and the fastq list rows
     sample_name = event['sample_name']
-    fastq_directory = event['fastq_directory']
-    fastq_list_csv = event['fastq_list_csv']
+    fastq_list_rows = event['fastq_list_rows']
 
+    # Set sequence run id
     seq_run_id = event.get('seq_run_id', None)
     seq_name = event.get('seq_name', None)
+    # Set batch run id
     batch_run_id = event.get('batch_run_id', None)
 
+    # Set workflow helper
     wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
 
     # read input template from parameter store
+    # template looks like this:
+    """
+    {
+      "sample_name": null,
+      "fastq_list_rows": null,
+      "sites_somalier": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/somalier/sites.hg38.vcf.gz"
+      },
+      "genome_version": "hg38",
+      "hla_reference_fasta": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/optitype/hla_reference_dna.fasta"
+      }
+      "reference_fasta": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/dragen/genomes/hg38/hg38.fa"
+      },
+      "reference_tar_dragen": {
+        "class": "File",
+        "location": "gds://umccr-refdata-dev/dragen/genomes/hg38/3.7.5/hg38_alt_ht_3_7_5.tar.gz"
+      }
+    }
+    """
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input['sample-name'] = f"{sample_name}"
-    workflow_input['fastq-directory']['location'] = f"{fastq_directory}"
-    workflow_input['fastq-list']['location'] = f"{fastq_list_csv}"
+    workflow_input["sample_name"] = f"{sample_name}"
+    workflow_input["fastq_list_rows"] = fastq_list_rows
 
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
