@@ -132,8 +132,11 @@ SLS_DEBUG=true serverless remove --STAGE dev
   "Environment": {
     "Variables": {
       "DJANGO_SETTINGS_MODULE": "data_portal.settings.aws",
-      "AWS_XRAY_SDK_ENABLED": "True"
+      "AWS_XRAY_SDK_ENABLED": "true"
     }
+  },
+  "TracingConfig": {
+    "Mode": "Active"
   },
   ...
   ...
@@ -149,7 +152,9 @@ aws lambda list-functions --query 'Functions[?starts_with(FunctionName, `data-po
 aws lambda list-functions | jq '.Functions[] | select(.FunctionName == "data-portal-api-dev-sqs_s3_event_processor")'
 ```
 
-- You can then use AWS Lambda Console to temporarily enable `AWS_XRAY_SDK_ENABLED` to `True`.
+- You can then use [AWS Lambda Console](https://console.aws.amazon.com/lambda) to enable `AWS_XRAY_SDK_ENABLED` to `true`.
+- While at AWS Lambda Console, you must also turn on: **Configuration** > **Monitoring and operations tools** > [**Active tracing**](https://docs.aws.amazon.com/xray/latest/devguide/xray-services-lambda.html).
+- Then make few Lambda invocations, and you can use [AWS X-Ray Console](https://console.aws.amazon.com/xray/home) > **Traces** to start observe tracing.
 - Please switch off the setting back when no longer in use.
 
 ### Segments
