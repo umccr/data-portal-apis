@@ -7,6 +7,7 @@ plugins:
   - serverless-aws-documentation
   - serverless-associate-waf
   - serverless-plugin-scripts
+  - serverless-prune-plugin
 
 provider:
   name: aws
@@ -183,6 +184,11 @@ custom:
     certificateArn: ${ssm:/data_portal/backend/certificate_arn}
   associateWaf:
     name: ${ssm:/data_portal/backend/waf_name}
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 3
+
 package:
   exclude:
     - node_modules/**

@@ -54,11 +54,11 @@ make loaddata
 
 #### Husky & Git
 
-> NOTE: [husky](.huskyrc.json) 🐕 will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encourage to fix those. If you wish to skip this for good reason, you can by-pass husky by using [`--no-verify`](https://github.com/typicode/husky/issues/124) flag in `git` command.
+> NOTE: [husky](https://typicode.github.io/husky/) 🐕 will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encourage to fix those. If you wish to skip this for good reason, you can by-pass husky by using [`--no-verify`](https://github.com/typicode/husky/issues/124) flag in `git` command.
 
 - The default branch is `dev`. Any merges are CI/CD to `DEV` account environment.
 - The `main` branch is production. Any merges are CI/CD to `PROD` account environment.
-- Merge to `main` should be fast-forward merge from `dev` to maintain sync and linearity as follow:
+- Merge to `main` should be fast-forward merge from `dev` to maintain sync and linearity as follows:
 ```
 git checkout main
 git merge --ff-only dev
