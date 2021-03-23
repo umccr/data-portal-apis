@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'data_portal',
     'data_processors',
-    'utils'
+    'utils',
+    'aws_xray_sdk.ext.django',
 ]
 
 MIDDLEWARE = [
@@ -140,3 +141,9 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-amz-security-token',
     'x-amz-date',
 ]
+
+XRAY_RECORDER = {
+    'AUTO_INSTRUMENT': True,
+    'AWS_XRAY_CONTEXT_MISSING': os.getenv('AWS_XRAY_CONTEXT_MISSING', 'LOG_ERROR'),
+    'AWS_XRAY_TRACING_NAME': os.getenv('AWS_XRAY_TRACING_NAME', 'data_portal'),
+}

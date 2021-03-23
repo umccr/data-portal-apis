@@ -118,3 +118,69 @@ aws sso login --profile dev && export AWS_PROFILE=dev
 SLS_DEBUG=true serverless delete_domain --STAGE dev
 SLS_DEBUG=true serverless remove --STAGE dev
 ```
+
+## X-Ray
+
+> 🙋‍♂️ X-Ray SDK is disabled by default!
+
+- Portal API backend and data processing functions can be traced with [X-Ray instrumentation](https://docs.aws.amazon.com/lambda/latest/dg/services-xray.html).
+- You can enable X-Ray SDK by setting the [Lambda Configuration Environment variable](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) in **each** Portal Lambda function, e.g.
+
+```
+  ...
+  ...
+  "Environment": {
+    "Variables": {
+      "DJANGO_SETTINGS_MODULE": "data_portal.settings.aws",
+      "AWS_XRAY_SDK_ENABLED": "True"
+    }
+  },
+  ...
+  ...
+```
+
+- You can observe deployed Lambda functions as follows:
+
+```
+aws sso login --profile dev && export AWS_PROFILE=dev
+
+aws lambda list-functions --query 'Functions[?starts_with(FunctionName, `data-portal-api`) == `true`].FunctionName'
+
+aws lambda list-functions | jq '.Functions[] | select(.FunctionName == "data-portal-api-dev-sqs_s3_event_processor")'
+```
+
+- You can then use AWS Lambda Console to temporarily enable `AWS_XRAY_SDK_ENABLED` to `True`.
+- Please switch off the setting back when no longer in use.
+
+### Segments
+
+- By default, X-Ray SDK support auto instrumentation (i.e. auto created segments) for Django framework, including database queries, rendering subsegments, etc.
+- You can however acquire the current `segment` elsewhere in program code as follows:
+
+```
+segment = xray_recorder.current_segment()
+```
+
+- Or you can add `subsegment` to start [trace from your Lambda handler](https://github.com/aws/aws-xray-sdk-python#trace-aws-lambda-functions) entrypoint:
+
+```
+from aws_xray_sdk.core import xray_recorder
+
+def lambda_handler(event, context):
+    # ... some code
+
+    subsegment = xray_recorder.begin_subsegment('subsegment_name')
+    # Code to record
+    # Add metadata or annotation here, if necessary
+    subsegment.put_metadata('key', dict, 'namespace')
+    subsegment.put_annotation('key', 'value')
+
+    xray_recorder.end_subsegment()
+
+    # ... some other code
+```
+
+- Refer the following links for example and doc:
+  - https://docs.aws.amazon.com/xray-sdk-for-python/latest/reference/index.html
+  - https://docs.aws.amazon.com/lambda/latest/dg/python-tracing.html
+

@@ -26,6 +26,7 @@ provider:
         - ${ssm:/data_portal/backend/lambda_subnet_ids}
   environment:
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
+    AWS_XRAY_SDK_ENABLED: False
 
 functions:
   api:
