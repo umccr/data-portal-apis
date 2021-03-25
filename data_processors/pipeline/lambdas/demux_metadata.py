@@ -26,6 +26,7 @@ from sample_sheet import SampleSheet
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import SampleSheetCSV
 from utils import libssm, libjson, iap
+from utils.regex_globals import SAMPLE_REGEX_OBJS
 
 SAMPLE_ID_HEADER = 'Sample_ID (SampleSheet)'
 OVERRIDECYCLES_HEADER = 'OverrideCycles'
@@ -143,7 +144,7 @@ def handler(event, context):
 
     :param event:
     :param context:
-    :return: dict contains metadata
+    :return: list of dicts containing metadata
     """
     logger.info(f"Start processing demux_metadata event")
     logger.info(libjson.dumps(event))
@@ -169,11 +170,29 @@ def handler(event, context):
     sample_ids = get_sample_ids_from_samplesheet(local_path)
     logger.info(f"Sample IDs: {sample_ids}")
 
+    # Get years
+    years = []
+    for sample_id in sample_ids:
+        # Get sample id and library id
+        sample_regex_obj = SAMPLE_REGEX_OBJS["unique_id"].match(sample_id)
+        # Get library id
+        library_id = sample_regex_obj.group(2)
+        # Get year from library id
+        year_regex_obj = SAMPLE_REGEX_OBJS["year"].match(library_id)
+        # Append year to years
+        # Hope this is fixed before 2099
+        years.append("20{}".format(year_regex_obj.group(1)))
+
+    years = list(set(years))
+
+    # Download lab metdata sheet for each year
+    metadata_dfs = []
+
+    for year in years:
+        metadata_dfs.append(download_metadata(year))
+
     # download the lab metadata sheets
-    df_2019 = download_metadata(year="2019")
-    df_2020 = download_metadata(year="2020")
-    df_2021 = download_metadata(year="2021")
-    df_all = df_2019.append(df_2020.append(df_2021))
+    df_all = pd.concat(metadata_dfs, axis="columns")
 
     # extract required records from metadata
     requested_metadata_df = extract_requested_rows(df=df_all, requested_ids=list(sample_ids))
@@ -184,12 +203,14 @@ def handler(event, context):
         logger.info(f"REQUESTED_METADATA_DF: \n{requested_metadata_df}")
 
     # turn metadata_df into format compatible with workflow input
-    sample_array = requested_metadata_df[SAMPLE_ID_HEADER].values.tolist()
-    orc_array = requested_metadata_df[OVERRIDECYCLES_HEADER].values.tolist()
-    type_array = requested_metadata_df[TYPE_HEADER].values.tolist()
+    # Select, rename, split metadata df
+    requested_metadata_df = requested_metadata_df[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER]]
+    # Rename
+    requested_metadata_df.rename(columns={
+        SAMPLE_ID_HEADER: "sample",
+        OVERRIDECYCLES_HEADER: "override_cycles",
+        TYPE_HEADER: "type"
+    }, inplace=True)
 
-    return {
-        'samples': sample_array,
-        'override_cycles': orc_array,
-        'types': type_array,
-    }
+    # Split by records
+    return requested_metadata_df.to_dict(orient="records")

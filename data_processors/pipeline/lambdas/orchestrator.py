@@ -121,8 +121,8 @@ def next_step(this_workflow: Workflow, context):
 
                 # Initialise fastq list rows object in model
                 for row in fastq_list_rows:
-                    this_batch = services.create_fastq_list_row(row,
-                                                                sequence_run=this_sqr.run_id)
+                    services.create_fastq_list_row(row,
+                                                   sequence_run=this_sqr.run_id)
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
@@ -183,6 +183,9 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         'gdsSamplesheet': sample_sheet_name,
     }, None)
 
+    # Easier to handle this as a df
+    metadata_df = pd.DataFrame(metadata)
+
     # Iterate through each sample by grouping by the RGSM value
     for sample_name, sample_df in fastq_list_df.groupby("rgsm"):
         # skip Undetermined samples
@@ -202,11 +205,20 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
 
         # Assign assay types by library
         for sample_library_name in sample_library_names:
-            assay_types.append(metadata['types'][metadata['samples'].index(sample_library_name)])
+            assay_types.append(metadata_df.query("sample==\"{}\"".format(sample_library_name))["type"].unique().item())
+
+        # Ensure no assay types
+        if list(set(assay_types)) == 0:
+            logger.warning("Skipping sample \"{}\", could not retrieve the assay type from the metadata dict".format(
+                sample_name
+            ))
+            continue
 
         # Ensure only one assay type
         if not list(set(assay_types)) == 1:
-            logger.warning("Skipping sample \"{}\", received multiple assay types".format(sample_name))
+            logger.warning("Skipping sample \"{}\", received multiple assay types: \"{}\"".format(
+                sample_name, ", ".join(assay_types)
+            ))
             continue
 
         # Assign the single assay type

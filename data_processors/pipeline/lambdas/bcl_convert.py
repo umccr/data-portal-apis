@@ -11,6 +11,7 @@ django.setup()
 
 # ---
 
+import pandas as pd
 import copy
 import logging
 from datetime import datetime, timezone
@@ -31,36 +32,26 @@ def _build_error_message(reason) -> dict:
     return error_message
 
 
-def validate_metadata(event, md_samples, md_override_cycles):
+def validate_metadata(event, samples):
     prefix = f"Abort launching BCL Convert workflow."
     suffix = f"after lab metadata tracking sheet and sample sheet filtering step."
 
-    if md_samples is None or len(md_samples) == 0:
+    # Check at least one sample is returned
+    if samples is None or len(samples) == 0:
         reason = f"{prefix} No samples found {suffix}"
         services.notify_outlier(topic="No samples found", reason=reason, status="Aborted", event=event)
         return reason
 
-    if md_override_cycles is None or len(md_override_cycles) == 0:
-        reason = f"{prefix} No Override Cycles found {suffix}"
+    # Check each sample has "override_cycles" attribute
+    has_error = False
+    failed_samples = []
+    for sample in samples:
+        if sample.get("override_cycles", None) is None:
+            failed_samples.append(sample.get("sample"))
+            has_error = True
+    if has_error:
+        reason = f"{prefix} No Override Cycles found for samples {','.join(failed_samples)} {suffix}"
         services.notify_outlier(topic="No Override Cycles found", reason=reason, status="Aborted", event=event)
-        return reason
-
-    if len(md_samples) != len(md_override_cycles):
-        reason = f"{prefix} " \
-                 f"Number of Samples ({len(md_samples)}) is not equal to " \
-                 f"number of Override Cycles ({len(md_override_cycles)}) {suffix}"
-        topic = "Samples size and Override Cycles size mismatch"
-        services.notify_outlier(topic=topic, reason=reason, status="Aborted", event=event)
-        return reason
-
-    if '' in md_samples:
-        reason = f"{prefix} Sample list contain blank value {suffix}"
-        services.notify_outlier(topic="Blank Sample_ID found", reason=reason, status="Aborted", event=event)
-        return reason
-
-    if '' in md_override_cycles:
-        reason = f"{prefix} Override Cycles contain blank value {suffix}"
-        services.notify_outlier(topic="Blank Override Cycles found", reason=reason, status="Aborted", event=event)
         return reason
 
     pass
@@ -96,27 +87,68 @@ def handler(event, context) -> dict:
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     sample_sheet_gds_path = f"{run_folder}/{SampleSheetCSV.FILENAME.value}"
 
-    metadata: dict = demux_metadata.handler({
+    metadata: list = demux_metadata.handler({
         'gdsVolume': gds_volume_name,
         'gdsBasePath': gds_folder_path,
         'gdsSamplesheet': SampleSheetCSV.FILENAME.value
     }, None)
-    md_samples = metadata.get('samples', None)
-    md_override_cycles = metadata.get('override_cycles', None)
 
-    failure_reason = validate_metadata(event=event, md_samples=md_samples, md_override_cycles=md_override_cycles)
+    metadata_df = pd.DataFrame(metadata)
+
+    failure_reason = validate_metadata(event=event, samples=metadata)
     if failure_reason is not None:
         return _build_error_message(failure_reason)
 
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input['samplesheet']['location'] = sample_sheet_gds_path
-    workflow_input['bcl-input-directory']['location'] = run_folder
-    workflow_input['samples'] = md_samples
-    workflow_input['override-cycles'] = md_override_cycles
-    if 'runfolder-name' in workflow_input:
-        workflow_input['runfolder-name'] = seq_name
-    if 'dummyFile-multiqc' in workflow_input:
-        workflow_input['dummyFile-multiqc']['location'] = sample_sheet_gds_path  # can be any file in GDS path
+    workflow_input['sample_sheet']['location'] = sample_sheet_gds_path
+    workflow_input['bcl_input_directory']['location'] = run_folder
+    workflow_input['override_cycles_by_sample'] = [
+        {
+            "sample": sample.get("sample"),
+            "override_cycles": sample.get("override_cycles")
+        }
+        for sample in metadata
+    ]
+
+    # Add in setting_by_override_cycles ->
+    # for TSO500 samples this means the inclusion of the following settings
+    """
+    ctDNA or TSO-DNA should have the following settings
+    AdapterBehavior,trim
+    MinimumTrimmedReadLength,35
+    MaskShortReads,35
+    """
+    tso_500_types = ["ctDNA", "TSO-DNA"]
+    settings_by_override_cycles = []
+    if not len(set(tso_500_types).intersection(metadata_df["types"].unique().tolist())) == 0:
+        tso_override_cycles_list = metadata_df.query("type in @tso_500_types")["override_cycles"].unique().tolist()
+        for tso_override_cycles in tso_override_cycles_list:
+            # Confirm that tso_override_cycles settings to not affect other types
+            types_in_override_cycles = metadata_df.query("override_cycles ==\"{}\"".format(tso_override_cycles))["types"].unique().tolist()
+            other_types_with_override_cycles_setting = set(types_in_override_cycles).difference(tso_500_types)
+            if not len(other_types_with_override_cycles_setting) == 0:
+                # Get other samples that aren't tso500 that have the same override cycles setting
+                other_samples = metadata_df.query("type not in @tso_500_types & override_cycles==\"{}\"".format(
+                    tso_override_cycles))["sample"].tolist()
+                # Throw warning
+                logger.warning("Cannot set override cycles specifically for tso500 data, "
+                               "the following samples also have same override cycles setting \"{}\": \"{}\"".format(
+                                tso_override_cycles, ", ".join(other_samples)
+                               ))
+                # And then continue like nothing ever happened
+                continue
+            # Otherwise, we're clear to add in the tso500 override cycles settings
+            settings_by_override_cycles.append({
+                "override_cycles": tso_override_cycles,
+                "settings": {
+                    "adapter_behaviour": "trim",
+                    "minimum_trimmed_read_length": 35,
+                    "mask_short_reads": 35
+                }
+            })
+    # Add settings by override cycles to workflow inputs
+    if not len(settings_by_override_cycles) == 0:
+        workflow_input["settings_by_override_cycles"] = settings_by_override_cycles
 
     # prepare engine_parameters
     gds_fastq_vol = libssm.get_ssm_param(constant.IAP_GDS_FASTQ_VOL)
