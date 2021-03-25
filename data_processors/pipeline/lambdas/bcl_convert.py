@@ -20,7 +20,7 @@ from data_portal.models import Workflow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler, demux_metadata
-from utils import libjson, libssm, libdt
+from utils import libjson, libssm, libdt, metadata_globals
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -118,7 +118,7 @@ def handler(event, context) -> dict:
     MinimumTrimmedReadLength,35
     MaskShortReads,35
     """
-    tso_500_types = ["ctDNA", "TSO-DNA"]
+    tso_500_types = metadata_globals.TSO_TYPES.copy()
     settings_by_override_cycles = []
     if not len(set(tso_500_types).intersection(metadata_df["types"].unique().tolist())) == 0:
         tso_override_cycles_list = metadata_df.query("type in @tso_500_types")["override_cycles"].unique().tolist()
@@ -140,11 +140,7 @@ def handler(event, context) -> dict:
             # Otherwise, we're clear to add in the tso500 override cycles settings
             settings_by_override_cycles.append({
                 "override_cycles": tso_override_cycles,
-                "settings": {
-                    "adapter_behaviour": "trim",
-                    "minimum_trimmed_read_length": 35,
-                    "mask_short_reads": 35
-                }
+                "settings": wfl_helper.get_sample_type_settings("tso500")
             })
     # Add settings by override cycles to workflow inputs
     if not len(settings_by_override_cycles) == 0:

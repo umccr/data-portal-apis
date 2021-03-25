@@ -19,8 +19,12 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         super(BCLConvertUnitTests, self).setUp()
         when(demux_metadata).handler(...).thenReturn(
             {
-                'samples': ['PTC_EXPn200908LL_L2000001'],
-                'override_cycles': ['Y100;I8N2;I8N2;Y100'],
+                'samples_by_override_cycles': [
+                    {
+                      "sample": "PTC_EXPn200908LL_L2000001",
+                      "override_cycles": "Y100;I8N2;I8N2;Y100"
+                    }
+                ]
             }
         )
 
@@ -81,16 +85,14 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         """
         when(demux_metadata).handler(...).thenReturn(
             {
-                'samples': [
-                    'PTC_EXPn200908LL_L2000001',
-                    'PTC_EXPn200908LL_L2000002',
-                    'PTC_EXPn200908LL_L2000003',
-                ],
-                'override_cycles': [
-                    'Y100;I8N2;I8N2;Y100',
-                    '',
-                    'Y100;I8N2;I8N2;Y100',
-                ],
+                'samples_by_override_cycles': [
+                    {"sample": "PTC_EXPn200908LL_L2000001",
+                     "override_cycles": "Y100;I8N2;I8N2;Y100"},
+                    {"sample": "PTC_EXPn200908LL_L2000002",
+                     "override_cycles": ""},
+                    {"sample": "PTC_EXPn200908LL_L2000003",
+                     "override_cycles": "Y100;I8N2;I8N2;Y100"},
+                ]
             }
         )
 
@@ -123,19 +125,16 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        mock_samples = [
-            '',
-            'PTC_EXPn200908LL_L2000002',
-            'PTC_EXPn200908LL_L2000003',
+        samples_by_override_cycles = [
+            {"sample": "PTC_EXPn200908LL_L2000001",
+             "override_cycles": "Y100;I8N2;I8N2;Y100"},
+            {"sample": "PTC_EXPn200908LL_L2000002",
+             "override_cycles": ""},
+            {"sample": "PTC_EXPn200908LL_L2000003",
+             "override_cycles": "Y100;I8N2;I8N2;Y100"}
         ]
 
-        mock_override_cycles = [
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-        ]
-
-        reason = bcl_convert.validate_metadata(mock_event, mock_samples, mock_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -156,18 +155,15 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        mock_samples = [
-            'PTC_EXPn200908LL_L2000002',
-            'PTC_EXPn200908LL_L2000003',
+        samples_by_override_cycles = [
+            {"override_cycles": "Y100;I8N2;I8N2;Y100"},
+            {"sample": "PTC_EXPn200908LL_L2000002",
+             "override_cycles": ""},
+            {"sample": "PTC_EXPn200908LL_L2000003",
+             "override_cycles": "Y100;I8N2;I8N2;Y100"}
         ]
 
-        mock_override_cycles = [
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-        ]
-
-        reason = bcl_convert.validate_metadata(mock_event, mock_samples, mock_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -188,17 +184,13 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        mock_samples = [
-
+        samples_by_override_cycles = [
+            {"override_cycles": "Y100;I8N2;I8N2;Y100"},
+            {"override_cycles": ""},
+            {"override_cycles": "Y100;I8N2;I8N2;Y100"}
         ]
 
-        mock_override_cycles = [
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-        ]
-
-        reason = bcl_convert.validate_metadata(mock_event, mock_samples, mock_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -219,16 +211,13 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        mock_samples = [
-            'PTC_EXPn200908LL_L2000002',
-            'PTC_EXPn200908LL_L2000003',
+        samples_by_override_cycles = [
+            {"sample": "PTC_EXPn200908LL_L2000001"},
+            {"sample": "PTC_EXPn200908LL_L2000002"},
+            {"sample": "PTC_EXPn200908LL_L2000003"}
         ]
 
-        mock_override_cycles = [
-
-        ]
-
-        reason = bcl_convert.validate_metadata(mock_event, mock_samples, mock_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -249,17 +238,16 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        mock_samples = [
-            'PTC_EXPn200908LL_L2000002',
-            'PTC_EXPn200908LL_L2000003',
+        samples_by_override_cycles = [
+            {"sample": "PTC_EXPn200908LL_L2000001",
+             "override_cycles": "Y100;I8N2;I8N2;Y100"},
+            {"sample": "PTC_EXPn200908LL_L2000002",
+             "override_cycles": ""},
+            {"sample": "PTC_EXPn200908LL_L2000003",
+             "override_cycles": "Y100;I8N2;I8N2;Y100"}
         ]
 
-        mock_override_cycles = [
-            'Y100;I8N2;I8N2;Y100',
-            'Y100;I8N2;I8N2;Y100',
-        ]
-
-        reason = bcl_convert.validate_metadata(mock_event, mock_samples, mock_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
