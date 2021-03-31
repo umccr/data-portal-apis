@@ -57,6 +57,9 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
             demux_metadata.TYPE_HEADER: [
                 "WGS",
             ],
+            demux_metadata.ASSAY_HEADER: [
+                "TsqNano"
+            ]
         }
         self.mock_metadata_df = pd.DataFrame(data=d)
 
@@ -82,10 +85,17 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
         when(demux_metadata).download_gds_file(...).thenReturn(self.mock_sample_sheet.name)
         when(demux_metadata).download_metadata(...).thenReturn(self.mock_metadata_df)  # comment to fetch actual sheet
 
+        # Get records list
         result = demux_metadata.handler(mock_metadata_event, None)
 
-        self.assertIsInstance(result.get('samples'), list)
-        self.assertIsInstance(result.get('override_cycles'), list)
+        # Make sure that the output is a list
+        self.assertIsInstance(result, list)
+
+        # Make sure that a selected attribute has 'type', 'sample', 'override-cycles', and 'assay'
+        self.assertIsNotNone(result[0].get('sample', None))
+        self.assertIsNotNone(result[0].get('override_cycles', None))
+        self.assertIsNotNone(result[0].get('type', None))
+        self.assertIsNotNone(result[0].get('assay', None))
 
         logger.info("-" * 32)
         logger.info("Example demux_metadata.handler lambda output:")

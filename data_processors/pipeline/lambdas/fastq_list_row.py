@@ -41,7 +41,7 @@ def handler(event, context) -> dict:
               "location": "gds://path/to/read_2.fastq.gz"
             }
         }],
-        "sequence_run_id": "YYMMDD_A0SLOT_1234_BFLOWCELLID"
+        "sequencing_run": "YYMMDD_A0SLOT_1234_BFLOWCELLID"
     }
 
     Given a list of fastq list rows and a sequence run id we do the following for each item in fastq_list_rows:
@@ -65,7 +65,7 @@ def handler(event, context) -> dict:
     logger.debug(libjson.dumps(event))
 
     fastq_list_rows: list = event['fastq_list_rows']
-    sequence_run_id: str = event["sequence_run_id"]
+    sequencing_run: str = event["sequencing_run"]
 
     # Easier to work this as a dataframe and iterate through each row
     # Particularly if something comes up where we need to work over a column
@@ -115,7 +115,7 @@ def handler(event, context) -> dict:
         # Get new rgid value, which now appends the run id and the unique rgsm value for this sample
         # This becomes 'index1.index2.lane.seq_id.uniq_id'
         new_row["rgid"] = ".".join(map(str, [
-            row["rgid"], sequence_run_id, row["rgsm"]
+            row["rgid"], sequencing_run, row["rgsm"]
         ]))
 
         new_rows.append(new_row)

@@ -113,7 +113,6 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
         # Assertion 8: Ensure that rgid still has _topup attribute
         self.assertTrue(mock_fastq_list_handler[1]["rgid"].endswith("_topup"))
 
-
     def add_fastq_list_row_as_fastq_list_object(self):
         """
         python manage.py test data_processors.pipeline.tests.test_fastq_list_row.FastqListRowUnitTests.add_fastq_list_row_as_fastq_list_object
@@ -126,7 +125,14 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
         # Call fastq handler on mock_fastq_list_rows
         mock_fastq_list_handler = fastq_list_row.handler({'fastq_list_rows': orchestrator.parse_bcl_convert_output(mock_bcl_convert_wes_run.output),
-                                                          'sequence_run_id': mock_sqr.run_id}, None)
+                                                          'sequence_run': mock_sqr.name}, None)
 
+        # Create row
         services.create_fastq_list_row(mock_fastq_list_handler[0],
-                                       sequence_run=mock_bcl_convert_wes_run.run_id)
+                                       sequencing_run=mock_sqr.name)
+
+        # Get row
+        same_fastq_list_row = services.get_fastq_list_row_by_rgid(rgid=mock_fastq_list_handler[0]["rgid"])
+
+        # assert row is in database
+        self.assertTrue(same_fastq_list_row["rgsm"] == mock_fastq_list_handler[0]["rgsm"])

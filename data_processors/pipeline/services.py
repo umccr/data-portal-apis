@@ -662,7 +662,7 @@ def get_batch_run_none_or_all_running(batch_run_id):
 
 
 @transaction.atomic
-def create_fastq_list_row(fastq_list_row, sequence_run=None):
+def create_fastq_list_row(fastq_list_row, sequencing_run=None):
     """
     A fastq list row contains the following elements
     rgid,
@@ -671,7 +671,7 @@ def create_fastq_list_row(fastq_list_row, sequence_run=None):
     read_1
     read_2
     :param fastq_list_row:
-    :param sequence_run_id
+    :param sequencing_run
     :return:
     """
 
@@ -682,5 +682,15 @@ def create_fastq_list_row(fastq_list_row, sequence_run=None):
         setattr(fastq_list_row_obj, key, value)
 
     # Add sequence run id
-    fastq_list_row_obj.sequence_run = sequence_run
+    fastq_list_row_obj.sequence_run = sequencing_run
     fastq_list_row_obj.save()
+
+
+@transaction.atomic
+def get_fastq_list_row_by_rgid(rgid):
+    try:
+        fastq_list_row = FastqListRow.objects.get(rgid=rgid)
+    except FastqListRow.DoesNotExist:
+        return None
+
+    return fastq_list_row

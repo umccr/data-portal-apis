@@ -28,9 +28,10 @@ from data_processors.pipeline.constant import SampleSheetCSV
 from utils import libssm, libjson, iap
 from utils.regex_globals import SAMPLE_REGEX_OBJS
 
-SAMPLE_ID_HEADER = 'Sample_ID (SampleSheet)'
-OVERRIDECYCLES_HEADER = 'OverrideCycles'
-TYPE_HEADER = 'Type'
+SAMPLE_ID_HEADER = "Sample_ID (SampleSheet)"
+OVERRIDECYCLES_HEADER = "OverrideCycles"
+TYPE_HEADER = "Type"
+ASSAY_HEADER = "Assay"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -204,12 +205,13 @@ def handler(event, context):
 
     # turn metadata_df into format compatible with workflow input
     # Select, rename, split metadata df
-    requested_metadata_df = requested_metadata_df[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER]]
+    requested_metadata_df = requested_metadata_df[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER, ASSAY_HEADER]]
     # Rename
     requested_metadata_df.rename(columns={
         SAMPLE_ID_HEADER: "sample",
         OVERRIDECYCLES_HEADER: "override_cycles",
-        TYPE_HEADER: "type"
+        TYPE_HEADER: "type",
+        ASSAY_HEADER: "assay"
     }, inplace=True)
 
     # Split by records

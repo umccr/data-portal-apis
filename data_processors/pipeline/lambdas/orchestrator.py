@@ -114,7 +114,7 @@ def next_step(this_workflow: Workflow, context):
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
                 fastq_list_rows = fastq_list_row.handler({'fastq_list_rows': parse_bcl_convert_output(this_workflow.output),
-                                                          'sequence_run_id': this_sqr.run_id}, None)
+                                                          'sequencing_run': this_sqr.name}, None)
 
                 # cache batch context data in db
                 this_batch = services.update_batch(this_batch.id, context_data=fastq_list_rows)
@@ -122,7 +122,7 @@ def next_step(this_workflow: Workflow, context):
                 # Initialise fastq list rows object in model
                 for row in fastq_list_rows:
                     services.create_fastq_list_row(row,
-                                                   sequence_run=this_sqr.run_id)
+                                                   sequencing_run=this_sqr.name)
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)

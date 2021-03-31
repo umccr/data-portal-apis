@@ -7,7 +7,7 @@ from mockito import when, verify
 
 from data_portal.models import SequenceRun, Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType
 from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libslack
@@ -19,12 +19,40 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         super(BCLConvertUnitTests, self).setUp()
         when(demux_metadata).handler(...).thenReturn(
             {
-                'samples_by_override_cycles': [
+                "settings_by_samples": [
                     {
-                      "sample": "PTC_EXPn200908LL_L2000001",
-                      "override_cycles": "Y100;I8N2;I8N2;Y100"
+                      "batch_name": "my-test-batch",
+                      "samples": [
+                          "PTC_EXPn200908LL_L2000001"
+                      ],
+                      "settings": {
+                        "override_cycles": "Y100;I8N2;I8N2;Y100"
+                      }
                     }
                 ]
+            }
+        )
+
+        wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT.value)
+
+        when(wfl_helper.get_ssm_key_input()).thenReturn(
+            {
+                "bcl_input_directory": {
+                    "class": "Directory",
+                    "location": "PLACEHOLDER"
+                },
+                "samplesheet": {
+                    "class": "File",
+                    "location": "PLACEHOLDER"
+                },
+                "settings_by_samples": [],
+                "samplesheet_outdir": "samplesheets-by-assay-type",
+                "ignore_missing_samples": True,
+                "samplesheet_output_format": "v2",
+                "bcl_sampleproject_subdirectories_bcl_conversion": True,
+                "strict_mode_bcl_conversion": True,
+                "delete_undetermined_indices_bcl_conversion": True,
+                "runfolder_name": "PLACEHOLDER"
             }
         )
 
@@ -83,16 +111,14 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_handler_metadata_validation_fail
         """
+
+        # This will fail metadata validation since there exists no samples
         when(demux_metadata).handler(...).thenReturn(
             {
-                'samples_by_override_cycles': [
-                    {"sample": "PTC_EXPn200908LL_L2000001",
-                     "override_cycles": "Y100;I8N2;I8N2;Y100"},
-                    {"sample": "PTC_EXPn200908LL_L2000002",
-                     "override_cycles": ""},
-                    {"sample": "PTC_EXPn200908LL_L2000003",
-                     "override_cycles": "Y100;I8N2;I8N2;Y100"},
-                ]
+                "sample": "",
+                "override_cycles": "Y100;I8N2;I8N2;Y100",
+                "type": "WGS",
+                "assay": "TsqNano"
             }
         )
 
@@ -114,9 +140,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # should call to slack webhook once
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
-    def test_validate_metadata_blank_sample(self):
+    def test_validate_metadata_blank_samples(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_blank_sample
+        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_blank_samples
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -125,16 +151,17 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        samples_by_override_cycles = [
-            {"sample": "PTC_EXPn200908LL_L2000001",
-             "override_cycles": "Y100;I8N2;I8N2;Y100"},
-            {"sample": "PTC_EXPn200908LL_L2000002",
-             "override_cycles": ""},
-            {"sample": "PTC_EXPn200908LL_L2000003",
-             "override_cycles": "Y100;I8N2;I8N2;Y100"}
+        settings_by_samples = [
+            {
+                "batch_name": "my-batch",
+                "samples": [],
+                "settings": {
+                    "override_cycles": "Y100;I8N2;I8N2;Y100"
+                }
+            }
         ]
 
-        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, settings_by_samples)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -144,9 +171,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # should call to slack webhook once
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
-    def test_validate_metadata_mismatch(self):
+    def test_validate_no_batch_name(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_mismatch
+        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_no_batch_name
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -155,15 +182,19 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        samples_by_override_cycles = [
-            {"override_cycles": "Y100;I8N2;I8N2;Y100"},
-            {"sample": "PTC_EXPn200908LL_L2000002",
-             "override_cycles": ""},
-            {"sample": "PTC_EXPn200908LL_L2000003",
-             "override_cycles": "Y100;I8N2;I8N2;Y100"}
+        settings_by_samples = [
+            {
+                "samples": [
+                    "PTC_EXPn200908LL_L2000002",
+                    "PTC_EXPn200908LL_L2000003"
+                ],
+                "settings": {
+                    "override_cycles": "Y100;I8N2;I8N2;Y100"
+                }
+            }
         ]
 
-        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, settings_by_samples)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -184,13 +215,17 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        samples_by_override_cycles = [
-            {"override_cycles": "Y100;I8N2;I8N2;Y100"},
-            {"override_cycles": ""},
-            {"override_cycles": "Y100;I8N2;I8N2;Y100"}
+        settings_by_override_cycles = [
+            {
+                "batch_name": "my-no-samples-batch",
+                "samples": [],
+                "settings": {
+                    "override_cycles": "Y100;I8N2;I8N2;Y100"
+                }
+            }
         ]
 
-        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, settings_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -211,13 +246,19 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        samples_by_override_cycles = [
-            {"sample": "PTC_EXPn200908LL_L2000001"},
-            {"sample": "PTC_EXPn200908LL_L2000002"},
-            {"sample": "PTC_EXPn200908LL_L2000003"}
+        settings_by_override_cycles = [
+            {
+                "batch_name": "my-no-override-cycles-batch",
+                "samples": [
+                    "PTC_EXPn200908LL_L2000001",
+                    "PTC_EXPn200908LL_L2000002",
+                    "PTC_EXPn200908LL_L2000003"
+                ],
+                "settings": {}
+            }
         ]
 
-        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, settings_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
@@ -238,16 +279,21 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
             'seq_name': "zzz",
         }
 
-        samples_by_override_cycles = [
-            {"sample": "PTC_EXPn200908LL_L2000001",
-             "override_cycles": "Y100;I8N2;I8N2;Y100"},
-            {"sample": "PTC_EXPn200908LL_L2000002",
-             "override_cycles": ""},
-            {"sample": "PTC_EXPn200908LL_L2000003",
-             "override_cycles": "Y100;I8N2;I8N2;Y100"}
+        settings_by_override_cycles = [
+            {
+                "batch_name": "my-passing-batch",
+                "samples": [
+                    "PTC_EXPn200908LL_L2000001",
+                    "PTC_EXPn200908LL_L2000002",
+                    "PTC_EXPn200908LL_L2000003"
+                ],
+                "settings": {
+                    "override_cycles": "Y100;I8N2;I8N2;Y100"
+                }
+            }
         ]
 
-        reason = bcl_convert.validate_metadata(mock_event, samples_by_override_cycles)
+        reason = bcl_convert.validate_metadata(mock_event, settings_by_override_cycles)
 
         logger.info("-" * 32)
         logger.info(json.dumps(reason))
