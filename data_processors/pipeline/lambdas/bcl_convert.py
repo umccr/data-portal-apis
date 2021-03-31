@@ -231,7 +231,6 @@ def handler(event, context) -> dict:
 
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input['samplesheet']['location'] = sample_sheet_gds_path
-    print(workflow_input)
     workflow_input['bcl_input_directory']['location'] = run_folder
 
     settings_by_samples = []

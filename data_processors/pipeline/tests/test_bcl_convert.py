@@ -7,7 +7,7 @@ from mockito import when, verify, contains
 
 from data_portal.models import SequenceRun, Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType
+from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType, IAP_GDS_FASTQ_VOL
 from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libslack
@@ -18,19 +18,14 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
     def setUp(self) -> None:
         super(BCLConvertUnitTests, self).setUp()
         when(demux_metadata).handler(...).thenReturn(
-            {
-                "settings_by_samples": [
+            [
                     {
-                      "batch_name": "my-test-batch",
-                      "samples": [
-                          "PTC_EXPn200908LL_L2000001"
-                      ],
-                      "settings": {
-                        "override_cycles": "Y100;I8N2;I8N2;Y100"
-                      }
+                      "sample": "PTC_EXPn200908LL_L2000001",
+                      "override_cycles": "Y100;I8N2;I8N2;Y100",
+                      "type": "WGS",
+                      "assay": "TsqNano"
                     }
-                ]
-            }
+            ]
         )
 
         # This introspect `libssm` module import in `bcl_convert` lambda module
@@ -66,6 +61,26 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
                 }
             )
         )
+
+        #when(bcl_convert.libssm).get_ssm_param(contains(IAP_GDS_FASTQ_VOL)).thenReturn(
+        #    "fastq-vol"
+        #)
+
+        #when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_engine_parameters())).thenReturn(
+        #    json.dumps(
+        #        {
+        #            "outputDirectory": "PLACEHOLDER"
+        #        }
+        #    )
+        #)
+
+        #when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_id()).thenReturn(
+        #    "wfl....."
+        #)
+
+        #when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_version()).thenReturn(
+        #    "version..."
+        #)
 
     def test_handler(self):
         """
