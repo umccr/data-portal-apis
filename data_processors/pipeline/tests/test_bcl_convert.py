@@ -140,12 +140,14 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
         # This will fail metadata validation since there exists no samples
         when(demux_metadata).handler(...).thenReturn(
-            {
+            [
+              {
                 "sample": "",
                 "override_cycles": "Y100;I8N2;I8N2;Y100",
                 "type": "WGS",
                 "assay": "TsqNano"
-            }
+              }
+            ]
         )
 
         result = bcl_convert.handler({
@@ -280,7 +282,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
                     "PTC_EXPn200908LL_L2000002",
                     "PTC_EXPn200908LL_L2000003"
                 ],
-                "settings": {}
+                "settings": {
+                    "adapter_read_1": "AAAACAACT"
+                }
             }
         ]
 

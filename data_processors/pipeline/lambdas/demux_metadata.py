@@ -126,7 +126,7 @@ def extract_requested_rows(df, requested_ids: list):
     # filter rows by requested ids
     subset_rows = df[df[SAMPLE_ID_HEADER].isin(requested_ids)]
     # filter colums by data needed for workflow
-    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER]]
+    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER, ASSAY_HEADER]]
     return subset_cols
 
 

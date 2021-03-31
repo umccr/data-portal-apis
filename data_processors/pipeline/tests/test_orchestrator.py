@@ -33,16 +33,32 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_workflow.type_name = WorkflowType.BCL_CONVERT.name
         mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
         mock_workflow.output = """
-        {
-            'main/fastqs': {
-                'location': "gds://{mock_workflow.wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert",
-                'basename': "out-dir-bclConvert",
-                'nameroot': "",
-                'nameext': "",
-                'class': "Directory",
-                'listing': []
+        "main/fastq_list_rows": [
+            {
+              "rgid": "CATGCGAT.4",
+              "rglb": "UnknownLibrary",
+              "rgsm": "PRJ200438_LPRJ200438",
+              "lane": 4,
+              "read_1": {
+                "class": "File",
+                "basename": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
+                "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
+                "nameroot": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq",
+                "nameext": ".gz",
+                "http://commonwl.org/cwltool#generation": 0,
+                "size": 16698849950
+              },
+              "read_2": {
+                "class": "File",
+                "basename": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
+                "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
+                "nameroot": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq",
+                "nameext": ".gz",
+                "http://commonwl.org/cwltool#generation": 0,
+                "size": 38716143739
+              }
             }
-        }
+        ]
         """
         try:
             orchestrator.next_step(mock_workflow, None)
@@ -63,82 +79,47 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
         mock_wfl_run.output = {
-            'main/fastq-directories': [
+            "main/fastq_list_rows": [
                 {
-                    'location': f"gds://{TestConstant.wfr_id.value}/outputs/OVERRIDE_CYCLES_ID_XZY",
-                    'basename': "OVERRIDE_CYCLES_ID_XZY",
-                    'nameroot': "",
-                    'nameext': "",
-                    'class': "Directory",
-                    'listing': []
-                },
+                    "rgid": "CATGCGAT.4",
+                    "rglb": "UnknownLibrary",
+                    "rgsm": "PRJ200438_LPRJ200438",
+                    "lane": 4,
+                    "read_1": {
+                        "class": "File",
+                        "basename": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
+                        "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
+                        "nameroot": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq",
+                        "nameext": ".gz",
+                        "http://commonwl.org/cwltool#generation": 0,
+                        "size": 16698849950
+                    },
+                    "read_2": {
+                        "class": "File",
+                        "basename": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
+                        "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
+                        "nameroot": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq",
+                        "nameext": ".gz",
+                        "http://commonwl.org/cwltool#generation": 0,
+                        "size": 38716143739
+                    }
+                }
             ]
         }
+
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
         workflow_version.id = TestConstant.wfv_id.value
         mock_wfl_run.workflow_version = workflow_version
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
-        volume = f"{TestConstant.wfr_id.value}"
-        base = f"/outputs/OVERRIDE_CYCLES_ID_XZY/PROJECT"
-        mock_files = [
-            "NA12345 - 4KC_S7_R1_001.fastq.gz",
-            "NA12345 - 4KC_S7_R2_001.fastq.gz",
-            "PRJ111119_L1900000_S1_R1_001.fastq.gz",
-            "PRJ111119_L1900000_S1_R2_001.fastq.gz",
-            "MDX199999_L1999999_topup_S2_R1_001.fastq.gz",
-            "MDX199999_L1999999_topup_S2_R2_001.fastq.gz",
-            "L9111111_topup_S3_R1_001.fastq.gz",
-            "L9111111_topup_S3_R2_001.fastq.gz",
-            "NTC_L111111_S4_R1_001.fastq.gz",
-            "NTC_L111111_S4_R2_001.fastq.gz",
-        ]
-        mock_file_list.items = []
-        for mock_file in mock_files:
-            mock_file_list.items.append(
-                libgds.FileResponse(volume_name=volume, path=f"{base}/{mock_file}", name=mock_file),
-            )
-        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
-
-        when(orchestrator.demux_metadata).handler(...).thenReturn({
-            'samples': [
-                "NA12345 - 4KC",
-                "NA12345 - 4KC",
-                "PRJ111119_L1900000",
-                "PRJ111119_L1900000",
-                "MDX199999_L1999999_topup",
-                "MDX199999_L1999999_topup",
-                "L9111111_topup",
-                "L9111111_topup",
-                "NTC_L111111",
-                "NTC_L111111",
-            ],
-            'override_cycles': [
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-                "Y100;I8N2;I8N2;Y100",
-            ],
-            'types': [
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-                "WGS",
-            ],
-        })
+        when(orchestrator.demux_metadata).handler(...).thenReturn([
+            {
+                "sample": "PRJ200438_LPRJ200438",
+                "override_cycles": "Y100;I8N2;I8N2;Y100",
+                "type": "WGS",
+                "assay": "TsqNano"
+            }
+        ])
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,

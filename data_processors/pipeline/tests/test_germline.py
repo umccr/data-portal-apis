@@ -28,7 +28,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
                     "rgid": "index1.index2.lane",
                     "rgsm": "sample_name",
                     "rglb": "sample_library",
-                    "lane": int,
+                    "lane": 1,
                     "read_1": {
                       "class": "File",
                       "location": "gds://path/to/read_1.fastq.gz"
@@ -73,7 +73,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
                     "rgid": "index1.index2.lane",
                     "rgsm": "sample_name",
                     "rglb": "sample_library",
-                    "lane": int,
+                    "lane": 1,
                     "read_1": {
                         "class": "File",
                         "location": "gds://path/to/read_1.fastq.gz"
@@ -122,7 +122,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
                     "rgid": "index1.index2.lane",
                     "rgsm": "sample_name",
                     "rglb": "sample_library",
-                    "lane": int,
+                    "lane": 1,
                     "read_1": {
                         "class": "File",
                         "location": "gds://path/to/read_1.fastq.gz"

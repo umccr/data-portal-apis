@@ -122,7 +122,7 @@ def next_step(this_workflow: Workflow, context):
                 # Initialise fastq list rows object in model
                 for row in fastq_list_rows:
                     services.create_fastq_list_row(row,
-                                                   sequencing_run=this_sqr.name)
+                                                   sequencing_run=this_sqr)
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)

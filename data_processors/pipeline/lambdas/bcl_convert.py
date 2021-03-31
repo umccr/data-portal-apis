@@ -82,6 +82,12 @@ def validate_metadata(event, settings_by_samples):
             reason = f"{prefix} no samples found for batch {batch_name}"
             services.notify_outlier(topic="Samples not found", reason=reason, status="Aborted", event=event)
             return reason
+        # Check each samples value is not null
+        for sample in settings_by_samples_batch.get("samples"):
+            if sample is None or sample == "":
+                reason = f"{prefix} found blank sample in {batch_name}"
+                services.notify_outlier(topic="Sample was blank", reason=reason, status="Aborted", event=event)
+                return reason
 
     # Check settings section
     for settings_by_samples_batch in settings_by_samples:

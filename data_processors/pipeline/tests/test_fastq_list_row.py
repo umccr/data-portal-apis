@@ -87,7 +87,7 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
         # Call fastq handler on mock_fastq_list_rows
         mock_fastq_list_handler = fastq_list_row.handler({'fastq_list_rows': orchestrator.parse_bcl_convert_output(mock_bcl_convert_wes_run.output),
-                                                          'sequence_run_id': mock_sqr.run_id}, None)
+                                                          'sequencing_run': mock_sqr.run_id}, None)
 
         # Assertion 1: Ensure output is of type list
         self.assertTrue(type(mock_fastq_list_handler) == list)
@@ -125,14 +125,14 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
         # Call fastq handler on mock_fastq_list_rows
         mock_fastq_list_handler = fastq_list_row.handler({'fastq_list_rows': orchestrator.parse_bcl_convert_output(mock_bcl_convert_wes_run.output),
-                                                          'sequence_run': mock_sqr.name}, None)
+                                                          'sequencing_run': mock_sqr.name}, None)
 
         # Create row
         services.create_fastq_list_row(mock_fastq_list_handler[0],
-                                       sequencing_run=mock_sqr.name)
+                                       sequencing_run=mock_sqr)
 
         # Get row
         same_fastq_list_row = services.get_fastq_list_row_by_rgid(rgid=mock_fastq_list_handler[0]["rgid"])
 
         # assert row is in database
-        self.assertTrue(same_fastq_list_row["rgsm"] == mock_fastq_list_handler[0]["rgsm"])
+        self.assertTrue(same_fastq_list_row.rgsm == mock_fastq_list_handler[0]["rgsm"])
