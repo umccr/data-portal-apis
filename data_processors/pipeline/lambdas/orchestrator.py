@@ -208,14 +208,14 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
             assay_types.append(metadata_df.query("sample==\"{}\"".format(sample_library_name))["type"].unique().item())
 
         # Ensure no assay types
-        if list(set(assay_types)) == 0:
+        if len(list(set(assay_types))) == 0:
             logger.warning("Skipping sample \"{}\", could not retrieve the assay type from the metadata dict".format(
                 sample_name
             ))
             continue
 
         # Ensure only one assay type
-        if not list(set(assay_types)) == 1:
+        if not len(list(set(assay_types))) == 1:
             logger.warning("Skipping sample \"{}\", received multiple assay types: \"{}\"".format(
                 sample_name, ", ".join(assay_types)
             ))

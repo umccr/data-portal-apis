@@ -223,45 +223,25 @@ class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
 
         # NOTE: typically dict within json.dumps is the output of fastq lambda. See wiki for how to invoke fastq lambda
         # https://github.com/umccr/wiki/blob/master/computing/cloud/illumina/automation.md
-        target_batch_context_data = json.dumps([
-            {
-                "locations": [
-                    "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC"
-                ],
-                "fastq_map": {
-                    "PRJ111111_L0000000_rerun": {
-                        "fastq_list": [
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Project1/PRJ111111_L0000000_rerun_S4_L001_R1_001.fastq.gz",
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Project1/PRJ111111_L0000000_rerun_S4_L001_R2_001.fastq.gz",
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Project1/PRJ111111_L0000000_rerun_S4_L002_R1_001.fastq.gz",
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Project1/PRJ111111_L0000000_rerun_S4_L002_R2_001.fastq.gz"
-                        ],
-                        "fastq_directories": [
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Project1"
-                        ],
-                        "fastq_list_csv": [
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Reports/fastq_list.csv"
-                        ],
-                        "tags": []
-                    },
-                    "NTC_NebRNA111111KC_L0000000_rerun": {
-                        "fastq_list": [
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/UMCCR/NTC_NebRNA111111KC_L0000000_rerun_S5_L001_R1_001.fastq.gz",
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/UMCCR/NTC_NebRNA111111KC_L0000000_rerun_S5_L001_R2_001.fastq.gz",
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/UMCCR/NTC_NebRNA111111KC_L0000000_rerun_S5_L002_R1_001.fastq.gz",
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/UMCCR/NTC_NebRNA111111KC_L0000000_rerun_S5_L002_R2_001.fastq.gz"
-                        ],
-                        "fastq_directories": [
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/UMCCR"
-                        ],
-                        "fastq_list_csv": [
-                            "gds://umccr-fastq-data-dev/111111_A22222_0011_AGCTG2AGCC/Y111_I1_I1_Y111/Reports/fastq_list.csv"
-                        ],
-                        "tags": []
-                    },
+        target_batch_context_data = json.dumps(
+            [
+                {"lane": 4,
+                 "read_1": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_S1_L004_R1_001.fastq.gz",
+                 "read_2": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_S1_L004_R2_001.fastq.gz",
+                 "rgid": "CCGTGACCGA.CCGAACGTTG.4",
+                 "rgsm": "PTC_TSOctDNA200901VD_L2000753",
+                 "rglb": "UnknownLibrary"
+                 },
+                {
+                    "lane": 3,
+                    "read_1": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_topup_S1_L004_R1_001.fastq.gz",
+                    "read_2": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_topup_S1_L004_R2_001.fastq.gz",
+                    "rgid": "CCGTGACCGA.CCGAACGTTG.4",
+                    "rgsm": "PTC_TSOctDNA200901VD_L2000753_topup",
+                    "rglb": "UnknownLibrary"
                 }
-            }
-        ])
+            ]
+        )
 
         mock_batch = Batch(name="Test", created_by="Test", context_data=target_batch_context_data)
         mock_batch.save()

@@ -39,48 +39,49 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # Integration (CI) build phase and before deploying to target environment (Continuous Delivery (CD))
         # Leaving here for showing mock construct and ad-hoc test use case. Perhaps keep it commented out when no use.
         wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT.value)
-        when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_input())).thenReturn(
-            json.dumps(
-                {
-                    "bcl_input_directory": {
-                        "class": "Directory",
-                        "location": "PLACEHOLDER"
-                    },
-                    "samplesheet": {
-                        "class": "File",
-                        "location": "PLACEHOLDER"
-                    },
-                    "settings_by_samples": [],
-                    "samplesheet_outdir": "samplesheets-by-assay-type",
-                    "ignore_missing_samples": True,
-                    "samplesheet_output_format": "v2",
-                    "bcl_sampleproject_subdirectories_bcl_conversion": True,
-                    "strict_mode_bcl_conversion": True,
-                    "delete_undetermined_indices_bcl_conversion": True,
-                    "runfolder_name": "PLACEHOLDER"
-                }
-            )
-        )
-
-        #when(bcl_convert.libssm).get_ssm_param(contains(IAP_GDS_FASTQ_VOL)).thenReturn(
+        # Use Ctrl + "/" (whilst lines below are highlighted) to comment or uncomment these lines
+        # when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_input())).thenReturn(
+        #     json.dumps(
+        #         {
+        #             "bcl_input_directory": {
+        #                 "class": "Directory",
+        #                 "location": "PLACEHOLDER"
+        #             },
+        #             "samplesheet": {
+        #                 "class": "File",
+        #                 "location": "PLACEHOLDER"
+        #             },
+        #             "settings_by_samples": [],
+        #             "samplesheet_outdir": "samplesheets-by-assay-type",
+        #             "ignore_missing_samples": True,
+        #             "samplesheet_output_format": "v2",
+        #             "bcl_sampleproject_subdirectories_bcl_conversion": True,
+        #             "strict_mode_bcl_conversion": True,
+        #             "delete_undetermined_indices_bcl_conversion": True,
+        #             "runfolder_name": "PLACEHOLDER"
+        #         }
+        #     )
+        # )
+        # 
+        # when(bcl_convert.libssm).get_ssm_param(contains(IAP_GDS_FASTQ_VOL)).thenReturn(
         #    "fastq-vol"
-        #)
-
-        #when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_engine_parameters())).thenReturn(
+        # )
+        # 
+        # when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_engine_parameters())).thenReturn(
         #    json.dumps(
         #        {
         #            "outputDirectory": "PLACEHOLDER"
         #        }
         #    )
-        #)
-
-        #when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_id()).thenReturn(
+        # )
+        # 
+        # when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_id()).thenReturn(
         #    "wfl....."
-        #)
-
-        #when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_version()).thenReturn(
+        # )
+        # 
+        # when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_version()).thenReturn(
         #    "version..."
-        #)
+        # )
 
     def test_handler(self):
         """
