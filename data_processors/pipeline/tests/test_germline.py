@@ -135,6 +135,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
             ],
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
+            "batch_run_id": mock_batch_run.id,
         }, None)
 
         logger.info("-" * 32)
@@ -157,7 +158,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
                               "rgid": "index1.index2.lane",
                               "rgsm": "sample_name",
                               "rglb": "sample_library",
-                              "lane": int,
+                              "lane": 1,
                               "read_1": {
                                   "class": "File",
                                   "location": "gds://path/to/read_1.fastq.gz"
