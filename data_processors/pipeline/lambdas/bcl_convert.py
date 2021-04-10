@@ -238,6 +238,7 @@ def handler(event, context) -> dict:
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input['samplesheet']['location'] = sample_sheet_gds_path
     workflow_input['bcl_input_directory']['location'] = run_folder
+    workflow_input['runfolder_name'] = seq_name
 
     settings_by_samples = []
     for (sample_type, assay), sample_group_df in metadata_df.groupby(["type", "assay"]):
