@@ -414,6 +414,7 @@ class Workflow(models.Model):
     def __str__(self):
         return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
 
+
 class ReportType(models.TextChoices):
     HRD_CHORD = "hrd_chord"
     HRD_HRDETECT = "hrd_hrdetect"
@@ -432,6 +433,7 @@ class ReportType(models.TextChoices):
     SV_NOBND_OTHER = "sv_nobnd_other"
     SV_NOBND_MANYGENES = "sv_nobnd_manygenes"
     SV_NOBND_MANYTRANSCRIPTS = "sv_nobnd_manytranscripts"
+
 
 class Report(models.Model):
     class Meta:
