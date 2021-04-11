@@ -94,3 +94,6 @@ class WorkflowHelper(Helper):
 
     def get_ssm_key_engine_parameters(self):
         return f"{IAP_WORKFLOW_PREFIX}/{self.name}/engine_parameters"
+
+    def get_sample_type_settings(self, sample_type):
+        return f"{IAP_WORKFLOW_PREFIX}/{self.name}/{sample_type}_settings"

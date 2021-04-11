@@ -20,6 +20,11 @@ class PipelineUnitTestCase(TestCase):
         os.environ['IAP_WES_WORKFLOW_ID'] = TestConstant.wfl_id.value
         os.environ['IAP_WES_WORKFLOW_VERSION_NAME'] = TestConstant.version.value
 
+        os.environ['ICA_BASE_URL'] = "http://localhost"
+        os.environ['ICA_ACCESS_TOKEN'] = "mock"
+        os.environ['ICA_WES_WORKFLOW_ID'] = TestConstant.wfl_id.value
+        os.environ['ICA_WES_WORKFLOW_VERSION_NAME'] = TestConstant.version.value
+
         # Comment the following mock to actually send slack message for this test case. i.e.
         # export SLACK_CHANNEL=#arteria-dev
         #
@@ -45,6 +50,12 @@ class PipelineUnitTestCase(TestCase):
         del os.environ['IAP_AUTH_TOKEN']
         del os.environ['IAP_WES_WORKFLOW_ID']
         del os.environ['IAP_WES_WORKFLOW_VERSION_NAME']
+
+        del os.environ['ICA_BASE_URL']
+        del os.environ['ICA_ACCESS_TOKEN']
+        del os.environ['ICA_WES_WORKFLOW_ID']
+        del os.environ['ICA_WES_WORKFLOW_VERSION_NAME']
+
         del os.environ['SLACK_CHANNEL']
         del os.environ['SLACK_WEBHOOK_ID']
         unstub()
@@ -58,6 +69,16 @@ class PipelineUnitTestCase(TestCase):
         assert os.environ['IAP_WES_WORKFLOW_ID'] == TestConstant.wfl_id.value
         assert os.environ['IAP_WES_WORKFLOW_VERSION_NAME'] == TestConstant.version.value
         self.assertEqual(os.environ['IAP_BASE_URL'], "http://localhost")
+
+        logger.info(f"ICA_BASE_URL={os.getenv('ICA_BASE_URL')}")
+        logger.info(f"ICA_WES_WORKFLOW_ID={os.getenv('ICA_WES_WORKFLOW_ID')}")
+        logger.info(f"ICA_WES_WORKFLOW_VERSION_NAME={os.getenv('ICA_WES_WORKFLOW_VERSION_NAME')}")
+        assert os.environ['ICA_BASE_URL'] == "http://localhost"
+        assert os.environ['ICA_ACCESS_TOKEN'] == "mock"
+        assert os.environ['ICA_WES_WORKFLOW_ID'] == TestConstant.wfl_id.value
+        assert os.environ['ICA_WES_WORKFLOW_VERSION_NAME'] == TestConstant.version.value
+        self.assertEqual(os.environ['ICA_BASE_URL'], "http://localhost")
+
         queue_urls = libaws.sqs_client().list_queues()['QueueUrls']
         logger.info(f"SQS_QUEUE_URLS={queue_urls}")
         assert '4566' in queue_urls[0]

@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Dict
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
-from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun
+from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from utils import libslack, lookup, libjson, libdt
 
@@ -568,7 +568,7 @@ def update_batch(batch_id, **kwargs):
         context_data = kwargs.get('context_data', None)
         if isinstance(context_data, str):
             batch.context_data = context_data
-        if isinstance(context_data, List):
+        if isinstance(context_data, List) or isinstance(context_data, Dict):
             batch.context_data = libjson.dumps(context_data)
         batch.save()
         return batch
@@ -659,3 +659,67 @@ def get_batch_run_none_or_all_running(batch_run_id):
         return batch_run
 
     return None
+
+
+@transaction.atomic
+def create_or_update_fastq_list_row(fastq_list_row: dict, sequence_run: SequenceRun):
+    """
+    A fastq list row is a dict that contains the following struct:
+    {
+        'rgid': "GTGTCGGA.GCTTGCGC.1.210108_A01052_0030_ABCDEFGHIJ.MDX200237_L2100008",
+        'rgsm': "MDX200237",
+        'rglb': "L2100008",
+        'lane': 1,
+        'read_1': "gds://fastq-vol/210108_A01052_0030_ABCDEFGHIJ/Y151_I8_I8_Y151/PO/MDX200237_L2100008_S2_L001_R1_001.fastq.gz",
+        'read_2': "gds://fastq-vol/210108_A01052_0030_ABCDEFGHIJ/Y151_I8_I8_Y151/PO/MDX200237_L2100008_S2_L001_R2_001.fastq.gz",
+    }
+
+    :param fastq_list_row:
+    :param sequence_run:
+    :return:
+    """
+
+    rgid: str = fastq_list_row['rgid']
+    rgsm: str = fastq_list_row['rgsm']
+    rglb: str = fastq_list_row['rglb']
+    lane: int = fastq_list_row['lane']
+    read_1: str = fastq_list_row['read_1']
+    read_2: str = fastq_list_row['read_2']
+
+    qs = FastqListRow.objects.filter(rgid__iexact=rgid)
+
+    if not qs.exists():
+        # create new row
+        logger.info(f"Creating new FastqListRow (rgid={rgid})")
+        flr = FastqListRow()
+        flr.rgid = rgid
+        flr.rgsm = rgsm
+        flr.rglb = rglb
+        flr.lane = lane
+        flr.read_1 = read_1
+        flr.read_2 = read_2
+        flr.sequence_run = sequence_run
+    else:
+        # update to updatable attributes i.e.
+        # Depends on business logic requirement, we may decide a particular attribute is "immutable" across different
+        # runs. For now, we update everything if the same rgid is matched / already existed in db.
+        logger.info(f"Updating existing FastqListRow (rgid={rgid})")
+        flr = qs.get()
+        flr.rgsm = rgsm
+        flr.rglb = rglb
+        flr.lane = lane
+        flr.read_1 = read_1
+        flr.read_2 = read_2
+        flr.sequence_run = sequence_run
+
+    flr.save()
+
+
+@transaction.atomic
+def get_fastq_list_row_by_rgid(rgid):
+    try:
+        fastq_list_row = FastqListRow.objects.get(rgid=rgid)
+    except FastqListRow.DoesNotExist:
+        return None
+
+    return fastq_list_row
