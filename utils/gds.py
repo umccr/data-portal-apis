@@ -145,13 +145,10 @@ def get_gds_file_list(**kwargs) -> (str, None):
             # Append the items
             items.append(api_response.items)
 
-            # Check if there's more items to come
-            if getattr(api_response, "nextPageToken", None) is not None:
-                # We need to continue iterating until all items are found
+            page_token = api_response.next_page_token
+            if not api_response.next_page_token:
                 break
-
-            # Set the pageToken from the nextPageToken of the previous output
-            page_token = getattr(api_response, "nextPageToken")
+        # while end
 
     # Return the list of items
     return items
@@ -202,4 +199,3 @@ def download_gds_file(gds_volume_name: str, gds_path: str) -> (NamedTemporaryFil
         f.write(gds_req.content)
 
     return content_file
-

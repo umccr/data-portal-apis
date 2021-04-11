@@ -87,6 +87,11 @@ def next_step(this_workflow: Workflow, context):
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
 
         this_sqr: SequenceRun = this_workflow.sequence_run
+        # a bcl convert workflow run association to a sequence run is very strong and
+        # those logic impl this point onward depends on its attribute like sequence run name
+        if this_sqr is None:
+            raise ValueError(f"Workflow {this_workflow.type_name} wfr_id: '{this_workflow.wfr_id}' must be associated "
+                             f"with a SequenceRun. Found SequenceRun is: {this_sqr}")
 
         # bcl convert workflow run must have output in order to continue next step
         if this_workflow.output is None:
@@ -113,16 +118,17 @@ def next_step(this_workflow: Workflow, context):
             if this_batch.context_data is None:
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
-                fastq_list_rows = fastq_list_row.handler({'fastq_list_rows': parse_bcl_convert_output(this_workflow.output),
-                                                          'sequencing_run': this_sqr.name}, None)
+                fastq_list_rows: List = fastq_list_row.handler({
+                    'fastq_list_rows': parse_bcl_convert_output(this_workflow.output),
+                    'seq_name': this_sqr.name,
+                }, None)
 
                 # cache batch context data in db
                 this_batch = services.update_batch(this_batch.id, context_data=fastq_list_rows)
 
                 # Initialise fastq list rows object in model
                 for row in fastq_list_rows:
-                    services.create_fastq_list_row(row,
-                                                   sequencing_run=this_sqr)
+                    services.create_or_update_fastq_list_row(row, this_sqr)
 
             # prepare job list and dispatch to job queue
             job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
@@ -148,17 +154,9 @@ def next_step(this_workflow: Workflow, context):
 
 def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
     """
-    NOTE: as of GERMLINE CWL workflow version 0.2-inputcsv-redir-19ddeb3
-
-    GERMLINE CWL workflow only support _single_ FASTQ directory and _single_ fastq_list.csv, See:
-    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/production/wfl.d6f51b67de5b4d309dddf4e411362be7/0.2-inputcsv-redir-19ddeb3.md
-    https://github.com/umccr-illumina/cwl-iap/blob/19ddeb38f89bbd8d6ba2b72a7da6c9fe51145fa5/workflows/dragen-qc-hla/0.2/dragen-qc-hla-inputCSV.redirect.cwl#L59
-
-    Portal fastq lambda is now able to construct FASTQ listing from multiple gds locations, See:
-    https://github.com/umccr/data-portal-apis/pull/137
-
-    Since downstream CWL workflow cannot take multiple fastq_directories and fastq_list_csv,
-    hence, skipping if Portal detect this.
+    NOTE: as of GERMLINE CWL workflow version 3.7.5--1.3.5, it uses fastq_list_rows format
+    See Example IAP Run > Inputs
+    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.5cc28c147e4e4dfa9e418523188aacec/3.7.5--1.3.5.md
 
     :param this_batch:
     :param this_batch_run:
@@ -249,13 +247,10 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
 
 def parse_bcl_convert_output(output_json: str) -> list:
     """
-    Given this_workflow (bcl convert) output (fastqs), return the list of fastq locations on gds
-
-    BCL Convert CWL output may be Directory or Directory[], See:
-    [1]: https://www.commonwl.org/v1.0/CommandLineTool.html#Directory
-    [2]: https://github.com/umccr-illumina/cwl-iap/blob/5ebe927b885a6f6d18ed220dba913d08eb45a67a/workflows/bclconversion/bclConversion-main.cwl#L30
-    [3]: https://github.com/umccr-illumina/cwl-iap/blob/1263e9d43cf08cfb7438dcfe42166e88b8456e54/workflows/bclconversion/1.0.4/bclConversion-main.cwl#L69
-    [4]: https://github.com/umccr-illumina/cwl-iap/blob/5b96a8cfafa5ac515ca46cf67aa20b40a716b4bd/workflows/bclconversion/1.0.6/bclConversion-main.1.0.6.cwl#L167
+    NOTE: as of BCL Convert CWL workflow version 3.7.5, it uses fastq_list_rows format
+    Given bcl convert workflow output json, return fastq_list_rows
+    See Example IAP Run > Outputs
+    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.84abc203cabd4dc196a6cf9bb49d5f74/3.7.5.md
 
     :param output_json: workflow run output in json format
     :return fastq_list_rows: list of fastq list rows in fastq list format

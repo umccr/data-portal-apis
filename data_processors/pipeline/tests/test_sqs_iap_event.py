@@ -13,6 +13,62 @@ from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 from utils import libslack, libjson
 
+
+def _mock_bcl_convert_output():
+    return {
+        'main/fastq_list_rows': [
+            {
+                "lane": 4,
+                "read_1": {
+                    "basename": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
+                    "class": "File",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "location": "gds://fastqvol/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
+                    "nameext": ".gz",
+                    "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq",
+                    "size": 26376114564
+                },
+                "read_2": {
+                    "basename": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
+                    "class": "File",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "location": "gds://fastqvol/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
+                    "nameext": ".gz",
+                    "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq",
+                    "size": 25995547898
+                },
+                "rgid": "CCGTGACCGA.CCGAACGTTG.4",
+                "rgsm": "PTC_EXPn200908LL_L2000001",
+                "rglb": "UnknownLibrary"
+            },
+            {
+                "lane": 3,
+                "read_1": {
+                    "basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
+                    "class": "File",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "location": "gds://fastqvol/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
+                    "nameext": ".gz",
+                    "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq",
+                    "size": 26376114564
+                },
+                "read_2": {
+                    "basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
+                    "class": "File",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "location": "gds://fastqvol/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
+                    "nameext": ".gz",
+                    "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq",
+                    "size": 25995547898
+                },
+                "rgid": "CCGTGACCGA.CCGAACGTTG.4",
+                "rgsm": "PTC_EXPn200908LL_L2000001_topup",
+                "rglb": "UnknownLibrary"
+            }
+        ]
+    }
+
+
 def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED):
 
     event_details = {}
@@ -465,54 +521,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_wfl_run.id = TestConstant.wfr_id.value
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
-        mock_wfl_run.output = {
-            'main/fastq_list_rows': [
-                    {
-                        "lane": 4,
-                        "read_1":
-                            {"basename": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq",
-                             "size": 26376114564},
-                        "read_2":
-                            {"basename": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq",
-                             "size": 25995547898},
-                        "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                        "rgsm": "PTC_EXPn200908LL_L2000001",
-                        "rglb": "UnknownLibrary"
-                     },
-                    {
-                        "lane": 3,
-                        "read_1":
-                            {"basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq",
-                             "size": 26376114564},
-                        "read_2":
-                            {"basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq",
-                             "size": 25995547898},
-                        "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                        "rgsm": "PTC_EXPn200908LL_L2000001_topup",
-                        "rglb": "UnknownLibrary"
-                    }
-                ]
-        }
+        mock_wfl_run.output = _mock_bcl_convert_output()
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
         workflow_version.id = TestConstant.wfv_id.value
         mock_wfl_run.workflow_version = workflow_version
@@ -551,54 +560,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_wfl_run.id = TestConstant.wfr_id.value
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
-        mock_wfl_run.output = {
-            'main/fastq_list_rows': [
-                {
-                    "lane": 4,
-                    "read_1":
-                        {"basename": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
-                         "class": "File",
-                         "http://commonwl.org/cwltool#generation": 0,
-                         "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
-                         "nameext": ".gz",
-                         "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq",
-                         "size": 26376114564},
-                    "read_2":
-                        {"basename": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
-                         "class": "File",
-                         "http://commonwl.org/cwltool#generation": 0,
-                         "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
-                         "nameext": ".gz",
-                         "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq",
-                         "size": 25995547898},
-                    "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                    "rgsm": "PTC_EXPn200908LL_L2000001",
-                    "rglb": "UnknownLibrary"
-                },
-                {
-                    "lane": 3,
-                    "read_1":
-                        {"basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
-                         "class": "File",
-                         "http://commonwl.org/cwltool#generation": 0,
-                         "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
-                         "nameext": ".gz",
-                         "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq",
-                         "size": 26376114564},
-                    "read_2":
-                        {"basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
-                         "class": "File",
-                         "http://commonwl.org/cwltool#generation": 0,
-                         "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
-                         "nameext": ".gz",
-                         "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq",
-                         "size": 25995547898},
-                    "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                    "rgsm": "PTC_EXPn200908LL_L2000001_topup",
-                    "rglb": "UnknownLibrary"
-                }
-            ]
-        }
+        mock_wfl_run.output = _mock_bcl_convert_output()
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
         workflow_version.id = TestConstant.wfv_id.value
         mock_wfl_run.workflow_version = workflow_version
@@ -651,68 +613,11 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_wfl_run_history_event2.timestamp = datetime.utcnow()
         mock_wfl_run_history_event2.event_type = WorkflowRunEventType.RUNSUCCEEDED.value
         mock_wfl_run_history_event2.event_details = {
-            "output": {
-                'main/fastq_list_rows': [
-                    {
-                        "lane": 4,
-                        "read_1":
-                            {"basename": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R1_001.fastq",
-                             "size": 26376114564},
-                        "read_2":
-                            {"basename": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_S1_L004_R2_001.fastq",
-                             "size": 25995547898},
-                        "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                        "rgsm": "PTC_EXPn200908LL_L2000001",
-                        "rglb": "UnknownLibrary"
-                    },
-                    {
-                        "lane": 3,
-                        "read_1":
-                            {"basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R1_001.fastq",
-                             "size": 26376114564},
-                        "read_2":
-                            {"basename": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
-                             "class": "File",
-                             "http://commonwl.org/cwltool#generation": 0,
-                             "location": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq.gz",
-                             "nameext": ".gz",
-                             "nameroot": "PTC_EXPn200908LL_L2000001_topup_S1_L004_R2_001.fastq",
-                             "size": 25995547898},
-                        "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                        "rgsm": "PTC_EXPn200908LL_L2000001_topup",
-                        "rglb": "UnknownLibrary"
-                    }
-                ]
-            }
+            "output": _mock_bcl_convert_output()
         }
         mock_wfl_run_history_event_list: libwes.WorkflowRunHistoryEventList = libwes.WorkflowRunHistoryEventList()
         mock_wfl_run_history_event_list.items = [mock_wfl_run_history_event1, mock_wfl_run_history_event2]
         when(libwes.WorkflowRunsApi).list_workflow_run_history(...).thenReturn(mock_wfl_run_history_event_list)
-
-        # make Germline workflow launch skip
-        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
-        mock_file_list.items = [
-            libgds.FileResponse(name="PRJ111119_L1900000_S7_L001_R1_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S7_L002_R1_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S7_L001_R2_001.fastq.gz"),
-            libgds.FileResponse(name="PRJ111119_L1900000_S7_L002_R2_001.fastq.gz"),
-        ]
-        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
 
         sqs_iap_event.handler(_sqs_wes_event_message(
             wfv_id=mock_bcl.wfv_id,
@@ -720,7 +625,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             workflow_status=WorkflowStatus.SUCCEEDED
         ), None)
 
-        # assert germline workflow launch has skipped and won't save into portal db
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one Succeeded bcl convert workflow
 

@@ -292,6 +292,7 @@ class SequenceRun(models.Model):
 
     def __str__(self):
         return f"Run ID '{self.run_id}', " \
+               f"Name '{self.name}', " \
                f"Instrument ID '{self.instrument_run_id}', " \
                f"Date Modified '{self.date_modified}', " \
                f"Status '{self.status}'"
@@ -299,21 +300,19 @@ class SequenceRun(models.Model):
 
 class FastqListRow(models.Model):
     class Meta:
-        unique_together = ["rgid"]
+        unique_together = ['rgid']
 
     rgid = models.CharField(max_length=255)
     rgsm = models.CharField(max_length=255)
     rglb = models.CharField(max_length=255)
     lane = models.IntegerField()
     read_1 = models.TextField()
-    read_2 = models.TextField()
+    read_2 = models.TextField(null=True, blank=True)  # This is nullable. Search 'read_2' in fastq_list_row.handler()
 
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return "RGID: {}, RGSM: {}, RGLB: {}".format(
-          self.rgid, self.rgsm, self.rglb
-        )
+        return f"RGID: {self.rgid}, RGSM: {self.rgsm}, RGLB: {self.rglb}"
 
 
 class Batch(models.Model):

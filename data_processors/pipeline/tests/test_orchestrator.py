@@ -3,11 +3,11 @@ from datetime import datetime
 from unittest import skip
 
 from django.utils.timezone import make_aware
-from libiap.openapi import libwes, libgds
+from libiap.openapi import libwes
 from mockito import when
 
 from data_portal.models import Workflow, BatchRun, Batch, SequenceRun
-from data_portal.tests.factories import WorkflowFactory, TestConstant
+from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.tests import _rand
@@ -28,10 +28,13 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         Storing models.Workflow.output into database should always be in JSON format.
         """
+        mock_sqr = SequenceRunFactory()
+
         mock_workflow = Workflow()
         mock_workflow.wfr_id = f"wfr.{_rand(32)}"
         mock_workflow.type_name = WorkflowType.BCL_CONVERT.name
         mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
         mock_workflow.output = """
         "main/fastq_list_rows": [
             {
@@ -42,7 +45,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
               "read_1": {
                 "class": "File",
                 "basename": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
-                "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
+                "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
                 "nameroot": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq",
                 "nameext": ".gz",
                 "http://commonwl.org/cwltool#generation": 0,
@@ -51,7 +54,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
               "read_2": {
                 "class": "File",
                 "basename": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
-                "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
+                "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
                 "nameroot": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq",
                 "nameext": ".gz",
                 "http://commonwl.org/cwltool#generation": 0,
@@ -88,7 +91,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
                     "read_1": {
                         "class": "File",
                         "basename": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
-                        "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
+                        "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
                         "nameroot": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq",
                         "nameext": ".gz",
                         "http://commonwl.org/cwltool#generation": 0,
@@ -97,7 +100,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
                     "read_2": {
                         "class": "File",
                         "basename": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
-                        "location": "gds://wfr.71527fbd4798426798811ffd1cd8f010/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
+                        "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
                         "nameroot": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq",
                         "nameext": ".gz",
                         "http://commonwl.org/cwltool#generation": 0,
@@ -126,6 +129,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             'wfv_id': TestConstant.wfv_id.value,
         }, None)
 
+        logger.info("-" * 32)
         self.assertIsNotNone(result)
         logger.info(f"Orchestrator lambda call output: \n{json.dumps(result)}")
 
@@ -221,7 +225,8 @@ class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
         target_gds_volume_name = "bssh.agctbfda498038ed99eeeeee79999999"
         target_sample_sheet_name = "SampleSheet.csv"
 
-        # NOTE: typically dict within json.dumps is the output of fastq lambda. See wiki for how to invoke fastq lambda
+        # NOTE: typically dict within json.dumps is the output of 'fastq_list_row' lambda.
+        # See wiki for how to invoke this lambda
         # https://github.com/umccr/wiki/blob/master/computing/cloud/illumina/automation.md
         target_batch_context_data = json.dumps(
             [
