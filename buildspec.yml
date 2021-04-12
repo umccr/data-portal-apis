@@ -12,7 +12,6 @@ phases:
         python: 3.8
     commands:
       - pip install -r requirements-test.txt
-      - yarn global add serverless
       - yarn install
   build:
     commands:
@@ -24,5 +23,5 @@ phases:
       - make load_localstack
       - python3 manage.py test
       - docker-compose down
-      - SLS_DEBUG=true serverless create_domain --STAGE $STAGE
-      - SLS_DEBUG=true serverless deploy --STAGE $STAGE
+      - SLS_DEBUG=true npx serverless create_domain --STAGE $STAGE
+      - SLS_DEBUG=true npx serverless deploy --STAGE $STAGE

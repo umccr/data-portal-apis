@@ -6,10 +6,16 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 
 #### TL;DR
 
-- Recommended: **Python 3.8** and PyCharm IDE
+- Required: 
+  - **Python 3.8**
+  - Node.js with Yarn
+  - See `buildspec.yml` for runtime versions requirement
 - Create virtual environment and activate it, then:
 ```
 source venv/bin/activate
+
+(install Python and node.js development dependencies)
+make install
 
 aws sso login --profile dev && export AWS_PROFILE=dev
 
@@ -23,8 +29,6 @@ make start
 
 - REST API at: http://localhost:8000
 - MySQL phpMyAdmin at: http://localhost:8181  (u/p: root)
-    - You may also try [PyCharm Database explorer](https://www.jetbrains.com/help/pycharm/connecting-to-a-database.html)
-    - You may also wish to try with [JetBrains DataGrip](https://www.jetbrains.com/datagrip/)
 - Look into `Makefile` for more dev routine targets
 
 #### Testing
@@ -86,18 +90,20 @@ node --version
 v12.18.2
 
 npm i -g yarn
-yarn global add serverless
 yarn install
 ```
+
+> NOTE: if you want to install serverless cli globally, make sure to install specific version defined in `package.json` for example `yarn global add serverless@1.83.3`. Otherwise, highly recommend to use local _locked version_ through `npx` as follows.
+
 - You can `serverless` invoke or deploy from local. But favour over [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
 - Serverless deployment targets only to AWS. AWS account specific variables will be loaded from SSM Parameter Store of respective login session:
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-serverless info --STAGE dev
-serverless invoke -f migrate --STAGE dev --noinput
-serverless invoke -f lims_scheduled_update_processor --STAGE dev --noinput
-serverless deploy --STAGE dev
+npx serverless info --STAGE dev
+npx serverless invoke -f migrate --STAGE dev --noinput
+npx serverless invoke -f lims_scheduled_update_processor --STAGE dev --noinput
+npx serverless deploy --STAGE dev
 ```
 
 > Caveat: If lambda timeout error occur then please try again. Lambda needs warm-up time and LIMS rows are growing, for example.
@@ -115,8 +121,8 @@ serverless deploy --STAGE dev
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-SLS_DEBUG=true serverless delete_domain --STAGE dev
-SLS_DEBUG=true serverless remove --STAGE dev
+SLS_DEBUG=true npx serverless delete_domain --STAGE dev
+SLS_DEBUG=true npx serverless remove --STAGE dev
 ```
 
 ## X-Ray

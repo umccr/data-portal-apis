@@ -1,6 +1,11 @@
 .EXPORT_ALL_VARIABLES:
 DJANGO_SETTINGS_MODULE = data_portal.settings.local
 
+install:
+	@pip install -r requirements-dev.txt
+	@yarn install
+	@npx husky install
+
 up:
 	@docker-compose up -d
 

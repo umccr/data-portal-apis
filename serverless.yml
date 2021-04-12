@@ -1,5 +1,9 @@
 service: data-portal-api
 
+# NOTE: we still stick to sls v1 bec not all plugins used are compatible with v2
+# especially https://github.com/logandk/serverless-wsgi
+frameworkVersion: ^1.83.3
+
 plugins:
   - serverless-wsgi
   - serverless-python-requirements
@@ -57,7 +61,7 @@ functions:
     events:
       - schedule:
           rate: cron(0 12 * * ? *)
-          enabled: ${self:custom.enabled.${opt:STAGE}, self.enabled.other}
+          enabled: ${self:custom.enabled.${opt:STAGE}, self:custom.enabled.other}
     timeout: 28
 
   sqs_s3_event_processor:
@@ -110,6 +114,12 @@ functions:
 
   fastq:
     handler: data_processors.pipeline.lambdas.fastq.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  fastq_list_row:
+    handler: data_processors.pipeline.lambdas.fastq_list_row.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
