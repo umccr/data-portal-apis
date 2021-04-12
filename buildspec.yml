@@ -18,7 +18,6 @@ phases:
       - which docker
       - which docker-compose
       - which python3
-      - which serverless
       - docker-compose up -d
       - make load_localstack
       - python3 manage.py test
