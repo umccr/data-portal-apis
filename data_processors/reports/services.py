@@ -6,6 +6,8 @@ from data_portal.models import Report
 from data_processors.s3.helper import S3EventRecord
 from utils import libs3, libjson
 
+from aws_xray_sdk.core import xray_recorder
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -46,6 +48,7 @@ def serialize_to_cancer_report(records: List[S3EventRecord]) -> bool:
     :param records: S3 events to be processed coming from the SQS queue
     :return: The serialization of the JSON records was successfully imported into the ORM (or not)
     """
+    subsegment = xray_recorder.begin_subsegment('serialize_cancer_report')
 
     for record in records:
         bucket = record.s3_bucket_name
@@ -58,6 +61,8 @@ def serialize_to_cancer_report(records: List[S3EventRecord]) -> bool:
                     json_dict = libjson.loads(obj_bytes)
                     json_dict['subject_id'], json_dict['sample_id'], json_dict['library_id'] = _extract_report_unique_key(key)
 
+                    subsegment.put_metadata('json_dict_cancer_report', json_dict, 'cancer_report')
+                    xray_recorder.end_subsegment()
                     # Adds attributes from JSON to Django Report model
                     json_report = libjson.dumps(json_dict)
                     report: Report = Report.objects.put(json_report)
