@@ -27,13 +27,20 @@ def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
     Entry point for SQS event processing
     :param event: SQS event
     """
+
+    subsegment = xray_recorder.begin_subsegment('cancer_report_xray_trace')
+
     logger.info("Start processing S3 event")
     logger.info(libjson.dumps(event))
     messages = event['Records']
     records = helper.parse_raw_s3_event_records(messages)
     results = helper.sync_s3_event_records(records)
     # TODO: Distribute special cases to other queues
+    subsegment.put_metadata('records', records, 'cancer_report')
+    #subsegment.put_annotation('key', 'value')
     serialize_to_cancer_report(records)
 
     logger.info("S3 event processing complete")
+
+    xray_recorder.end_subsegment()
     return results
