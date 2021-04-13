@@ -18,9 +18,11 @@ phases:
       - which docker
       - which docker-compose
       - which python3
-      - docker-compose up -d
+      - which aws
+      - aws ecr get-login-password | docker login --username AWS --password-stdin 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com
+      - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up -d
       - make load_localstack
       - python3 manage.py test
-      - docker-compose down
+      - docker-compose -f docker-compose.yml -f docker-compose.ci.yml down
       - SLS_DEBUG=true npx serverless create_domain --STAGE $STAGE
       - SLS_DEBUG=true npx serverless deploy --STAGE $STAGE

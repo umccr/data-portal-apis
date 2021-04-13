@@ -28,7 +28,6 @@ make start
 ```
 
 - REST API at: http://localhost:8000
-- MySQL phpMyAdmin at: http://localhost:8181  (u/p: root)
 - Look into `Makefile` for more dev routine targets
 
 #### Testing

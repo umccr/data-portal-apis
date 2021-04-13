@@ -31,7 +31,6 @@ provider:
         - ${ssm:/data_portal/backend/lambda_subnet_ids}
   environment:
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
-    AWS_XRAY_SDK_ENABLED: false
 
 functions:
 
@@ -72,6 +71,9 @@ functions:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
     timeout: 28
+    environment:
+      # FIXME enabled xray on this lambda. pls turn this off when no use
+      AWS_XRAY_SDK_ENABLED: true
 
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler

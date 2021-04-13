@@ -15,6 +15,7 @@ WARNING:
 import os
 import uuid
 
+import aws_xray_sdk as xray
 from corsheaders.defaults import default_headers
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -147,3 +148,6 @@ XRAY_RECORDER = {
     'AWS_XRAY_CONTEXT_MISSING': os.getenv('AWS_XRAY_CONTEXT_MISSING', 'LOG_ERROR'),
     'AWS_XRAY_TRACING_NAME': os.getenv('AWS_XRAY_TRACING_NAME', 'data_portal'),
 }
+
+# turn off xray more generally and you can overwrite with env var AWS_XRAY_SDK_ENABLED=true at runtime
+xray.global_sdk_config.set_sdk_enabled(False)

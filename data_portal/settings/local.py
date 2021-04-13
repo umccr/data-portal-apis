@@ -6,7 +6,6 @@ Usage:
 """
 import sys
 
-import aws_xray_sdk as xray
 from environ import Env
 
 from .base import *  # noqa
@@ -20,6 +19,3 @@ DATABASES = {
 INSTALLED_APPS += ('django_extensions',)
 
 RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = sys.maxsize
-
-# turn off xray for local dev
-xray.global_sdk_config.set_sdk_enabled(False)

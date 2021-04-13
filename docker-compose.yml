@@ -1,3 +1,6 @@
+# NOTE:
+# If you update image version, make sure to update in syncdkr.sh and docker-compose.ci.yml as well
+
 version: '3.1'
 
 services:
@@ -15,68 +18,8 @@ services:
       - MYSQL_USER=data_portal
       - MYSQL_PASSWORD=data_portal
 
-  phpmyadmin:
-    image: phpmyadmin
-    restart: always
-    ports:
-      - 8181:80
-    environment:
-      - PMA_ARBITRARY=1
-
-  haproxy:
-    image: haproxy
-    ports:
-      - 80:80
-    volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-
-  wes:
-    image: stoplight/prism:3
-    command: mock -d -h 0.0.0.0 "/swagger/wes.json"
-    restart: always
-    ports:
-      - 4010:4010
-    volumes:
-      - ./swagger:/swagger
-
-  tes:
-    image: stoplight/prism:3
-    command: mock -d -h 0.0.0.0 "/swagger/tes.json"
-    restart: always
-    ports:
-      - 4011:4010
-    volumes:
-      - ./swagger:/swagger
-
-  gds:
-    image: stoplight/prism:3
-    command: mock -d -h 0.0.0.0 "/swagger/gds.json"
-    restart: always
-    ports:
-      - 4012:4010
-    volumes:
-      - ./swagger:/swagger
-
-  ens:
-    image: stoplight/prism:3
-    command: mock -d -h 0.0.0.0 "/swagger/ens.json"
-    restart: always
-    ports:
-      - 4013:4010
-    volumes:
-      - ./swagger:/swagger
-
-  console:
-    image: stoplight/prism:3
-    command: mock -d -h 0.0.0.0 "/swagger/console.json"
-    restart: always
-    ports:
-      - 4014:4010
-    volumes:
-      - ./swagger:/swagger
-
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:0.12.9
     ports:
       - "4566:4566"
       - "4572:4572"
@@ -93,3 +36,55 @@ services:
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+
+  haproxy:
+    image: haproxy:2.3
+    ports:
+      - 80:80
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+
+  wes:
+    image: stoplight/prism:4
+    command: mock -d -h 0.0.0.0 "/swagger/wes.json"
+    restart: always
+    ports:
+      - 4010:4010
+    volumes:
+      - ./swagger:/swagger
+
+  tes:
+    image: stoplight/prism:4
+    command: mock -d -h 0.0.0.0 "/swagger/tes.json"
+    restart: always
+    ports:
+      - 4011:4010
+    volumes:
+      - ./swagger:/swagger
+
+  gds:
+    image: stoplight/prism:4
+    command: mock -d -h 0.0.0.0 "/swagger/gds.json"
+    restart: always
+    ports:
+      - 4012:4010
+    volumes:
+      - ./swagger:/swagger
+
+  ens:
+    image: stoplight/prism:4
+    command: mock -d -h 0.0.0.0 "/swagger/ens.json"
+    restart: always
+    ports:
+      - 4013:4010
+    volumes:
+      - ./swagger:/swagger
+
+  console:
+    image: stoplight/prism:4
+    command: mock -d -h 0.0.0.0 "/swagger/console.json"
+    restart: always
+    ports:
+      - 4014:4010
+    volumes:
+      - ./swagger:/swagger
