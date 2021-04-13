@@ -18,6 +18,8 @@ from data_processors.s3 import helper
 
 from data_processors.reports.services import serialize_to_cancer_report
 
+from aws_xray_sdk.core import xray_recorder
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
