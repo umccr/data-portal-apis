@@ -11,21 +11,18 @@ django.setup()
 
 # ---
 
-import json
 import logging
 from datetime import datetime
 
 import requests
 import pandas as pd
-import gspread
-from google.oauth2 import service_account
-from gspread_pandas import Spread
 from libiap.openapi import libgds
 from sample_sheet import SampleSheet
 
-from data_processors.pipeline import services, constant
+from data_processors import const
+from data_processors.pipeline import services
 from data_processors.pipeline.constant import SampleSheetCSV
-from utils import libssm, libjson, iap
+from utils import libssm, libjson, iap, libgdrive
 from utils.regex_globals import SAMPLE_REGEX_OBJS
 
 SAMPLE_ID_HEADER = "Sample_ID (SampleSheet)"
@@ -103,18 +100,10 @@ def download_metadata(year: str) -> pd.DataFrame:
 
     :param year: the sheet in the metadata spreadsheet to load
     """
-    lab_sheet_id = libssm.get_secret(constant.TRACKING_SHEET_ID)
-    account_info = libssm.get_secret(constant.GDRIVE_SERVICE_ACCOUNT)
+    lab_sheet_id = libssm.get_secret(const.TRACKING_SHEET_ID)
+    account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
 
-    scopes = ['https://www.googleapis.com/auth/drive.readonly']
-    credentials = service_account.Credentials.from_service_account_info(json.loads(account_info))
-    spread = Spread(spread=lab_sheet_id, creds=credentials.with_scopes(scopes))
-
-    try:
-        return spread.sheet_to_df(sheet=year, index=0, header_rows=1, start_row=1)
-    except (gspread.exceptions.WorksheetNotFound, gspread.exceptions.APIError) as e:
-        logger.warning(f"Returning empty data frame for sheet {year}. Exception: {type(e).__name__} -- {e}")
-        return pd.DataFrame()
+    return libgdrive.download_sheet(account_info, lab_sheet_id, sheet=year)
 
 
 def extract_requested_rows(df, requested_ids: list):

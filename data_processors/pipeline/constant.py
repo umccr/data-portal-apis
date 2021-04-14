@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """module for pipeline constants
 
-Let's be Pythonic 💪 let's not mutate CAP_VAR elsewhere!
+Let's be Pythonic 💪 let's not mutate CAPITAL_VARIABLE elsewhere!
 Consider Enum, if there's a need for (name, value) and better protected tuple pair.
 Or consider Helper class-ing where composite builder is needed.
 """
@@ -12,9 +12,6 @@ IAP_BASE_URL = "https://aps2.platform.illumina.com"
 IAP_GDS_FASTQ_VOL = "/iap/gds/fastq_vol"
 IAP_WORKFLOW_PREFIX = "/iap/workflow"
 IAP_JWT_TOKEN = "/iap/jwt-token"
-
-TRACKING_SHEET_ID = "/umccr/google/drive/tracking_sheet_id"
-GDRIVE_SERVICE_ACCOUNT = "/umccr/google/drive/lims_service_account_json"
 
 SQS_GERMLINE_QUEUE_ARN = "/data_portal/backend/sqs_germline_queue_arn"
 SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"

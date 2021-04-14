@@ -16,11 +16,16 @@ import io
 import json
 import logging
 
+import gspread
+import pandas as pd
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
+from gspread_pandas import Spread
 
 logger = logging.getLogger()
+
+_scopes = ['https://www.googleapis.com/auth/drive.readonly']
 
 
 def download_sheet1_csv(account_info: str, file_id: str) -> bytes:
@@ -38,9 +43,9 @@ def download_sheet1_csv(account_info: str, file_id: str) -> bytes:
     :param file_id:
     :return file content: in csv format bytes
     """
-    scopes = ['https://www.googleapis.com/auth/drive.readonly']
+
     credentials = service_account.Credentials.from_service_account_info(json.loads(account_info))
-    service = build('drive', 'v3', credentials=credentials.with_scopes(scopes), cache_discovery=False)
+    service = build('drive', 'v3', credentials=credentials.with_scopes(_scopes), cache_discovery=False)
     request = service.files().export_media(fileId=file_id, mimeType='text/csv')
 
     fh = io.BytesIO()  # Create temporary in memory file handler
@@ -54,3 +59,22 @@ def download_sheet1_csv(account_info: str, file_id: str) -> bytes:
     content = fh.getvalue()
     fh.close()
     return content
+
+
+def download_sheet(account_info: str, file_id: str, sheet=None) -> pd.DataFrame:
+    """Download the specified sheet from GDrive and return as panda DataFrame object
+
+    :param account_info:
+    :param file_id:
+    :param sheet: str,int the sheet in the metadata spreadsheet to load
+    :return dataframe: file content in panda dataframe, NOTE: it still return blank DF if exception occur
+    """
+
+    credentials = service_account.Credentials.from_service_account_info(json.loads(account_info))
+    spread = Spread(spread=file_id, creds=credentials.with_scopes(_scopes))
+
+    try:
+        return spread.sheet_to_df(sheet=sheet, index=0, header_rows=1, start_row=1)
+    except (gspread.exceptions.WorksheetNotFound, gspread.exceptions.APIError) as e:
+        logger.warning(f"Returning empty data frame for sheet {sheet}. Exception: {type(e).__name__} -- {e}")
+        return pd.DataFrame()

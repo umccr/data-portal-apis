@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from data_portal.models import LIMSRow
+from data_processors import const
 from utils import libgdrive, libssm, libdt
 
 logger = logging.getLogger(__name__)
@@ -21,8 +22,8 @@ def persist_lims_data_from_google_drive() -> Dict[str, int]:
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LIMS data from google drive at {requested_time}")
 
-    lims_sheet_id = libssm.get_secret('/umccr/google/drive/lims_sheet_id')
-    account_info = libssm.get_secret('/umccr/google/drive/lims_service_account_json')
+    lims_sheet_id = libssm.get_secret(const.LIMS_SHEET_ID)
+    account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
 
     bytes_data = libgdrive.download_sheet1_csv(
         account_info=account_info,
