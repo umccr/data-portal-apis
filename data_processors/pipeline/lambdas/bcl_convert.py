@@ -164,7 +164,7 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
         # Add in TSO500 settings
         settings.update(
             {
-                "adapter_behaviour": "trim",
+                "adapter_behavior": "trim",
                 "minimum_trimmed_read_length": 35,
                 "mask_short_reads": 35
              }
