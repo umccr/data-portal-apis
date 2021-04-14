@@ -11,11 +11,15 @@ django.setup()
 
 # ---
 
+import io
 import logging
 from typing import Dict
 
-from data_processors.lims.services import persist_lims_data_from_google_drive
-from utils import libjson
+from datetime import datetime
+
+from data_processors import const
+from data_processors.lims import services
+from utils import libjson, libgdrive, libssm
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -40,4 +44,12 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
     logger.info("Start processing LIMS update event")
     logger.info(libjson.dumps(event))
 
-    return persist_lims_data_from_google_drive()
+    requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    logger.info(f"Reading LIMS data from google drive at {requested_time}")
+
+    lims_sheet_id = libssm.get_secret(const.LIMS_SHEET_ID)
+    account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
+
+    bytes_data = libgdrive.download_sheet1_csv(account_info, lims_sheet_id)
+
+    return services.persist_lims_data(io.BytesIO(bytes_data))

@@ -2,42 +2,23 @@ import csv
 import io
 import logging
 import re
-from datetime import datetime
-from io import BytesIO
 from typing import Dict
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from data_portal.models import LIMSRow
-from data_processors import const
-from utils import libgdrive, libssm, libdt
+from utils import libdt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
 @transaction.atomic
-def persist_lims_data_from_google_drive() -> Dict[str, int]:
-    requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    logger.info(f"Reading LIMS data from google drive at {requested_time}")
-
-    lims_sheet_id = libssm.get_secret(const.LIMS_SHEET_ID)
-    account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
-
-    bytes_data = libgdrive.download_sheet1_csv(
-        account_info=account_info,
-        file_id=lims_sheet_id,
-    )
-    csv_input = BytesIO(bytes_data)
-    return persist_lims_data(csv_input)
-
-
-@transaction.atomic
-def persist_lims_data(csv_input: BytesIO, rewrite: bool = False) -> Dict[str, int]:
+def persist_lims_data(csv_input: io.BytesIO, rewrite: bool = False) -> Dict[str, int]:
     """
     Persist lims data into the db
-    :param csv_input: buffer instance of BytesIO
+    :param csv_input: buffer instance of io.BytesIO
     :param rewrite: whether we are rewriting the data
     :return: result statistics - count of updated, new and invalid LIMS rows
     """

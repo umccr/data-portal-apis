@@ -54,7 +54,7 @@ functions:
     timeout: 28
 
   lims_scheduled_update_processor:
-    handler: data_processors.lims.lambdas.scheduled_update_handler
+    handler: data_processors.lims.lambdas.google_lims.scheduled_update_handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     events:
