@@ -7,7 +7,9 @@ from typing import Dict
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from data_portal.models import LIMSRow
+import pandas as pd
+
+from data_portal.models import LIMSRow, LabMetadata
 from utils import libdt
 
 logger = logging.getLogger(__name__)
@@ -130,3 +132,62 @@ def __csv_column_to_field_name(column_name: str) -> str:
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', column_name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+# Lab metadata functions
+
+@transaction.atomic
+def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, int]:
+    """
+    Persist labmetadata from a pandas dataframe into the db
+    :param df: dataframe to persist
+    :param rewrite: whether we are rewriting the data
+    :return: result statistics - count of updated, new and invalid LIMS rows
+    """
+    
+    logger.info(f"Start processing LabMetadata data")
+
+    if rewrite:
+        # Delete all rows first
+        logger.info("REWRITE MODE: Deleting all existing records")
+        LabMetadata.objects.all().delete()
+
+    labmetadata_row_update_count = 0
+    labmetadata_row_new_count = 0
+    labmetadata_row_invalid_count = 0
+
+    # assume samples are unique by Library ID plus Sample Name (sample name is itself a concat of sample id and external sample id)
+    lib_ids = df['library_id'].tolist()
+    sample_names = df['sample_name'].tolist()
+    existing_labmetadatas = LabMetadata.objects.filter(library_id__in=lib_ids).filter(sample_name__in=sample_names)
+
+    # print them
+    print(existing_labmetadatas)
+    print("---")
+    print(df)
+
+    #TODO complete this
+
+    #
+    #((filter DF to remove blanks))
+    #get all (lib,sample) instanced from DF
+    #get (those that exist) from Django
+    #split DF into two by (those that exist) amd those that dont
+    #bulk update one. bulk insert other.
+    #
+    #df_records = df.to_dict('records')
+    #
+    #model_instances = [MyModel(
+    #    field_1=record['field_1'],
+    #    field_2=record['field_2'],
+    #) for record in df_records]
+    #
+    #MyModel.objects.bulk_create(model_instances)
+
+    return {
+        'labmetadata_row_update_count': labmetadata_row_update_count,
+        'labmetadata_row_new_count': labmetadata_row_new_count,
+        'labmetadata_row_invalid_count': labmetadata_row_invalid_count,
+    }
+
+
