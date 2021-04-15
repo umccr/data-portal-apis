@@ -10,7 +10,14 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
   - **Python 3.8**
   - Node.js with Yarn
   - See `buildspec.yml` for runtime versions requirement
-- Create virtual environment and activate it, then:
+- Create virtual environment and activate it, i.e:
+
+```
+$ python -mvenv venv
+```
+
+then:
+
 ```
 source venv/bin/activate
 
