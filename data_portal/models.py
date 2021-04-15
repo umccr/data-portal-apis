@@ -147,6 +147,35 @@ class LIMSRow(models.Model):
     S3_LINK_ATTRS = ('subject_id', 'sample_id')
 
 
+class LabMetadata(models.Model):
+    """
+    Models a row in the lab tracking sheet data. Fields are the columns.
+    """
+
+    library_id = models.CharField(max_length=255,unique=True)   
+    #external_library_id = models.CharField(max_length=255) # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet. do we want to store clarity-generated lib id, and what do we want to call it?
+    sample_name = models.CharField(max_length=255)
+    sample_id = models.CharField(max_length=255)
+    external_sample_id = models.CharField(max_length=255, null=True, blank=True)
+    subject_id = models.CharField(max_length=255, null=True, blank=True)
+    external_subject_id = models.CharField(max_length=255, null=True, blank=True)
+    phenotype = models.CharField(max_length=255, null=True, blank=True)
+    quality = models.CharField(max_length=255, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    project_name = models.CharField(max_length=255, null=True, blank=True)
+    project_owner = models.CharField(max_length=255, null=True, blank=True)
+    experiment_id = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    assay = models.CharField(max_length=255, null=True, blank=True)
+    override_cycles = models.CharField(max_length=255, null=True, blank=True)
+    workflow = models.CharField(max_length=255, null=True, blank=True)
+    coverage = models.CharField(max_length=255, null=True, blank=True)
+    truseqindex = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
+               % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
+
 class S3LIMS(models.Model):
     """
     Models the association between a S3 object and a LIMS row
