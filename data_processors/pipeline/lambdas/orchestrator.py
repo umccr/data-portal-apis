@@ -257,9 +257,15 @@ def parse_bcl_convert_output(output_json: str) -> list:
     """
     output: dict = libjson.loads(output_json)
 
-    look_up_key = 'main/fastq_list_rows'
-    if look_up_key not in output.keys():
-        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting {look_up_key}. Found {output.keys()}")
+    lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']  # lookup in order, return on first found
+    look_up_key = None
+    for k in lookup_keys:
+        if k in output.keys():
+            look_up_key = k
+            break
+
+    if look_up_key is None:
+        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting one of {lookup_keys}. Found {output.keys()}")
 
     return output[look_up_key]
 

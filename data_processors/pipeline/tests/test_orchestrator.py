@@ -16,6 +16,50 @@ from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, Pi
 
 class OrchestratorUnitTests(PipelineUnitTestCase):
 
+    def test_parse_bcl_convert_output(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output
+        """
+
+        result = orchestrator.parse_bcl_convert_output(json.dumps({
+            "main/fastq_list_rows": [{'rgid': "main/fastq_list_rows"}],
+            "fastq_list_rows": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}]
+        }))
+
+        logger.info("-" * 32)
+        logger.info(f"Orchestrator parse_bcl_convert_output: {json.dumps(result)}")
+
+        self.assertEqual(result[0]['rgid'], "main/fastq_list_rows")
+
+    def test_parse_bcl_convert_output_alt(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_alt
+        """
+
+        result = orchestrator.parse_bcl_convert_output(json.dumps({
+            "fastq_list_rows2": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
+            "fastq_list_rows": [{'rgid': "fastq_list_rows"}]
+        }))
+
+        logger.info("-" * 32)
+        logger.info(f"Orchestrator parse_bcl_convert_output alt: {json.dumps(result)}")
+
+        self.assertEqual(result[0]['rgid'], "fastq_list_rows")
+
+    def test_parse_bcl_convert_output_error(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_error
+        """
+
+        try:
+            orchestrator.parse_bcl_convert_output(json.dumps({
+                "fastq_list_rows/main": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
+                "fastq_list_rowz": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS_TOO"}]
+            }))
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(json.JSONDecodeError)
+
     def test_workflow_output_not_json(self):
         """
         python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_workflow_output_not_json
