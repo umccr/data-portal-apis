@@ -1,16 +1,18 @@
+import json
+
 from django.core.exceptions import ObjectDoesNotExist
-from django.test import TestCase
 from django.utils.timezone import now
 
 from data_portal.models import LIMSRow, S3Object, S3LIMS
-from data_processors.s3 import lambdas
+from data_processors.s3.lambdas import s3_event
+from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase
 
 
-class S3LambdaTests(TestCase):
+class S3EventUnitTests(S3EventUnitTestCase):
 
-    def test_sqs_s3_event_processor(self) -> None:
+    def test_handler(self) -> None:
         """
-        python manage.py test data_processors.s3.tests.S3LambdaTests.test_sqs_s3_event_processor
+        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler
 
         Test whether SQS S3 event processor can process event data as expected
         """
@@ -92,12 +94,12 @@ class S3LambdaTests(TestCase):
         sqs_event = {
             "Records": [
                 {
-                    "body": str(s3_event_message),
+                    "body": json.dumps(s3_event_message),
                 }
             ]
         }
 
-        results = lambdas.handler(sqs_event, None)
+        results = s3_event.handler(sqs_event, None)
 
         self.assertEqual(results['removed_count'], 1)
         # We should expect the existing association removed as well
@@ -110,7 +112,7 @@ class S3LambdaTests(TestCase):
 
     def test_delete_non_existent_s3_object(self):
         """
-        python manage.py test data_processors.s3.tests.S3LambdaTests.test_delete_non_existent_s3_object
+        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_delete_non_existent_s3_object
         """
         s3_event_message = {
             "Records": [
@@ -134,10 +136,19 @@ class S3LambdaTests(TestCase):
         sqs_event = {
             "Records": [
                 {
-                    "body": str(s3_event_message),
+                    "body": json.dumps(s3_event_message),
                 }
             ]
         }
 
-        lambdas.handler(sqs_event, None)
+        s3_event.handler(sqs_event, None)
         self.assertRaises(ObjectDoesNotExist)
+
+
+class S3EventIntegrationTests(S3EventIntegrationTestCase):
+    # integration test hit actual File or API endpoint, thus, manual run in most cases
+    # required appropriate access mechanism setup such as active aws login session
+    # uncomment @skip and hit the each test case!
+    # and keep decorated @skip after tested
+
+    pass

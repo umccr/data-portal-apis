@@ -8,17 +8,70 @@ Models or entities, in this case, our S3Object model, and/or some aspect of
 direct mutation to the actual S3 object itself, etc.
 """
 import logging
+from collections import defaultdict
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, List
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import ExpressionWrapper, Value, CharField, Q, F
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS
+from data_processors.s3.helper import S3EventRecord, S3EventType
 from utils import libs3
 
 logger = logging.getLogger(__name__)
+
+
+def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
+    """
+    Synchronise s3 event records to the db.
+    :param records: records to be processed
+    :return results of synchronisation
+    """
+    results = defaultdict(int)
+
+    for record in records:
+        if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
+            removed_count, s3_lims_removed_count = _sync_s3_event_record_removed(record)
+            results['removed_count'] += removed_count
+            results['s3_lims_removed_count'] += s3_lims_removed_count
+
+        elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
+            created_count, s3_lims_created_count = _sync_s3_event_record_created(record)
+            results['created_count'] += created_count
+            results['s3_lims_created_count'] += s3_lims_created_count
+        else:
+            logger.info(f"Found unsupported S3 event type: {record.event_type}")
+            results['unsupported_count'] += 1
+
+    return results
+
+
+def _sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
+    """
+    Synchronise a S3 event (CREATED) record to db
+    :return: number of s3 object created, number of database association records created
+    """
+    bucket_name = record.s3_bucket_name
+    key = record.s3_object_meta['key']
+    size = record.s3_object_meta['size']
+    e_tag = record.s3_object_meta['eTag']
+
+    tag_s3_object(bucket_name, key, "bam")
+
+    return persist_s3_object(bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag)
+
+
+def _sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
+    """
+    Synchronise a S3 event (REMOVED) record to db
+    :param record: record to be synced
+    :return: number of s3 records deleted, number of s3-lims association records deleted
+    """
+    bucket_name = record.s3_bucket_name
+    key = record.s3_object_meta['key']
+    return delete_s3_object(bucket_name, key)
 
 
 @transaction.atomic

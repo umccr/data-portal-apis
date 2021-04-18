@@ -64,7 +64,7 @@ functions:
     timeout: 28
 
   sqs_s3_event_processor:
-    handler: data_processors.s3.lambdas.handler
+    handler: data_processors.s3.lambdas.s3_event.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     events:
