@@ -149,6 +149,7 @@ class S3EventUnitTests(S3EventUnitTestCase):
         """
         python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler_report_queue
         """
+        self.verify_local()
         results = s3_event.handler(MOCK_REPORT_EVENT, None)
         logger.info(json.dumps(results))
         self.assertEqual(results['created_count'], 1)
