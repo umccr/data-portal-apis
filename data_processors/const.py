@@ -9,3 +9,6 @@ Or consider Helper class-ing where composite builder is needed.
 GDRIVE_SERVICE_ACCOUNT = "/umccr/google/drive/lims_service_account_json"
 TRACKING_SHEET_ID = "/umccr/google/drive/tracking_sheet_id"
 LIMS_SHEET_ID = "/umccr/google/drive/lims_sheet_id"
+
+JSON_GZ = "json.gz"
+CANCER_REPORT_TABLES = "cancer_report_tables"

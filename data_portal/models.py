@@ -1,6 +1,5 @@
-import uuid
 import random
-from enum import Enum
+import uuid
 from typing import Union
 
 from django.db import models
@@ -435,19 +434,50 @@ class ReportType(models.TextChoices):
     SV_NOBND_MANYTRANSCRIPTS = "sv_nobnd_manytranscripts"
 
 
+class ReportManager(models.Manager):
+
+    def create_or_update_report(self, subject_id, sample_id, library_id, report_type, created_by, data, s3_object):
+        qs: QuerySet = self.filter(
+            subject_id=subject_id,
+            sample_id=sample_id,
+            library_id=library_id,
+            type=report_type
+        )
+
+        if qs.exists():
+            # update existing report
+            report = qs.get()
+        else:
+            # new report
+            report = Report()
+            report.subject_id = subject_id
+            report.sample_id = sample_id
+            report.library_id = library_id
+            report.type = report_type
+
+        report.created_by = created_by
+        report.data = data
+        report.s3_object = s3_object
+        report.save()
+        return report
+
+
 class Report(models.Model):
     class Meta:
-        unique_together = ['subject_id', 'sample_id', 'library_id', 'type', 'date_created']
+        unique_together = ['subject_id', 'sample_id', 'library_id', 'type']
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
     library_id = models.CharField(max_length=255)
     type = models.CharField(choices=ReportType.choices, max_length=255)
-    date_created = models.DateTimeField()
     created_by = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
 
+    s3_object = models.OneToOneField(S3Object, on_delete=models.SET_NULL, null=True, blank=True)
+
+    objects = ReportManager()
+
     def __str__(self):
         return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}, " \
-               f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}, DATE_CREATED: {self.date_created}"
+               f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}"

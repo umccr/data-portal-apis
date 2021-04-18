@@ -24,7 +24,7 @@ from datetime import datetime
 
 from botocore.exceptions import ClientError
 
-from utils import libaws, libjson
+from utils import libaws
 
 logger = logging.getLogger(__name__)
 
@@ -189,18 +189,21 @@ def get_s3_object(bucket: str, key: str, **kwargs) -> (bool, dict):
         return False, dict(error=message)
 
 
-def get_s3_object_to_bytes(bucket: str, key: str, **kwargs) -> bytes:
+def get_s3_object_to_bytes(bucket: str, key: str) -> bytes:
     """
     get_object_to_bytes API, with on-the-fly gzip detection and decompression
 
     :param bucket:
     :param key:
-    :param kwargs:
-    :return tuple (bytes): the bytes from the S3 object body
+    :return bytes: bytes from the decompressed S3 object body
     """
-    obj_body = libaws.resource('s3').Object(bucket, key).get()['Body']
-    obj_bytes = gzip.decompress(obj_body.read())
-    return libjson.loads(obj_bytes)
+    try:
+        obj_body = libaws.resource('s3').Object(bucket, key).get()['Body']
+        obj_bytes = gzip.decompress(obj_body.read())
+        return obj_bytes
+    except ClientError as e:
+        message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key})"
+        raise FileNotFoundError(message)
 
 
 def get_s3_object_tagging(bucket: str, key: str):

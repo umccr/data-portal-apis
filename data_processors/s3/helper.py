@@ -2,10 +2,11 @@ import logging
 from ast import literal_eval
 from collections import defaultdict
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from dateutil.parser import parse
 
+from data_processors import const
 from data_processors.s3 import services
 
 logger = logging.getLogger(__name__)
@@ -34,13 +35,23 @@ class S3EventRecord:
         self.s3_object_meta = s3_object_meta
 
 
-def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
+def is_report_record(s3_object_meta):
+    """
+    Check S3 object key to determine whether further processing is required for report data ingestion
+    Filtering strategy is finding a very discriminated "keyword" in S3 object key
+    """
+    key = s3_object_meta['key']
+    return const.JSON_GZ in key and const.CANCER_REPORT_TABLES in key
+
+
+def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
     """
     Parse raw SQS messages into S3EventRecord objects
     :param messages: the messages to be processed
     :return: list of S3EventRecord objects
     """
     s3_event_records = []
+    report_event_records = []
 
     for message in messages:
         # We need to convert json data in string to dict
@@ -63,11 +74,16 @@ def parse_raw_s3_event_records(messages: List[dict]) -> List[S3EventRecord]:
 
             logger.debug(f"Found new event of type {event_type}")
 
-            s3_event_records.append(S3EventRecord(
-                event_type, event_time, s3_bucket_name, s3_object_meta
-            ))
+            s3_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
 
-    return s3_event_records
+            # filter early for records that need further processing
+            if is_report_record(s3_object_meta):
+                report_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
+
+    return {
+        's3_event_records': s3_event_records,
+        'report_event_records': report_event_records
+    }
 
 
 def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
