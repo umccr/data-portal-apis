@@ -5,7 +5,8 @@ from django.utils.timezone import now
 
 from data_portal.models import LIMSRow, S3Object, S3LIMS
 from data_processors.s3.lambdas import s3_event
-from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase
+from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase, logger
+from data_processors.s3.tests.test_helper import MOCK_REPORT_EVENT
 
 
 class S3EventUnitTests(S3EventUnitTestCase):
@@ -143,6 +144,14 @@ class S3EventUnitTests(S3EventUnitTestCase):
 
         s3_event.handler(sqs_event, None)
         self.assertRaises(ObjectDoesNotExist)
+
+    def test_handler_report_queue(self):
+        """
+        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler_report_queue
+        """
+        results = s3_event.handler(MOCK_REPORT_EVENT, None)
+        logger.info(json.dumps(results))
+        self.assertEqual(results['created_count'], 1)
 
 
 class S3EventIntegrationTests(S3EventIntegrationTestCase):

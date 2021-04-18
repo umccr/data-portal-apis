@@ -1,7 +1,7 @@
 import logging
 import re
 import uuid
-from typing import List, Tuple
+from typing import Tuple
 
 from aws_xray_sdk.core import xray_recorder
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,7 +10,6 @@ from django.db import transaction
 from data_portal.models import Report, ReportType, S3Object
 from data_processors import const
 from data_processors.s3 import helper
-from data_processors.s3.helper import S3EventRecord
 from utils import libs3, libjson
 
 logger = logging.getLogger(__name__)
@@ -37,8 +36,7 @@ def _extract_report_unique_key(key) -> Tuple:
 
     # regex_key = re.compile('.+.umccrised.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern +').+')
     # let's relax "umccrised" keyword for now
-    regex_key = re.compile(
-        '.+.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern + ').+')
+    regex_key = re.compile('.+.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern + ').+')
 
     subject_id = None
     sample_id = None
@@ -123,31 +121,28 @@ def _extract_report_type(key):
 
 
 @transaction.atomic
-def persist_report(records: List[S3EventRecord]):
+def persist_report(bucket, key, event_type):
     """
     Depends on event type, persist Report into db. Remove otherwise.
 
-    :param records: S3 events to be processed coming from the SQS queue
+    :param bucket:
+    :param key:
+    :param event_type:
     """
-    with xray_recorder.in_subsegment("PERSIST_REPORT_TRACE") as subsegment:
-        subsegment.put_metadata('total', len(records), 'persist_report')
-        for record in records:
-            bucket = record.s3_bucket_name
-            key = record.s3_object_meta['key']
 
-            subject_id, sample_id, library_id = _extract_report_unique_key(key)
-            if subject_id is None or sample_id is None or library_id is None:
-                continue
+    subject_id, sample_id, library_id = _extract_report_unique_key(key)
+    if subject_id is None or sample_id is None or library_id is None:
+        return None
 
-            report_type = _extract_report_type(key)
-            if report_type is None:
-                continue
+    report_type = _extract_report_type(key)
+    if report_type is None:
+        return None
 
-            if record.event_type == helper.S3EventType.EVENT_OBJECT_CREATED:
-                _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
-            elif record.event_type == helper.S3EventType.EVENT_OBJECT_REMOVED:
-                _sync_report_deleted(key, subject_id, sample_id, library_id, report_type)
-        # for end
+    if event_type == helper.S3EventType.EVENT_OBJECT_CREATED.value:
+        return _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
+    elif event_type == helper.S3EventType.EVENT_OBJECT_REMOVED.value:
+        _sync_report_deleted(key, subject_id, sample_id, library_id, report_type)
+        return None
 
 
 def _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type):

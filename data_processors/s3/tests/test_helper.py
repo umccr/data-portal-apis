@@ -22,7 +22,7 @@ _mock_event_no_records = {
     ]
 }
 
-_mock_event = {
+MOCK_REPORT_EVENT = {
     "Records": [
         {
             "messageId": "08ffc52c-4c76-40ee-bcdc-94e34432835c",
@@ -50,7 +50,7 @@ class S3EventHelperUnitTests(S3EventUnitTestCase):
         """
         python manage.py test data_processors.s3.tests.test_helper.S3EventHelperUnitTests.test_parse_raw_s3_event_records
         """
-        event_records_dict = helper.parse_raw_s3_event_records(_mock_event['Records'])
+        event_records_dict = helper.parse_raw_s3_event_records(MOCK_REPORT_EVENT['Records'])
         self.assertEqual(len(event_records_dict['s3_event_records']), 1)
         self.assertEqual(len(event_records_dict['report_event_records']), 1)
 

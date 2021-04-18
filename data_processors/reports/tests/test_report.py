@@ -60,7 +60,11 @@ class ReportUnitTests(ReportUnitTestCase):
 
         when(services.libs3).get_s3_object_to_bytes(...).thenReturn(mock_s3_content_bytes)
 
-        services.persist_report([mock_s3_event_record])
+        services.persist_report(
+            bucket=mock_s3_event_record.s3_bucket_name,
+            key=mock_s3_event_record.s3_object_meta['key'],
+            event_type=mock_s3_event_record.event_type.value,
+        )
 
         report = Report.objects.get(subject_id="SBJ00001", sample_id="PRJ000001", library_id="L0000001")
         logger.info("-" * 32)

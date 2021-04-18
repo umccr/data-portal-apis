@@ -79,7 +79,12 @@ def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
 
             # filter early for records that need further processing
             if is_report_record(s3_object_meta):
-                report_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
+                report_event_records.append({
+                    'event_type': event_type.value,
+                    'event_time': event_time,
+                    's3_bucket_name': s3_bucket_name,
+                    's3_object_meta': s3_object_meta
+                })
 
     return {
         's3_event_records': s3_event_records,

@@ -88,6 +88,10 @@ load_localstack() {
   eval "$aws_local_cmd sqs create-queue --queue-name StdQueue"
   eval "$aws_local_cmd sqs create-queue --queue-name MyQueue.fifo --attributes FifoQueue=true,ContentBasedDeduplication=true"
 
+  sqs_report_event_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_report_event_queue_arn' --with-decryption | jq -r .Parameter.Value)
+  sqs_report_event_queue_arn=${sqs_report_event_queue_arn##*:}
+  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_report_event_queue_arn"
+
   sqs_germline_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_germline_queue_arn' --with-decryption | jq -r .Parameter.Value)
   sqs_germline_queue_name=${sqs_germline_queue_arn##*:}
   eval "$aws_local_cmd sqs create-queue --queue-name $sqs_germline_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"

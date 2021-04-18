@@ -76,6 +76,19 @@ functions:
     environment:
       AWS_XRAY_SDK_ENABLED: true
 
+  sqs_report_event_processor:
+    handler: data_processors.reports.lambdas.report_event.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_report_event_queue_arn}
+    timeout: 28
+    # FIXME enabled xray on this lambda. pls turn this off when no use
+    tracing: Active
+    environment:
+      AWS_XRAY_SDK_ENABLED: true
+
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
     layers:
