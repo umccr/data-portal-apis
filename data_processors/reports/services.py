@@ -6,6 +6,7 @@ from typing import Tuple
 from aws_xray_sdk.core import xray_recorder
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import QuerySet
 
 from data_portal.models import Report, ReportType, S3Object
 from data_processors import const
@@ -148,7 +149,7 @@ def persist_report(bucket, key, event_type):
 def _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type):
     subsegment = xray_recorder.current_subsegment()
 
-    s3_object = S3Object.objects.get(bucket=bucket, key=key)
+    s3_object: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
 
     data = libjson.loads(libs3.get_s3_object_to_bytes(bucket, key))
 
@@ -159,7 +160,7 @@ def _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_
         report_type=report_type,
         created_by=const.CANCER_REPORT_TABLES if const.CANCER_REPORT_TABLES in key else None,
         data=data,
-        s3_object=s3_object
+        s3_object=s3_object.get() if s3_object.exists() else None
     )
 
     subsegment.put_metadata(str(report.id.hex), {
