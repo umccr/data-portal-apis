@@ -415,6 +415,7 @@ class Workflow(models.Model):
 
 
 class ReportType(models.TextChoices):
+    REPORT_INPUTS = "report_inputs"
     HRD_CHORD = "hrd_chord"
     HRD_HRDETECT = "hrd_hrdetect"
     PURPLE_CNV_GERM = "purple_cnv_germ"

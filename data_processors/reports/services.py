@@ -115,6 +115,9 @@ def _extract_report_type(key: str):
         elif "nobnd_manytranscripts" in key:
             return ReportType.SV_NOBND_MANYTRANSCRIPTS
 
+    if "report_inputs" in key:
+        return ReportType.REPORT_INPUTS
+
     msg = f"Unknown report type. Unexpected pattern found: {key}"
     logger.warning(msg)
     subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
