@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def _extract_report_unique_key(key) -> Tuple:
+def _extract_report_unique_key(key: str) -> Tuple:
     """
     Matches our special sauce key sequencing identifiers @UMCCR, i.e:
         SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary
@@ -61,7 +61,7 @@ def _extract_report_unique_key(key) -> Tuple:
     return subject_id, sample_id, library_id
 
 
-def _extract_report_type(key):
+def _extract_report_type(key: str):
     """
     Extract well-known Report type from key
 
@@ -69,6 +69,9 @@ def _extract_report_type(key):
     :return: report type Or None
     """
     subsegment = xray_recorder.current_subsegment()
+
+    # Normalize
+    key = key.lower()
 
     if "hrd" in key:
         if "chord" in key:
@@ -122,7 +125,7 @@ def _extract_report_type(key):
 
 
 @transaction.atomic
-def persist_report(bucket, key, event_type):
+def persist_report(bucket: str, key: str, event_type):
     """
     Depends on event type, persist Report into db. Remove otherwise.
 
@@ -146,7 +149,7 @@ def persist_report(bucket, key, event_type):
         return None
 
 
-def _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type):
+def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
     subsegment = xray_recorder.current_subsegment()
 
     s3_object: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
@@ -171,7 +174,7 @@ def _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_
     return report
 
 
-def _sync_report_deleted(key, subject_id, sample_id, library_id, report_type):
+def _sync_report_deleted(key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
     subsegment = xray_recorder.current_subsegment()
 
     try:
