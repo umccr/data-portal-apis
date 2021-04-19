@@ -6,8 +6,12 @@ from typing import Dict
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
+import operator
 
 import pandas as pd
+from collections import namedtuple
+from functools import reduce
 
 from data_portal.models import LIMSRow, LabMetadata
 from utils import libdt
@@ -152,42 +156,84 @@ def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, in
         logger.info("REWRITE MODE: Deleting all existing records")
         LabMetadata.objects.all().delete()
 
-    labmetadata_row_update_count = 0
-    labmetadata_row_new_count = 0
-    labmetadata_row_invalid_count = 0
+    # assume a row's unique identifier is a tuple of library_id and sample_name
 
-    # assume samples are unique by Library ID plus Sample Name (sample name is itself a concat of sample id and external sample id)
-    lib_ids = df['library_id'].tolist()
-    sample_names = df['sample_name'].tolist()
-    existing_labmetadatas = LabMetadata.objects.filter(library_id__in=lib_ids).filter(sample_name__in=sample_names)
+    # assemble a df of rows to update - query for labmetadatas that match a library_id + sample_name from our df
+    libids_samplenames = list(zip( df['library_id'].tolist(),  df['sample_name'].tolist() ))
+    query = reduce(operator.or_, (Q(library_id=l, sample_name=s) for l, s in libids_samplenames))
+    existing_labmetadatas = LabMetadata.objects.filter(query)
+    existing_identifier_tuples = tuple((lm.library_id, lm.sample_name) for lm in existing_labmetadatas)
 
-    # print them
-    print(existing_labmetadatas)
-    print("---")
-    print(df)
+    df_to_update =  df[pd.Series(list(zip(df['library_id'], df['sample_name']))).isin(existing_identifier_tuples)]
+    
+    # df of rows to create is the original dataframe minus df-to-update
+    df_to_create = df.append(df_to_update)
+    df_to_create = df_to_create[~df_to_create.index.duplicated(keep=False)]
 
-    #TODO complete this
+    instances_insert = make_labmetadata_instances_from_dataframe(df_to_create)
+    created = LabMetadata.objects.bulk_create(instances_insert,batch_size=100)
 
-    #
-    #((filter DF to remove blanks))
-    #get all (lib,sample) instanced from DF
-    #get (those that exist) from Django
-    #split DF into two by (those that exist) amd those that dont
-    #bulk update one. bulk insert other.
-    #
-    #df_records = df.to_dict('records')
-    #
-    #model_instances = [MyModel(
-    #    field_1=record['field_1'],
-    #    field_2=record['field_2'],
-    #) for record in df_records]
-    #
-    #MyModel.objects.bulk_create(model_instances)
+    rows_updated = 0
+    for row in df_to_update.itertuples():
+        rows_updated += update_labmetadata_instance(row)
+
+    print("Updated " + str((rows_updated)))
+    print("New " + str(len(created)))
+    print("Invalid " + str( len(df.index) - len(created) - rows_updated ))
 
     return {
-        'labmetadata_row_update_count': labmetadata_row_update_count,
-        'labmetadata_row_new_count': labmetadata_row_new_count,
-        'labmetadata_row_invalid_count': labmetadata_row_invalid_count,
+        'labmetadata_row_update_count':rows_updated,
+        'labmetadata_row_new_count': len(created),
+        'labmetadata_row_invalid_count': len(df.index) - len(created) - rows_updated
     }
 
 
+def make_labmetadata_instances_from_dataframe(df):
+    df_records = df.to_dict('records')
+    
+    model_instances = [LabMetadata(
+        library_id=record['library_id'],
+        sample_name=record['sample_name'],
+        sample_id=record['sample_id'],
+        external_sample_id=record['external_sample_id'],
+        subject_id=record['subject_id'],
+        external_subject_id=record['external_subject_id'],
+        phenotype=record['phenotype'],
+        quality=record['quality'],
+        source=record['source'],
+        project_name=record['project_name'],
+        project_owner=record['project_owner'],
+        experiment_id=record['experiment_id'],
+        type=record['type'],
+        assay=record['assay'],
+        override_cycles=record['override_cycles'],
+        workflow=record['workflow'],
+        coverage=record['coverage'],
+        truseqindex=record['truseqindex']
+    ) for record in df_records]
+    return model_instances
+
+def update_labmetadata_instance(row: namedtuple):
+    return LabMetadata.objects.filter(
+        library_id=row.library_id,
+        sample_name=row.sample_name,
+    ).update(
+        library_id=row.library_id,
+        sample_name=row.sample_name,
+        sample_id=row.sample_id,
+        external_sample_id=row.external_sample_id,
+        subject_id=row.subject_id,
+        external_subject_id=row.external_subject_id,
+        phenotype=row.phenotype,
+        quality=row.quality,
+        source=row.source,
+        project_name=row.project_name,
+        project_owner=row.project_owner,
+        experiment_id=row.experiment_id,
+        type=row.type,
+        assay=row.assay,
+        override_cycles=row.override_cycles,
+        workflow=row.workflow,
+        coverage=row.coverage,
+        truseqindex=row.truseqindex
+    )

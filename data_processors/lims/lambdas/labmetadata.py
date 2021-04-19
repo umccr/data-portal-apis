@@ -56,13 +56,25 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
         metadata_dfs.append(download_metadata(year))
     df_all = pd.concat(metadata_dfs, axis="columns")
 
-    # convert CamelCase headers to snake_case, and fix ID going to _i_d
-    pattern = re.compile(r'(?<!^)(?=[A-Z])')
-    df_all.rename(columns=lambda x: pattern.sub('_',x).lower().replace('_i_d','_id'), inplace=True)
-    print(df_all) #debug
+    df_all = clean_labmetadata_dataframe(df_all)
 
     return services.persist_labmetadata(df_all)
         
+def clean_labmetadata_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    clean a dataframe of labmetadata from a tracking sheet to correspond to the django object model
+    we do this by editing the columns
+    """
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+    df.rename(columns = {'Coverage (X)' : 'coverage', "TruSeq Index, unless stated":"truseqindex"}, inplace = True)
+
+    # convert PascalCase headers to snake_case, and fix ID going to _i_d
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    df.rename(columns=lambda x: pattern.sub('_',x).lower().replace('_i_d','_id'), inplace=True)
+    print(df) #debug
+    return df
+
 def download_metadata(year: str) -> pd.DataFrame:
     """Download the full original metadata from which to extract the required information
 

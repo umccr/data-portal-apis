@@ -22,6 +22,7 @@ LibraryID,SampleName,SampleID,ExternalSampleID,SubjectID,ExternalSubjectID,Pheno
 LIB01,SAMIDA-EXTSAMA,SAMIDA,EXTSAMA,SUBIDA,EXTSUBIDA,tumor,poor,FFPE,MyPath,Alice,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-F07,P30,,,#NAME?,SAMIDA_LIB01,,,,,,,,,,
 LIB02,SAMIDB-EXTSAMB,SAMIDB,EXTSAMB,SUBIDB,EXTSUBIDB,tumor,poor,FFPE,Fake,Bob,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-G07,P30,,,#NAME?,SAMIDB_LIB02,,,,,,,,,,
 LIB03,SAMIDB-EXTSAMB,SAMIDB,EXTSAMB,SUBIDB,EXTSUBIDB,tumor,poor,FFPE,Fake,Bob,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-H07,P30,,,#NAME?,SAMIDB_LIB03,,,,,,,,,,
+LIB04,SAMIDA-EXTSAMA,SAMIDA,EXTSAMA,SUBIDA,EXTSUBIDA,tumor,poor,FFPE,MyPath,Alice,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-F07,P30,,,#NAME?,SAMIDA_LIB01,,,,,,,,,,
 """
 
 
@@ -66,22 +67,29 @@ class LimsUnitTests(LimsUnitTestCase):
         mock_labmetadata_sheet.write(_mock_labmetadata_sheet_content.lstrip().rstrip())
         mock_labmetadata_sheet.seek(0)
         mock_labmetadata_sheet.flush()
+        
+        # make a duplicate , its phenotype is normal, in sheet it is tumor
+        test_existing_sample=LabMetadata.objects.create(library_id='LIB03',sample_name='SAMIDB-EXTSAMB',sample_id='SAMIDB',external_sample_id='EXTSAMB',subject_id='SUBIDB',external_subject_id='EXTSUBIDB',phenotype='NORMAL',quality='poor',source='FFPE',project_name='Fake',project_owner='Bob',experiment_id='Exper1',type='WTS',assay='NebRNA',override_cycles='Y151;I8;I8;Y151',workflow='clinical',coverage='6.0',truseqindex='H07')
 
         # print csv file in tmp dir -- if delete=False, you can see the mock csv content
-        logger.info(f"Path to mock lims sheet: {mock_labmetadata_sheet.name}")
+        logger.info(f"Path to mock tracking sheet: {mock_labmetadata_sheet.name}")
 
         when(labmetadata.libgdrive).download_sheet(...).thenReturn(pd.read_csv(mock_labmetadata_sheet))
 
         result = labmetadata.scheduled_update_handler({'event': "mock lims update event"}, None)
 
         logger.info("-" * 32)
-        logger.info("Example google_lims.scheduled_update_handler lambda output:")
+        logger.info("Example labmetadata.scheduled_update_handler lambda output:")
         logger.info(json.dumps(result))
-        self.assertEqual(result['labmetadata_row_new_count'], 1)
-
-        sbj = LabMetadata.objects.get(subject_id='SBJ00001')
-        logger.info(sbj)
-        self.assertIsNotNone(sbj)
+        self.assertEqual(result['labmetadata_row_new_count'], 3)
+        self.assertEqual(result['labmetadata_row_update_count'], 1)
+        libCreated = LabMetadata.objects.get(library_id='LIB02')
+        logger.info(libCreated)
+        self.assertIsNotNone(libCreated)
+        libUpdated = LabMetadata.objects.get(library_id='LIB03')
+        logger.info(libUpdated)
+        logger.info(libUpdated.phenotype)
+        self.assertEqual(libUpdated.phenotype,'tumor')
 
         # clean up
         mock_labmetadata_sheet.close()
