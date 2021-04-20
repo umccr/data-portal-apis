@@ -4,9 +4,7 @@ import warnings
 from unittest import skip
 
 import pandas as pd
-import requests
-from libiap.openapi import libgds
-from mockito import when, mock
+from mockito import when
 
 from data_portal.models import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory
@@ -82,7 +80,7 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
             'gdsSamplesheet': "SampleSheet.csv",
         }
 
-        when(demux_metadata).download_gds_file(...).thenReturn(self.mock_sample_sheet.name)
+        when(demux_metadata.gds).download_gds_file(...).thenReturn(self.mock_sample_sheet)
         when(demux_metadata).download_metadata(...).thenReturn(self.mock_metadata_df)  # comment to fetch actual sheet
 
         # Get records list
@@ -100,48 +98,6 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
         logger.info("-" * 32)
         logger.info("Example demux_metadata.handler lambda output:")
         logger.info(json.dumps(result))
-
-    def test_download_gds_file(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_demux_metadata.DemuxMetaDataTests.test_download_gds_file
-        """
-
-        mock_file_list: libgds.FileListResponse = libgds.FileListResponse()
-        mock_file_list.items = [
-            libgds.FileResponse(name="SampleSheet.csv"),
-        ]
-        when(libgds.FilesApi).list_files(...).thenReturn(mock_file_list)
-
-        mock_file = libgds.FileResponse()
-        mock_file.id = "fil.333888aaaafe44ab1f7f08d8505c19ab"
-        mock_file.name = "SampleSheet.csv"
-        mock_file.path = "/Runs/200911_A00130_0001_AAAAAAAAAA_r.v0_aiefjIWflxIkmv/SampleSheet.csv"
-        mock_file.presigned_url = "https://mock.s3.ap-southeast-2.amazonaws.com/888abc888-d44a-4343-85b3-88d77f441232" \
-                                  "/Runs/200911_A00130_0001_AAAAAAAAAA_r.v0_aiefjIWflxIkmv/SampleSheet.csv?" \
-                                  "X-Amz-Expires=604800" \
-                                  "&response-content-disposition=attachment%3Bfilename%3D%22SampleSheet.csv%22" \
-                                  "&response-content-type=application%2Foctet-stream" \
-                                  "&x-userId=44ed4444-777c-888e-be44-cf9ae7373f73" \
-                                  "&X-Amz-Algorithm=AWS4-HMAC-SHA256" \
-                                  "&X-Amz-Credential=AAAAAAAAAAAAAAAAAAAA/20200924/ap-southeast-2/s3/aws4_request" \
-                                  "&X-Amz-Date=20200924T041330Z" \
-                                  "&X-Amz-SignedHeaders=host" \
-                                  "&X-Amz-Signature=0a0c4p44paaab986400ce883cbc3449e7a61a9f93e94e63a33bcf8903a7773bb"
-        when(libgds.FilesApi).get_file(...).thenReturn(mock_file)
-
-        mock_resp = mock({'status_code': 200, 'content': self.mock_sample_sheet_content})
-        when(requests).get(...).thenReturn(mock_resp)
-
-        local_path = demux_metadata.download_gds_file(gds_volume="you-cannot", gds_path="/find/me/SampleSheet.csv")
-        self.assertIsNotNone(local_path)
-        logger.info(json.dumps({'local_path': local_path}))
-
-    def test_download_gds_file_not_found(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_demux_metadata.DemuxMetaDataTests.test_download_gds_file_not_found
-        """
-        local_path = demux_metadata.download_gds_file(gds_volume="you-cannot", gds_path="/find/me/SampleSheet.csv")
-        self.assertIsNone(local_path)
 
 
 class DemuxMetaDataIntegrationTests(PipelineIntegrationTestCase):

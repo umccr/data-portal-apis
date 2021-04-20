@@ -15,10 +15,9 @@ import logging
 from typing import List
 import pandas as pd
 
-from utils.gds import check_gds_file
 from utils.regex_globals import SAMPLE_REGEX_OBJS
 
-from utils import libjson
+from utils import libjson, gds
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -75,7 +74,7 @@ def handler(event, context) -> List[dict]:
     # Particularly if something comes up where we need to work over a column
     fastq_list_df = pd.DataFrame(fastq_list_rows)
 
-    # Iterate thorugh each row and update fastq_list_row object
+    # Iterate through each row and update fastq_list_row object
     new_rows = []
     for index, row in fastq_list_df.iterrows():
 
@@ -97,12 +96,12 @@ def handler(event, context) -> List[dict]:
         new_row = row.copy()
 
         # Check read_1 and read_2 exist on gds and set to location attributes
-        check_gds_file(row['read_1']['location'])
+        gds.check_file(row['read_1']['location'])
         new_row['read_1'] = row['read_1']['location']
 
         # First read_2 exists
         if "read_2" in row.keys() and not row['read_2'] is None and not row['read_2'] == "":
-            check_gds_file(row['read_2']['location'])
+            gds.check_file(row['read_2']['location'])
             new_row['read_2'] = row['read_2']['location']
         else:
             # Set to null value

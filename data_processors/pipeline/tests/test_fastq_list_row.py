@@ -1,5 +1,7 @@
 import json
 
+from mockito import when
+
 from data_portal.models import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory
 from data_processors.pipeline import services
@@ -112,6 +114,22 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
         # Assertion 8: Ensure that rgid still has _topup attribute
         self.assertTrue(result[1]['rgid'].endswith("_topup"))
+
+    def test_handler_file_not_found(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_fastq_list_row.FastqListRowUnitTests.test_handler_file_not_found
+        """
+        read_1_location = f"gds://{self.mock_fastq_list_rows[0]['read_1']['location']}"
+        when(fastq_list_row.gds).check_file(...).thenRaise(FileNotFoundError(f"Could not get file: {read_1_location}"))
+
+        try:
+            fastq_list_row.handler({
+                'fastq_list_rows': self.mock_fastq_list_rows,
+                'seq_name': "does-not-matter",
+            }, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(FileNotFoundError)
 
     def test_create_fastq_list_row(self):
         """
