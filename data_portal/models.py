@@ -152,9 +152,9 @@ class LabMetadata(models.Model):
     Models a row in the lab tracking sheet data. Fields are the columns.
     """
 
-    library_id = models.CharField(max_length=255,unique=True)   
+    library_id = models.CharField(max_length=255,unique=True,blank=False)   
     #external_library_id = models.CharField(max_length=255) # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet. do we want to store clarity-generated lib id, and what do we want to call it?
-    sample_name = models.CharField(max_length=255)
+    sample_name = models.CharField(max_length=255,blank=False)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)
     subject_id = models.CharField(max_length=255, null=True, blank=True)

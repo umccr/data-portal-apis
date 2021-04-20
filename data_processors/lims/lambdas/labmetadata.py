@@ -26,7 +26,7 @@ from utils import libjson, libgdrive, libssm
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-years = ['2021']  #how to set this?
+years = ['2021']  #TODO how to set this?
 
 def scheduled_update_handler(event, context) -> Dict[str, int]:
     """
@@ -51,28 +51,31 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
     logger.info(f"Reading LabMetadata sheet from google drive at {requested_time}")
 
     # Download lab metdata sheet for each year and combine them
+    # this assumes columns are the same across years, note in umccr official tracking sheet 2018 is different to the rest
     metadata_dfs = []
     for year in years:
         metadata_dfs.append(download_metadata(year))
     df_all = pd.concat(metadata_dfs, axis="columns")
 
-    df_all = clean_labmetadata_dataframe(df_all)
+    df_all = clean_labmetadata_dataframe_columns(df_all) #TODO not sure if ought to be in services
 
     return services.persist_labmetadata(df_all)
         
-def clean_labmetadata_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def clean_labmetadata_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     clean a dataframe of labmetadata from a tracking sheet to correspond to the django object model
-    we do this by editing the columns
+    we do this by editing the columns to match the django obect
     """
+    # remove unnamed
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
+    # simplify verbose column names
     df.rename(columns = {'Coverage (X)' : 'coverage', "TruSeq Index, unless stated":"truseqindex"}, inplace = True)
 
-    # convert PascalCase headers to snake_case, and fix ID going to _i_d
+    # convert PascalCase headers to snake_case and fix ID going to _i_d
     pattern = re.compile(r'(?<!^)(?=[A-Z])')
     df.rename(columns=lambda x: pattern.sub('_',x).lower().replace('_i_d','_id'), inplace=True)
-    print(df) #debug
+
     return df
 
 def download_metadata(year: str) -> pd.DataFrame:

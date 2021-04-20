@@ -14,7 +14,7 @@ from data_processors.lims.tests.case import LimsUnitTestCase, LimsIntegrationTes
 
 # columns in LIMS CSV
 labmetadata_csv_columns = [
-    'LibraryID','SampleName','SampleID','ExternalSampleID','SubjectID','ExternalSubjectID','Phenotype','Quality','Source','ProjectName','ProjectOwner','','ExperimentID','Type','Assay','OverrideCycles','Workflow','Coverage (X)','"TruSeq Index',' unless stated"','Run#','Comments','rRNA','qPCR ID','Sample_ID (SampleSheet)'
+        'LibraryID','SampleName','SampleID','ExternalSampleID','SubjectID','ExternalSubjectID','Phenotype','Quality','Source','ProjectName','ProjectOwner','','ExperimentID','Type','Assay','OverrideCycles','Workflow','Coverage (X)','TruSeq Index, unless stated','Run#','Comments','rRNA','qPCR ID','Sample_ID (SampleSheet)'
 ]
 
 _mock_labmetadata_sheet_content = b"""
@@ -26,17 +26,22 @@ LIB04,SAMIDA-EXTSAMA,SAMIDA,EXTSAMA,SUBIDA,EXTSUBIDA,tumor,poor,FFPE,MyPath,Alic
 """
 
 
-def _generate_labmetadata_csv_row_dict(id: str) -> dict:
+def _generate_labmetadata_row_dict(id: str) -> dict:
     """
-    Generate labmetadata csv row dict
-    :param id: id of the row, to make this row distinguishable
+    Generate labmetadata row dict
+    :param id: this just gets used asa suffix
     :return: row dict
     """
+
+    # 'clean' CSV columns into django model compatible columns
+    df = pd.DataFrame(columns=labmetadata_csv_columns)
+    cleaned_labmetadata_csv_columns = list(labmetadata.clean_labmetadata_dataframe_columns(df).columns.values)
+
     row = dict()
-    for col in labmetadata_csv_columns:
-        if col == 'Run':
+    for col in cleaned_labmetadata_csv_columns:
+        if col == 'run':
             row[col] = '1'
-        elif col == 'Timestamp':
+        elif col == 'timestamp':
             row[col] = '2019-01-01'
         else:
             # Normal columns, just use column name as value + id
@@ -44,13 +49,13 @@ def _generate_labmetadata_csv_row_dict(id: str) -> dict:
     return row
 
 
-def _generate_labmetadata_csv(rows: List[Dict[str, str]]):
-    csv_data = ','.join(labmetadata_csv_columns) + '\n'  # Generate header row
+def _generate_labmetadata_df(rows: List[Dict[str, str]]) -> pd.DataFrame:
+    df = pd.DataFrame(columns=labmetadata_csv_columns)
+    df = labmetadata.clean_labmetadata_dataframe_columns(df)
 
     for row in rows:
-        csv_data += ','.join(row.values()) + '\n'
-
-    return csv_data
+        df = df.append(row,ignore_index=True)
+    return df
 
 
 class LimsUnitTests(LimsUnitTestCase):
@@ -61,8 +66,8 @@ class LimsUnitTests(LimsUnitTestCase):
     def tearDown(self) -> None:
         super(LimsUnitTests, self).tearDown()  # parent tear down should call last
 
-    def test_ingest_metadata(self):
-
+    @skip
+    def test_scheduled_update_handler(self):
         mock_labmetadata_sheet = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)  # delete=False keep file in tmp dir
         mock_labmetadata_sheet.write(_mock_labmetadata_sheet_content.lstrip().rstrip())
         mock_labmetadata_sheet.seek(0)
@@ -84,17 +89,83 @@ class LimsUnitTests(LimsUnitTestCase):
         self.assertEqual(result['labmetadata_row_new_count'], 3)
         self.assertEqual(result['labmetadata_row_update_count'], 1)
         libCreated = LabMetadata.objects.get(library_id='LIB02')
-        logger.info(libCreated)
         self.assertIsNotNone(libCreated)
         libUpdated = LabMetadata.objects.get(library_id='LIB03')
-        logger.info(libUpdated)
-        logger.info(libUpdated.phenotype)
         self.assertEqual(libUpdated.phenotype,'tumor')
 
         # clean up
         mock_labmetadata_sheet.close()
 
-  
+ 
+    def test_labmetadata_rewrite(self) -> None:
+        sample_name = 'sample_name'
+        library_id = 'library_id'
+
+        row_1 = _generate_labmetadata_row_dict('1')
+        row_1['sample_name'] = sample_name
+        row_1['library_id'] = library_id
+        process_results = persist_labmetadata(_generate_labmetadata_df([row_1]))
+
+        self.assertEqual(process_results['labmetadata_row_new_count'], 1)
+        self.assertEqual(LabMetadata.objects.get(subject_id='subject_id1', sample_name=sample_name).external_sample_id, row_1['external_sample_id'])
+        self.assertEqual(process_results['labmetadata_row_update_count'], 0)
+        self.assertEqual(process_results['labmetadata_row_invalid_count'], 0)
+
+   
+    def test_lims_update(self) -> None:
+        row_1 = _generate_labmetadata_row_dict('1')
+        persist_labmetadata(_generate_labmetadata_df([row_1]))
+
+        new_assay = 'new_assay'
+        row_1['assay'] = new_assay
+        row_2 = _generate_labmetadata_row_dict('2')
+        process_results = persist_labmetadata(_generate_labmetadata_df([row_1,row_2]))
+
+        self.assertEqual(process_results['labmetadata_row_new_count'], 1)
+        self.assertEqual(process_results['labmetadata_row_update_count'], 1)
+        self.assertEqual(process_results['labmetadata_row_invalid_count'], 0)
+        self.assertEqual(LabMetadata.objects.get(library_id='library_id1', sample_name='sample_name1').assay, new_assay)
+
+    def test_lims_row_duplicate(self) -> None:
+        row_duplicate = _generate_labmetadata_row_dict('3')
+        process_results = persist_labmetadata(_generate_labmetadata_df([row_duplicate,row_duplicate]))
+        self.assertEqual(process_results['labmetadata_row_update_count'], 0)
+        self.assertEqual(process_results['labmetadata_row_new_count'], 1)
+        self.assertEqual(process_results['labmetadata_row_invalid_count'], 1)
+
+    def test_lims_non_nullable_columns(self) -> None:
+        """
+        Test to process non-nullable colum
+        """
+        row_1 = _generate_labmetadata_row_dict('1')
+        row_2 = _generate_labmetadata_row_dict('2')
+
+        # Use blank values for all non-nullable fields
+        row_1['sample_id'] = ''
+        row_1['sample_name'] = ''
+        row_1['library_id'] = ''
+        # the bad row should be removed from the DF by persist_labmetada to end with 1 new and 1 invalid
+        process_results = persist_labmetadata(_generate_labmetadata_df([row_1, row_2]))
+        self.assertEqual(process_results['labmetadata_row_update_count'], 0)
+        self.assertEqual(process_results['labmetadata_row_new_count'], 1)
+        self.assertEqual(process_results['labmetadata_row_invalid_count'], 1)
+        self.assertEqual(LabMetadata.objects.count(), 1)
+
+    
+    #TODO implement this
+    @skip
+    def test_lims_empty_subject_id(self) -> None:
+        """
+        Test  row with empty SubjectID (this is allowed)
+        """
+        row_1 = _generate_lims_csv_row_dict('1')
+
+        row_1['subject_id'] = '-'
+        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
+
+        self.assertEqual(LIMSRow.objects.count(), 1)
+        self.assertEqual(process_results['lims_row_new_count'], 1)
+ 
 
 
 class LimsIntegrationTests(LimsIntegrationTestCase):
