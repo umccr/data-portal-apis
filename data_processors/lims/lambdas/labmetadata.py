@@ -70,11 +70,11 @@ def clean_labmetadata_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     # simplify verbose column names
-    df.rename(columns = {'Coverage (X)' : 'coverage', "TruSeq Index, unless stated":"truseqindex"}, inplace = True)
+    df = df.rename(columns = {'Coverage (X)' : 'coverage', "TruSeq Index, unless stated":"truseqindex"})
 
     # convert PascalCase headers to snake_case and fix ID going to _i_d
     pattern = re.compile(r'(?<!^)(?=[A-Z])')
-    df.rename(columns=lambda x: pattern.sub('_',x).lower().replace('_i_d','_id'), inplace=True)
+    df = df.rename(columns=lambda x: pattern.sub('_',x).lower().replace('_i_d','_id'))
 
     return df
 

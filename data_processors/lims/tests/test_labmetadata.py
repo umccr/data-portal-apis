@@ -3,9 +3,9 @@ import tempfile
 from io import BytesIO
 from typing import List, Dict
 from unittest import skip
-
 from mockito import when
 import pandas as pd
+import numpy as np
 
 from data_portal.models import LabMetadata
 from data_processors.lims.lambdas import labmetadata
@@ -19,7 +19,7 @@ labmetadata_csv_columns = [
 
 _mock_labmetadata_sheet_content = b"""
 LibraryID,SampleName,SampleID,ExternalSampleID,SubjectID,ExternalSubjectID,Phenotype,Quality,Source,ProjectName,ProjectOwner,,ExperimentID,Type,Assay,OverrideCycles,Workflow,Coverage (X),"TruSeq Index, unless stated",Run#,Comments,rRNA,qPCR ID,Sample_ID (SampleSheet),,,,,,,,,,
-LIB01,SAMIDA-EXTSAMA,SAMIDA,EXTSAMA,SUBIDA,EXTSUBIDA,tumor,poor,FFPE,MyPath,Alice,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-F07,P30,,,#NAME?,SAMIDA_LIB01,,,,,,,,,,
+LIB01,SAMIDA-EXTSAMA,SAMIDA,,SUBIDA,EXTSUBIDA,,,FFPE,MyPath,Alice,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-F07,P30,,,#NAME?,SAMIDA_LIB01,,,,,,,,,,
 LIB02,SAMIDB-EXTSAMB,SAMIDB,EXTSAMB,SUBIDB,EXTSUBIDB,tumor,poor,FFPE,Fake,Bob,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-G07,P30,,,#NAME?,SAMIDB_LIB02,,,,,,,,,,
 LIB03,SAMIDB-EXTSAMB,SAMIDB,EXTSAMB,SUBIDB,EXTSUBIDB,tumor,poor,FFPE,Fake,Bob,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-H07,P30,,,#NAME?,SAMIDB_LIB03,,,,,,,,,,
 LIB04,SAMIDA-EXTSAMA,SAMIDA,EXTSAMA,SUBIDA,EXTSUBIDA,tumor,poor,FFPE,MyPath,Alice,,Exper1,WTS,NebRNA,Y151;I8;I8;Y151,clinical,6.0,Neb2-F07,P30,,,#NAME?,SAMIDA_LIB01,,,,,,,,,,
@@ -66,7 +66,6 @@ class LimsUnitTests(LimsUnitTestCase):
     def tearDown(self) -> None:
         super(LimsUnitTests, self).tearDown()  # parent tear down should call last
 
-    @skip
     def test_scheduled_update_handler(self):
         mock_labmetadata_sheet = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)  # delete=False keep file in tmp dir
         mock_labmetadata_sheet.write(_mock_labmetadata_sheet_content.lstrip().rstrip())
@@ -88,6 +87,8 @@ class LimsUnitTests(LimsUnitTestCase):
         logger.info(json.dumps(result))
         self.assertEqual(result['labmetadata_row_new_count'], 3)
         self.assertEqual(result['labmetadata_row_update_count'], 1)
+        libBlankExtSampleId = LabMetadata.objects.get(library_id='LIB01')
+        self.assertEqual(libBlankExtSampleId.external_sample_id,'')
         libCreated = LabMetadata.objects.get(library_id='LIB02')
         self.assertIsNotNone(libCreated)
         libUpdated = LabMetadata.objects.get(library_id='LIB03')
@@ -95,7 +96,6 @@ class LimsUnitTests(LimsUnitTestCase):
 
         # clean up
         mock_labmetadata_sheet.close()
-
  
     def test_labmetadata_rewrite(self) -> None:
         sample_name = 'sample_name'
@@ -112,7 +112,7 @@ class LimsUnitTests(LimsUnitTestCase):
         self.assertEqual(process_results['labmetadata_row_invalid_count'], 0)
 
    
-    def test_lims_update(self) -> None:
+    def test_labmetadata_update(self) -> None:
         row_1 = _generate_labmetadata_row_dict('1')
         persist_labmetadata(_generate_labmetadata_df([row_1]))
 
@@ -126,17 +126,15 @@ class LimsUnitTests(LimsUnitTestCase):
         self.assertEqual(process_results['labmetadata_row_invalid_count'], 0)
         self.assertEqual(LabMetadata.objects.get(library_id='library_id1', sample_name='sample_name1').assay, new_assay)
 
-    def test_lims_row_duplicate(self) -> None:
+    def test_labmetadata_row_duplicate(self) -> None:
         row_duplicate = _generate_labmetadata_row_dict('3')
         process_results = persist_labmetadata(_generate_labmetadata_df([row_duplicate,row_duplicate]))
+        logger.info(json.dumps(process_results))
         self.assertEqual(process_results['labmetadata_row_update_count'], 0)
         self.assertEqual(process_results['labmetadata_row_new_count'], 1)
         self.assertEqual(process_results['labmetadata_row_invalid_count'], 1)
 
-    def test_lims_non_nullable_columns(self) -> None:
-        """
-        Test to process non-nullable colum
-        """
+    def test_labmetadata_non_nullable_columns(self) -> None:
         row_1 = _generate_labmetadata_row_dict('1')
         row_2 = _generate_labmetadata_row_dict('2')
 
@@ -151,20 +149,21 @@ class LimsUnitTests(LimsUnitTestCase):
         self.assertEqual(process_results['labmetadata_row_invalid_count'], 1)
         self.assertEqual(LabMetadata.objects.count(), 1)
 
-    
-    #TODO implement this
-    @skip
-    def test_lims_empty_subject_id(self) -> None:
-        """
-        Test  row with empty SubjectID (this is allowed)
-        """
-        row_1 = _generate_lims_csv_row_dict('1')
+    def test_labmetadata_empty_colums(self) -> None:
+        # set a bunch of nullable/empty-able rows 
+        row_1 = _generate_labmetadata_row_dict('1')
+        row_1['subject_id'] = '-' 
+        row_2 = _generate_labmetadata_row_dict('2')
+        row_2['subject_id'] = ''  
+        row_3 = _generate_labmetadata_row_dict('3')
+        row_3['coverage'] = np.nan
+        row_4 = _generate_labmetadata_row_dict('4')
+        row_4['subject_id'] = ' '
 
-        row_1['subject_id'] = '-'
-        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
+        process_results = persist_labmetadata(_generate_labmetadata_df([row_1,row_2,row_3,row_4]))
 
-        self.assertEqual(LIMSRow.objects.count(), 1)
-        self.assertEqual(process_results['lims_row_new_count'], 1)
+        self.assertEqual(LabMetadata.objects.count(), 4)
+        self.assertEqual(process_results['labmetadata_row_new_count'], 4)
  
 
 

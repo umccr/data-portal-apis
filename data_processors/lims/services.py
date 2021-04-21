@@ -138,9 +138,6 @@ def __csv_column_to_field_name(column_name: str) -> str:
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', column_name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-
-# Lab metadata functions
-#
 @transaction.atomic
 def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, int]:
     """
@@ -149,13 +146,18 @@ def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, in
     :param rewrite: whether we are rewriting the data
     :return: result statistics - count of updated, new and invalid LabMetadata rows
     """
-    
+    df_starting_len = len(df.index)
     logger.info(f"Start processing LabMetadata data")
-
     if rewrite:
         # Delete all rows first
         logger.info("REWRITE MODE: Deleting all existing records")
         LabMetadata.objects.all().delete()
+
+    # clean the DF and reset the index
+    df = df.applymap(_clean_datacell)
+    df = df.drop_duplicates()
+    df = _remove_rows_with_empty_required_cols(df)
+    df = df.reset_index(drop=True)
 
     # Below code assumes a labmetadata's unique identifier is a tuple of library_id and sample_name
 
@@ -166,15 +168,13 @@ def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, in
     existing_identifier_tuples = tuple((lm.library_id, lm.sample_name) for lm in existing_labmetadatas)
     df_to_update =  df[pd.Series(list(zip(df['library_id'], df['sample_name']))).isin(existing_identifier_tuples)]
     
-    # Assemble df of entries to create
+    # Assemble df of entries to create.
     df_to_create = df.append(df_to_update)
     df_to_create = df_to_create[~df_to_create.index.duplicated(keep=False)]
-    df_to_create = df_to_create.drop_duplicates()
-    df_to_create = remove_rows_with_empty_required_cols(df_to_create)
 
     # Create labmetadata ojbects
     try:
-        instances_insert = make_labmetadata_instances_from_dataframe(df_to_create)
+        instances_insert = _make_labmetadata_instances_from_dataframe(df_to_create)
         rows_created = LabMetadata.objects.bulk_create(instances_insert,batch_size=100)
     except Exception as e:
         logger.error("Error bulk creating objects! No new rows created")
@@ -186,32 +186,34 @@ def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, in
     # Update labmetadatas
     rows_updated = 0
     for row in df_to_update.itertuples():
-        rows_updated += update_labmetadata_instance(row)
+        rows_updated += _update_labmetadata_instance(row)
 
     logger.debug("Updated " + str((rows_updated)))
     logger.debug("New " + str(len(rows_created)))
-    logger.debug("Invalid " + str( len(df.index) - len(rows_created) - rows_updated ))
+    logger.debug("Invalid " + str(len(df.index) - len(rows_created) - rows_updated ))
 
     return {
         'labmetadata_row_update_count':rows_updated,
         'labmetadata_row_new_count': len(rows_created),
-        'labmetadata_row_invalid_count': len(df.index) - len(rows_created) - rows_updated
+        'labmetadata_row_invalid_count': df_starting_len - len(rows_created) - rows_updated
     }
 
-def remove_rows_with_empty_required_cols(df):
-   df['library_id'].replace('-',np.nan,inplace=True)
-   df['library_id'].replace('',np.nan,inplace=True)
-   df = df.dropna(axis=0, subset=['library_id'])
-   df['sample_id'].replace('-',np.nan,inplace=True)
-   df['sample_id'].replace('',np.nan,inplace=True)
-   df = df.dropna(axis=0, subset=['sample_name'])
-   df['sample_name'].replace('-',np.nan,inplace=True)
-   df['sample_name'].replace('',np.nan,inplace=True)
-   df = df.dropna(axis=0, subset=['sample_id'])
-   #TODO see fn eed to clean other col values - check how they come through
+def _clean_datacell(value):
+    #python NaNs are != to themselves
+    if value == '-' or value == np.nan or value != value:
+        value = ''
+    if (isinstance(value,str) and value.strip() == ''):
+        value = ''
+    return value
+    
+def _remove_rows_with_empty_required_cols(df):
+   df.library_id = df.library_id.replace('', np.nan)
+   df.sample_id = df.sample_id.replace('', np.nan)
+   df.sample_name = df.sample_name.replace('', np.nan)
+   df = df.dropna(axis=0,subset=['sample_name','library_id','sample_id'])   
    return df
 
-def make_labmetadata_instances_from_dataframe(df):
+def _make_labmetadata_instances_from_dataframe(df):
     """
     for each row in dataframe, make a LabMetadata object from it
     :param df: dataframe to turn into LabMetadata object instances
@@ -240,7 +242,7 @@ def make_labmetadata_instances_from_dataframe(df):
     ) for record in df_records]
     return model_instances
 
-def update_labmetadata_instance(row: namedtuple):
+def _update_labmetadata_instance(row: namedtuple):
     """
     update a single metadata instance determined by library_id and sample_name
     :param row: new parameters to set on a labmetadata that matches row.library_id and row.sample_name
