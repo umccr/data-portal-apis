@@ -14,8 +14,11 @@ from utils import libslack, lookup, libjson, libdt
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-SLACK_SENDER_BADGE = "Portal Workflow Automation"
-SLACK_FOOTER_BADGE = "Automated Workflow Event"
+SLACK_SENDER_BADGE_AUTO = "Portal Workflow Automation"
+SLACK_FOOTER_BADGE_AUTO = "ICA Pipeline: Automated Workflow Event"
+
+SLACK_SENDER_BADGE_BSSH = "BSSH Run"
+SLACK_FOOTER_BADGE_BSSH = "ICA Pipeline: BSSH.RUNS Event"
 
 
 @transaction.atomic
@@ -185,7 +188,7 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
         logger.info("Multiple IDs in ACL, expected 1!")
         owner = 'undetermined'
 
-    sender = SLACK_SENDER_BADGE
+    sender = SLACK_SENDER_BADGE_BSSH
     topic = f"Notification from {sqr.msg_attr_action_type}"
     attachments = [
         {
@@ -246,7 +249,7 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
                     "short": True
                 }
             ],
-            "footer": "IAP BSSH.RUNS Event",
+            "footer": SLACK_FOOTER_BADGE_BSSH,
             "ts": sqs_record_timestamp
         }
     ]
@@ -332,12 +335,12 @@ def notify_workflow_status(workflow: Workflow):
                     "short": True
                 },
             ],
-            "footer": SLACK_FOOTER_BADGE,
+            "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": libdt.get_utc_now_ts()
         }
     ]
 
-    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
+    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE_AUTO, _topic, _attachments)
 
     if _resp:
         workflow.notified = True
@@ -395,12 +398,12 @@ def notify_batch_run_status(batch_run_id):
             "pretext": f"Status: {state.upper()}, Workflow: {workflow.type_name.upper()}@{workflow.version}",
             "title": _title,
             "text": mtx,
-            "footer": SLACK_FOOTER_BADGE,
+            "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": libdt.get_utc_now_ts()
         }
     ]
 
-    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
+    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE_AUTO, _topic, _attachments)
 
     if _resp:
         for wfl in workflows:
@@ -417,7 +420,7 @@ def notify_outlier(topic: str, reason: str, status: str, event: dict):
 
     slack_color = libslack.SlackColor.GRAY.value
 
-    sender = SLACK_SENDER_BADGE
+    sender = SLACK_SENDER_BADGE_AUTO
     topic = f"Pipeline {status}: {topic}"
 
     fields = []
@@ -438,7 +441,7 @@ def notify_outlier(topic: str, reason: str, status: str, event: dict):
             "title": f"Reason: {reason}",
             "text": "Event Attributes:",
             "fields": fields if fields else "No attributes found. Please check CloudWatch logs.",
-            "footer": SLACK_FOOTER_BADGE,
+            "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
         }
     ]
