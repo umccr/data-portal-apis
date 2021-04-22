@@ -100,11 +100,12 @@ def call_slack_webhook(sender, topic, attachments, **kwargs):
 
 
 class SlackColor(Enum):
-    GREEN = "#36a64f"
-    RED = "#ff0000"
+    GREEN = "#36A64F"
+    RED = "#FF0000"
     BLUE = "#439FE0"
-    GRAY = "#dddddd"
+    GRAY = "#DDDDDD"
     BLACK = "#000000"
+    ORANGE = "#FFA500"
 
 
 class SlackField(object):

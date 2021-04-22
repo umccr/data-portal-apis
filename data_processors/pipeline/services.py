@@ -364,40 +364,50 @@ def notify_batch_run_status(batch_run_id):
     # at the mo, BatchRun has only two states, RUNNING or not
     if batch_run.running:
         state = "running"
-        slack_color = libslack.SlackColor.BLUE.value
     else:
         state = "completed"
-        slack_color = libslack.SlackColor.GREEN.value
 
     workflows = Workflow.objects.get_by_batch_run(batch_run=batch_run)
     workflow = workflows[0]  # pick one for convenience
 
-    cnt = 0
-    stats = {
+    _total_cnt = 0
+    _stats = {
         WorkflowStatus.SUCCEEDED.value: 0,
         WorkflowStatus.FAILED.value: 0,
         WorkflowStatus.ABORTED.value: 0,
         WorkflowStatus.RUNNING.value: 0,
     }
-    mtx = ""
+    _metrics = ""
     for wfl in workflows:
-        mtx += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
-        cnt += 1
-        stats[wfl.end_status] += 1
+        _metrics += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
+        _total_cnt += 1
+        _stats[wfl.end_status] += 1
 
-    _title = f"Total: {cnt} " \
-             f"| Running: {stats[WorkflowStatus.RUNNING.value]} " \
-             f"| Succeeded: {stats[WorkflowStatus.SUCCEEDED.value]} " \
-             f"| Failed: {stats[WorkflowStatus.FAILED.value]} " \
-             f"| Aborted: {stats[WorkflowStatus.ABORTED.value]}"
+    _title = f"Total: {_total_cnt} " \
+             f"| Running: {_stats[WorkflowStatus.RUNNING.value]} " \
+             f"| Succeeded: {_stats[WorkflowStatus.SUCCEEDED.value]} " \
+             f"| Failed: {_stats[WorkflowStatus.FAILED.value]} " \
+             f"| Aborted: {_stats[WorkflowStatus.ABORTED.value]}"
+
+    _color = libslack.SlackColor.GRAY.value  # default to grey
+
+    if _total_cnt == _stats[WorkflowStatus.RUNNING.value] or _total_cnt == _stats[WorkflowStatus.SUCCEEDED.value]:
+        _color = libslack.SlackColor.GREEN.value
+
+    elif _total_cnt == _stats[WorkflowStatus.FAILED.value]:
+        _color = libslack.SlackColor.RED.value
+
+    elif _stats[WorkflowStatus.SUCCEEDED.value] > 0 and \
+            _stats[WorkflowStatus.FAILED.value] > 0 or _stats[WorkflowStatus.ABORTED.value] > 0:
+        _color = libslack.SlackColor.ORANGE.value
 
     _attachments = [
         {
             "fallback": _topic,
-            "color": slack_color,
+            "color": _color,
             "pretext": f"Status: {state.upper()}, Workflow: {workflow.type_name.upper()}@{workflow.version}",
             "title": _title,
-            "text": mtx,
+            "text": _metrics,
             "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": libdt.get_utc_now_ts()
         }
