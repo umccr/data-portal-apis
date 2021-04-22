@@ -389,16 +389,20 @@ def notify_batch_run_status(batch_run_id):
              f"| Failed: {_stats[WorkflowStatus.FAILED.value]} " \
              f"| Aborted: {_stats[WorkflowStatus.ABORTED.value]}"
 
-    _color = libslack.SlackColor.GRAY.value  # default to grey
+    if _total_cnt == _stats[WorkflowStatus.RUNNING.value]:
+        # all running -> blue
+        _color = libslack.SlackColor.BLUE.value
 
-    if _total_cnt == _stats[WorkflowStatus.RUNNING.value] or _total_cnt == _stats[WorkflowStatus.SUCCEEDED.value]:
+    elif _total_cnt == _stats[WorkflowStatus.SUCCEEDED.value]:
+        # all succeeded -> green
         _color = libslack.SlackColor.GREEN.value
 
     elif _total_cnt == _stats[WorkflowStatus.FAILED.value]:
+        # all failed -> red
         _color = libslack.SlackColor.RED.value
 
-    elif _stats[WorkflowStatus.SUCCEEDED.value] > 0 and \
-            _stats[WorkflowStatus.FAILED.value] > 0 or _stats[WorkflowStatus.ABORTED.value] > 0:
+    else:
+        # anything else -> orange
         _color = libslack.SlackColor.ORANGE.value
 
     _attachments = [
