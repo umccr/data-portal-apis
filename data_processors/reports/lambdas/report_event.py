@@ -11,6 +11,7 @@ django.setup()
 
 # ---
 
+import uuid
 import logging
 
 from data_portal.models import Report
@@ -47,23 +48,21 @@ def sqs_handler(event, context):
     :return:
     """
     messages = event['Records']
-    reports = []
+    results = []
 
     with xray_recorder.in_subsegment("REPORT_HANDLER_TRACE") as subsegment:
         subsegment.put_metadata('total', len(messages), 'sqs_handler')
 
         for message in messages:
             job = libjson.loads(message['body'])
-            report = handler(job, context)
-            if report is not None and isinstance(report, Report):
-                reports.append(str(report.id.hex))
+            results.append(handler(job, context))
 
     return {
-        'reports': reports
+        'results': results
     }
 
 
-def handler(event, context):
+def handler(event, context) -> dict:
     """event payload dict
     {
         "event_type": value of S3EventType,
@@ -80,11 +79,27 @@ def handler(event, context):
 
     :param event:
     :param context:
-    :return: report id Or no return
+    :return: dict
     """
+    subsegment = xray_recorder.current_subsegment()
+
+    logger.info("Start processing report event")
+    logger.info(libjson.dumps(event))
+    subsegment.put_metadata('event', event, 'handler')
 
     bucket = event['s3_bucket_name']
     key = event['s3_object_meta']['key']
     event_type = event['event_type']
 
-    return services.persist_report(bucket, key, event_type)
+    report = services.persist_report(bucket, key, event_type)
+
+    logger.info("Report event processing complete")
+
+    if report is not None and isinstance(report, Report):
+        return {
+            str(report.id): str(report)
+        }
+    else:
+        return {
+            f"WARN__{str(uuid.uuid4())}": f"Unable to ingest report of {event_type} for s3://{bucket}/{key}"
+        }

@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from dateutil.parser import parse
 from django.db.models import QuerySet
 from django.utils.timezone import make_aware
 from mockito import when, unstub
 
 from data_portal.models import S3Object, Report
 from data_processors.reports import services
+from data_processors.reports.lambdas import report_event
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 from data_processors.reports.tests.test_report_uk import KEY_EXPECTED
 from data_processors.s3 import helper
@@ -21,9 +21,9 @@ class ReportUnitTests(ReportUnitTestCase):
         unstub()
         super(ReportUnitTests, self).tearDown()  # parent tearDown should be last
 
-    def test_persist_report(self):
+    def test_report_event_handler(self):
         """export DJANGO_SETTINGS_MODULE=data_portal.settings.local
-        python manage.py test data_processors.reports.tests.test_report.ReportUnitTests.test_persist_report
+        python manage.py test data_processors.reports.tests.test_report.ReportUnitTests.test_report_event_handler
 
         NOTE:
         If you are seeing this error:
@@ -43,28 +43,24 @@ class ReportUnitTests(ReportUnitTestCase):
         )
         mock_s3_obj.save()
 
-        mock_s3_event_record = helper.S3EventRecord(
-            event_type=helper.S3EventType.EVENT_OBJECT_CREATED,
-            event_time=parse("2021-04-16T05:53:42.841Z"),
-            s3_bucket_name=mock_s3_obj.bucket,
-            s3_object_meta={
+        mock_s3_content_bytes = b'[{"sample":"SBJ00001_PRJ000001_L0000001","Probability":0.034,"intercept":-3.364,"del.mh.prop":-0.757,"SNV3":2.571,"SV3":-0.877,"SV5":-1.105,"hrdloh_index":0.096,"SNV8":0.079}]\n'
+
+        when(services.libs3).get_s3_object_to_bytes(...).thenReturn(mock_s3_content_bytes)
+
+        result = report_event.handler({
+            'event_type': helper.S3EventType.EVENT_OBJECT_CREATED.value,
+            'event_time': "2021-04-16T05:53:42.841Z",
+            's3_bucket_name': mock_s3_obj.bucket,
+            's3_object_meta': {
                 'versionId': "sGc6i4_SXKDncofB7fvEq9z7xsvW7GVl",
                 'size': 170,
                 'eTag': mock_s3_obj.e_tag,
                 'key': mock_s3_obj.key,
                 'sequencer': "006078FC7966A0E163"
             }
-        )
+        }, None)
 
-        mock_s3_content_bytes = b'[{"sample":"SBJ00001_PRJ000001_L0000001","Probability":0.034,"intercept":-3.364,"del.mh.prop":-0.757,"SNV3":2.571,"SV3":-0.877,"SV5":-1.105,"hrdloh_index":0.096,"SNV8":0.079}]\n'
-
-        when(services.libs3).get_s3_object_to_bytes(...).thenReturn(mock_s3_content_bytes)
-
-        services.persist_report(
-            bucket=mock_s3_event_record.s3_bucket_name,
-            key=mock_s3_event_record.s3_object_meta['key'],
-            event_type=mock_s3_event_record.event_type.value,
-        )
+        logger.info(result)
 
         report = Report.objects.get(subject_id="SBJ00001", sample_id="PRJ000001", library_id="L0000001")
         logger.info("-" * 32)

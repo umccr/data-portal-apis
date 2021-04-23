@@ -70,52 +70,55 @@ def _extract_report_type(key: str):
     """
     subsegment = xray_recorder.current_subsegment()
 
-    # Normalize
+    # normalize
     key = key.lower()
 
-    if "hrd" in key:
-        if "chord" in key:
+    if "hrd/" in key:
+        if "-chord." in key:
             return ReportType.HRD_CHORD
-        elif "hrdetect" in key:
+        elif "-hrdetect." in key:
             return ReportType.HRD_HRDETECT
 
-    if "purple" in key:
-        if "cnv_germ" in key:
+    if "purple/" in key:
+        if "_cnv_germ." in key:
             return ReportType.PURPLE_CNV_GERM
-        elif "cnv_som" in key:
+        elif "_cnv_som." in key:
             return ReportType.PURPLE_CNV_SOM
-        elif "cnv_som_gene" in key:
+        elif "_cnv_som_gene." in key:
             return ReportType.PURPLE_CNV_SOM_GENE
 
-    if "sigs" in key:
-        if "dbs" in key:
+    if "sigs/" in key:
+        if "-dbs." in key:
             return ReportType.SIGS_DBS
-        elif "indel" in key:
+        elif "-indel." in key:
             return ReportType.SIGS_INDEL
-        elif "snv_2015" in key:
+        elif "-snv_2015." in key:
             return ReportType.SIGS_SNV_2015
-        elif "snv_2020" in key:
+        elif "-snv_2020." in key:
             return ReportType.SIGS_SNV_2020
 
-    if "sv" in key:
-        if "unmelted" in key:
+    if "sv/" in key:
+        if "_unmelted." in key:
             return ReportType.SV_UNMELTED
-        elif "melted" in key:
-            return ReportType.SV_UNMELTED
-        elif "bnd_main" in key:
+        elif "_melted." in key:
+            return ReportType.SV_MELTED
+        elif "_bnd_main." in key:
             return ReportType.SV_BND_MAIN
-        elif "bnd_purpleinf" in key:
+        elif "_bnd_purpleinf." in key:
             return ReportType.SV_BND_PURPLEINF
-        elif "nobnd_main" in key:
+        elif "_nobnd_main." in key:
             return ReportType.SV_NOBND_MAIN
-        elif "nobnd_other" in key:
+        elif "_nobnd_other." in key:
             return ReportType.SV_NOBND_OTHER
-        elif "nobnd_manygenes" in key:
+        elif "_nobnd_manygenes." in key:
             return ReportType.SV_NOBND_MANYGENES
-        elif "nobnd_manytranscripts" in key:
+        elif "_nobnd_manytranscripts." in key:
             return ReportType.SV_NOBND_MANYTRANSCRIPTS
 
-    if "report_inputs" in key:
+    if "-qc_summary." in key:
+        return ReportType.QC_SUMMARY
+
+    if "-report_inputs." in key:
         return ReportType.REPORT_INPUTS
 
     msg = f"Unknown report type. Unexpected pattern found: {key}"
@@ -171,7 +174,7 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
 
     subsegment.put_metadata(str(report.id.hex), {
         'key': key,
-        'report': report,
+        'report': str(report),
     }, 'sync_report_created')
 
     return report
@@ -189,7 +192,7 @@ def _sync_report_deleted(key: str, subject_id: str, sample_id: str, library_id: 
         )
         subsegment.put_metadata(str(report.id.hex), {
             'key': key,
-            'report': report,
+            'report': str(report),
         }, 'sync_report_deleted')
         report.delete()
     except ObjectDoesNotExist as e:

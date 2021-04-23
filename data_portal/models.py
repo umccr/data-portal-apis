@@ -415,6 +415,7 @@ class Workflow(models.Model):
 
 
 class ReportType(models.TextChoices):
+    QC_SUMMARY = "qc_summary"
     REPORT_INPUTS = "report_inputs"
     HRD_CHORD = "hrd_chord"
     HRD_HRDETECT = "hrd_hrdetect"

@@ -1,3 +1,4 @@
+from data_portal.models import ReportType
 from data_processors.reports import services
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 
@@ -10,8 +11,30 @@ KEY_EXPECTED_ALT_4 = "cancer_report_tables/json/hrd/SBJ00001__SBJ00001_PRJ000001
 KEY_EXPECTED_ALT_5 = "cancer_report_tables/json/hrd/SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary.json.gz"
 KEY_EXPECTED_ALT_6 = "cancer_report_tables/json/hrd/SBJ66666__SBJ66666_MDX888888_L9999999_topup-qc_summary.json.gz"
 
+KEY_EXPECTED_ALL = [
+    ("SBJ00001__SBJ00001_MDX000001_L0000001-qc_summary.json.gz", ReportType.QC_SUMMARY),
+    ("SBJ00001__SBJ00001_MDX000001_L0000001-report_inputs.json.gz", ReportType.REPORT_INPUTS),
+    ("hrd/SBJ00001__SBJ00001_MDX000001_L0000001-chord.json.gz", ReportType.HRD_CHORD),
+    ("hrd/SBJ00001__SBJ00001_MDX000001_L0000001-hrdetect.json.gz", ReportType.HRD_HRDETECT),
+    ("purple/SBJ00001__SBJ00001_MDX000001_L0000001-purple_cnv_germ.json.gz", ReportType.PURPLE_CNV_GERM),
+    ("purple/SBJ00001__SBJ00001_MDX000001_L0000001-purple_cnv_som.json.gz", ReportType.PURPLE_CNV_SOM),
+    ("purple/SBJ00001__SBJ00001_MDX000001_L0000001-purple_cnv_som_gene.json.gz", ReportType.PURPLE_CNV_SOM_GENE),
+    ("sigs/SBJ00001__SBJ00001_MDX000001_L0000001-indel.json.gz", ReportType.SIGS_INDEL),
+    ("sigs/SBJ00001__SBJ00001_MDX000001_L0000001-snv_2015.json.gz", ReportType.SIGS_SNV_2015),
+    ("sigs/SBJ00001__SBJ00001_MDX000001_L0000001-snv_2020.json.gz", ReportType.SIGS_SNV_2020),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-01_sv_unmelted.json.gz", ReportType.SV_UNMELTED),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-02_sv_melted.json.gz", ReportType.SV_MELTED),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-03_sv_BND_main.json.gz", ReportType.SV_BND_MAIN),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-04_sv_BND_purpleinf.json.gz", ReportType.SV_BND_PURPLEINF),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-05_sv_noBND_main.json.gz", ReportType.SV_NOBND_MAIN),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-06_sv_noBND_other.json.gz", ReportType.SV_NOBND_OTHER),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-07_sv_noBND_manygenes.json.gz", ReportType.SV_NOBND_MANYGENES),
+    ("sv/SBJ00001__SBJ00001_MDX000001_L0000001-08_sv_noBND_manytranscripts.json.gz", ReportType.SV_NOBND_MANYTRANSCRIPTS),
+]
+
 KEY_ERROR_1 = "cancer_report_tables/json/hrd/SBJ00001__SBI00001_PRJ000001_L0000001-hrdetect.json.gz"
 KEY_ERROR_2 = "cancer_report_tables/json/hrd/SBJ00001/hrdetect.json.gz"
+KEY_ERROR_3 = "cancer_report_tables/json/hrd/SBJ00001/hrddetect.json.gz"
 
 
 class ReportUniqueKeyUnitTests(ReportUnitTestCase):
@@ -113,6 +136,31 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         subject_id, _, _ = services._extract_report_unique_key(KEY_ERROR_2)
         self.assertIsNone(subject_id)
+
+    def test_extract_report_type(self):
+        """
+        python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_type
+        """
+        type_ = services._extract_report_type(KEY_EXPECTED)
+        self.assertEqual(type_, ReportType.HRD_HRDETECT)
+
+    def test_extract_report_type_check_all(self):
+        """
+        python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_type_check_all
+        """
+        chk = 0
+        for k, t in KEY_EXPECTED_ALL:
+            type_ = services._extract_report_type(k)
+            self.assertEqual(type_, t)
+            chk += 1
+        self.assertEqual(chk, len(KEY_EXPECTED_ALL))
+
+    def test_extract_report_type_unknown(self):
+        """
+        python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_type_unknown
+        """
+        type_ = services._extract_report_type(KEY_ERROR_3)
+        self.assertIsNone(type_)
 
 
 class ReportUniqueKeyIntegrationTests(ReportIntegrationTestCase):
