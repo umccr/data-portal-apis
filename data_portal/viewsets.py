@@ -273,20 +273,20 @@ class ReportViewSet(ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
-    ordering = ['-sample_id']
+    ordering = ['-subject_id']
     search_fields = ordering_fields
 
     def retrieve(self, request, pk=None, **kwargs):
         data = {
             'id': pk,
             'reports': {
-                'count': Report.objects.filter(sample_id=pk).count()
+                'count': Report.objects.count()
             },
         }
         return Response(data)
 
 class ReportSubjectViewSet(ReadOnlyModelViewSet):
-    queryset = Report.objects.values_list('subject_id', named=True).filter(sample_id__isnull=False).distinct()
+    queryset = Report.objects.values_list('subject_id', named=True).filter(subject_id__isnull=False).distinct()
     serializer_class = ReportIdSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -297,8 +297,8 @@ class ReportSubjectViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, pk=None, **kwargs):
         data = {
             'id': pk,
-            'data': {
-                'count': Report.objects.filter(sample_id=pk).data
+            'subjects': {
+                'count': Report.objects.filter(subject_id=pk)
             },
         }
         return Response(data)

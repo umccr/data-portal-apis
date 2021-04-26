@@ -29,6 +29,9 @@ runs_router.register(r'gds', RunDataGDSFileViewSet, basename='run-gds')
 
 reports_router = routers.NestedDefaultRouter(router, r'reports', lookup='report')
 reports_router.register(r'subject', ReportSubjectViewSet, basename='report-subject')
+reports_router.register(r'sample', ReportSubjectViewSet, basename='report-subject')
+reports_router.register(r'library', ReportSubjectViewSet, basename='report-subject')
+reports_router.register(r'type', ReportSubjectViewSet, basename='report-subject')
 
 urlpatterns = [
     path('files', views.search_file, name='file-search'),
@@ -37,6 +40,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(subjects_router.urls)),
     path('', include(runs_router.urls)),
+    path('', include(reports_router.urls))
 ]
 
 handler500 = 'rest_framework.exceptions.server_error'
