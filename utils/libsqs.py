@@ -55,7 +55,7 @@ def dispatch_notification(queue_arn: str, message: dict, group_id: str):
     return response
 
 
-def dispatch_jobs(queue_arn, job_list, batch_size=10):
+def dispatch_jobs(queue_arn, job_list, batch_size=10, fifo=True):
     """
     Queue job in batch of given size
 
@@ -82,6 +82,7 @@ def dispatch_jobs(queue_arn, job_list, batch_size=10):
     :param queue_arn:
     :param job_list:
     :param batch_size:
+    :param fifo: default True
     :return:
     """
     _batch_size = batch_size if batch_size < MAX_BATCH_SIZE else MAX_BATCH_SIZE
@@ -94,8 +95,9 @@ def dispatch_jobs(queue_arn, job_list, batch_size=10):
             entry = {
                 'Id': str(uuid.uuid4()),
                 'MessageBody': libjson.dumps(job),
-                'MessageGroupId': group_id,
             }
+            if fifo:
+                entry['MessageGroupId'] = group_id
             entries.append(entry)
         resp = enqueue_messages(queue_arn, entries)
         responses[group_id] = {k: v for k, v in resp.items() if k.startswith('Successful') or k.startswith('Failed')}

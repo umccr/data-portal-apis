@@ -14,8 +14,11 @@ from utils import libslack, lookup, libjson, libdt
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-SLACK_SENDER_BADGE = "Portal Workflow Automation"
-SLACK_FOOTER_BADGE = "Automated Workflow Event"
+SLACK_SENDER_BADGE_AUTO = "Portal Workflow Automation"
+SLACK_FOOTER_BADGE_AUTO = "ICA Pipeline: Automated Workflow Event"
+
+SLACK_SENDER_BADGE_BSSH = "BSSH Run"
+SLACK_FOOTER_BADGE_BSSH = "ICA Pipeline: BSSH.RUNS Event"
 
 
 @transaction.atomic
@@ -185,7 +188,7 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
         logger.info("Multiple IDs in ACL, expected 1!")
         owner = 'undetermined'
 
-    sender = SLACK_SENDER_BADGE
+    sender = SLACK_SENDER_BADGE_BSSH
     topic = f"Notification from {sqr.msg_attr_action_type}"
     attachments = [
         {
@@ -246,7 +249,7 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
                     "short": True
                 }
             ],
-            "footer": "IAP BSSH.RUNS Event",
+            "footer": SLACK_FOOTER_BADGE_BSSH,
             "ts": sqs_record_timestamp
         }
     ]
@@ -332,12 +335,12 @@ def notify_workflow_status(workflow: Workflow):
                     "short": True
                 },
             ],
-            "footer": SLACK_FOOTER_BADGE,
+            "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": libdt.get_utc_now_ts()
         }
     ]
 
-    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
+    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE_AUTO, _topic, _attachments)
 
     if _resp:
         workflow.notified = True
@@ -361,46 +364,60 @@ def notify_batch_run_status(batch_run_id):
     # at the mo, BatchRun has only two states, RUNNING or not
     if batch_run.running:
         state = "running"
-        slack_color = libslack.SlackColor.BLUE.value
     else:
         state = "completed"
-        slack_color = libslack.SlackColor.GREEN.value
 
     workflows = Workflow.objects.get_by_batch_run(batch_run=batch_run)
     workflow = workflows[0]  # pick one for convenience
 
-    cnt = 0
-    stats = {
+    _total_cnt = 0
+    _stats = {
         WorkflowStatus.SUCCEEDED.value: 0,
         WorkflowStatus.FAILED.value: 0,
         WorkflowStatus.ABORTED.value: 0,
         WorkflowStatus.RUNNING.value: 0,
     }
-    mtx = ""
+    _metrics = ""
     for wfl in workflows:
-        mtx += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
-        cnt += 1
-        stats[wfl.end_status] += 1
+        _metrics += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
+        _total_cnt += 1
+        _stats[wfl.end_status] += 1
 
-    _title = f"Total: {cnt} " \
-             f"| Running: {stats[WorkflowStatus.RUNNING.value]} " \
-             f"| Succeeded: {stats[WorkflowStatus.SUCCEEDED.value]} " \
-             f"| Failed: {stats[WorkflowStatus.FAILED.value]} " \
-             f"| Aborted: {stats[WorkflowStatus.ABORTED.value]}"
+    _title = f"Total: {_total_cnt} " \
+             f"| Running: {_stats[WorkflowStatus.RUNNING.value]} " \
+             f"| Succeeded: {_stats[WorkflowStatus.SUCCEEDED.value]} " \
+             f"| Failed: {_stats[WorkflowStatus.FAILED.value]} " \
+             f"| Aborted: {_stats[WorkflowStatus.ABORTED.value]}"
+
+    if _total_cnt == _stats[WorkflowStatus.RUNNING.value]:
+        # all running -> blue
+        _color = libslack.SlackColor.BLUE.value
+
+    elif _total_cnt == _stats[WorkflowStatus.SUCCEEDED.value]:
+        # all succeeded -> green
+        _color = libslack.SlackColor.GREEN.value
+
+    elif _total_cnt == _stats[WorkflowStatus.FAILED.value]:
+        # all failed -> red
+        _color = libslack.SlackColor.RED.value
+
+    else:
+        # anything else -> orange
+        _color = libslack.SlackColor.ORANGE.value
 
     _attachments = [
         {
             "fallback": _topic,
-            "color": slack_color,
+            "color": _color,
             "pretext": f"Status: {state.upper()}, Workflow: {workflow.type_name.upper()}@{workflow.version}",
             "title": _title,
-            "text": mtx,
-            "footer": SLACK_FOOTER_BADGE,
+            "text": _metrics,
+            "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": libdt.get_utc_now_ts()
         }
     ]
 
-    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE, _topic, _attachments)
+    _resp = libslack.call_slack_webhook(SLACK_SENDER_BADGE_AUTO, _topic, _attachments)
 
     if _resp:
         for wfl in workflows:
@@ -417,7 +434,7 @@ def notify_outlier(topic: str, reason: str, status: str, event: dict):
 
     slack_color = libslack.SlackColor.GRAY.value
 
-    sender = SLACK_SENDER_BADGE
+    sender = SLACK_SENDER_BADGE_AUTO
     topic = f"Pipeline {status}: {topic}"
 
     fields = []
@@ -438,7 +455,7 @@ def notify_outlier(topic: str, reason: str, status: str, event: dict):
             "title": f"Reason: {reason}",
             "text": "Event Attributes:",
             "fields": fields if fields else "No attributes found. Please check CloudWatch logs.",
-            "footer": SLACK_FOOTER_BADGE,
+            "footer": SLACK_FOOTER_BADGE_AUTO,
             "ts": int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
         }
     ]

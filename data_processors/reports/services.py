@@ -1,24 +1,33 @@
-import re
 import logging
-from typing import List, Tuple
-
-from data_portal.models import Report
-from data_processors.s3.helper import S3EventRecord
-from utils import libs3, libjson
+import re
+import uuid
+from typing import Tuple
 
 from aws_xray_sdk.core import xray_recorder
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from django.db.models import QuerySet
+
+from data_portal.models import Report, ReportType, S3Object
+from data_processors import const
+from data_processors.s3 import helper
+from utils import libs3, libjson
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def _extract_report_unique_key(key) -> Tuple:
+def _extract_report_unique_key(key: str) -> Tuple:
     """
     Matches our special sauce key sequencing identifiers @UMCCR, i.e:
-    "SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary.json.gz"
+        SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary
+        SBJ00001__SBJ00001_PRJ000001_L0000001-hrdetect
+
     :param key: S3 key string
-    :return: subject_id, sample_id and library_id strings
+    :return: subject_id, sample_id, library_id Or None
     """
+    subsegment = xray_recorder.current_subsegment()
+
     subject_id_pattern = 'SBJ\d{5}'
     sample_id_pattern = '(?:PRJ|CCR|MDX)\d{6}'
     library_id_int_pattern = 'L\d{7}'
@@ -26,7 +35,13 @@ def _extract_report_unique_key(key) -> Tuple:
     library_id_extension_pattern = '(?:_topup\d?|_rerun\d?)'
     library_id_pattern = '(?:' + library_id_int_pattern + '|' + library_id_ext_pattern + ')' + library_id_extension_pattern + '?'
 
-    regex_key = re.compile('.+.umccrised.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern +').+')
+    # regex_key = re.compile('.+.umccrised.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern +').+')
+    # let's relax "umccrised" keyword for now
+    regex_key = re.compile('.+.' + subject_id_pattern + '__(' + subject_id_pattern + ')_(' + sample_id_pattern + ')_(' + library_id_pattern + ').+')
+
+    subject_id = None
+    sample_id = None
+    library_id = None
 
     match = regex_key.fullmatch(key)
 
@@ -35,37 +50,151 @@ def _extract_report_unique_key(key) -> Tuple:
         subject_id = match_groups[0]
         sample_id = match_groups[1]
         library_id = match_groups[2]
+    else:
+        msg = f"Unable to extract report unique key. Unexpected pattern found: {key}"
+        logger.warning(msg)
+        subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+            'key': key,
+            'message': msg,
+        }, 'extract_report_unique_key')
 
     return subject_id, sample_id, library_id
 
 
-def serialize_to_cancer_report(records: List[S3EventRecord]) -> bool:
+def _extract_report_type(key: str):
     """
-    Filters and distributes particular S3 objects for further processing.
+    Extract well-known Report type from key
 
-    s3://clinical-patient-data-bucket/['subject_id', 'sample_id', 'library_id']/cancer_report_tables/json/{hrd|purple|sigs|sv}
-
-    :param records: S3 events to be processed coming from the SQS queue
-    :return: The serialization of the JSON records was successfully imported into the ORM (or not)
+    :param key:
+    :return: report type Or None
     """
-    subsegment = xray_recorder.begin_subsegment('serialize_cancer_report')
+    subsegment = xray_recorder.current_subsegment()
 
-    for record in records:
-        bucket = record.s3_bucket_name
-        key = record.s3_object_meta['key']
-        try:
-            if 'cancer_report_tables' in key:
-                if 'json.gz' in key:
-                    # Fetches S3 object and decompresses/deserializes it
-                    obj_bytes = libs3.get_s3_object_to_bytes(bucket, key)
-                    json_dict = libjson.loads(obj_bytes)
-                    json_dict['subject_id'], json_dict['sample_id'], json_dict['library_id'] = _extract_report_unique_key(key)
+    # normalize
+    key = key.lower()
 
-                    subsegment.put_metadata('json_dict_cancer_report', json_dict, 'cancer_report')
-                    xray_recorder.end_subsegment()
-                    # Adds attributes from JSON to Django Report model
-                    json_report = libjson.dumps(json_dict)
-                    report: Report = Report.objects.put(json_report)
-            return True
-        except:
-            return False
+    if "hrd/" in key:
+        if "-chord." in key:
+            return ReportType.HRD_CHORD
+        elif "-hrdetect." in key:
+            return ReportType.HRD_HRDETECT
+
+    if "purple/" in key:
+        if "_cnv_germ." in key:
+            return ReportType.PURPLE_CNV_GERM
+        elif "_cnv_som." in key:
+            return ReportType.PURPLE_CNV_SOM
+        elif "_cnv_som_gene." in key:
+            return ReportType.PURPLE_CNV_SOM_GENE
+
+    if "sigs/" in key:
+        if "-dbs." in key:
+            return ReportType.SIGS_DBS
+        elif "-indel." in key:
+            return ReportType.SIGS_INDEL
+        elif "-snv_2015." in key:
+            return ReportType.SIGS_SNV_2015
+        elif "-snv_2020." in key:
+            return ReportType.SIGS_SNV_2020
+
+    if "sv/" in key:
+        if "_unmelted." in key:
+            return ReportType.SV_UNMELTED
+        elif "_melted." in key:
+            return ReportType.SV_MELTED
+        elif "_bnd_main." in key:
+            return ReportType.SV_BND_MAIN
+        elif "_bnd_purpleinf." in key:
+            return ReportType.SV_BND_PURPLEINF
+        elif "_nobnd_main." in key:
+            return ReportType.SV_NOBND_MAIN
+        elif "_nobnd_other." in key:
+            return ReportType.SV_NOBND_OTHER
+        elif "_nobnd_manygenes." in key:
+            return ReportType.SV_NOBND_MANYGENES
+        elif "_nobnd_manytranscripts." in key:
+            return ReportType.SV_NOBND_MANYTRANSCRIPTS
+
+    if "-qc_summary." in key:
+        return ReportType.QC_SUMMARY
+
+    if "-report_inputs." in key:
+        return ReportType.REPORT_INPUTS
+
+    msg = f"Unknown report type. Unexpected pattern found: {key}"
+    logger.warning(msg)
+    subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+        'key': key,
+        'message': msg,
+    }, 'extract_report_type')
+    return None
+
+
+@transaction.atomic
+def persist_report(bucket: str, key: str, event_type):
+    """
+    Depends on event type, persist Report into db. Remove otherwise.
+
+    :param bucket:
+    :param key:
+    :param event_type:
+    """
+
+    subject_id, sample_id, library_id = _extract_report_unique_key(key)
+    if subject_id is None or sample_id is None or library_id is None:
+        return None
+
+    report_type = _extract_report_type(key)
+    if report_type is None:
+        return None
+
+    if event_type == helper.S3EventType.EVENT_OBJECT_CREATED.value:
+        return _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
+    elif event_type == helper.S3EventType.EVENT_OBJECT_REMOVED.value:
+        _sync_report_deleted(key, subject_id, sample_id, library_id, report_type)
+        return None
+
+
+def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
+    subsegment = xray_recorder.current_subsegment()
+
+    s3_object: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
+
+    data = libjson.loads(libs3.get_s3_object_to_bytes(bucket, key))
+
+    report = Report.objects.create_or_update_report(
+        subject_id=subject_id,
+        sample_id=sample_id,
+        library_id=library_id,
+        report_type=report_type,
+        created_by=const.CANCER_REPORT_TABLES if const.CANCER_REPORT_TABLES in key else None,
+        data=data,
+        s3_object=s3_object.get() if s3_object.exists() else None
+    )
+
+    subsegment.put_metadata(str(report.id.hex), {
+        'key': key,
+        'report': str(report),
+    }, 'sync_report_created')
+
+    return report
+
+
+def _sync_report_deleted(key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
+    subsegment = xray_recorder.current_subsegment()
+
+    try:
+        report: Report = Report.objects.get(
+            subject_id=subject_id,
+            sample_id=sample_id,
+            library_id=library_id,
+            type=report_type
+        )
+        subsegment.put_metadata(str(report.id.hex), {
+            'key': key,
+            'report': str(report),
+        }, 'sync_report_deleted')
+        report.delete()
+    except ObjectDoesNotExist as e:
+        logger.info(f"No deletion required. Non-existent Report (subject_id={subject_id}, sample_id={sample_id}, "
+                    f"library_id={library_id}, type={report_type}) : {str(e)}")

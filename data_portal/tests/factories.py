@@ -170,15 +170,14 @@ class ReportFactory(factory.django.DjangoModelFactory):
     subject_id = "SBJ00001"
     sample_id = "MDX000001"
     library_id = "L0000001"
-    date_created = make_aware(datetime.now())
-    created_by = "umccrise-1.2.1"
+    created_by = "cancer_report_tables"
 
-    type = "UNKNOWN"
+    type = "unknown"
     data = None
 
 
 class HRDChordReportFactory(ReportFactory):
-    type = ReportType.HRD_CHORD.name
+    type = ReportType.HRD_CHORD
 
     data = [
         {
@@ -204,7 +203,7 @@ class HRDChordReportFactory(ReportFactory):
 
 
 class HRDetectReportFactory(ReportFactory):
-    type = ReportType.HRD_HRDETECT.name
+    type = ReportType.HRD_HRDETECT
 
     data = [
         {
@@ -222,7 +221,7 @@ class HRDetectReportFactory(ReportFactory):
 
 
 class PurpleCNVGermReportFactory(ReportFactory):
-    type = ReportType.PURPLE_CNV_GERM.name
+    type = ReportType.PURPLE_CNV_GERM
 
     data = [
         {
@@ -251,7 +250,7 @@ class PurpleCNVGermReportFactory(ReportFactory):
 
 
 class PurpleCNVSomReportFactory(ReportFactory):
-    type = ReportType.PURPLE_CNV_SOM.name
+    type = ReportType.PURPLE_CNV_SOM
 
     data = [
         {
@@ -280,7 +279,7 @@ class PurpleCNVSomReportFactory(ReportFactory):
 
 
 class PurpleCNVSomGeneReportFactory(ReportFactory):
-    type = ReportType.PURPLE_CNV_SOM_GENE.name
+    type = ReportType.PURPLE_CNV_SOM_GENE
 
     data = [
         {
@@ -321,7 +320,7 @@ class PurpleCNVSomGeneReportFactory(ReportFactory):
 
 
 class SigsDBSReportFactory(ReportFactory):
-    type = ReportType.SIGS_DBS.name
+    type = ReportType.SIGS_DBS
 
     data = [
         {
@@ -358,7 +357,7 @@ class SigsDBSReportFactory(ReportFactory):
 
 
 class SigsIndelReportFactory(ReportFactory):
-    type = ReportType.SIGS_INDEL.name
+    type = ReportType.SIGS_INDEL
 
     data = [
         {
@@ -395,7 +394,7 @@ class SigsIndelReportFactory(ReportFactory):
 
 
 class SigsSNV2015ReportFactory(ReportFactory):
-    type = ReportType.SIGS_SNV_2015.name
+    type = ReportType.SIGS_SNV_2015
 
     data = [
         {
@@ -432,7 +431,7 @@ class SigsSNV2015ReportFactory(ReportFactory):
 
 
 class SigsSNV2020ReportFactory(ReportFactory):
-    type = ReportType.SIGS_SNV_2020.name
+    type = ReportType.SIGS_SNV_2020
 
     data = [
         {
@@ -469,7 +468,7 @@ class SigsSNV2020ReportFactory(ReportFactory):
 
 
 class SvUnmeltedReportFactory(ReportFactory):
-    type = ReportType.SV_UNMELTED.name
+    type = ReportType.SV_UNMELTED
 
     data = [
         {
@@ -510,7 +509,7 @@ class SvUnmeltedReportFactory(ReportFactory):
 
 
 class SvMeltedReportFactory(ReportFactory):
-    type = ReportType.SV_MELTED.name
+    type = ReportType.SV_MELTED
 
     data = [
         {
@@ -567,7 +566,7 @@ class SvMeltedReportFactory(ReportFactory):
 
 
 class SvBNDMainReportFactory(ReportFactory):
-    type = ReportType.SV_BND_MAIN.name
+    type = ReportType.SV_BND_MAIN
 
     data = [
         {
@@ -612,14 +611,14 @@ class SvBNDMainReportFactory(ReportFactory):
 
 
 class SvBNDPurpleinfReportFactory(ReportFactory):
-    type = ReportType.SV_BND_PURPLEINF.name
+    type = ReportType.SV_BND_PURPLEINF
 
     data = [
     ]
 
 
 class SvNoBNDMainReportFactory(ReportFactory):
-    type = ReportType.SV_NOBND_MAIN.name
+    type = ReportType.SV_NOBND_MAIN
 
     data = [
         {
@@ -655,7 +654,7 @@ class SvNoBNDMainReportFactory(ReportFactory):
 
 
 class SvNoBNDOtherReportFactory(ReportFactory):
-    type = ReportType.SV_NOBND_OTHER.name
+    type = ReportType.SV_NOBND_OTHER
 
     data = [
         {
@@ -686,7 +685,7 @@ class SvNoBNDOtherReportFactory(ReportFactory):
 
 
 class SvNoBNDManyGenesReportFactory(ReportFactory):
-    type = ReportType.SV_NOBND_MANYGENES.name
+    type = ReportType.SV_NOBND_MANYGENES
 
     data = [
         {
@@ -715,7 +714,7 @@ class SvNoBNDManyGenesReportFactory(ReportFactory):
 
 
 class SvNoBNDManyTranscriptsReportFactory(ReportFactory):
-    type = ReportType.SV_NOBND_MANYTRANSCRIPTS.name
+    type = ReportType.SV_NOBND_MANYTRANSCRIPTS
 
     data = [
         {

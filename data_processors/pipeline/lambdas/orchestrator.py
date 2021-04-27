@@ -158,6 +158,18 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     See Example IAP Run > Inputs
     https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.5cc28c147e4e4dfa9e418523188aacec/3.7.5--1.3.5.md
 
+    Germline job preparation is at _pure_ Library level aggregate.
+    Here "Pure" Library ID means without having _topup(N) or _rerun(N) suffixes.
+    The fastq_list_row lambda already stripped these topup/rerun suffixes (i.e. what is in this_batch.context_data cache).
+    Therefore, it aggregates all fastq list at
+        - per sequence run by per library for
+            - all different lane(s)
+            - all topup(s)
+            - all rerun(s)
+    This constitute one Germline job (i.e. one Germline workflow run).
+
+    See OrchestratorIntegrationTests.test_prepare_germline_jobs() for example job list of SEQ-II validation run.
+
     :param this_batch:
     :param this_batch_run:
     :param this_sqr:
@@ -166,28 +178,25 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     job_list = []
     fastq_list_rows: List[dict] = libjson.loads(this_batch.context_data)
 
-    # Convert to pandas dataframe
-    fastq_list_df = pd.DataFrame(fastq_list_rows)
-
-    # Get metadata for determining which sample types need to be run through
-    # the germline workflow
-    gds_volume_name = this_sqr.gds_volume_name
-    gds_folder_path = this_sqr.gds_folder_path
-    sample_sheet_name = this_sqr.sample_sheet_name
-
+    # get metadata for determining which sample need to be run through the germline workflow
     metadata: dict = demux_metadata.handler({
-        'gdsVolume': gds_volume_name,
-        'gdsBasePath': gds_folder_path,
-        'gdsSamplesheet': sample_sheet_name,
+        'gdsVolume': this_sqr.gds_volume_name,
+        'gdsBasePath': this_sqr.gds_folder_path,
+        'gdsSamplesheet': this_sqr.sample_sheet_name,
     }, None)
 
-    # Easier to handle this as a df
     metadata_df = pd.DataFrame(metadata)
+    fastq_list_df = pd.DataFrame(fastq_list_rows)
 
-    # Iterate through each sample by grouping by the RGSM value
-    for sample_name, sample_df in fastq_list_df.groupby("rgsm"):
+    # iterate through each sample group by rglb
+    for rglb, sample_df in fastq_list_df.groupby("rglb"):
+
+        rgsm = sample_df['rgsm'].unique().item()  # get rgsm which should be the same for all libraries
+
+        sample_name = f"{rgsm}_{rglb}"  # this is now "sample name" convention for analysis workflow perspective
+
         # skip Undetermined samples
-        if sample_name == "Undetermined":
+        if sample_name.startswith("Undetermined"):
             logger.warning(f"SKIP '{sample_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
             continue
 
@@ -196,41 +205,38 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
             logger.warning(f"SKIP NTC SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
             continue
 
-        # Iterate through libraries for this sample, ensure that they're the same type
-        sample_library_names = ["{}_{}".format(sample_name, sample_library)
-                                 for sample_library in sample_df.rglb.unique().tolist()]
+        # collect back BSSH run styled SampleSheet(SampleID) globally unique ID format from rgid
+        sample_library_names = list(map(lambda k: k.split('.')[-1], sample_df.rgid.unique().tolist()))
+
+        # iterate through libraries for this sample and collect their assay types
         assay_types = []
-
-        # Assign assay types by library
         for sample_library_name in sample_library_names:
-            assay_types.append(metadata_df.query("sample==\"{}\"".format(sample_library_name))["type"].unique().item())
+            library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
+            if not library_metadata.empty:
+                assay_types.append(library_metadata["type"].unique().item())
 
-        # Ensure no assay types
-        if len(list(set(assay_types))) == 0:
-            logger.warning("Skipping sample \"{}\", could not retrieve the assay type from the metadata dict".format(
-                sample_name
-            ))
+        # ensure there are some assay types for this sample
+        if len(set(assay_types)) == 0:
+            logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. NO ASSAY TYPE METADATA FOUND.")
             continue
 
-        # Ensure only one assay type
-        if not len(list(set(assay_types))) == 1:
-            logger.warning("Skipping sample \"{}\", received multiple assay types: \"{}\"".format(
-                sample_name, ", ".join(assay_types)
-            ))
+        # ensure only one assay type
+        if not len(set(assay_types)) == 1:
+            logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. MULTIPLE ASSAY TYPES: {assay_types}")
             continue
 
-        # Assign the single assay type
+        # now we assign this _single_ assay type
         assay_type = list(set(assay_types))[0]
 
+        # skip germline if assay type is not WGS
         if assay_type != "WGS":
             logger.warning(f"SKIP {assay_type} SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
             continue
 
-        # Convert read_1 and read_2 to dicts
+        # convert read_1 and read_2 to cwl file location dict format
         sample_df["read_1"] = sample_df["read_1"].apply(cwl_file_path_as_string_to_dict)
         sample_df["read_2"] = sample_df["read_2"].apply(cwl_file_path_as_string_to_dict)
 
-        # Initialise job
         job = {
             "sample_name": sample_name,
             "fastq_list_rows": sample_df.to_dict(orient="records"),
@@ -239,7 +245,6 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
             "batch_run_id": int(this_batch_run.id)
         }
 
-        # Append job to job_list
         job_list.append(job)
 
     return job_list
@@ -257,9 +262,15 @@ def parse_bcl_convert_output(output_json: str) -> list:
     """
     output: dict = libjson.loads(output_json)
 
-    look_up_key = 'main/fastq_list_rows'
-    if look_up_key not in output.keys():
-        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting {look_up_key}. Found {output.keys()}")
+    lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']  # lookup in order, return on first found
+    look_up_key = None
+    for k in lookup_keys:
+        if k in output.keys():
+            look_up_key = k
+            break
+
+    if look_up_key is None:
+        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting one of {lookup_keys}. Found {output.keys()}")
 
     return output[look_up_key]
 

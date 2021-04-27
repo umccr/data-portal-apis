@@ -12,17 +12,16 @@ django.setup()
 # ---
 
 import logging
-from datetime import datetime
+from contextlib import closing
+from tempfile import NamedTemporaryFile
 
-import requests
 import pandas as pd
-from libiap.openapi import libgds
 from sample_sheet import SampleSheet
 
 from data_processors import const
 from data_processors.pipeline import services
-from data_processors.pipeline.constant import SampleSheetCSV
-from utils import libssm, libjson, iap, libgdrive
+
+from utils import libssm, libjson, libgdrive, gds
 from utils.regex_globals import SAMPLE_REGEX_OBJS
 
 SAMPLE_ID_HEADER = "Sample_ID (SampleSheet)"
@@ -32,67 +31,6 @@ ASSAY_HEADER = "Assay"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
-def download_gds_file(gds_volume: str, gds_path: str):
-    """Retrieve a GDS file
-
-    Call GDS list files endpoint with a filter on given gds_path
-    Get details PreSigned URL of the GDS file and write to local /tmp storage
-
-    :param gds_volume:
-    :param gds_path: the GDS path of the file to download
-    :return local_path: or None if file not found
-    """
-
-    logger.info(f"Downloading file from GDS: gds://{gds_volume}{gds_path}")
-
-    local_path = None
-    file_details = None
-
-    with libgds.ApiClient(iap.configuration(libgds)) as api_client:
-        file_api = libgds.FilesApi(api_client)
-        try:
-            page_token = None
-            while True:
-                file_list: libgds.FileListResponse = file_api.list_files(
-                    volume_name=[gds_volume],
-                    path=[gds_path],
-                    page_size=1000,
-                    page_token=page_token,
-                )
-
-                for item in file_list.items:
-                    file: libgds.FileResponse = item
-                    if file.name == SampleSheetCSV.FILENAME.value:
-                        file_details = file_api.get_file(file.id)
-                        file_list.next_page_token = None
-                        break
-
-                page_token = file_list.next_page_token
-                if not file_list.next_page_token:
-                    break
-            # while end
-
-        except libgds.ApiException as e:
-            logger.info("Exception when calling FilesApi: %s\n" % e)
-
-    if file_details:
-        logger.info(f"PreSigned URL: {file_details.presigned_url}")
-        req = requests.get(file_details.presigned_url)
-        local_path = f"/tmp/SampleSheet-{datetime.now().timestamp()}.csv"
-        with open(local_path, 'wb') as f:
-            f.write(req.content)
-
-    return local_path
-
-
-def get_sample_ids_from_samplesheet(path: str):
-    samplesheet = SampleSheet(path)
-    ids = set()
-    for sample in samplesheet:
-        ids.add(sample.Sample_ID)
-    return ids
 
 
 def download_metadata(year: str) -> pd.DataFrame:
@@ -147,8 +85,8 @@ def handler(event, context):
     gds_samplesheet_path = os.path.join(gds_base_path, samplesheet_path)
     logger.info(f"GDS sample sheet path: {gds_samplesheet_path}")
 
-    local_path = download_gds_file(gds_volume=gds_volume, gds_path=gds_samplesheet_path)
-    if local_path is None:
+    ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, gds_samplesheet_path)
+    if ntf is None:
         reason = f"Abort extracting metadata process. " \
                 f"Can not download sample sheet from GDS: gds://{gds_volume}{gds_samplesheet_path}"
         abort_message = {'message': reason}
@@ -156,8 +94,13 @@ def handler(event, context):
         services.notify_outlier(topic="Sample sheet download issue", reason=reason, status="Aborted", event=event)
         return abort_message
 
-    logger.info(f"Local sample sheet path: {local_path}")
-    sample_ids = get_sample_ids_from_samplesheet(local_path)
+    logger.info(f"Local sample sheet path: {ntf.name}")
+    sample_ids = set()
+    with closing(ntf) as f:
+        samplesheet = SampleSheet(f.name)
+        for sample in samplesheet:
+            sample_ids.add(sample.Sample_ID)
+
     logger.info(f"Sample IDs: {sample_ids}")
 
     # Get years
@@ -190,7 +133,7 @@ def handler(event, context):
         logger.warning(f"Can not extract any associated metadata tracking for sample sheet: "
                        f"gds://{gds_volume}{gds_samplesheet_path}")
     else:
-        logger.info(f"REQUESTED_METADATA_DF: \n{requested_metadata_df}")
+        logger.debug(f"REQUESTED_METADATA_DF: \n{requested_metadata_df}")
 
     # turn metadata_df into format compatible with workflow input
     # Select, rename, split metadata df
@@ -204,4 +147,8 @@ def handler(event, context):
     }, inplace=True)
 
     # Split by records
-    return requested_metadata_df.to_dict(orient="records")
+    results = requested_metadata_df.to_dict(orient="records")
+
+    logger.info(libjson.dumps(results))
+
+    return results

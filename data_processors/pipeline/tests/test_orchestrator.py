@@ -9,12 +9,56 @@ from mockito import when
 from data_portal.models import Workflow, BatchRun, Batch, SequenceRun
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import orchestrator
+from data_processors.pipeline.lambdas import orchestrator, fastq_list_row, wes_handler
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
 
 class OrchestratorUnitTests(PipelineUnitTestCase):
+
+    def test_parse_bcl_convert_output(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output
+        """
+
+        result = orchestrator.parse_bcl_convert_output(json.dumps({
+            "main/fastq_list_rows": [{'rgid': "main/fastq_list_rows"}],
+            "fastq_list_rows": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}]
+        }))
+
+        logger.info("-" * 32)
+        logger.info(f"Orchestrator parse_bcl_convert_output: {json.dumps(result)}")
+
+        self.assertEqual(result[0]['rgid'], "main/fastq_list_rows")
+
+    def test_parse_bcl_convert_output_alt(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_alt
+        """
+
+        result = orchestrator.parse_bcl_convert_output(json.dumps({
+            "fastq_list_rows2": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
+            "fastq_list_rows": [{'rgid': "fastq_list_rows"}]
+        }))
+
+        logger.info("-" * 32)
+        logger.info(f"Orchestrator parse_bcl_convert_output alt: {json.dumps(result)}")
+
+        self.assertEqual(result[0]['rgid'], "fastq_list_rows")
+
+    def test_parse_bcl_convert_output_error(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_error
+        """
+
+        try:
+            orchestrator.parse_bcl_convert_output(json.dumps({
+                "fastq_list_rows/main": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
+                "fastq_list_rowz": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS_TOO"}]
+            }))
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(json.JSONDecodeError)
 
     def test_workflow_output_not_json(self):
         """
@@ -38,28 +82,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_workflow.output = """
         "main/fastq_list_rows": [
             {
-              "rgid": "CATGCGAT.4",
-              "rglb": "UnknownLibrary",
-              "rgsm": "PRJ200438_LPRJ200438",
-              "lane": 4,
-              "read_1": {
-                "class": "File",
-                "basename": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
-                "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
-                "nameroot": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq",
-                "nameext": ".gz",
-                "http://commonwl.org/cwltool#generation": 0,
-                "size": 16698849950
-              },
-              "read_2": {
-                "class": "File",
-                "basename": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
-                "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
-                "nameroot": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq",
-                "nameext": ".gz",
-                "http://commonwl.org/cwltool#generation": 0,
-                "size": 38716143739
-              }
+              "rgid": "THIS_DOES_NOT_MATTER_AS_ALREADY_MALFORMED_JSON",
             }
         ]
         """
@@ -210,64 +233,59 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
 
 class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
+    # integration test hit actual File or API endpoint, thus, manual run in most cases
+    # required appropriate access mechanism setup such as active aws login session
+    # uncomment @skip and hit the each test case!
+    # and keep decorated @skip after tested
 
     @skip
     def test_prepare_germline_jobs(self):
         """
-        1. uncomment @skip
-        2. setup target_xx variables noted below
-        3. hit the test like so:
-            python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorIntegrationTests.test_prepare_germline_jobs
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorIntegrationTests.test_prepare_germline_jobs
         """
 
-        # NOTE: need to set the target bssh run gds output
-        target_gds_folder_path = "/Runs/111111_A22222_0011_AGCTG2AGCC_r.ACGTlKjDgEy099ioQOeOWg"
-        target_gds_volume_name = "bssh.agctbfda498038ed99eeeeee79999999"
-        target_sample_sheet_name = "SampleSheet.csv"
+        # --- Setup these values
 
-        # NOTE: typically dict within json.dumps is the output of 'fastq_list_row' lambda.
-        # See wiki for how to invoke this lambda
-        # https://github.com/umccr/wiki/blob/master/computing/cloud/illumina/automation.md
-        target_batch_context_data = json.dumps(
-            [
-                {"lane": 4,
-                 "read_1": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_S1_L004_R1_001.fastq.gz",
-                 "read_2": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_S1_L004_R2_001.fastq.gz",
-                 "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                 "rgsm": "PTC_TSOctDNA200901VD_L2000753",
-                 "rglb": "UnknownLibrary"
-                 },
-                {
-                    "lane": 3,
-                    "read_1": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_topup_S1_L004_R1_001.fastq.gz",
-                    "read_2": "gds://wfr.3157562b798b44009f661549aa421815/bcl-convert-test/steps/bcl_convert_step/0/steps/bclConvert-nonFPGA-3/try-1/U7N1Y93N50_I10_I10_U7N1Y93N50/PTC_TSOctDNA200901VD_L2000753_topup_S1_L004_R2_001.fastq.gz",
-                    "rgid": "CCGTGACCGA.CCGAACGTTG.4",
-                    "rgsm": "PTC_TSOctDNA200901VD_L2000753_topup",
-                    "rglb": "UnknownLibrary"
-                }
-            ]
-        )
+        bssh_run_id = "r.Uvlx2DEIME-KH0BRyF9XBg"
+        bssh_run_name = "200612_A01052_0017_BH5LYWDSXY"
+        bssh_run_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg"
+        bssh_run_volume = "umccr-raw-sequence-data-dev"
+        bssh_samplesheet_name = "SampleSheet.csv"
+        bcl_convert_wfr_id = "wfr.81cf25d7226a4874be43e4b15c1f5687"
 
-        mock_batch = Batch(name="Test", created_by="Test", context_data=target_batch_context_data)
+        # --- Get pipeline state
+
+        bcl_convert_run = wes_handler.get_workflow_run({'wfr_id': bcl_convert_wfr_id}, None)
+
+        print('-' * 32)
+
+        fastq_list = fastq_list_row.handler({
+            'fastq_list_rows': bcl_convert_run['output']['fastq_list_rows'],
+            'seq_name': bssh_run_name
+        }, None)
+
+        # --- Make mock pipeline state in test db
+
+        mock_batch = Batch(name="Test", created_by="Test", context_data=json.dumps(fastq_list))
         mock_batch.save()
 
-        mock_batch_run = BatchRun(batch=mock_batch)
+        mock_batch_run = BatchRun(batch=mock_batch, step="Test")
         mock_batch_run.save()
 
         mock_sqr_run = SequenceRun(
-            run_id="r.ACGTlKjDgEy099ioQOeOWg",
+            run_id=bssh_run_id,
             date_modified=make_aware(datetime.utcnow()),
             status="PendingAnalysis",
-            instrument_run_id=TestConstant.sqr_name.value,
-            gds_folder_path=target_gds_folder_path,
-            gds_volume_name=target_gds_volume_name,
+            instrument_run_id=bssh_run_name,
+            gds_folder_path=bssh_run_path,
+            gds_volume_name=bssh_run_volume,
             reagent_barcode="NV9999999-RGSBS",
             v1pre3_id="666666",
             acl=["wid:acgtacgt-9999-38ed-99fa-94fe79523959"],
             flowcell_barcode="BARCODEEE",
-            sample_sheet_name=target_sample_sheet_name,
+            sample_sheet_name=bssh_samplesheet_name,
             api_url=f"https://ilmn/v2/runs/r.ACGTlKjDgEy099ioQOeOWg",
-            name=TestConstant.sqr_name.value,
+            name=bssh_run_name,
             msg_attr_action="statuschanged",
             msg_attr_action_type="bssh.runs",
             msg_attr_action_date="2020-05-09T22:17:10.815Z",
@@ -275,11 +293,19 @@ class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
         )
         mock_sqr_run.save()
 
+        print('-'*32)
+        logger.info("PREPARE GERMLINE JOBS:")
+
         job_list = orchestrator.prepare_germline_jobs(
             this_batch=mock_batch,
             this_batch_run=mock_batch_run,
             this_sqr=mock_sqr_run,
         )
 
+        print('-'*32)
+        logger.info("JOB LIST JSON:")
+        print()
         print(json.dumps(job_list))
+        print()
         self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), 8)

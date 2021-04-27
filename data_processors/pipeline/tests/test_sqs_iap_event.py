@@ -39,7 +39,7 @@ def _mock_bcl_convert_output():
                 },
                 "rgid": "CCGTGACCGA.CCGAACGTTG.4",
                 "rgsm": "PTC_EXPn200908LL_L2000001",
-                "rglb": "UnknownLibrary"
+                "rglb": "L2000001"
             },
             {
                 "lane": 3,
@@ -63,7 +63,7 @@ def _mock_bcl_convert_output():
                 },
                 "rgid": "CCGTGACCGA.CCGAACGTTG.4",
                 "rgsm": "PTC_EXPn200908LL_L2000001_topup",
-                "rglb": "UnknownLibrary"
+                "rglb": "L2000001"
             }
         ]
     }
@@ -192,16 +192,20 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
         super(SQSIAPEventUnitTests, self).setUp()
-        when(demux_metadata).handler(...).thenReturn(
-            [
-                {
-                    "sample": "PTC_EXPn200908LL_L2000001",
-                    "override_cycles": "Y100;I8N2;I8N2;Y100",
-                    "type": "WGS",
-                    "assay": "TsqNano"
-                }
-            ]
-        )
+        when(demux_metadata).handler(...).thenReturn([
+            {
+                "sample": "PTC_EXPn200908LL_L2000001",
+                "override_cycles": "Y100;I8N2;I8N2;Y100",
+                "type": "WGS",
+                "assay": "TsqNano"
+            },
+            {
+                "sample": "PTC_EXPn200908LL_L2000001_topup",
+                "override_cycles": "Y100;I8N2;I8N2;Y100",
+                "type": "WGS",
+                "assay": "TsqNano"
+            },
+        ])
 
     def test_uploaded_gds_file_event(self):
         """
