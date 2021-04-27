@@ -2084,7 +2084,7 @@ fs-extra@^8.1.0:
     jsonfile "^4.0.0"
     universalify "^0.1.0"
 
-fs-extra@^9.0.1, fs-extra@^9.1.0:
+fs-extra@^9.1.0:
   version "9.1.0"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-9.1.0.tgz#5954460c764a8da2094ba3554bf839e6b9a7c86d"
   integrity sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==
@@ -4035,15 +4035,15 @@ serverless-s3-batch@^1.0.2:
     lodash.merge "^4.6.1"
     semver "^6.0.0"
 
-serverless-wsgi@^1.7.6:
-  version "1.7.6"
-  resolved "https://registry.yarnpkg.com/serverless-wsgi/-/serverless-wsgi-1.7.6.tgz#76f9d390ef6ca1a081f86df95d2a20a276a52c52"
-  integrity sha512-odHMLP6PpdwAryBNuLuDQUc4Ls8LTyHuW2QL7iZpe4ZagPe0gMwT+VhdZwsTu0hm+dV8vHNjuyrMxPegfk550A==
+serverless-wsgi@^1.7.7:
+  version "1.7.7"
+  resolved "https://registry.yarnpkg.com/serverless-wsgi/-/serverless-wsgi-1.7.7.tgz#0fba085737eadc0e5d15f4478f3adcc78c07a4ac"
+  integrity sha512-Xmd0GTyABxPHeNJwPSd4O1q+TP7mmwOQLGM0tiVFfKLrdlT/+wAvfD4Ihl2BhWauQq47/gKN0FpwL6bUZxeczw==
   dependencies:
     bluebird "^3.7.2"
-    fs-extra "^9.0.1"
+    fs-extra "^9.1.0"
     hasbin "^1.2.3"
-    lodash "^4.17.20"
+    lodash "^4.17.21"
 
 serverless@^1.83.3:
   version "1.83.3"

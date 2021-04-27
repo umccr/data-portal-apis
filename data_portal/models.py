@@ -88,7 +88,7 @@ class S3Object(models.Model):
     MySQL has character length limitation on unique indexes and since key column require to store
     lengthy path, unique_hash is sha256sum of bucket and key for unique indexes purpose.
     """
-
+    id = models.BigAutoField(primary_key=True)
     bucket = models.CharField(max_length=255)
     key = models.TextField()
     size = models.BigIntegerField()
@@ -110,6 +110,7 @@ class LIMSRow(models.Model):
     class Meta:
         unique_together = ['illumina_id', 'library_id']
 
+    id = models.BigAutoField(primary_key=True)
     illumina_id = models.CharField(max_length=255)
     run = models.IntegerField()
     timestamp = models.DateField()
@@ -154,6 +155,7 @@ class S3LIMS(models.Model):
     class Meta:
         unique_together = ['s3_object', 'lims_row']
 
+    id = models.BigAutoField(primary_key=True)
     s3_object = models.ForeignKey(S3Object, on_delete=models.CASCADE)
     lims_row = models.ForeignKey(LIMSRow, on_delete=models.CASCADE)
 
@@ -163,6 +165,7 @@ class Configuration(models.Model):
     Model that stores a configuration value
     Currently not used; but could be used for cases when we want to record the state of some data - e.g. LIMS file.
     """
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     value = models.TextField()
 
@@ -241,6 +244,7 @@ class GDSFile(models.Model):
     For composite (unique) key, it follows S3 style bucket + key pattern, see unique_hash.
     i.e. gds://volume_name/path ~ s3://bucket/key and, this full path must be unique globally.
     """
+    id = models.BigAutoField(primary_key=True)
     file_id = models.CharField(max_length=255)
     name = models.TextField()
     volume_id = models.CharField(max_length=255)
@@ -273,6 +277,7 @@ class SequenceRun(models.Model):
     class Meta:
         unique_together = ['run_id', 'date_modified', 'status']
 
+    id = models.BigAutoField(primary_key=True)
     run_id = models.CharField(max_length=255)
     date_modified = models.DateTimeField()
     status = models.CharField(max_length=255)
@@ -303,6 +308,7 @@ class FastqListRow(models.Model):
     class Meta:
         unique_together = ['rgid']
 
+    id = models.BigAutoField(primary_key=True)
     rgid = models.CharField(max_length=255)
     rgsm = models.CharField(max_length=255)
     rglb = models.CharField(max_length=255)
@@ -320,6 +326,7 @@ class Batch(models.Model):
     class Meta:
         unique_together = ['name', 'created_by']
 
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
     created_by = models.CharField(max_length=255)
     context_data = models.TextField(null=True, blank=True)
@@ -329,6 +336,7 @@ class Batch(models.Model):
 
 
 class BatchRun(models.Model):
+    id = models.BigAutoField(primary_key=True)
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
     step = models.CharField(max_length=255)
     running = models.BooleanField(null=True, blank=True)
@@ -392,6 +400,7 @@ class Workflow(models.Model):
     class Meta:
         unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
 
+    id = models.BigAutoField(primary_key=True)
     wfr_name = models.TextField(null=True, blank=True)
     sample_name = models.CharField(max_length=255, null=True, blank=True)
     type_name = models.CharField(max_length=255)
