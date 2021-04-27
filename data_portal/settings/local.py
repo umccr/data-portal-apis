@@ -10,10 +10,14 @@ from environ import Env
 
 from .base import *  # noqa
 
+
+db_conn_cfg = Env.db_url_config(os.getenv('PORTAL_DB_URL', 'mysql://root:root@localhost:3306/data_portal'))
+db_conn_cfg['OPTIONS'] = {
+    'max_allowed_packet': MYSQL_CLIENT_MAX_ALLOWED_PACKET,
+}
+
 DATABASES = {
-    'default': Env.db_url_config(
-        os.getenv('PORTAL_DB_URL', 'mysql://root:root@localhost:3306/data_portal')
-    )
+    'default': db_conn_cfg
 }
 
 INSTALLED_APPS += ('django_extensions',)

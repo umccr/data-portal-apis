@@ -61,7 +61,7 @@ functions:
       - schedule:
           rate: cron(0 12 * * ? *)
           enabled: ${self:custom.enabled.${opt:STAGE}, self:custom.enabled.other}
-    timeout: 28
+    timeout: 60
 
   sqs_s3_event_processor:
     handler: data_processors.s3.lambdas.s3_event.handler
@@ -71,10 +71,10 @@ functions:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
     timeout: 28
-    # FIXME enabled xray on this lambda. pls turn this off when no use
-    tracing: Active
-    environment:
-      AWS_XRAY_SDK_ENABLED: true
+    # Uncomment to enable xray on this lambda
+#    tracing: Active
+#    environment:
+#      AWS_XRAY_SDK_ENABLED: true
 
   sqs_report_event_processor:
     handler: data_processors.reports.lambdas.report_event.sqs_handler
@@ -83,11 +83,12 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_report_event_queue_arn}
-    timeout: 28
-    # FIXME enabled xray on this lambda. pls turn this off when no use
-    tracing: Active
-    environment:
-      AWS_XRAY_SDK_ENABLED: true
+    timeout: 60
+    memorySize: 4096
+    # Uncomment to enable xray on this lambda
+#    tracing: Active
+#    environment:
+#      AWS_XRAY_SDK_ENABLED: true
 
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler

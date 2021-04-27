@@ -1,5 +1,6 @@
 import logging
 import re
+import sys
 import uuid
 from typing import Tuple
 
@@ -160,7 +161,34 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
 
     s3_object: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
 
-    data = libjson.loads(libs3.get_s3_object_to_bytes(bucket, key))
+    decompressed_report: bytes = libs3.get_s3_object_to_bytes(bucket, key)
+
+    decompressed_report_size_in_bytes: int = sys.getsizeof(decompressed_report)
+    logger.info(f"Decompressed report size in bytes: {decompressed_report_size_in_bytes}")
+
+    if decompressed_report_size_in_bytes > const.MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES:
+        """NOTE: Here, report data is too large if > 150MB
+        We will just capture its metadata only and skip ingesting json data.
+        Based on offline debug study, it is known to require:
+            - RDS Aurora Serverless 8AU capacity (8*2GB ~16GB)
+            - Lambda processing memory 4096MB (4GB)
+            - 3x Lambda invocations 
+                - First 2 invocations raised OperationalError: (2013, 'Lost connection to MySQL server during query')
+                - That, in turns trigger scale up event for RDS Aurora Serverless cluster
+                - And, 3rd invocation got through at RDS Aurora 8AU capacity 
+            - Processing time elapse avg 44604.08 ms (~44s)
+            - For ingesting decompressed report json data size of 167009928 bytes (~167.01MB)  
+        """
+        msg = f"Report too large. Decompressed size in bytes: {decompressed_report_size_in_bytes}. " \
+              f"Capturing report metadata only. Skip ingesting report data: s3://{bucket}/{key}"
+        logger.warning(msg)
+        subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+            'key': key,
+            'message': msg,
+        }, 'sync_report_created')
+        data = None
+    else:
+        data = libjson.loads(decompressed_report)
 
     report = Report.objects.create_or_update_report(
         subject_id=subject_id,
@@ -175,6 +203,7 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
     subsegment.put_metadata(str(report.id.hex), {
         'key': key,
         'report': str(report),
+        'size': str(decompressed_report_size_in_bytes),
     }, 'sync_report_created')
 
     return report
