@@ -71,6 +71,60 @@ def update_step(wfr_id, wfv_id, wfr_event, context):
     return None
 
 
+def get_running_germline_runs(sequence_run: SequenceRun) -> list:
+    # use workflow helper class to find all Germline workflows for this SequenceRun
+    workflows = services.get_running_germline_runs(sequence_run)
+    return workflows
+
+
+def get_subjects_from_runs(workflows: list) -> list:
+    subjects = set()
+    for workflow in workflows:
+        # use workflow helper class to extract sample/library ID from workflow
+        library_id = services.get_library_id_from_workflow(workflow)
+        if library_id:
+            # use metadata helper class to get corresponding subject ID
+            subjects.add(services.get_subject_for_libary(library_id))
+        else:
+            # log or raise
+            continue
+
+    return list(subjects)
+
+
+def create_tn_job(subject_id: str) -> dict:
+    # use metadata helper class to retrieve all metadata records for the subject
+    records = services.get_records_for_subject(subject_id)
+    # extract tumor/normal pairs (taking into account Type, Topup, ReRun, ...)
+    tumor_records = list()
+    normal_records = list()
+    for record in records:
+        # TODO: perhaps model controlled values as enums rather than free text?
+        if record.type().lower() != constant.Type.WGS.value.lower():
+            continue
+        if record.phenotype.lower() == constant.Phenotype.TUMOR.value.lower():
+            tumor_records.append(record)
+        elif record.phenotype.lower() == constant.Phenotype.NORMAL.value.lower():
+            normal_records.append(record)
+        else:
+            # should be negative control, ignore
+            continue
+    # TODO: check library IDs, we should have only one each per tumor/normal
+    # TODO: sort out topup/rerun logic
+
+    # check if we have records at all in the metadata
+    if len(tumor_records) == 0 or len(normal_records) == 0:
+        return {}
+
+    # check if (all) FASTQs are available for T/N pairs
+    for t_record in tumor_records:
+        services.get_fastq_list_rows_by_library_id(t_record.library_id)
+
+    # create T/N job definition
+
+    return {}
+
+
 def next_step(this_workflow: Workflow, context):
     """determine next pipeline step based on this_workflow state from database
 
@@ -82,11 +136,11 @@ def next_step(this_workflow: Workflow, context):
         # skip if update_step has skipped
         return
 
+    this_sqr: SequenceRun = this_workflow.sequence_run
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
 
-        this_sqr: SequenceRun = this_workflow.sequence_run
         # a bcl convert workflow run association to a sequence run is very strong and
         # those logic impl this point onward depends on its attribute like sequence run name
         if this_sqr is None:
@@ -150,6 +204,23 @@ def next_step(this_workflow: Workflow, context):
             'batch_run_step': this_batch_run.step,
             'batch_run_status': "RUNNING" if this_batch_run.running else "NOT_RUNNING"
         }
+    elif this_workflow.type_name.lower() == WorkflowType.GERMLINE.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        # check if all other Germline workflows for this run have finished
+        # if yes we continue to the T/N workflow
+        # if not, we wait (until all Germline workflows have finished)
+        germline_runs_running = get_running_germline_runs(this_sqr)
+        if len(germline_runs_running) == 0:
+            job_list = list()
+            # determine which samples are available for T/N wokflow
+            subjects = get_subjects_from_runs(germline_runs_running)
+            for subject in subjects:
+                job = create_tn_job(subject)  # create T/N workflow job (if conditions are met)
+                if job:
+                    job_list.append(job)
+            if job_list:
+                queue_arn = libssm.get_ssm_param(constant.SQS_TN_QUEUE_ARN)
+                libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
 
 
 def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
