@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+"""addreport
+
+Add report from S3 URI location. This ad-hoc command is mainly for local dev purpose.
+
+Usage:
+    aws sso login --profile dev && export AWS_PROFILE=dev
+    make up
+    export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+    python manage.py migrate
+    python manage.py help addreport
+    time python manage.py addreport s3://my_bucket/path/to/file.json.gz
+"""
 import logging
 import sys
 from datetime import datetime
@@ -18,15 +31,7 @@ def set_db_debug():
 
 
 class Command(BaseCommand):
-    """
-    Add report from S3 URI location. This ad-hoc command is mainly for local dev purpose.
-    Usage:
-        aws sso login --profile dev && export AWS_PROFILE=dev
-        export DJANGO_SETTINGS_MODULE=data_portal.settings.local
-        python manage.py migrate
-        python manage.py help addreport
-        time python manage.py addreport s3://my_bucket/path/to/file.json.gz
-    """
+
     def add_arguments(self, parser: CommandParser):
         parser.add_argument('path', help="S3 URI e.g. s3://my_bucket/path/to/report_file.json.gz")
 

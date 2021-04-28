@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
-from utils import libs3, libjson, iap
+from utils import libs3, libjson, ica
 from .models import LIMSRow, S3Object, GDSFile, Report
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
@@ -142,7 +142,7 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
     @action(detail=True)
     def presign(self, request, pk=None):
         obj: GDSFile = self.get_object()
-        response = iap.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
+        response = ica.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
         if response[0]:
             return Response({'signed_url': response[1]})
         else:

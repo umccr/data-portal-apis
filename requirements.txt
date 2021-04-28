@@ -11,8 +11,6 @@ python-dateutil==2.8.1
 google-api-python-client==2.2.0
 google-auth==1.30.0
 Werkzeug==1.0.1
-# Note: when bump libiap version, see swagger/README.md
-libiap==0.3.0
 libica==0.5.0
 gspread==3.7.0
 gspread-pandas==2.3.0

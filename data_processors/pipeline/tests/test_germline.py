@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 from django.utils.timezone import make_aware
-from libiap.openapi import libwes
+from libica.openapi import libwes
 from mockito import when
 
 from data_portal.models import Workflow, SequenceRun, BatchRun
@@ -151,28 +151,30 @@ class GermlineUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tests.test_germline.GermlineUnitTests.test_sqs_handler
         """
 
+        mock_sqr: SequenceRun = SequenceRunFactory()
+
         mock_job = {
-                      "sample_name": "SAMPLE_NAME",
-                      "fastq_list_rows": [
-                          {
-                              "rgid": "index1.index2.lane",
-                              "rgsm": "sample_name",
-                              "rglb": "sample_library",
-                              "lane": 1,
-                              "read_1": {
-                                  "class": "File",
-                                  "location": "gds://path/to/read_1.fastq.gz"
-                              },
-                              "read_2": {
-                                  "class": "File",
-                                  "location": "gds://path/to/read_2.fastq.gz"
-                              }
-                          }
-                      ],
-                      "seq_run_id": "sequence run id",
-                      "seq_name": "sequence run name",
-                      "batch_run_id": 1
-                      }
+            "sample_name": "SAMPLE_NAME",
+            "fastq_list_rows": [
+                {
+                    "rgid": "index1.index2.lane",
+                    "rgsm": "sample_name",
+                    "rglb": "sample_library",
+                    "lane": 1,
+                    "read_1": {
+                        "class": "File",
+                        "location": "gds://path/to/read_1.fastq.gz"
+                    },
+                    "read_2": {
+                        "class": "File",
+                        "location": "gds://path/to/read_2.fastq.gz"
+                    }
+                }
+            ],
+            "seq_run_id": mock_sqr.run_id,
+            "seq_name": mock_sqr.name,
+            "batch_run_id": 1
+        }
 
         mock_event = {
             'Records': [

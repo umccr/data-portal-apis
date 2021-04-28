@@ -197,7 +197,7 @@ custom:
   pythonRequirements:
     layer: true
     dockerizePip: non-linux
-    zip: true
+    zip: false
     slim: true
     slimPatternsAppendDefaults: false
     slimPatterns:
@@ -218,16 +218,29 @@ custom:
 
 package:
   exclude:
+    - .husky/**
+    - .git/**
+    - .idea/**
+    - __pycache__/**
     - node_modules/**
+    - package.json
+    - yarn.lock
     - mocks/**
     - downloads/**
     - venv/**
     - .venv/**
     - env/**
     - data/**
+    - swagger/**
     - docker-compose.yml
     - docker-compose.override.sample.yml
+    - docker-compose.override.ci.yml
     - docker-compose.override.yml
+    - buildspec.yml
+    - Makefile
+    - README.md
+    - requirements-dev.txt
+    - requirements-test.txt
     - haproxy.cfg
-    - start.sh
     - loaddata.sh
+    - syncdkr.sh

@@ -13,7 +13,7 @@ django.setup()
 
 import logging
 
-from libiap.openapi import libwes
+from libica.openapi import libwes
 
 from data_processors.pipeline import constant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowRunEventType
@@ -40,7 +40,7 @@ def configuration():
     )
 
     # WARNING: only in local debug purpose, should never be committed uncommented!
-    # it print stdout all libiap.openapi http calls activity including JWT token in http header
+    # it print stdout all libica.openapi http calls activity including JWT token in http header
     # config.debug = True
 
     return config

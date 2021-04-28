@@ -27,7 +27,7 @@ def configuration(lib):
     )
 
     # WARNING: only in local debug purpose, should never be committed uncommented!
-    # it print stdout all libiap.openapi http calls activity including JWT token in http header
+    # it print stdout all libica.openapi http calls activity including JWT token in http header
     # config.debug = True
 
     return config
