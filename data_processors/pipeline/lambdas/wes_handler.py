@@ -15,35 +15,11 @@ import logging
 
 from libica.openapi import libwes
 
-from data_processors.pipeline import constant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowRunEventType
-from utils import libssm, libjson
+from utils import libjson, ica
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
-def configuration():
-    iap_auth_token = os.getenv("IAP_AUTH_TOKEN", None)
-    if iap_auth_token is None:
-        iap_auth_token = libssm.get_secret(constant.IAP_JWT_TOKEN)
-    iap_base_url = os.getenv("IAP_BASE_URL", constant.IAP_BASE_URL)
-
-    config = libwes.Configuration(
-        host=iap_base_url,
-        api_key={
-            'Authorization': iap_auth_token
-        },
-        api_key_prefix={
-            'Authorization': "Bearer"
-        },
-    )
-
-    # WARNING: only in local debug purpose, should never be committed uncommented!
-    # it print stdout all libica.openapi http calls activity including JWT token in http header
-    # config.debug = True
-
-    return config
 
 
 def launch(event, context) -> dict:
@@ -64,7 +40,7 @@ def launch(event, context) -> dict:
     logger.info(f"Start processing WES workflow launch event")
     logger.info(libjson.dumps(event))
 
-    with libwes.ApiClient(configuration()) as api_client:
+    with libwes.ApiClient(ica.configuration(libwes)) as api_client:
         version_api = libwes.WorkflowVersionsApi(api_client)
         workflow_id = event['workflow_id']
         workflow_version = event['workflow_version']
@@ -107,7 +83,7 @@ def get_workflow_run(event, context) -> dict:
     wfr_id = event['wfr_id']
     wfr_event = event.get('wfr_event')
 
-    with libwes.ApiClient(configuration()) as api_client:
+    with libwes.ApiClient(ica.configuration(libwes)) as api_client:
         run_api = libwes.WorkflowRunsApi(api_client)
 
         try:

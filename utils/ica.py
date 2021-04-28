@@ -4,17 +4,19 @@ import os
 from libica.openapi import libgds
 from libica.openapi.libgds import FileResponse
 
-from data_processors.pipeline import constant
 from utils import libssm
 
 logger = logging.getLogger(__name__)
+
+ICA_BASE_URL = "https://aps2.platform.illumina.com"
+ICA_JWT_TOKEN = "/iap/jwt-token"
 
 
 def configuration(lib):
     ica_access_token = os.getenv("ICA_ACCESS_TOKEN", None)
     if ica_access_token is None:
-        ica_access_token = libssm.get_secret(constant.IAP_JWT_TOKEN)
-    ica_base_url = os.getenv("ICA_BASE_URL", constant.IAP_BASE_URL)
+        ica_access_token = libssm.get_secret(ICA_JWT_TOKEN)
+    ica_base_url = os.getenv("ICA_BASE_URL", ICA_BASE_URL)
 
     config = lib.Configuration(
         host=ica_base_url,

@@ -1,6 +1,6 @@
 aws-xray-sdk==2.7.0
-boto3==1.17.58
-botocore==1.20.58
+boto3==1.17.59
+botocore==1.20.59
 Django==3.2
 django-environ==0.4.5
 django-cors-headers==3.7.0
@@ -17,4 +17,4 @@ gspread-pandas==2.3.0
 sample-sheet==0.12.0
 requests==2.25.1
 pandas==1.2.4
-cachetools==4.2.1
+cachetools==4.2.2

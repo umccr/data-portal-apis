@@ -103,6 +103,7 @@ class ReportModelUnitTests(ReportUnitTestCase):
             type=ReportType.PURPLE_CNV_SOM,
             created_by="me",
             data=mock_data,
+            s3_object=None,
         )
 
         # save it to db

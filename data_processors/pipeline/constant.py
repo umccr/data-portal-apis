@@ -8,10 +8,8 @@ Or consider Helper class-ing where composite builder is needed.
 from enum import Enum
 
 
-IAP_BASE_URL = "https://aps2.platform.illumina.com"
-IAP_GDS_FASTQ_VOL = "/iap/gds/fastq_vol"
-IAP_WORKFLOW_PREFIX = "/iap/workflow"
-IAP_JWT_TOKEN = "/iap/jwt-token"
+ICA_GDS_FASTQ_VOL = "/iap/gds/fastq_vol"
+ICA_WORKFLOW_PREFIX = "/iap/workflow"
 
 SQS_GERMLINE_QUEUE_ARN = "/data_portal/backend/sqs_germline_queue_arn"
 SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"
@@ -81,16 +79,16 @@ class WorkflowHelper(Helper):
         self.name = name
 
     def get_ssm_key_id(self):
-        return f"{IAP_WORKFLOW_PREFIX}/{self.name}/id"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/id"
 
     def get_ssm_key_version(self):
-        return f"{IAP_WORKFLOW_PREFIX}/{self.name}/version"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/version"
 
     def get_ssm_key_input(self):
-        return f"{IAP_WORKFLOW_PREFIX}/{self.name}/input"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/input"
 
     def get_ssm_key_engine_parameters(self):
-        return f"{IAP_WORKFLOW_PREFIX}/{self.name}/engine_parameters"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/engine_parameters"
 
     def get_sample_type_settings(self, sample_type):
-        return f"{IAP_WORKFLOW_PREFIX}/{self.name}/{sample_type}_settings"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/{sample_type}_settings"
