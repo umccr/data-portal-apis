@@ -98,12 +98,12 @@ class ReportModelUnitTests(ReportUnitTestCase):
         # instantiate a Report
         report = Report(
             subject_id="SBJ00001",
-            sample_id="MDX111111",
-            library_id="L12345678",
+            sample_id="MDX000001",
+            library_id="L0000001",
             type=ReportType.PURPLE_CNV_SOM,
             created_by="me",
             data=mock_data,
-            s3_object=None,
+            s3_object=factories.ReportLinkedS3ObjectFactory(),
         )
 
         # save it to db
@@ -113,7 +113,7 @@ class ReportModelUnitTests(ReportUnitTestCase):
         self.assertEqual(1, Report.objects.count())
 
         # query back: get report(s) by sample id
-        qs: QuerySet = Report.objects.filter(sample_id="MDX111111")
+        qs: QuerySet = Report.objects.filter(sample_id="MDX000001")
 
         # simply qs.get() it since we know that there is only 1 record, otherwise should qs.all()
         # and iterate all matched records for query `sample_id` condition

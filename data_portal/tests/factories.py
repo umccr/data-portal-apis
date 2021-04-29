@@ -163,6 +163,17 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
     notified = True
 
 
+class ReportLinkedS3ObjectFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = S3Object
+
+    bucket = 'some-bucket'
+    key = factory.Sequence(lambda n: 'cancer_report_tables/SBJ00001__SBJ00001_MDX000001_L0000001_%d.json.gz' % n)
+    size = 1000
+    last_modified_date = now()
+    e_tag = 'etag'
+
+
 class ReportFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Report
@@ -174,7 +185,7 @@ class ReportFactory(factory.django.DjangoModelFactory):
 
     type = "unknown"
     data = None
-    s3_object = None
+    s3_object = factory.SubFactory(ReportLinkedS3ObjectFactory)
 
 
 class HRDChordReportFactory(ReportFactory):

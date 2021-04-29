@@ -34,7 +34,7 @@ load_localstack:
 	@. ./loaddata.sh; load_localstack
 
 test: load_localstack
-	@pip install -r requirements-test.txt
+	@pip install -r requirements-dev.txt
 	@echo $$DJANGO_SETTINGS_MODULE
 	@python manage.py migrate
 	@python manage.py test

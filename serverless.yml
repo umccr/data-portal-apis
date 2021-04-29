@@ -195,14 +195,12 @@ custom:
     hooks:
       'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
-    layer: true
     dockerizePip: non-linux
+    layer: true
     zip: false
     slim: true
-    slimPatternsAppendDefaults: false
-    slimPatterns:
-      - '**/*.py[c|o]'
-      - '**/__pycache__*'
+    slimPatternsAppendDefaults: true
+    slimPatterns: ${file(slimpatterns.yml):slimPatterns}
   customDomain:
     domainName: ${ssm:/data_portal/backend/api_domain_name}
     basePath: ''
