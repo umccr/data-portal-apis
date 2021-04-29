@@ -51,7 +51,7 @@ functions:
     handler: migrate.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
-    timeout: 28
+    timeout: 120
 
   lims_scheduled_update_processor:
     handler: data_processors.lims.lambdas.google_lims.scheduled_update_handler
@@ -193,7 +193,7 @@ custom:
     packRequirements: false
   scripts:
     hooks:
-      'deploy:finalize': SLS_DEBUG=true sls invoke -f migrate --STAGE ${opt:STAGE} --noinput
+      'deploy:finalize': SLS_DEBUG=true npx serverless invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
     dockerizePip: non-linux
     layer: true
@@ -235,6 +235,7 @@ package:
     - docker-compose.override.ci.yml
     - docker-compose.override.yml
     - buildspec.yml
+    - slimpatterns.yml
     - Makefile
     - README.md
     - requirements-dev.txt
