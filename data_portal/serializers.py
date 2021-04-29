@@ -3,7 +3,7 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow, GDSFile
+from data_portal.models import S3Object, LIMSRow, GDSFile, Report
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 
@@ -194,8 +194,11 @@ class RunIdSerializer(serializers.BaseSerializer):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
 
 class ReportIdSerializer(serializers.BaseSerializer):
+#    def to_representation(self, instance):
+#        return instance.id
+    
     def to_representation(self, instance):
-        return instance.sample_id
+        return instance.id
 
     def to_internal_value(self, data):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
