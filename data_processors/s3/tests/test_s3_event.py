@@ -1,9 +1,12 @@
 import json
+import logging
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
+from django.test import override_settings
 
-from data_portal.models import LIMSRow, S3Object, S3LIMS
+from data_portal.models import LIMSRow, S3Object, S3LIMS, Report
+from data_portal.tests import factories
 from data_processors.s3.lambdas import s3_event
 from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase, logger
 from data_processors.s3.tests.test_helper import MOCK_REPORT_EVENT
@@ -153,6 +156,50 @@ class S3EventUnitTests(S3EventUnitTestCase):
         results = s3_event.handler(MOCK_REPORT_EVENT, None)
         logger.info(json.dumps(results))
         self.assertEqual(results['created_count'], 1)
+
+    @override_settings(DEBUG=True)
+    def test_delete_s3_object_linked_with_report(self):
+        """
+        python manage.py test -v 3 data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_delete_s3_object_linked_with_report
+        """
+        logging.getLogger('django.db.backends').setLevel(logging.DEBUG)
+
+        mock_report: Report = factories.HRDetectReportFactory()
+        mock_s3_object: S3Object = factories.ReportLinkedS3ObjectFactory()
+        mock_report.s3_object_id = mock_s3_object.id
+        mock_report.save()
+
+        s3_event_message = {
+            "Records": [
+                {
+                    "eventTime": "2019-01-01T00:00:00.000Z",
+                    "eventName": "ObjectRemoved",
+                    "s3": {
+                        "bucket": {
+                            "name": f"{mock_s3_object.bucket}",
+                        },
+                        "object": {
+                            "key": f"{mock_s3_object.key}",
+                            "size": 1,
+                            "eTag": "object eTag",
+                        }
+                    }
+                }
+            ]
+        }
+
+        sqs_event = {
+            "Records": [
+                {
+                    "body": json.dumps(s3_event_message),
+                }
+            ]
+        }
+
+        s3_event.handler(sqs_event, None)
+
+        report_in_db = Report.objects.get(id__exact=mock_report.id)
+        self.assertIsNotNone(report_in_db.s3_object_id)
 
 
 class S3EventIntegrationTests(S3EventIntegrationTestCase):

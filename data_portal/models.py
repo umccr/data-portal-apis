@@ -468,7 +468,7 @@ class ReportManager(models.Manager):
 
         report.created_by = created_by
         report.data = data
-        report.s3_object = s3_object
+        report.s3_object_id = None if s3_object is None else s3_object.id
         report.save()
         return report
 
@@ -485,7 +485,7 @@ class Report(models.Model):
     created_by = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
 
-    s3_object = models.OneToOneField(S3Object, on_delete=models.SET_NULL, null=True, blank=True)
+    s3_object_id = models.BigIntegerField(null=True, blank=True)
 
     objects = ReportManager()
 

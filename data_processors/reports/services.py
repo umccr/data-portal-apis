@@ -159,7 +159,7 @@ def persist_report(bucket: str, key: str, event_type):
 def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
     subsegment = xray_recorder.current_subsegment()
 
-    s3_object: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
+    qs: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
 
     decompressed_report: bytes = libs3.get_s3_object_to_bytes(bucket, key)
 
@@ -197,7 +197,7 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
         report_type=report_type,
         created_by=const.CANCER_REPORT_TABLES if const.CANCER_REPORT_TABLES in key else None,
         data=data,
-        s3_object=s3_object.get() if s3_object.exists() else None
+        s3_object=qs.get() if qs.exists() else None
     )
 
     subsegment.put_metadata(str(report.id.hex), {

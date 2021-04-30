@@ -232,8 +232,8 @@ package:
     - swagger/**
     - docker-compose.yml
     - docker-compose.override.sample.yml
-    - docker-compose.override.ci.yml
     - docker-compose.override.yml
+    - docker-compose.ci.yml
     - buildspec.yml
     - slimpatterns.yml
     - Makefile

@@ -185,7 +185,7 @@ class ReportFactory(factory.django.DjangoModelFactory):
 
     type = "unknown"
     data = None
-    s3_object = factory.SubFactory(ReportLinkedS3ObjectFactory)
+    s3_object_id = None
 
 
 class HRDChordReportFactory(ReportFactory):
