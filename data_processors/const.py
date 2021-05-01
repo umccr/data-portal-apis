@@ -13,5 +13,5 @@ LIMS_SHEET_ID = "/umccr/google/drive/lims_sheet_id"
 JSON_GZ = "json.gz"
 CANCER_REPORT_TABLES = "cancer_report_tables"
 
-# Operational limit for decompressed report json data size ~150MB
-MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES = 150000000
+# Operational limit for decompressed report json data size ~10MB
+MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES = 11000000
