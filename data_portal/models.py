@@ -228,8 +228,16 @@ class LabMetadata(models.Model):
     Models a row in the lab tracking sheet data. Fields are the columns.
     """
 
-    library_id = models.CharField(max_length=255,unique=True,blank=False)   
-    #external_library_id = models.CharField(max_length=255) # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet. do we want to store clarity-generated lib id, and what do we want to call it?
+    # Portal internal auto incremental PK ID. Scheme may change as need be and may rebuild thereof.
+    # External system or business logic should not rely upon this ID field.
+    # Use any of unique fields or <>_id fields below.
+    id = models.BigAutoField(primary_key=True)
+
+    # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet.
+    #  do we want to store clarity-generated lib id, and what do we want to call it?
+    # external_library_id = models.CharField(max_length=255)
+
+    library_id = models.CharField(max_length=255,unique=True,blank=False)
     sample_name = models.CharField(max_length=255,blank=False)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)

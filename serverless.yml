@@ -63,6 +63,16 @@ functions:
           enabled: ${self:custom.enabled.${opt:STAGE}, self:custom.enabled.other}
     timeout: 60
 
+  labmetadata_scheduled_update_processor:
+    handler: data_processors.lims.lambdas.labmetadata.scheduled_update_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - schedule:
+          rate: cron(0 12 * * ? *)
+          enabled: ${self:custom.enabled.${opt:STAGE}, self:custom.enabled.other}
+    timeout: 60
+
   sqs_s3_event_processor:
     handler: data_processors.s3.lambdas.s3_event.handler
     layers:
