@@ -147,6 +147,112 @@ class LIMSRow(models.Model):
     S3_LINK_ATTRS = ('subject_id', 'sample_id')
 
 
+class LabMetadataType(models.TextChoices):
+    CT_DNA = "ctDNA"
+    CT_TSO = "ctTSO"
+    EXOME = "exome"
+    OTHER = "other"
+    TEN_X = "10X"
+    TSO_DNA = "TSO-DNA"
+    TSO_RNA = "TSO-RNA"
+    WGS = "WGS"
+    WTS = "WTS"
+
+
+class LabMetadataPhenotype(models.TextChoices):
+    N_CONTROL = "negative-control"
+    NORMAL = "normal"
+    TUMOR = "tumor"
+
+
+class LabMetadataAssay(models.TextChoices):
+    AG_SS_CRE = "AgSsCRE"
+    CT_TSO = "ctTSO"
+    NEB_DNA = "NebDNA"
+    NEB_DNA_U = "NebDNAu"
+    NEB_RNA = "NebRNA"
+    PCR_FREE = "PCR-Free-Tagmentation"
+    TEN_X_3PRIME = "10X-3prime-expression"
+    TEN_X_5PRIME = "10X-5prime-expression"
+    TEN_X_ATAC = "10X-ATAC"
+    TEN_X_CITE_FEAT = "10X-CITE-feature"
+    TEN_X_CITE_HASH = "10X-CITE-hashing"
+    TEN_X_CNV = "10X-CNV"
+    TEN_X_VDJ = "10X-VDJ"
+    TEN_X_VDJ_TCR = "10X-VDJ-TCR"
+    TSO_DNA = "TSODNA"
+    TSO_RNA = "TSORNA"
+    TSQ_NANO = "TsqNano"
+    TSQ_STR = "TsqSTR"
+
+
+class LabMetadataQuality(models.TextChoices):
+    BORDERLINE = "borderline"
+    GOOD = "good"
+    POOR = "poor"
+    VERY_POOR = "VeryPoor"
+
+
+class LabMetadataSource(models.TextChoices):
+    ACITES = "ascites"
+    BLOOD = "blood"
+    BONE = "bone-marrow"
+    BUCCAL = "buccal"
+    CELL_LINE = "cell-line"
+    CF_DNA = "cfDNA"
+    CYST = "cyst-fluid"
+    DNA = "DNA"
+    EYEBROW = "eyebrow-hair"
+    FFPE = "FFPE"
+    FNA = "FNA"
+    OCT = "OCT"
+    ORGANOID = "organoid"
+    PDX = "PDX-tissue"
+    PLASMA = "plasma-serum"
+    RNA = "RNA"
+    TISSUE = "tissue"
+    WATER = "water"
+
+
+class LabMetadataWorkflow(models.TextChoices):
+    BCL = "bcl"
+    CLINICAL = "clinical"
+    CONTROL = "control"
+    MANUAL = "manual"
+    QC = "qc"
+    RESEARCH = "research"
+
+
+class LabMetadata(models.Model):
+    """
+    Models a row in the lab tracking sheet data. Fields are the columns.
+    """
+
+    library_id = models.CharField(max_length=255,unique=True,blank=False)   
+    #external_library_id = models.CharField(max_length=255) # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet. do we want to store clarity-generated lib id, and what do we want to call it?
+    sample_name = models.CharField(max_length=255,blank=False)
+    sample_id = models.CharField(max_length=255)
+    external_sample_id = models.CharField(max_length=255, null=True, blank=True)
+    subject_id = models.CharField(max_length=255, null=True, blank=True)
+    external_subject_id = models.CharField(max_length=255, null=True, blank=True)
+    phenotype = models.CharField(choices=LabMetadataPhenotype.choices, max_length=255)
+    quality = models.CharField(choices=LabMetadataSource.choices, max_length=255)
+    source = models.CharField(choices=LabMetadataSource.choices, max_length=255)
+    project_name = models.CharField(max_length=255, null=True, blank=True)
+    project_owner = models.CharField(max_length=255, null=True, blank=True)
+    experiment_id = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(choices=LabMetadataType.choices, max_length=255)
+    assay = models.CharField(choices=LabMetadataAssay.choices, max_length=255)
+    override_cycles = models.CharField(max_length=255, null=True, blank=True)
+    workflow = models.CharField(choices=LabMetadataWorkflow.choices, max_length=255)
+    coverage = models.CharField(max_length=255, null=True, blank=True)
+    truseqindex = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
+               % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
+
+
 class S3LIMS(models.Model):
     """
     Models the association between a S3 object and a LIMS row

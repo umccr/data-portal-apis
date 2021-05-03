@@ -6,8 +6,15 @@ from typing import Dict
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
+import operator
+import traceback
+import pandas as pd
+import numpy as np
+from collections import namedtuple
+from functools import reduce
 
-from data_portal.models import LIMSRow
+from data_portal.models import LIMSRow, LabMetadata
 from utils import libdt
 
 logger = logging.getLogger(__name__)
@@ -130,3 +137,142 @@ def __csv_column_to_field_name(column_name: str) -> str:
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', column_name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+@transaction.atomic
+def persist_labmetadata(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, int]:
+    """
+    Persist labmetadata from a pandas dataframe into the db
+    :param df: dataframe to persist
+    :param rewrite: whether we are rewriting the data
+    :return: result statistics - count of updated, new and invalid LabMetadata rows
+    """
+    df_starting_len = len(df.index)
+    logger.info(f"Start processing LabMetadata data")
+    if rewrite:
+        # Delete all rows first
+        logger.info("REWRITE MODE: Deleting all existing records")
+        LabMetadata.objects.all().delete()
+
+    # clean the DF and reset the index
+    df = df.applymap(_clean_datacell)
+    df = df.drop_duplicates()
+    df = _remove_rows_with_empty_required_cols(df)
+    df = df.reset_index(drop=True)
+
+    # Below code assumes a labmetadata's unique identifier is a tuple of library_id and sample_name
+
+    # Assemble a df of entries to update by first querying for existing labmetadatas 
+    libids_samplenames = list(zip( df['library_id'].tolist(),  df['sample_name'].tolist() ))
+    query = reduce(operator.or_, (Q(library_id=l, sample_name=s) for l, s in libids_samplenames))
+    existing_labmetadatas = LabMetadata.objects.filter(query)
+    existing_identifier_tuples = tuple((lm.library_id, lm.sample_name) for lm in existing_labmetadatas)
+    df_to_update =  df[pd.Series(list(zip(df['library_id'], df['sample_name']))).isin(existing_identifier_tuples)]
+    
+    # Assemble df of entries to create.
+    df_to_create = df.append(df_to_update)
+    df_to_create = df_to_create[~df_to_create.index.duplicated(keep=False)]
+
+    # Create labmetadata ojbects
+    try:
+        instances_insert = _make_labmetadata_instances_from_dataframe(df_to_create)
+        rows_created = LabMetadata.objects.bulk_create(instances_insert,batch_size=100)
+    except Exception as e:
+        logger.error("Error bulk creating objects! No new rows created")
+        logger.error(e)   
+        logger.debug(traceback.format_exc())
+        rows_created = []
+        raise 
+
+    # Update labmetadatas
+    rows_updated = 0
+    for row in df_to_update.itertuples():
+        rows_updated += _update_labmetadata_instance(row)
+
+    logger.debug("Updated " + str((rows_updated)))
+    logger.debug("New " + str(len(rows_created)))
+    logger.debug("Invalid " + str(len(df.index) - len(rows_created) - rows_updated ))
+
+    return {
+        'labmetadata_row_update_count':rows_updated,
+        'labmetadata_row_new_count': len(rows_created),
+        'labmetadata_row_invalid_count': df_starting_len - len(rows_created) - rows_updated
+    }
+
+def _clean_datacell(value):
+    #python NaNs are != to themselves
+    if value == '-' or value == np.nan or value != value:
+        value = ''
+    if (isinstance(value,str) and value.strip() == ''):
+        value = ''
+    return value
+    
+def _remove_rows_with_empty_required_cols(df):
+   df.library_id = df.library_id.replace('', np.nan)
+   df.sample_id = df.sample_id.replace('', np.nan)
+   df.sample_name = df.sample_name.replace('', np.nan)
+   df = df.dropna(axis=0,subset=['sample_name','library_id','sample_id'])   
+   return df
+
+def _make_labmetadata_instances_from_dataframe(df):
+    """
+    for each row in dataframe, make a LabMetadata object from it
+    :param df: dataframe to turn into LabMetadata object instances
+    """
+    df_records = df.to_dict('records')
+    
+    model_instances = [LabMetadata(
+        library_id=record['library_id'],
+        sample_name=record['sample_name'],
+        sample_id=record['sample_id'],
+        external_sample_id=record['external_sample_id'],
+        subject_id=record['subject_id'],
+        external_subject_id=record['external_subject_id'],
+        phenotype=record['phenotype'],
+        quality=record['quality'],
+        source=record['source'],
+        project_name=record['project_name'],
+        project_owner=record['project_owner'],
+        experiment_id=record['experiment_id'],
+        type=record['type'],
+        assay=record['assay'],
+        override_cycles=record['override_cycles'],
+        workflow=record['workflow'],
+        coverage=record['coverage'],
+        truseqindex=record['truseqindex']
+    ) for record in df_records]
+    return model_instances
+
+def _update_labmetadata_instance(row: namedtuple):
+    """
+    update a single metadata instance determined by library_id and sample_name
+    :param row: new parameters to set on a labmetadata that matches row.library_id and row.sample_name
+    """
+    try:
+        return LabMetadata.objects.filter(
+            library_id=row.library_id,
+            sample_name=row.sample_name,
+        ).update(
+            library_id=row.library_id,
+            sample_name=row.sample_name,
+            sample_id=row.sample_id,
+            external_sample_id=row.external_sample_id,
+            subject_id=row.subject_id,
+            external_subject_id=row.external_subject_id,
+            phenotype=row.phenotype,
+            quality=row.quality,
+            source=row.source,
+            project_name=row.project_name,
+            project_owner=row.project_owner,
+            experiment_id=row.experiment_id,
+            type=row.type,
+            assay=row.assay,
+            override_cycles=row.override_cycles,
+            workflow=row.workflow,
+            coverage=row.coverage,
+            truseqindex=row.truseqindex
+        )
+    except Exception as e:
+        logger.error("Error trying to update item with library id " + str(row.library_id) + " sample name " + str(row.sample_name))
+        logger.error(e)
+        logger.debug(traceback.format_exc())
+        raise() # bail on error - dont let updates happen
