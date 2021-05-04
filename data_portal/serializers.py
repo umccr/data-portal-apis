@@ -3,7 +3,7 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow, GDSFile
+from data_portal.models import S3Object, LIMSRow, GDSFile, LabMetadata
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 
@@ -157,6 +157,11 @@ class S3ObjectSerializer(serializers.Serializer):
 class LIMSRowModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = LIMSRow
+        fields = '__all__'
+
+class LabMetadataModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabMetadata
         fields = '__all__'
 
 
