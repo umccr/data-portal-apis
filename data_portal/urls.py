@@ -9,7 +9,7 @@ from .routers import OptionalSlashDefaultRouter
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
-router.register(r'labmeta', LabMetadataViewSet, basename='labmeta')
+router.register(r'metadata', LabMetadataViewSet, basename='metadata')
 router.register(r's3', S3ObjectViewSet, basename='s3')
 router.register(r'gds', GDSFileViewSet, basename='gds')
 router.register(r'buckets', BucketViewSet, basename='buckets')
