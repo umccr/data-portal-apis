@@ -22,11 +22,6 @@ LIMS_SEARCH_ORDER_FIELDS = [
     'library_id', 'external_sample_id', 'project_name', 'illumina_id',
 ]
 
-LAB_METADATA_SEARCH_ORDER_FIELDS = [
-    'library_id', 'subject_id', 'timestamp', 'sample_id', 'external_subject_id','phenotype', 'external_sample_id'
-]
-
-
 def _presign_response(bucket, key):
     response = libs3.presign_s3_file(bucket, key)
     if response[0]:
@@ -49,7 +44,7 @@ class LabMetadataViewSet(ReadOnlyModelViewSet):
     serializer_class = LabMetadataModelSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = LAB_METADATA_SEARCH_ORDER_FIELDS
+    ordering_fields = '__all__'
     ordering = ['library_id']
     search_fields = ordering_fields
 
