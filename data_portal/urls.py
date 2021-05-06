@@ -2,14 +2,14 @@ from django.urls import path, include
 from rest_framework_nested import routers
 
 from data_portal import views
-from .viewsets import LIMSRowViewSet, LabMetadataViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, SubjectS3ObjectViewSet, \
+from .viewsets import LIMSRowViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, SubjectS3ObjectViewSet, \
     RunViewSet, PresignedUrlViewSet, RunDataLIMSViewSet, RunDataS3ObjectViewSet, SubjectGDSFileViewSet, \
-    RunDataGDSFileViewSet, GDSFileViewSet, ReportViewSet, SubjectLabMetadataViewSet
+    RunDataGDSFileViewSet, GDSFileViewSet, ReportViewSet, SubjectLabMetadataViewSet, LabMetadataViewSet
 from .routers import OptionalSlashDefaultRouter
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
-router.register(r'labmeta', LabMetadataViewSet, basename='labmeta')
+router.register(r'metadata', LabMetadataViewSet, basename='metadata')
 router.register(r's3', S3ObjectViewSet, basename='s3')
 router.register(r'gds', GDSFileViewSet, basename='gds')
 router.register(r'buckets', BucketViewSet, basename='buckets')
@@ -17,7 +17,6 @@ router.register(r'subjects', SubjectViewSet, basename='subjects')
 router.register(r'runs', RunViewSet, basename='runs')
 router.register(r'reports', ReportViewSet, basename='reports')
 router.register(r'presign', PresignedUrlViewSet, basename='presign')
-
 
 subjects_router = routers.NestedDefaultRouter(router, r'subjects', lookup='subject')
 subjects_router.register(r'labmeta', SubjectLabMetadataViewSet, basename='subject-labmeta')
