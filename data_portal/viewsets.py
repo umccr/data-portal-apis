@@ -13,7 +13,7 @@ from .models import LIMSRow, S3Object, GDSFile, Report
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
-    BucketIdSerializer, GDSFileModelSerializer, ReportIdSerializer
+    BucketIdSerializer, GDSFileModelSerializer, ReportSerializer
 
 logger = logging.getLogger()
 
@@ -268,22 +268,13 @@ class RunViewSet(ReadOnlyModelViewSet):
 
 
 class ReportViewSet(ReadOnlyModelViewSet):
-    queryset = Report.objects.values_list('sample_id', named=True).filter(sample_id__isnull=False).distinct()
-    serializer_class = ReportIdSerializer
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = ['sample_id']
-    ordering = ['-sample_id']
+    ordering_fields = '__all__'
+    ordering = ['-subject_id']
     search_fields = ordering_fields
-
-    def retrieve(self, request, pk=None, **kwargs):
-        data = {
-            'id': pk,
-            'reports': {
-                'count': Report.objects.filter(sample_id=pk).count()
-            },
-        }
-        return Response(data)
 
 
 class RunDataS3ObjectViewSet(ReadOnlyModelViewSet):
