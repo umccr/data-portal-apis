@@ -159,6 +159,7 @@ class LIMSRowModelSerializer(serializers.ModelSerializer):
         model = LIMSRow
         fields = '__all__'
 
+
 class LabMetadataModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabMetadata
