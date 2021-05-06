@@ -198,7 +198,7 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
 
         data.update(
-            labmeta={
+            metadata={
                 'count': LabMetadata.objects.filter(subject_id=pk).count(),
                 'next': self._base_url('metadata')
             })
