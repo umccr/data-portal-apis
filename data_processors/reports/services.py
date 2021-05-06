@@ -4,7 +4,7 @@ import sys
 import uuid
 from typing import Tuple
 
-from aws_xray_sdk.core import xray_recorder
+#from aws_xray_sdk.core import xray_recorder
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import QuerySet
@@ -27,7 +27,7 @@ def _extract_report_unique_key(key: str) -> Tuple:
     :param key: S3 key string
     :return: subject_id, sample_id, library_id Or None
     """
-    subsegment = xray_recorder.current_subsegment()
+    #subsegment = xray_recorder.current_subsegment()
 
     subject_id_pattern = 'SBJ\d{5}'
     sample_id_pattern = '(?:PRJ|CCR|MDX)\d{6}'
@@ -54,10 +54,10 @@ def _extract_report_unique_key(key: str) -> Tuple:
     else:
         msg = f"Unable to extract report unique key. Unexpected pattern found: {key}"
         logger.warning(msg)
-        subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
-            'key': key,
-            'message': msg,
-        }, 'extract_report_unique_key')
+        # subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+        #     'key': key,
+        #     'message': msg,
+        # }, 'extract_report_unique_key')
 
     return subject_id, sample_id, library_id
 
@@ -69,7 +69,7 @@ def _extract_report_type(key: str):
     :param key:
     :return: report type Or None
     """
-    subsegment = xray_recorder.current_subsegment()
+#    subsegment = xray_recorder.current_subsegment()
 
     # normalize
     key = key.lower()
@@ -119,15 +119,18 @@ def _extract_report_type(key: str):
     if "-qc_summary." in key:
         return ReportType.QC_SUMMARY
 
+    if "multiqc_data.json" in key:
+        return ReportType.MULTIQC
+
     if "-report_inputs." in key:
         return ReportType.REPORT_INPUTS
 
     msg = f"Unknown report type. Unexpected pattern found: {key}"
     logger.warning(msg)
-    subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
-        'key': key,
-        'message': msg,
-    }, 'extract_report_type')
+    # subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+    #     'key': key,
+    #     'message': msg,
+    # }, 'extract_report_type')
     return None
 
 
@@ -157,7 +160,7 @@ def persist_report(bucket: str, key: str, event_type):
 
 
 def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
-    subsegment = xray_recorder.current_subsegment()
+#    subsegment = xray_recorder.current_subsegment()
 
     qs: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
 
@@ -182,10 +185,10 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
         msg = f"Report too large. Decompressed size in bytes: {decompressed_report_size_in_bytes}. " \
               f"Capturing report metadata only. Skip ingesting report data: s3://{bucket}/{key}"
         logger.warning(msg)
-        subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
-            'key': key,
-            'message': msg,
-        }, 'sync_report_created')
+        #subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+        #     'key': key,
+        #     'message': msg,
+        # }, 'sync_report_created')
         data = None
     else:
         data = libjson.loads(decompressed_report)
@@ -195,22 +198,22 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
         sample_id=sample_id,
         library_id=library_id,
         report_type=report_type,
-        created_by=const.CANCER_REPORT_TABLES if const.CANCER_REPORT_TABLES in key else None,
+        created_by=const.CANCER_REPORT_TABLES if (const.CANCER_REPORT_TABLES or const.MULTIQC_REPORT) in key else None,
         data=data,
         s3_object=qs.get() if qs.exists() else None
     )
 
-    subsegment.put_metadata(str(report.id.hex), {
-        'key': key,
-        'report': str(report),
-        'size': str(decompressed_report_size_in_bytes),
-    }, 'sync_report_created')
+    # subsegment.put_metadata(str(report.id.hex), {
+    #     'key': key,
+    #     'report': str(report),
+    #     'size': str(decompressed_report_size_in_bytes),
+    # }, 'sync_report_created')
 
     return report
 
 
 def _sync_report_deleted(key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
-    subsegment = xray_recorder.current_subsegment()
+    # subsegment = xray_recorder.current_subsegment()
 
     try:
         report: Report = Report.objects.get(
@@ -219,10 +222,10 @@ def _sync_report_deleted(key: str, subject_id: str, sample_id: str, library_id: 
             library_id=library_id,
             type=report_type
         )
-        subsegment.put_metadata(str(report.id.hex), {
-            'key': key,
-            'report': str(report),
-        }, 'sync_report_deleted')
+        # subsegment.put_metadata(str(report.id.hex), {
+        #     'key': key,
+        #     'report': str(report),
+        # }, 'sync_report_deleted')
         report.delete()
     except ObjectDoesNotExist as e:
         logger.info(f"No deletion required. Non-existent Report (subject_id={subject_id}, sample_id={sample_id}, "

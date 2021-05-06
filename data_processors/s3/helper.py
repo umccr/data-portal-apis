@@ -39,7 +39,7 @@ def is_report_record(s3_object_meta):
     Filtering strategy is finding a very discriminated "keyword" in S3 object key
     """
     key = s3_object_meta['key']
-    return const.JSON_GZ in key and const.CANCER_REPORT_TABLES in key
+    return (const.CANCER_REPORT_TABLES or const.MULTIQC_REPORT) in key
 
 
 def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
