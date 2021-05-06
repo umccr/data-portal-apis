@@ -9,11 +9,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from utils import libs3, libjson, ica
-from .models import LIMSRow, S3Object, GDSFile, Report
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
-from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
+from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
     BucketIdSerializer, GDSFileModelSerializer, ReportSerializer
+
 
 logger = logging.getLogger()
 
@@ -21,7 +22,6 @@ LIMS_SEARCH_ORDER_FIELDS = [
     'subject_id', 'timestamp', 'type', 'run', 'sample_id', 'external_subject_id', 'results', 'phenotype',
     'library_id', 'external_sample_id', 'project_name', 'illumina_id',
 ]
-
 
 def _presign_response(bucket, key):
     response = libs3.presign_s3_file(bucket, key)
@@ -40,6 +40,14 @@ class LIMSRowViewSet(ReadOnlyModelViewSet):
     ordering = ['-subject_id']
     search_fields = ordering_fields
 
+class LabMetadataViewSet(ReadOnlyModelViewSet):
+    queryset = LabMetadata.objects.all()
+    serializer_class = LabMetadataModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['library_id']
+    search_fields = ordering_fields
 
 class S3ObjectViewSet(ReadOnlyModelViewSet):
     queryset = S3Object.objects.get_all()
