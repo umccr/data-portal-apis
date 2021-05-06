@@ -198,7 +198,7 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
         sample_id=sample_id,
         library_id=library_id,
         report_type=report_type,
-        created_by=const.CANCER_REPORT_TABLES if const.CANCER_REPORT_TABLES in key else None,
+        created_by=const.CANCER_REPORT_TABLES if (const.CANCER_REPORT_TABLES or const.MULTIQC_REPORT) in key else None,
         data=data,
         s3_object=qs.get() if qs.exists() else None
     )
