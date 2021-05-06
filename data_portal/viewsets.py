@@ -13,7 +13,7 @@ from .models import LIMSRow, S3Object, GDSFile, Report
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
-    BucketIdSerializer, GDSFileModelSerializer, ReportIdSerializer
+    BucketIdSerializer, GDSFileModelSerializer, ReportSerializer
 
 logger = logging.getLogger()
 
@@ -269,45 +269,12 @@ class RunViewSet(ReadOnlyModelViewSet):
 
 class ReportViewSet(ReadOnlyModelViewSet):
     queryset = Report.objects.all()
-    serializer_class = ReportIdSerializer
+    serializer_class = ReportSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
     ordering = ['-subject_id']
     search_fields = ordering_fields
-
-    def retrieve(self, request, pk=None, **kwargs):
-        results = Report.objects.all()
-
-        data = {
-            'id': pk,
-            'reports': {
-                'count': results.count()
-            },
-        }
-        data.update(results=ReportIdSerializer(results, many=True).data)
-
-        return Response(data)
-
-class ReportSubjectViewSet(ReadOnlyModelViewSet):
-    queryset = Report.objects.values_list('subject_id', named=True).filter(subject_id__isnull=False).distinct()
-    serializer_class = ReportIdSerializer
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = ['subject_id']
-    ordering = ['-subject_id']
-    search_fields = ordering_fields
-
-    results = Report.objects.all()
-
-    def retrieve(self, request, pk=None, **kwargs):
-        data = {
-            'id': pk,
-            'subjects': {
-                'results': {ReportIdSerializer(results, many=True).data}
-            },
-        }
-        return Response(data)
 
 
 class RunDataS3ObjectViewSet(ReadOnlyModelViewSet):

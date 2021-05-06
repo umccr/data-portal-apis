@@ -193,21 +193,12 @@ class RunIdSerializer(serializers.BaseSerializer):
     def create(self, validated_data):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
 
-class ReportIdSerializer(serializers.BaseSerializer):
-#    def to_representation(self, instance):
-#        return instance.id
-    
-    def to_representation(self, instance):
-        return instance.id
 
-    def to_internal_value(self, data):
-        raise NotImplementedError(READ_ONLY_SERIALIZER)
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = '__all__'
 
-    def update(self, instance, validated_data):
-        raise NotImplementedError(READ_ONLY_SERIALIZER)
-
-    def create(self, validated_data):
-        raise NotImplementedError(READ_ONLY_SERIALIZER)
 
 class BucketIdSerializer(serializers.BaseSerializer):
     def to_representation(self, instance):
