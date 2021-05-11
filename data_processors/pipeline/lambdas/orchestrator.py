@@ -212,7 +212,7 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         is_manual = False
         for sample_library_name in sample_library_names:
             library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
-            if library_metadata["workflow"].unique().item() == "manual":
+            if not library_metadata.empty and library_metadata["workflow"].unique().item() == "manual":
                 logger.info(f"Skipping sample '{sample_name}'. Workflow column for matching "
                             f"sample '{sample_library_name}' is set to manual")
                 is_manual = True
