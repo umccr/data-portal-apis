@@ -197,13 +197,15 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
                 "sample": "PTC_EXPn200908LL_L2000001",
                 "override_cycles": "Y100;I8N2;I8N2;Y100",
                 "type": "WGS",
-                "assay": "TsqNano"
+                "assay": "TsqNano",
+                "workflow": "research"
             },
             {
                 "sample": "PTC_EXPn200908LL_L2000001_topup",
                 "override_cycles": "Y100;I8N2;I8N2;Y100",
                 "type": "WGS",
-                "assay": "TsqNano"
+                "assay": "TsqNano",
+                "workflow": "research"
             },
         ])
 

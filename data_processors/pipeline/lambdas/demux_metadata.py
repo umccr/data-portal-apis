@@ -28,6 +28,7 @@ SAMPLE_ID_HEADER = "Sample_ID (SampleSheet)"
 OVERRIDECYCLES_HEADER = "OverrideCycles"
 TYPE_HEADER = "Type"
 ASSAY_HEADER = "Assay"
+WORKFLOW_HEADER = "Workflow"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -53,7 +54,7 @@ def extract_requested_rows(df, requested_ids: list):
     # filter rows by requested ids
     subset_rows = df[df[SAMPLE_ID_HEADER].isin(requested_ids)]
     # filter colums by data needed for workflow
-    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER, ASSAY_HEADER]]
+    subset_cols = subset_rows[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER, ASSAY_HEADER, WORKFLOW_HEADER]]
     return subset_cols
 
 
@@ -137,13 +138,14 @@ def handler(event, context):
 
     # turn metadata_df into format compatible with workflow input
     # Select, rename, split metadata df
-    requested_metadata_df = requested_metadata_df[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER, ASSAY_HEADER]]
+    requested_metadata_df = requested_metadata_df[[SAMPLE_ID_HEADER, OVERRIDECYCLES_HEADER, TYPE_HEADER, ASSAY_HEADER, WORKFLOW_HEADER]]
     # Rename
     requested_metadata_df.rename(columns={
         SAMPLE_ID_HEADER: "sample",
         OVERRIDECYCLES_HEADER: "override_cycles",
         TYPE_HEADER: "type",
-        ASSAY_HEADER: "assay"
+        ASSAY_HEADER: "assay",
+        WORKFLOW_HEADER: "workflow"
     }, inplace=True)
 
     # Split by records
