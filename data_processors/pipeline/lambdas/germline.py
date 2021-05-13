@@ -107,7 +107,7 @@ def handler(event, context) -> dict:
     batch_run_id = event.get('batch_run_id', None)
 
     # Set workflow helper
-    wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
+    wfl_helper = WorkflowHelper(WorkflowType.GERMLINE)
 
     # Read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())

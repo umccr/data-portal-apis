@@ -5,12 +5,14 @@ Let's be Pythonic 💪 let's not mutate CAPITAL_VARIABLE elsewhere!
 Consider Enum, if there's a need for (name, value) and better protected tuple pair.
 Or consider Helper class-ing where composite builder is needed.
 """
+from datetime import datetime, timezone
 from enum import Enum
 
 
 ICA_GDS_FASTQ_VOL = "/iap/gds/fastq_vol"
 ICA_WORKFLOW_PREFIX = "/iap/workflow"
 
+SQS_TN_QUEUE_ARN = "/data_portal/backend/sqs_tn_queue_arn"
 SQS_GERMLINE_QUEUE_ARN = "/data_portal/backend/sqs_germline_queue_arn"
 SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"
 
@@ -36,6 +38,7 @@ class ENSEventType(Enum):
 class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
     GERMLINE = "germline"
+    TUMOR_NORMAL = "tumor_normal"
 
 
 class WorkflowStatus(Enum):
@@ -75,20 +78,41 @@ class Helper(object):
 
 
 class WorkflowHelper(Helper):
-    def __init__(self, name):
-        self.name = name
+    prefix = "umccr__automated"
+
+    def __init__(self, type: WorkflowType):
+        self.type = type
 
     def get_ssm_key_id(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/id"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id"
 
     def get_ssm_key_version(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/version"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/version"
 
     def get_ssm_key_input(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/input"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input"
 
     def get_ssm_key_engine_parameters(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/engine_parameters"
+        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/engine_parameters"
 
     def get_sample_type_settings(self, sample_type):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.name}/{sample_type}_settings"
+        # TODO: not used?
+        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/{sample_type}_settings"
+
+    def construct_workflow_name(self, **kwargs):
+        # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
+        utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
+        if self.type == WorkflowType.GERMLINE:
+            seq_name = kwargs['seq_name']
+            seq_run_id = kwargs['seq_run_id']
+            sample_name = kwargs['sample_name']
+            return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{seq_run_id}__{sample_name}__{utc_now_ts}"
+        elif self.type == WorkflowType.TUMOR_NORMAL:
+            subject_id = kwargs['subject_id']
+            return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{utc_now_ts}"
+        elif self.type == WorkflowType.BCL_CONVERT:
+            seq_name = kwargs['seq_name']
+            seq_run_id = kwargs['seq_run_id']
+            return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{seq_run_id}__{utc_now_ts}"
+        else:
+            raise ValueError(f"Unsupported workflow type: {self.type.name}")

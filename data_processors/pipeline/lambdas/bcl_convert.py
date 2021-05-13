@@ -217,7 +217,7 @@ def handler(event, context) -> dict:
     run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
 
-    wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT.value)
+    wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
 
     # read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())

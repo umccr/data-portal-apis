@@ -38,7 +38,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # SSM parameter without changing corresponding code in Portal -- we want to capture that during Continuous
         # Integration (CI) build phase and before deploying to target environment (Continuous Delivery (CD))
         # Leaving here for showing mock construct and ad-hoc test use case. Perhaps keep it commented out when no use.
-        wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT.value)
+        wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
         # Use Ctrl + "/" (whilst lines below are highlighted) to comment or uncomment these lines
         # when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_input())).thenReturn(
         #     json.dumps(
