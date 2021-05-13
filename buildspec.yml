@@ -2,8 +2,8 @@ version: 0.2
 env:
   variables:
     STAGE: $STAGE
-    IAP_BASE_URL: $IAP_BASE_URL
-    IAP_AUTH_TOKEN: $IAP_AUTH_TOKEN
+    ICA_BASE_URL: $ICA_BASE_URL
+    ICA_ACCESS_TOKEN: $ICA_ACCESS_TOKEN
     DJANGO_SETTINGS_MODULE: data_portal.settings.it
 phases:
   install:

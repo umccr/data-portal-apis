@@ -13,7 +13,6 @@ django.setup()
 
 # ---
 
-import io
 import logging
 from typing import Dict
 
@@ -26,14 +25,14 @@ from utils import libjson, libgdrive, libssm
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-years = ['2021']  #TODO how to set this?
 
 def scheduled_update_handler(event, context) -> Dict[str, int]:
-    """
+    """event payload
+    {
+        "sheet": "2020"
+    }
     Handler for LIMS update by reading the designated Spreadsheet file from Google Drive.
     Can be hit by Cron like job scheduler. It uses EventBridge on default EventBus with cron(0 12 * * ? *). See REF.
-    Can be also invoked directly:
-        aws lambda invoke --function-name data-portal-api-[dev|prod]-lims_scheduled_update_processor
 
     REF:
     https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduled-events.html
@@ -44,39 +43,36 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
     :param context:
     :return: dict of update counters
     """
-    logger.info("Start processing LabMetadata Ingest event")
+    logger.info("Start processing LabMetadata update event")
     logger.info(libjson.dumps(event))
 
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LabMetadata sheet from google drive at {requested_time}")
 
-    # Download lab metdata sheet for each year and combine them
-    # this assumes columns are the same across years, note in umccr official tracking sheet 2018 is different to the rest
-    metadata_dfs = []
-    for year in years:
-        metadata_dfs.append(download_metadata(year))
-    df_all = pd.concat(metadata_dfs, axis="columns")
+    year = event.get('sheet', "2021")  # default to 2021
 
-    df_all = clean_labmetadata_dataframe_columns(df_all) #TODO not sure if ought to be in services
+    df = clean_labmetadata_dataframe_columns(download_metadata(year))
 
-    return services.persist_labmetadata(df_all)
-        
+    return services.persist_labmetadata(df)
+
+
 def clean_labmetadata_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     clean a dataframe of labmetadata from a tracking sheet to correspond to the django object model
-    we do this by editing the columns to match the django obect
+    we do this by editing the columns to match the django object
     """
     # remove unnamed
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     # simplify verbose column names
-    df = df.rename(columns = {'Coverage (X)' : 'coverage', "TruSeq Index, unless stated":"truseqindex"})
+    df = df.rename(columns={'Coverage (X)': 'coverage', "TruSeq Index, unless stated": "truseqindex"})
 
     # convert PascalCase headers to snake_case and fix ID going to _i_d
     pattern = re.compile(r'(?<!^)(?=[A-Z])')
-    df = df.rename(columns=lambda x: pattern.sub('_',x).lower().replace('_i_d','_id'))
+    df = df.rename(columns=lambda x: pattern.sub('_', x).lower().replace('_i_d', '_id'))
 
     return df
+
 
 def download_metadata(year: str) -> pd.DataFrame:
     """Download the full original metadata from which to extract the required information
@@ -86,4 +82,4 @@ def download_metadata(year: str) -> pd.DataFrame:
     lab_sheet_id = libssm.get_secret(const.TRACKING_SHEET_ID)
     account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
 
-    return libgdrive.download_sheet(account_info, lab_sheet_id, sheet=year)    
+    return libgdrive.download_sheet(account_info, lab_sheet_id, sheet=year)

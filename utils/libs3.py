@@ -199,7 +199,10 @@ def get_s3_object_to_bytes(bucket: str, key: str) -> bytes:
     """
     try:
         obj_body = libaws.resource('s3').Object(bucket, key).get()['Body']
-        obj_bytes = gzip.decompress(obj_body.read())
+        if ".gz" in key:
+            obj_bytes = gzip.decompress(obj_body.read())
+        else:
+            obj_bytes = obj_body.read()
         return obj_bytes
     except ClientError as e:
         message = f"Failed on GET request the specified S3 object (s3://{bucket}/{key})"

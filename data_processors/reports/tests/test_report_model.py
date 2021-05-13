@@ -1,6 +1,9 @@
-from django.db.models import QuerySet
+import logging
 
-from data_portal.models import Report, ReportType
+from django.db.models import QuerySet
+from django.test import override_settings
+
+from data_portal.models import Report, ReportType, S3Object
 from data_portal.tests import factories
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 
@@ -98,8 +101,8 @@ class ReportModelUnitTests(ReportUnitTestCase):
         # instantiate a Report
         report = Report(
             subject_id="SBJ00001",
-            sample_id="MDX111111",
-            library_id="L12345678",
+            sample_id="MDX000001",
+            library_id="L0000001",
             type=ReportType.PURPLE_CNV_SOM,
             created_by="me",
             data=mock_data,
@@ -112,7 +115,7 @@ class ReportModelUnitTests(ReportUnitTestCase):
         self.assertEqual(1, Report.objects.count())
 
         # query back: get report(s) by sample id
-        qs: QuerySet = Report.objects.filter(sample_id="MDX111111")
+        qs: QuerySet = Report.objects.filter(sample_id="MDX000001")
 
         # simply qs.get() it since we know that there is only 1 record, otherwise should qs.all()
         # and iterate all matched records for query `sample_id` condition
@@ -125,6 +128,50 @@ class ReportModelUnitTests(ReportUnitTestCase):
         # iterate report's data points and show `CN` value
         for d in r.data:
             logger.info(d.get('CN'))
+
+    def test_delete_report(self):
+        """
+        python manage.py test data_processors.reports.tests.test_report_model.ReportModelUnitTests.test_delete_report
+        """
+        mock_report: Report = factories.HRDetectReportFactory()  # create mock report through factory fixture
+        linked_s3_object: S3Object = factories.ReportLinkedS3ObjectFactory()
+        mock_report.s3_object_id = linked_s3_object.id
+        mock_report.save()
+
+        qs: QuerySet = Report.objects.filter(id__exact=mock_report.id)  # query it back from db
+        self.assertTrue(qs.exists())  # make sure it exists
+
+        report_from_db: Report = qs.get()  # construct back into object
+        report_from_db.delete()  # now delete the report
+        self.assertEqual(Report.objects.count(), 0)  # none report should exists anymore
+
+        s3_object_from_db = S3Object.objects.get(id__exact=linked_s3_object.id)  # linked S3Object should still exist
+        self.assertEqual(s3_object_from_db.id, linked_s3_object.id)
+
+    @override_settings(DEBUG=True)
+    def test_delete_report_linked_s3_object(self):
+        """
+        python manage.py test -v 3 data_processors.reports.tests.test_report_model.ReportModelUnitTests.test_delete_report_linked_s3_object
+        """
+        logging.getLogger('django.db.backends').setLevel(logging.DEBUG)
+
+        mock_report: Report = factories.HRDetectReportFactory()  # create mock report through factory fixture
+        linked_s3_object: S3Object = factories.ReportLinkedS3ObjectFactory()
+        mock_report.s3_object_id = linked_s3_object.id
+        mock_report.save()
+
+        qs: QuerySet = Report.objects.filter(id__exact=mock_report.id)  # query it back from db
+        self.assertTrue(qs.exists())  # make sure it exists
+
+        s3_object_from_db = S3Object.objects.get(id__exact=linked_s3_object.id)
+        self.assertEqual(linked_s3_object.id, s3_object_from_db.id)
+
+        s3_object_from_db.delete()  # now delete S3Object
+
+        r: Report = qs.get()
+        self.assertIsNotNone(r.s3_object_id)
+        self.assertEqual(Report.objects.count(), 1)  # report should exist
+        self.assertEqual(S3Object.objects.count(), 0)  # linked S3Object should NOT exist
 
 
 class ReportModelIntegrationTests(ReportIntegrationTestCase):

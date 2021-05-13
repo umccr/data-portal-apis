@@ -8,12 +8,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
-from utils import libs3, libjson, iap
-from .models import LIMSRow, S3Object, GDSFile, Report
+from utils import libs3, libjson, ica
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
-from .serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, RunIdSerializer, \
-    BucketIdSerializer, GDSFileModelSerializer, ReportIdSerializer
+from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
+    SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer
 
 logger = logging.getLogger()
 
@@ -38,6 +38,16 @@ class LIMSRowViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = LIMS_SEARCH_ORDER_FIELDS
     ordering = ['-subject_id']
+    search_fields = ordering_fields
+
+
+class LabMetadataViewSet(ReadOnlyModelViewSet):
+    queryset = LabMetadata.objects.all()
+    serializer_class = LabMetadataModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['library_id']
     search_fields = ordering_fields
 
 
@@ -142,7 +152,7 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
     @action(detail=True)
     def presign(self, request, pk=None):
         obj: GDSFile = self.get_object()
-        response = iap.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
+        response = ica.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
         if response[0]:
             return Response({'signed_url': response[1]})
         else:
@@ -187,6 +197,11 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         data = {'id': pk}
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
 
+        data.update(
+            metadata={
+                'count': LabMetadata.objects.filter(subject_id=pk).count(),
+                'next': self._base_url('metadata')
+            })
         data.update(
             s3={
                 'count': S3Object.objects.get_by_subject_id(pk).count(),
@@ -242,6 +257,25 @@ class SubjectGDSFileViewSet(ReadOnlyModelViewSet):
         return super(SubjectGDSFileViewSet, self).handle_exception(exc)
 
 
+class SubjectLabMetadataViewSet(ReadOnlyModelViewSet):
+    serializer_class = LabMetadataModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['library_id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        return LabMetadata.objects.filter(subject_id=self.kwargs['subject_pk'])
+
+    def handle_exception(self, exc):
+        logger.exception(exc)
+        if isinstance(exc, InternalError):
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super(SubjectLabMetadataViewSet, self).handle_exception(exc)
+
+
 class RunViewSet(ReadOnlyModelViewSet):
     queryset = LIMSRow.objects.values_list('illumina_id', named=True).filter(illumina_id__isnull=False).distinct()
     serializer_class = RunIdSerializer
@@ -268,22 +302,13 @@ class RunViewSet(ReadOnlyModelViewSet):
 
 
 class ReportViewSet(ReadOnlyModelViewSet):
-    queryset = Report.objects.values_list('sample_id', named=True).filter(sample_id__isnull=False).distinct()
-    serializer_class = ReportIdSerializer
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = ['sample_id']
-    ordering = ['-sample_id']
+    ordering_fields = '__all__'
+    ordering = ['-subject_id']
     search_fields = ordering_fields
-
-    def retrieve(self, request, pk=None, **kwargs):
-        data = {
-            'id': pk,
-            'reports': {
-                'count': Report.objects.filter(sample_id=pk).count()
-            },
-        }
-        return Response(data)
 
 
 class RunDataS3ObjectViewSet(ReadOnlyModelViewSet):

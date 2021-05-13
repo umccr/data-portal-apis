@@ -1,6 +1,6 @@
 from unittest import skip
 
-from libiap.openapi import libgds
+from libica.openapi import libgds
 from mockito import when
 
 from data_processors.pipeline.lambdas import fastq

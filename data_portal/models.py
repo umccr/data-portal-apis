@@ -88,7 +88,7 @@ class S3Object(models.Model):
     MySQL has character length limitation on unique indexes and since key column require to store
     lengthy path, unique_hash is sha256sum of bucket and key for unique indexes purpose.
     """
-
+    id = models.BigAutoField(primary_key=True)
     bucket = models.CharField(max_length=255)
     key = models.TextField()
     size = models.BigIntegerField()
@@ -110,6 +110,7 @@ class LIMSRow(models.Model):
     class Meta:
         unique_together = ['illumina_id', 'library_id']
 
+    id = models.BigAutoField(primary_key=True)
     illumina_id = models.CharField(max_length=255)
     run = models.IntegerField()
     timestamp = models.DateField()
@@ -146,34 +147,119 @@ class LIMSRow(models.Model):
     S3_LINK_ATTRS = ('subject_id', 'sample_id')
 
 
+class LabMetadataType(models.TextChoices):
+    CT_DNA = "ctDNA"
+    CT_TSO = "ctTSO"
+    EXOME = "exome"
+    OTHER = "other"
+    TEN_X = "10X"
+    TSO_DNA = "TSO-DNA"
+    TSO_RNA = "TSO-RNA"
+    WGS = "WGS"
+    WTS = "WTS"
+
+
+class LabMetadataPhenotype(models.TextChoices):
+    N_CONTROL = "negative-control"
+    NORMAL = "normal"
+    TUMOR = "tumor"
+
+
+class LabMetadataAssay(models.TextChoices):
+    AG_SS_CRE = "AgSsCRE"
+    CT_TSO = "ctTSO"
+    NEB_DNA = "NebDNA"
+    NEB_DNA_U = "NebDNAu"
+    NEB_RNA = "NebRNA"
+    PCR_FREE = "PCR-Free-Tagmentation"
+    TEN_X_3PRIME = "10X-3prime-expression"
+    TEN_X_5PRIME = "10X-5prime-expression"
+    TEN_X_ATAC = "10X-ATAC"
+    TEN_X_CITE_FEAT = "10X-CITE-feature"
+    TEN_X_CITE_HASH = "10X-CITE-hashing"
+    TEN_X_CNV = "10X-CNV"
+    TEN_X_VDJ = "10X-VDJ"
+    TEN_X_VDJ_TCR = "10X-VDJ-TCR"
+    TSO_DNA = "TSODNA"
+    TSO_RNA = "TSORNA"
+    TSQ_NANO = "TsqNano"
+    TSQ_STR = "TsqSTR"
+
+
+class LabMetadataQuality(models.TextChoices):
+    BORDERLINE = "borderline"
+    GOOD = "good"
+    POOR = "poor"
+    VERY_POOR = "VeryPoor"
+
+
+class LabMetadataSource(models.TextChoices):
+    ACITES = "ascites"
+    BLOOD = "blood"
+    BONE = "bone-marrow"
+    BUCCAL = "buccal"
+    CELL_LINE = "cell-line"
+    CF_DNA = "cfDNA"
+    CYST = "cyst-fluid"
+    DNA = "DNA"
+    EYEBROW = "eyebrow-hair"
+    FFPE = "FFPE"
+    FNA = "FNA"
+    OCT = "OCT"
+    ORGANOID = "organoid"
+    PDX = "PDX-tissue"
+    PLASMA = "plasma-serum"
+    RNA = "RNA"
+    TISSUE = "tissue"
+    WATER = "water"
+
+
+class LabMetadataWorkflow(models.TextChoices):
+    BCL = "bcl"
+    CLINICAL = "clinical"
+    CONTROL = "control"
+    MANUAL = "manual"
+    QC = "qc"
+    RESEARCH = "research"
+
+
 class LabMetadata(models.Model):
     """
     Models a row in the lab tracking sheet data. Fields are the columns.
     """
 
-    library_id = models.CharField(max_length=255,unique=True,blank=False)   
-    #external_library_id = models.CharField(max_length=255) # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet. do we want to store clarity-generated lib id, and what do we want to call it?
+    # Portal internal auto incremental PK ID. Scheme may change as need be and may rebuild thereof.
+    # External system or business logic should not rely upon this ID field.
+    # Use any of unique fields or <>_id fields below.
+    id = models.BigAutoField(primary_key=True)
+
+    # TODO: as far as Clarity is concerned, "external" lib id = tracking sheet.
+    #  do we want to store clarity-generated lib id, and what do we want to call it?
+    # external_library_id = models.CharField(max_length=255)
+
+    library_id = models.CharField(max_length=255,unique=True,blank=False)
     sample_name = models.CharField(max_length=255,blank=False)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)
     subject_id = models.CharField(max_length=255, null=True, blank=True)
     external_subject_id = models.CharField(max_length=255, null=True, blank=True)
-    phenotype = models.CharField(max_length=255, null=True, blank=True)
-    quality = models.CharField(max_length=255, null=True, blank=True)
-    source = models.CharField(max_length=255, null=True, blank=True)
+    phenotype = models.CharField(choices=LabMetadataPhenotype.choices, max_length=255)
+    quality = models.CharField(choices=LabMetadataSource.choices, max_length=255)
+    source = models.CharField(choices=LabMetadataSource.choices, max_length=255)
     project_name = models.CharField(max_length=255, null=True, blank=True)
     project_owner = models.CharField(max_length=255, null=True, blank=True)
     experiment_id = models.CharField(max_length=255, null=True, blank=True)
-    type = models.CharField(max_length=255, null=True, blank=True)
-    assay = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(choices=LabMetadataType.choices, max_length=255)
+    assay = models.CharField(choices=LabMetadataAssay.choices, max_length=255)
     override_cycles = models.CharField(max_length=255, null=True, blank=True)
-    workflow = models.CharField(max_length=255, null=True, blank=True)
+    workflow = models.CharField(choices=LabMetadataWorkflow.choices, max_length=255)
     coverage = models.CharField(max_length=255, null=True, blank=True)
     truseqindex = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
+
 
 class S3LIMS(models.Model):
     """
@@ -183,6 +269,7 @@ class S3LIMS(models.Model):
     class Meta:
         unique_together = ['s3_object', 'lims_row']
 
+    id = models.BigAutoField(primary_key=True)
     s3_object = models.ForeignKey(S3Object, on_delete=models.CASCADE)
     lims_row = models.ForeignKey(LIMSRow, on_delete=models.CASCADE)
 
@@ -192,6 +279,7 @@ class Configuration(models.Model):
     Model that stores a configuration value
     Currently not used; but could be used for cases when we want to record the state of some data - e.g. LIMS file.
     """
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     value = models.TextField()
 
@@ -270,6 +358,7 @@ class GDSFile(models.Model):
     For composite (unique) key, it follows S3 style bucket + key pattern, see unique_hash.
     i.e. gds://volume_name/path ~ s3://bucket/key and, this full path must be unique globally.
     """
+    id = models.BigAutoField(primary_key=True)
     file_id = models.CharField(max_length=255)
     name = models.TextField()
     volume_id = models.CharField(max_length=255)
@@ -302,6 +391,7 @@ class SequenceRun(models.Model):
     class Meta:
         unique_together = ['run_id', 'date_modified', 'status']
 
+    id = models.BigAutoField(primary_key=True)
     run_id = models.CharField(max_length=255)
     date_modified = models.DateTimeField()
     status = models.CharField(max_length=255)
@@ -332,6 +422,7 @@ class FastqListRow(models.Model):
     class Meta:
         unique_together = ['rgid']
 
+    id = models.BigAutoField(primary_key=True)
     rgid = models.CharField(max_length=255)
     rgsm = models.CharField(max_length=255)
     rglb = models.CharField(max_length=255)
@@ -349,6 +440,7 @@ class Batch(models.Model):
     class Meta:
         unique_together = ['name', 'created_by']
 
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
     created_by = models.CharField(max_length=255)
     context_data = models.TextField(null=True, blank=True)
@@ -358,6 +450,7 @@ class Batch(models.Model):
 
 
 class BatchRun(models.Model):
+    id = models.BigAutoField(primary_key=True)
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
     step = models.CharField(max_length=255)
     running = models.BooleanField(null=True, blank=True)
@@ -421,6 +514,7 @@ class Workflow(models.Model):
     class Meta:
         unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
 
+    id = models.BigAutoField(primary_key=True)
     wfr_name = models.TextField(null=True, blank=True)
     sample_name = models.CharField(max_length=255, null=True, blank=True)
     type_name = models.CharField(max_length=255)
@@ -445,6 +539,7 @@ class Workflow(models.Model):
 
 class ReportType(models.TextChoices):
     QC_SUMMARY = "qc_summary"
+    MULTIQC = "multiqc"
     REPORT_INPUTS = "report_inputs"
     HRD_CHORD = "hrd_chord"
     HRD_HRDETECT = "hrd_hrdetect"
@@ -488,7 +583,7 @@ class ReportManager(models.Manager):
 
         report.created_by = created_by
         report.data = data
-        report.s3_object = s3_object
+        report.s3_object_id = None if s3_object is None else s3_object.id
         report.save()
         return report
 
@@ -505,7 +600,7 @@ class Report(models.Model):
     created_by = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
 
-    s3_object = models.OneToOneField(S3Object, on_delete=models.SET_NULL, null=True, blank=True)
+    s3_object_id = models.BigIntegerField(null=True, blank=True)
 
     objects = ReportManager()
 

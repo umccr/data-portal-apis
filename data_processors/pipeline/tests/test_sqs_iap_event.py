@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import make_aware
-from libiap.openapi import libwes, libgds
+from libica.openapi import libwes, libgds
 from mockito import when, verify
 
 from data_portal.models import GDSFile, SequenceRun, Workflow, BatchRun

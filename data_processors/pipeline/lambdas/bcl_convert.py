@@ -285,7 +285,7 @@ def handler(event, context) -> dict:
     workflow_input['settings_by_samples'] = settings_by_samples
 
     # prepare engine_parameters
-    gds_fastq_vol = libssm.get_ssm_param(constant.IAP_GDS_FASTQ_VOL)
+    gds_fastq_vol = libssm.get_ssm_param(constant.ICA_GDS_FASTQ_VOL)
     engine_params_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_engine_parameters())
     workflow_engine_params: dict = copy.deepcopy(libjson.loads(engine_params_template))
     workflow_engine_params['outputDirectory'] = f"gds://{gds_fastq_vol}/{seq_name}"

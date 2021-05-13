@@ -2,12 +2,12 @@ import json
 from datetime import datetime
 
 from django.utils.timezone import make_aware
-from libiap.openapi import libwes
+from libica.openapi import libwes
 from mockito import when, verify, contains
 
 from data_portal.models import SequenceRun, Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType, IAP_GDS_FASTQ_VOL
+from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType, ICA_GDS_FASTQ_VOL
 from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libslack
@@ -63,7 +63,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         #     )
         # )
         # 
-        # when(bcl_convert.libssm).get_ssm_param(contains(IAP_GDS_FASTQ_VOL)).thenReturn(
+        # when(bcl_convert.libssm).get_ssm_param(contains(ICA_GDS_FASTQ_VOL)).thenReturn(
         #    "fastq-vol"
         # )
         # 

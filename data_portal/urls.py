@@ -4,11 +4,12 @@ from rest_framework_nested import routers
 from data_portal import views
 from .viewsets import LIMSRowViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, SubjectS3ObjectViewSet, \
     RunViewSet, PresignedUrlViewSet, RunDataLIMSViewSet, RunDataS3ObjectViewSet, SubjectGDSFileViewSet, \
-    RunDataGDSFileViewSet, GDSFileViewSet, ReportViewSet
+    RunDataGDSFileViewSet, GDSFileViewSet, ReportViewSet, SubjectLabMetadataViewSet, LabMetadataViewSet
 from .routers import OptionalSlashDefaultRouter
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
+router.register(r'metadata', LabMetadataViewSet, basename='metadata')
 router.register(r's3', S3ObjectViewSet, basename='s3')
 router.register(r'gds', GDSFileViewSet, basename='gds')
 router.register(r'buckets', BucketViewSet, basename='buckets')
@@ -17,10 +18,10 @@ router.register(r'runs', RunViewSet, basename='runs')
 router.register(r'reports', ReportViewSet, basename='reports')
 router.register(r'presign', PresignedUrlViewSet, basename='presign')
 
-
 subjects_router = routers.NestedDefaultRouter(router, r'subjects', lookup='subject')
-subjects_router.register(r's3', SubjectS3ObjectViewSet, basename='subject-s3')
+subjects_router.register(r'metadata', SubjectLabMetadataViewSet, basename='subject-metadata')
 subjects_router.register(r'gds', SubjectGDSFileViewSet, basename='subject-gds')
+subjects_router.register(r's3', SubjectS3ObjectViewSet, basename='subject-s3')
 
 runs_router = routers.NestedDefaultRouter(router, r'runs', lookup='run')
 runs_router.register(r'lims', RunDataLIMSViewSet, basename='run-lims')

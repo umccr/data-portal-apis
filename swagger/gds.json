@@ -33,6 +33,18 @@
             "name": "tenantId",
             "description": "Optional parameter to see shared data in another tenant",
             "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "metadata.include",
+            "description": "Optional parameter to specify comma separated patterns to include metadata by their field names.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "metadata.exclude",
+            "description": "Optional parameter to specify comma separated patterns to exclude metadata by their field names.",
+            "type": "string"
           }
         ],
         "responses": {
@@ -385,65 +397,6 @@
           },
           "403": {
             "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "default": {
-            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v1/files/{fileId}:destroy": {
-      "delete": {
-        "tags": [
-          "Files"
-        ],
-        "summary": "Permanently delete a file",
-        "description": "This endpoint will be deprecated with the EarlyAccess launch. Utilize DELETE: v1/files/{fileId} instead.",
-        "operationId": "destroyFile-deprecated",
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "fileId",
-            "description": "Unique identifier for the file to delete.",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content."
-          },
-          "400": {
-            "description": "Bad request.",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "404": {
-            "description": "File not found.",
             "schema": {
               "$ref": "#/definitions/ErrorResponse"
             }
@@ -1009,6 +962,96 @@
         }
       }
     },
+    "/v1/folders/{folderId}:copy": {
+      "post": {
+        "tags": [
+          "Folders"
+        ],
+        "summary": "Copy a folder",
+        "description": "Copy a folder into a target parent folder",
+        "operationId": "copyFolder",
+        "consumes": [
+          "application/json-patch+json",
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folderId",
+            "description": "Unique identifier for the folder to be copied.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "tenantId",
+            "description": "Optional parameter to copy from a shared folder in another tenant",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/FolderCopyRequest"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted.",
+            "schema": {
+              "$ref": "#/definitions/JobResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Folder not found.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator."
+          }
+        }
+      }
+    },
     "/v1/folders/{folderId}:archive": {
       "post": {
         "tags": [
@@ -1332,6 +1375,394 @@
         }
       }
     },
+    "/v1/folders/{folderId}/jobs/{jobId}": {
+      "get": {
+        "tags": [
+          "Folders"
+        ],
+        "summary": "Get status of a folder job in GDS",
+        "description": "Get status of a folder job in GDS.",
+        "operationId": "getFolderJob",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folderId",
+            "description": "Unique identifier for the folder related to the job.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "path",
+            "name": "jobId",
+            "description": "The id of the job",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returned job.",
+            "schema": {
+              "$ref": "#/definitions/JobResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          }
+        }
+      }
+    },
+    "/v1/volumeconfigurations": {
+      "get": {
+        "tags": [
+          "VolumeConfigurations"
+        ],
+        "summary": "Get a list of volumes",
+        "operationId": "listVolumeConfigurations",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "onlineStatus",
+            "description": "Optional field that specifies the Online Status for Volume configurations included in the list.\r\nIf provided, the value must be Initializing, Ok, or Error.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "description": "START_DESC END_DESC",
+            "type": "integer",
+            "format": "int32",
+            "maximum": 1000,
+            "minimum": 0
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "START_DESC END_DESC",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "START_DESC END_DESC",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/VolumeConfigurationListResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "VolumeConfigurations"
+        ],
+        "summary": "Create a volume configuration in GDS.",
+        "description": "Create a volume configuration in GDS. This contains the object store details that will be used to create volumes.",
+        "operationId": "createVolumeConfiguration",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateVolumeConfigurationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created new Volume Configuration.",
+            "schema": {
+              "$ref": "#/definitions/VolumeConfigurationResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "409": {
+            "description": "A conflict was found. Make sure the new Volume configuration name doesn't already exist.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/volumeconfigurations/{volumeConfigurationName}": {
+      "get": {
+        "tags": [
+          "VolumeConfigurations"
+        ],
+        "summary": "Get information for the specified volume configuration name or Id",
+        "operationId": "getVolumeConfiguration",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "volumeConfigurationName",
+            "description": "Unique name of the volume configuration to retrieve information for.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/VolumeConfigurationResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Volume configuration not found.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "VolumeConfigurations"
+        ],
+        "summary": "Deletes a volume configuration by Id or name",
+        "operationId": "deleteVolumeConfiguration",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "volumeConfigurationName",
+            "description": "Unique name of the Volume Configuration to be deleted.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted.",
+            "schema": {
+              "$ref": "#/definitions/VolumeResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Volume not found.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/volumeconfigurations/{volumeConfigurationName}:validate": {
+      "post": {
+        "tags": [
+          "VolumeConfigurations"
+        ],
+        "summary": "Validate a volume configuration",
+        "description": "Validate an existing volume configuration.",
+        "operationId": "validateVolumeConfiguration",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "volumeConfigurationName",
+            "description": "Unique name of the volume configuration to be validated.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted.",
+            "schema": {
+              "$ref": "#/definitions/VolumeConfigurationResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Volume configuration not found.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected issue. Please try your request again. If problem persists, please contact the system administrator.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/volumes": {
       "get": {
         "tags": [
@@ -1369,6 +1800,12 @@
             "in": "query",
             "name": "tenantId",
             "description": "Optional parameter to see shared data in another tenant",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "volumeConfigurationName",
+            "description": "Unique name of the volume configuration",
             "type": "string"
           }
         ],
@@ -1555,6 +1992,12 @@
             "description": "Unique identifier for the Volume to be deleted.",
             "required": true,
             "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "purgeObjectStoreData",
+            "description": "Optional and for BYOB only. If true, the volume's data in object storage will be erased.\r\n            This field is ignored for non-BYOB volumes where the object store data is always removed upon deleting the volume.",
+            "type": "boolean"
           }
         ],
         "responses": {
@@ -1584,6 +2027,12 @@
           },
           "404": {
             "description": "Volume not found.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "schema": {
               "$ref": "#/definitions/ErrorResponse"
             }
@@ -1637,6 +2086,10 @@
           "description": "The name of the volume where the file resides",
           "type": "string"
         },
+        "volumeConfigurationName": {
+          "description": "The name of the volume configuration (BYOB only)",
+          "type": "string"
+        },
         "type": {
           "description": "The type of the File",
           "type": "string"
@@ -1687,6 +2140,10 @@
           "description": "The File's Size in bytes",
           "type": "integer"
         },
+        "metadata": {
+          "description": "Metadata about this File",
+          "type": "object"
+        },
         "isUploaded": {
           "description": "The current upload state of the File",
           "type": "boolean"
@@ -1701,6 +2158,10 @@
         },
         "storageTier": {
           "$ref": "#/definitions/StorageTier"
+        },
+        "eTag": {
+          "description": "The File's ETag",
+          "type": "string"
         },
         "presignedUrl": {
           "description": "The presigned Url allowing access to this File",
@@ -1737,45 +2198,6 @@
         }
       }
     },
-    "ObjectStorageCredentialsResponse": {
-      "description": "The temporaryUploadCredentials/objectStorageCredentialsResponse will be deprecated. Use objectStoreAccess/awsS3TemporaryUploadCredentials instead.",
-      "type": "object",
-      "properties": {
-        "accessKey": {
-          "description": "Access key for use with AWS S3",
-          "type": "string"
-        },
-        "secretKey": {
-          "description": "Secret key for use with AWS S3",
-          "type": "string"
-        },
-        "sessionToken": {
-          "description": "Token for use with AWS S3",
-          "type": "string"
-        },
-        "region": {
-          "description": "AWS region the folder will/does reside in",
-          "type": "string"
-        },
-        "bucketName": {
-          "description": "AWS bucket the folder will/does reside in",
-          "type": "string"
-        },
-        "serviceUrl": {
-          "description": "Service URL for multi-regional support",
-          "type": "string"
-        },
-        "uploadLocation": {
-          "description": "AWS upload location for this folder",
-          "type": "string"
-        },
-        "expirationDate": {
-          "format": "date-time",
-          "description": "expiration for temporary credentials",
-          "type": "string"
-        }
-      }
-    },
     "AwsS3TemporaryUploadCredentials": {
       "description": "AwsS3TemporaryUploadCredentials",
       "type": "object",
@@ -1807,6 +2229,10 @@
         "expirationDate": {
           "format": "date-time",
           "description": "expiration for temporary credentials",
+          "type": "string"
+        },
+        "serviceUrl": {
+          "description": "Service endpoint for accessing S3.\r\nThis is optional for AWS S3, but mandatory for other services like Taiwan Computing Cloud.",
           "type": "string"
         }
       }
@@ -1840,6 +2266,10 @@
         },
         "volumeName": {
           "description": "The name of the volume where the file resides",
+          "type": "string"
+        },
+        "volumeConfigurationName": {
+          "description": "The name of the volume configuration (BYOB only)",
           "type": "string"
         },
         "type": {
@@ -1892,6 +2322,10 @@
           "description": "The File's Size in bytes",
           "type": "integer"
         },
+        "metadata": {
+          "description": "Metadata about this File",
+          "type": "object"
+        },
         "isUploaded": {
           "description": "The current upload state of the File",
           "type": "boolean"
@@ -1907,8 +2341,9 @@
         "storageTier": {
           "$ref": "#/definitions/StorageTier"
         },
-        "temporaryUploadCredentials": {
-          "$ref": "#/definitions/ObjectStorageCredentialsResponse"
+        "eTag": {
+          "description": "The File's ETag",
+          "type": "string"
         },
         "objectStoreAccess": {
           "$ref": "#/definitions/ObjectStoreAccess"
@@ -2021,7 +2456,7 @@
       }
     },
     "JobStatus": {
-      "description": "The valid Job Status values for folders in GDS",
+      "description": "This enum was originally created to store the type of job on a folder or file entity. \r\nThe Job entity is now used to track this information for copy operations, with the Illumina.Gds.Api.Models.Enums.JobOperationType \r\nand Illumina.Gds.Api.Models.Enums.JobProgressStatus used to record the type and progress status of the job.",
       "enum": [
         "None",
         "Archiving",
@@ -2096,6 +2531,10 @@
         "modifiedBy": {
           "description": "The updator of this Folder",
           "type": "string"
+        },
+        "metadata": {
+          "description": "Metadata about this folder",
+          "type": "object"
         },
         "jobStatus": {
           "$ref": "#/definitions/JobStatus"
@@ -2247,14 +2686,15 @@
           "description": "The updator of this Folder",
           "type": "string"
         },
+        "metadata": {
+          "description": "Metadata about this folder",
+          "type": "object"
+        },
         "jobStatus": {
           "$ref": "#/definitions/JobStatus"
         },
         "archiveJobStorageTier": {
           "$ref": "#/definitions/StorageTier"
-        },
-        "temporaryUploadCredentials": {
-          "$ref": "#/definitions/ObjectStorageCredentialsResponse"
         },
         "objectStoreAccess": {
           "$ref": "#/definitions/ObjectStoreAccess"
@@ -2270,6 +2710,112 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "FolderCopyRequest": {
+      "required": [
+        "targetParentFolderId"
+      ],
+      "type": "object",
+      "properties": {
+        "targetParentFolderId": {
+          "description": "The parent folder into which the source folder will be copied.",
+          "type": "string"
+        },
+        "destinationFolderName": {
+          "description": "A new name for the destination folder. Required if target parent folder is the same as the destination folder.\r\nWhen optional and not provided, the source folder name is used as the destination folder name.",
+          "pattern": "^[^/]+$",
+          "type": "string"
+        }
+      }
+    },
+    "JobOperationType": {
+      "description": "The valid job operation type values for resources in GDS",
+      "enum": [
+        "Unknown",
+        "FolderArchive",
+        "FolderUnarchive",
+        "FolderDelete",
+        "FolderCopy"
+      ],
+      "type": "string"
+    },
+    "FolderCopyOperationParameters": {
+      "description": "Operation parameters for folder copy operations",
+      "type": "object",
+      "properties": {
+        "sourceFolderUrn": {
+          "description": "The Urn of the source folder for the copy operation",
+          "type": "string"
+        },
+        "targetFolderUrn": {
+          "description": "The Urn of the target folder for the copy operation",
+          "type": "string"
+        },
+        "destinationFolderName": {
+          "description": "The folder name for the copied folder",
+          "type": "string"
+        }
+      }
+    },
+    "JobOperationParameters": {
+      "description": "Container for XXXOperationParameters objects, which have additional details related to the specific job operation type.\r\nOnly one object will be populated.",
+      "type": "object",
+      "properties": {
+        "folderCopy": {
+          "$ref": "#/definitions/FolderCopyOperationParameters"
+        }
+      }
+    },
+    "JobProgressStatus": {
+      "description": "The valid Job Status values for folders in GDS.",
+      "enum": [
+        "Pending",
+        "InProgress",
+        "Completed",
+        "Failed"
+      ],
+      "type": "string"
+    },
+    "JobResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "A unique identifier for this Job",
+          "type": "string"
+        },
+        "parentFolderUrn": {
+          "description": "The Universal Resource Name of the parent folder associated with the Job",
+          "type": "string"
+        },
+        "operationType": {
+          "$ref": "#/definitions/JobOperationType"
+        },
+        "operationParameters": {
+          "$ref": "#/definitions/JobOperationParameters"
+        },
+        "progressStatus": {
+          "$ref": "#/definitions/JobProgressStatus"
+        },
+        "timeCreated": {
+          "format": "date-time",
+          "description": "The date & time this Folder was created, in GDS",
+          "type": "string"
+        },
+        "createdBy": {
+          "description": "The creator of this Job",
+          "type": "string"
+        },
+        "timeModified": {
+          "format": "date-time",
+          "description": "The date & time this Job was updated, in GDS",
+          "type": "string"
+        },
+        "timeCompleted": {
+          "format": "date-time",
+          "description": "The date & time this Job was completed, in GDS",
+          "type": "string"
         }
       }
     },
@@ -2362,6 +2908,168 @@
         }
       }
     },
+    "VolumeConfigurationOnlineStatus": {
+      "description": "The valid Online Status values for Volume configurations in GDS",
+      "enum": [
+        "Initializing",
+        "Ok",
+        "Error"
+      ],
+      "type": "string"
+    },
+    "AWSS3ObjectStoreSetting": {
+      "required": [
+        "bucketName"
+      ],
+      "type": "object",
+      "properties": {
+        "bucketName": {
+          "description": "The bucket name",
+          "maxLength": 63,
+          "minLength": 3,
+          "type": "string"
+        },
+        "keyPrefix": {
+          "description": "Key prefix within the bucket for GDS to operate within. Volumes may only be created within this prefix and the given credentials need only authorize\r\naccess here. If not set, default is to allow operation on the full bucket. No leading slash, and must end with a trailing slash.",
+          "pattern": "^[^/].*$",
+          "type": "string",
+          "example": "gds-volumes/"
+        }
+      }
+    },
+    "ObjectStoreSettings": {
+      "required": [
+        "awsS3",
+        "secretName"
+      ],
+      "type": "object",
+      "properties": {
+        "awsS3": {
+          "$ref": "#/definitions/AWSS3ObjectStoreSetting"
+        },
+        "secretName": {
+          "description": "Platform credentials Name",
+          "type": "string"
+        }
+      }
+    },
+    "VolumeConfigurationResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name for the volume configuration",
+          "type": "string"
+        },
+        "tenantId": {
+          "description": "The unique identifier for this Volume Configuration's Tenant",
+          "type": "string"
+        },
+        "subTenantId": {
+          "description": "The unique identifier for this Volume Configurations's Sub Tenant",
+          "type": "string"
+        },
+        "urn": {
+          "description": "The Universal Resource Name, unique to this Volume Configuration",
+          "type": "string"
+        },
+        "onlineStatus": {
+          "$ref": "#/definitions/VolumeConfigurationOnlineStatus"
+        },
+        "errorCode": {
+          "description": "Error code returned from the object store",
+          "type": "string"
+        },
+        "errorMessage": {
+          "description": "Error message returned from the object store",
+          "type": "string"
+        },
+        "timeOfLastError": {
+          "format": "date-time",
+          "description": "Timestamp of the last observed error.",
+          "type": "string"
+        },
+        "timeCreated": {
+          "format": "date-time",
+          "description": "The date & time this Volume was created, in GDS",
+          "type": "string"
+        },
+        "createdBy": {
+          "description": "The creator of this Volume",
+          "type": "string"
+        },
+        "timeModified": {
+          "format": "date-time",
+          "description": "The date & time this Volume was updated, in GDS",
+          "type": "string"
+        },
+        "modifiedBy": {
+          "description": "The updator of this Volume",
+          "type": "string"
+        },
+        "objectStoreSettings": {
+          "$ref": "#/definitions/ObjectStoreSettings"
+        }
+      }
+    },
+    "VolumeConfigurationListResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "description": "Items in paged list",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VolumeConfigurationResponse"
+          }
+        },
+        "itemCount": {
+          "format": "int32",
+          "description": "Number of items included in the page",
+          "type": "integer"
+        },
+        "firstPageToken": {
+          "description": "PageToken for first paged list",
+          "type": "string"
+        },
+        "nextPageToken": {
+          "description": "PageToken for the next paged list",
+          "type": "string"
+        },
+        "prevPageToken": {
+          "description": "PageToken for the previous paged list",
+          "type": "string"
+        },
+        "lastPageToken": {
+          "description": "PageToken for the last paged list. Only included when totalItemCount is listed",
+          "type": "string"
+        },
+        "totalItemCount": {
+          "format": "int64",
+          "description": "Total number of items in all pages. Only included when requested",
+          "type": "integer"
+        },
+        "totalPageCount": {
+          "format": "int64",
+          "description": "Total number of pages. Only included when totalItemCount is listed",
+          "type": "integer"
+        }
+      }
+    },
+    "CreateVolumeConfigurationRequest": {
+      "required": [
+        "name",
+        "objectStoreSettings"
+      ],
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name for the volume configuration",
+          "type": "string"
+        },
+        "objectStoreSettings": {
+          "$ref": "#/definitions/ObjectStoreSettings"
+        }
+      }
+    },
     "VolumeResponse": {
       "type": "object",
       "properties": {
@@ -2383,6 +3091,18 @@
         },
         "urn": {
           "description": "The Universal Resource Name, unique to this Volume",
+          "type": "string"
+        },
+        "rootFolderId": {
+          "description": "The unique identifier for the root Folder of this Volume",
+          "type": "string"
+        },
+        "rootKeyPrefix": {
+          "description": "The base bucket location for Volumes associated with custom VolumeConfigurations otherwise this field is not set.",
+          "type": "string"
+        },
+        "volumeConfigurationName": {
+          "description": "Unique name of the Volume configuration for this Volume.\r\nThis field will only be set if a custom Volume configuration is associated.",
           "type": "string"
         },
         "inheritedAcl": {
@@ -2412,6 +3132,10 @@
         },
         "jobStatus": {
           "$ref": "#/definitions/JobStatus"
+        },
+        "metadata": {
+          "description": "Metadata about this Volume",
+          "type": "object"
         }
       }
     },
@@ -2467,6 +3191,15 @@
         "name": {
           "description": "Name for the volume",
           "type": "string"
+        },
+        "volumeConfigurationName": {
+          "description": "Unique name of the volume configuration to use",
+          "type": "string"
+        },
+        "rootKeyPrefix": {
+          "description": "The base bucket location for volumes associated with custom VolumeConfigurations. If not provided, the given volume Name is used.\r\nIf provided, it must start with the VolumeConfiguration's keyprefix and end with a /.\r\nTo create a volume representing the root of a bucket, use the value '/'.",
+          "pattern": "^(/)$|^([^/].*[/])$",
+          "type": "string"
         }
       }
     },
@@ -2491,6 +3224,18 @@
         },
         "urn": {
           "description": "The Universal Resource Name, unique to this Volume",
+          "type": "string"
+        },
+        "rootFolderId": {
+          "description": "The unique identifier for the root Folder of this Volume",
+          "type": "string"
+        },
+        "rootKeyPrefix": {
+          "description": "The base bucket location for Volumes associated with custom VolumeConfigurations otherwise this field is not set.",
+          "type": "string"
+        },
+        "volumeConfigurationName": {
+          "description": "Unique name of the Volume configuration for this Volume.\r\nThis field will only be set if a custom Volume configuration is associated.",
           "type": "string"
         },
         "inheritedAcl": {
@@ -2521,8 +3266,13 @@
         "jobStatus": {
           "$ref": "#/definitions/JobStatus"
         },
-        "temporaryUploadCredentials": {
-          "$ref": "#/definitions/ObjectStorageCredentialsResponse"
+        "metadata": {
+          "description": "Metadata about this Volume",
+          "type": "object"
+        },
+        "importSessionId": {
+          "description": "Unique identifier of the import Session for this Volume. This only applies to Volumes created from custom\r\nVolume configurations.",
+          "type": "string"
         },
         "objectStoreAccess": {
           "$ref": "#/definitions/ObjectStoreAccess"

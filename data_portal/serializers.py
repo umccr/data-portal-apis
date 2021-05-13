@@ -3,7 +3,7 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow, GDSFile
+from data_portal.models import S3Object, LIMSRow, GDSFile, Report, LabMetadata
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 
@@ -160,6 +160,12 @@ class LIMSRowModelSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class LabMetadataModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabMetadata
+        fields = '__all__'
+
+
 class S3ObjectModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = S3Object
@@ -193,18 +199,12 @@ class RunIdSerializer(serializers.BaseSerializer):
     def create(self, validated_data):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
 
-class ReportIdSerializer(serializers.BaseSerializer):
-    def to_representation(self, instance):
-        return instance.sample_id
 
-    def to_internal_value(self, data):
-        raise NotImplementedError(READ_ONLY_SERIALIZER)
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = '__all__'
 
-    def update(self, instance, validated_data):
-        raise NotImplementedError(READ_ONLY_SERIALIZER)
-
-    def create(self, validated_data):
-        raise NotImplementedError(READ_ONLY_SERIALIZER)
 
 class BucketIdSerializer(serializers.BaseSerializer):
     def to_representation(self, instance):

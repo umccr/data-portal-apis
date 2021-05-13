@@ -13,8 +13,8 @@ django.setup()
 
 import logging
 from data_processors.pipeline import services
-from libiap.openapi import libgds
-from utils import libjson, iap
+from libica.openapi import libgds
+from utils import libjson, ica
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 def get_presigned_url(file_id: str):
     logger.debug(f"Retrieving pre-signed URL for file: {file_id}")
-    with libgds.ApiClient(iap.configuration(libgds)) as api_client:
+    with libgds.ApiClient(ica.configuration(libgds)) as api_client:
         file_api = libgds.FilesApi(api_client)
     try:
         file_details: libgds.FileListResponse = file_api.get_file(file_id=file_id)

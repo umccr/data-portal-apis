@@ -10,8 +10,11 @@ KEY_EXPECTED_ALT_3 = "Project-CUP/SBJ00001/WGS/2020-12-07/umccrised/SBJ0000O__SB
 KEY_EXPECTED_ALT_4 = "cancer_report_tables/json/hrd/SBJ00001__SBJ00001_PRJ000001_L0000001-hrdetect.json.gz"
 KEY_EXPECTED_ALT_5 = "cancer_report_tables/json/hrd/SBJ66666__SBJ66666_MDX888888_L9999999_rerun-qc_summary.json.gz"
 KEY_EXPECTED_ALT_6 = "cancer_report_tables/json/hrd/SBJ66666__SBJ66666_MDX888888_L9999999_topup-qc_summary.json.gz"
+KEY_EXPECTED_ALT_7 = "SBJ00742__SBJ00742_PRJ210259_L2100263/SBJ00742__SBJ00742_PRJ210259_L2100263-multiqc_report_data/multiqc_data.json"
+
 
 KEY_EXPECTED_ALL = [
+    ("SBJ00742__SBJ00742_PRJ210259_L2100263-multiqc_report_data/multiqc_data.json", ReportType.MULTIQC),
     ("SBJ00001__SBJ00001_MDX000001_L0000001-qc_summary.json.gz", ReportType.QC_SUMMARY),
     ("SBJ00001__SBJ00001_MDX000001_L0000001-report_inputs.json.gz", ReportType.REPORT_INPUTS),
     ("hrd/SBJ00001__SBJ00001_MDX000001_L0000001-chord.json.gz", ReportType.HRD_CHORD),
@@ -122,6 +125,16 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         self.assertIn(sample_id, KEY_EXPECTED_ALT_6)
         self.assertIn(library_id, KEY_EXPECTED_ALT_6)
         self.assertIn("topup", library_id)
+
+    def test_extract_report_unique_key_alt_7(self):
+        """
+        python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key_alt_7
+        """
+        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_7)
+        logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
+        self.assertIn(subject_id, KEY_EXPECTED_ALT_7)
+        self.assertIn(sample_id, KEY_EXPECTED_ALT_7)
+        self.assertIn(library_id, KEY_EXPECTED_ALT_7)
 
     def test_extract_report_unique_key_error_1(self):
         """

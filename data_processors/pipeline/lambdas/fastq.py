@@ -16,9 +16,9 @@ import re
 from collections import defaultdict
 from typing import List
 
-from libiap.openapi import libgds
+from libica.openapi import libgds
 
-from utils import iap, libjson
+from utils import ica, libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -92,7 +92,7 @@ def handler(event, context) -> dict:
 def collect_gds_files(location: str, fastq_list_csv_files: List, fastq_files: List):
     volume_name, path_ = parse_gds_path(location)
 
-    with libgds.ApiClient(iap.configuration(libgds)) as api_client:
+    with libgds.ApiClient(ica.configuration(libgds)) as api_client:
         files_api = libgds.FilesApi(api_client)
         try:
             page_token = None

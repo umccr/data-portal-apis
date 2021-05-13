@@ -3,7 +3,7 @@ from datetime import datetime
 from unittest import skip
 
 from django.utils.timezone import make_aware
-from libiap.openapi import libwes
+from libica.openapi import libwes
 from mockito import when
 
 from data_portal.models import Workflow, BatchRun, Batch, SequenceRun

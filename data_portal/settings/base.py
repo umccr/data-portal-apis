@@ -73,12 +73,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'data_portal.wsgi.application'
 
+# 1GB packet limit for MySQL. See https://dev.mysql.com/doc/refman/5.7/en/packet-too-large.html
+MYSQL_CLIENT_MAX_ALLOWED_PACKET = 1073741824
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
