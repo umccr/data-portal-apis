@@ -3,8 +3,9 @@ try:
 except ImportError:
     pass
 
-import django
 import os
+
+import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -14,7 +15,6 @@ django.setup()
 # Standards
 import copy
 import logging
-from datetime import datetime, timezone
 
 # Data portal imports
 from data_portal.models import Workflow
@@ -135,11 +135,13 @@ def handler(event, context) -> dict:
 
     # check if a workflow is already running
     # TODO: missing criteria to uniquely match workflows to metadata
-    matched_runs = services.search_matching_runs(
-        type_name=WorkflowType.TUMOR_NORMAL.name,
-        wfl_id=workflow_id,
-        version=workflow_version
-    )
+    # matched_runs = services.search_matching_runs(
+    #     type_name=WorkflowType.TUMOR_NORMAL.name,
+    #     wfl_id=workflow_id,
+    #     version=workflow_version
+    # )
+    # TODO: the above will block if even one T/N workflow is running. We want to check against the SAME workflow
+    matched_runs = list()
 
     if len(matched_runs) > 0:
         results = []

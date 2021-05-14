@@ -1,9 +1,12 @@
+import json
 import random
 import uuid
 from typing import Union
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import Max, QuerySet, Q
+from rest_framework import serializers
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
@@ -446,6 +449,27 @@ class FastqListRow(models.Model):
 
     def __str__(self):
         return f"RGID: {self.rgid}, RGSM: {self.rgsm}, RGLB: {self.rglb}"
+
+    def to_dict(self):
+        dict_obj = {
+            "rgid": self.rgid,
+            "rglb": self.rglb,
+            "rgsm": self.rgsm,
+            "lane": self.lane,
+            "read_1": self.read_1_to_dict(),
+        }
+        if self.read_2:
+            dict_obj["read_2"] = self.read_2_to_dict()
+        return dict_obj
+
+    def __json__(self):
+        return json.dumps(self.to_dict())
+
+    def read_1_to_dict(self):
+        return {"class": "File", "location": self.read_1}
+
+    def read_2_to_dict(self):
+        return {"class": "File", "location": self.read_2}
 
 
 class Batch(models.Model):

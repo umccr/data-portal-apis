@@ -16,7 +16,8 @@ import logging
 from typing import List
 import pandas as pd
 
-from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, LabMetadataPhenotype, FastqListRow
+from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
+    LabMetadataPhenotype, FastqListRow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
@@ -150,12 +151,12 @@ def create_tn_job(subject_id: str) -> dict:
     tumor_records = LabMetadata.objects.filter(
         subject_id=subject_id,
         type__iexact=LabMetadataType.WGS.value.lower(),
-        phenotype_iexact=LabMetadataPhenotype.TUMOR.value.lower())
+        phenotype__iexact=LabMetadataPhenotype.TUMOR.value.lower())
 
     normal_records = LabMetadata.objects.filter(
         subject_id=subject_id,
         type__iexact=LabMetadataType.WGS.value.lower(),
-        phenotype_iexact=LabMetadataPhenotype.NORMAL.value.lower())
+        phenotype__iexact=LabMetadataPhenotype.NORMAL.value.lower())
 
     # TODO: sort out topup/rerun logic
 
@@ -169,16 +170,16 @@ def create_tn_job(subject_id: str) -> dict:
     tumor_fastq_list_rows = list()
     for record in tumor_records:
         fastq_rows = FastqListRow.objects.filter(rglb=record.library_id)
-        tumor_fastq_list_rows.append(fastq_rows)
+        tumor_fastq_list_rows.extend(fastq_rows)
     if len(tumor_fastq_list_rows) < 1:
         # TODO: legacy data might be not in fastq_list_row table. Could fall back to alternative lookup
         logger.debug(f"Skipping subject {subject_id} (tumor FASTQs still missing).")
         return {}
 
-    normal_fastq_list_rows = list()
+    normal_fastq_list_rows: list[FastqListRow] = list()
     for record in normal_records:
         fastq_rows = FastqListRow.objects.filter(rglb=record.library_id)
-        normal_fastq_list_rows.append(fastq_rows)
+        normal_fastq_list_rows.extend(fastq_rows)
     if len(normal_fastq_list_rows) < 1:
         # TODO: legacy data might be not in fastq_list_row table. Could fall back to alternative lookup
         logger.debug(f"Skipping subject {subject_id} (normal FASTQs still missing).")
@@ -198,12 +199,20 @@ def create_tn_job(subject_id: str) -> dict:
 
     tumor_sample_id = t_samples[0]
 
+    # hacky way to convert non-serializable Django Model objects to the Json format we expect
+    # TODO: find a better way to define a Json Serializer for Django Model objects
+    normal_dict_list = list()
+    for row in normal_fastq_list_rows:
+        normal_dict_list.append(row.to_dict())
+    tumor_dict_list = list()
+    for row in tumor_fastq_list_rows:
+        tumor_dict_list.append(row.to_dict())
+
     # create T/N job definition
-    # TODO: construct job json
     job_json = {
         "subject_id": subject_id,
-        "fastq_list_rows": normal_fastq_list_rows,
-        "tumor_fastq_list_rows": tumor_fastq_list_rows,
+        "fastq_list_rows": normal_dict_list,
+        "tumor_fastq_list_rows": tumor_dict_list,
         "output_file_prefix": tumor_sample_id,
         "output_directory": subject_id
     }
@@ -297,13 +306,16 @@ def next_step(this_workflow: Workflow, context):
         running, ended = get_germline_runs(this_sqr)
         if len(running) == 0:
             # determine which samples are available for T/N wokflow
-            subjects = get_subjects_from_runs(running)
+            subjects = get_subjects_from_runs(ended)
             job_list = prepare_tumor_normal_jobs(subjects=subjects)
             if job_list:
                 queue_arn = libssm.get_ssm_param(constant.SQS_TN_QUEUE_ARN)
                 libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
             logger.debug(f"Germline workflow finished, but {len(running)} still running. Wait for them to finish...")
+        return {
+            "subjects": subjects
+        }
 
 
 def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
@@ -447,6 +459,7 @@ def parse_bcl_convert_output(output_json: str) -> list:
 
 
 def cwl_file_path_as_string_to_dict(file_path):
+    # TODO: extract to global util?
     """
     Convert "gds://path/to/file" to {"class": "File", "location": "gds://path/to/file"}
     :param file_path:

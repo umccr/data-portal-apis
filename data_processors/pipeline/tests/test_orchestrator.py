@@ -1,4 +1,5 @@
 import json
+import uuid
 from datetime import datetime
 from unittest import skip
 
@@ -6,8 +7,9 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Workflow, BatchRun, Batch, SequenceRun
-from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
+from data_portal.models import Workflow, BatchRun, Batch, SequenceRun, LabMetadata, LabMetadataType, \
+    LabMetadataPhenotype, FastqListRow
+from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory, GermlineWorkflowFactory
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator, fastq_list_row, wes_handler
 from data_processors.pipeline.tests import _rand
@@ -238,8 +240,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         """
         self.verify_local()
 
-        # TODO: create mock LabMetadata object(s) ??
-        mock_bcl_workflow: Workflow = WorkflowFactory()
+        mock_germline_workflow: Workflow = GermlineWorkflowFactory()
 
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -248,10 +249,40 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_wfl_run.output = {}
 
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
-        workflow_version.id = "wfl.xxxxxtumornormalxxxxx"
-        workflow_version.version = "0.0.1"
+        workflow_version.id = TestConstant.wfv_id.value
         mock_wfl_run.workflow_version = workflow_version
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
+
+        mock_labmetadata_normal = LabMetadata()
+        mock_labmetadata_normal.subject_id = "SBJ00001"
+        mock_labmetadata_normal.library_id = TestConstant.library_id_normal.value
+        mock_labmetadata_normal.phenotype = LabMetadataPhenotype.NORMAL.value
+        mock_labmetadata_normal.type = LabMetadataType.WGS.value
+        mock_labmetadata_normal.save()
+
+        mock_labmetadata_tumor = LabMetadata()
+        mock_labmetadata_tumor.subject_id = "SBJ00001"
+        mock_labmetadata_tumor.library_id = TestConstant.library_id_tumor.value
+        mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
+        mock_labmetadata_tumor.type = LabMetadataType.WGS.value
+        mock_labmetadata_tumor.save()
+
+        mock_flr_normal = FastqListRow()
+        mock_flr_normal.lane = 1
+        mock_flr_normal.rglb = TestConstant.library_id_normal.value
+        mock_flr_normal.rgsm = TestConstant.sample_id.value
+        mock_flr_normal.rgid = str(uuid.uuid4())
+        mock_flr_normal.read_1 = "gds://volume/path/normal_read_1.fastq.gz"
+        mock_flr_normal.save()
+
+        mock_flr_tumor = FastqListRow()
+        mock_flr_tumor.lane = 2
+        mock_flr_tumor.rglb = TestConstant.library_id_tumor.value
+        mock_flr_tumor.rgsm = TestConstant.sample_id.value
+        mock_flr_tumor.rgid = str(uuid.uuid4())
+        mock_flr_tumor.read_1 = "gds://volume/path/tumor_read_1.fastq.gz"
+        mock_flr_tumor.read_2 = "gds://volume/path/tumor_read_2.fastq.gz"
+        mock_flr_tumor.save()
 
         logger.info("-" * 32)
         when(orchestrator.demux_metadata).handler(...).thenReturn([
