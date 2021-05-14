@@ -155,10 +155,7 @@ def handler(event, context) -> dict:
         return results_dict
 
     # construct and format workflow run name convention
-    # [RUN_NAME_PREFIX]__[WORKFLOW_TYPE]__[SEQUENCE_RUN_NAME]__[SEQUENCE_RUN_ID]__[UTC_TIMESTAMP]
-    run_name_prefix = "umccr__automated"
-    utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-    workflow_run_name = f"{run_name_prefix}__{WorkflowType.GERMLINE.value}__{seq_name}__{seq_run_id}__{utc_now_ts}"
+    workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name, seq_run_id=seq_run_id)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
