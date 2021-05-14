@@ -223,6 +223,10 @@ class LabMetadataWorkflow(models.TextChoices):
     RESEARCH = "research"
 
 
+class LabMetadataManager(models.Manager):
+    pass
+
+
 class LabMetadata(models.Model):
     """
     Models a row in the lab tracking sheet data. Fields are the columns.
@@ -255,6 +259,8 @@ class LabMetadata(models.Model):
     workflow = models.CharField(choices=LabMetadataWorkflow.choices, max_length=255)
     coverage = models.CharField(max_length=255, null=True, blank=True)
     truseqindex = models.CharField(max_length=255, null=True, blank=True)
+
+    objects = LabMetadataManager()
 
     def __str__(self):
         return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
@@ -418,6 +424,10 @@ class SequenceRun(models.Model):
                f"Status '{self.status}'"
 
 
+class FastqListRowManager(models.Manager):
+    pass
+
+
 class FastqListRow(models.Model):
     class Meta:
         unique_together = ['rgid']
@@ -431,6 +441,8 @@ class FastqListRow(models.Model):
     read_2 = models.TextField(null=True, blank=True)  # This is nullable. Search 'read_2' in fastq_list_row.handler()
 
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
+
+    objects = FastqListRowManager()
 
     def __str__(self):
         return f"RGID: {self.rgid}, RGSM: {self.rgsm}, RGLB: {self.rglb}"
@@ -503,7 +515,7 @@ class WorkflowManager(models.Manager):
             sequence_run=sequence_run,
             batch_run=batch_run,
             end__isnull=True,
-            end_status__isnull=True,
+            end_status__isnull=True,  # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
             start__isnull=False,
             input__isnull=False,
         )
