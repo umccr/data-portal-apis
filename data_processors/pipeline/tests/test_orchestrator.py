@@ -231,6 +231,46 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         self.assertRaises(json.JSONDecodeError)
 
+    def test_tumor_normal(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_tumor_normal
+        """
+        self.verify_local()
+
+        # TODO: create mock LabMetadata object(s) ??
+        mock_bcl_workflow: Workflow = WorkflowFactory()
+
+        mock_wfl_run = libwes.WorkflowRun()
+        mock_wfl_run.id = TestConstant.wfr_id.value
+        mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
+        mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
+        mock_wfl_run.output = {}
+
+        workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
+        workflow_version.id = "wfl.xxxxxtumornormalxxxxx"
+        workflow_version.version = "0.0.1"
+        mock_wfl_run.workflow_version = workflow_version
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
+
+        logger.info("-" * 32)
+        when(orchestrator.demux_metadata).handler(...).thenReturn([
+            {
+                "sample": "PRJ200438_LPRJ200438",
+                "override_cycles": "Y100;I8N2;I8N2;Y100",
+                "type": "WGS",
+                "assay": "TsqNano"
+            }
+        ])
+
+        result = orchestrator.handler({
+            'wfr_id': TestConstant.wfr_id.value,
+            'wfv_id': TestConstant.wfv_id.value,
+        }, None)
+
+        logger.info("-" * 32)
+        self.assertIsNotNone(result)
+        logger.info(f"Orchestrator lambda call output: \n{json.dumps(result)}")
+
 
 class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
