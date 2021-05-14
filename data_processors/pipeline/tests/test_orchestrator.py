@@ -143,7 +143,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
                 "sample": "PRJ200438_LPRJ200438",
                 "override_cycles": "Y100;I8N2;I8N2;Y100",
                 "type": "WGS",
-                "assay": "TsqNano"
+                "assay": "TsqNano",
+                "workflow": "research"
             }
         ])
 

@@ -57,6 +57,9 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
             ],
             demux_metadata.ASSAY_HEADER: [
                 "TsqNano"
+            ],
+            demux_metadata.WORKFLOW_HEADER: [
+                "research"
             ]
         }
         self.mock_metadata_df = pd.DataFrame(data=d)
@@ -94,6 +97,7 @@ class DemuxMetaDataTests(PipelineUnitTestCase):
         self.assertIsNotNone(result[0].get('override_cycles', None))
         self.assertIsNotNone(result[0].get('type', None))
         self.assertIsNotNone(result[0].get('assay', None))
+        self.assertIsNotNone(result[0].get('workflow', None))
 
         logger.info("-" * 32)
         logger.info("Example demux_metadata.handler lambda output:")

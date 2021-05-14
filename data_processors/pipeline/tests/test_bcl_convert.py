@@ -23,7 +23,8 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
                       "sample": "PTC_EXPn200908LL_L2000001",
                       "override_cycles": "Y100;I8N2;I8N2;Y100",
                       "type": "WGS",
-                      "assay": "TsqNano"
+                      "assay": "TsqNano",
+                      "workflow": "research"
                     }
             ]
         )
@@ -146,7 +147,8 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
                 "sample": "",
                 "override_cycles": "Y100;I8N2;I8N2;Y100",
                 "type": "WGS",
-                "assay": "TsqNano"
+                "assay": "TsqNano",
+                "workflow": "research"
               }
             ]
         )

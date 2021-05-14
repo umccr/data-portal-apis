@@ -362,6 +362,23 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         # collect back BSSH run styled SampleSheet(SampleID) globally unique ID format from rgid
         sample_library_names = list(map(lambda k: k.split('.')[-1], sample_df.rgid.unique().tolist()))
 
+        # Skip samples where metadata workflow is set to manual
+        is_manual = False
+        for sample_library_name in sample_library_names:
+            library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
+            if not library_metadata.empty and library_metadata["workflow"].unique().item() == "manual":
+                logger.info(f"Skipping sample '{sample_name}'. Workflow column for matching "
+                            f"sample '{sample_library_name}' is set to manual")
+                is_manual = True
+                break
+
+        # Break out of manual
+        if is_manual:
+            # We do not pursue manual samples
+            logger.info(f"Skipping sample '{sample_name}'. "
+                        f"Workflow column is set to manual for at least one library name")
+            continue
+
         # iterate through libraries for this sample and collect their assay types
         assay_types = []
         for sample_library_name in sample_library_names:
