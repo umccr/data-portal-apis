@@ -121,8 +121,21 @@ def _extract_report_type(key: str):
     if "multiqc_data.json" in key:
         return ReportType.MULTIQC
 
-    if const.CTTSO500_REPORT in key:
-        return ReportType.CTTSO500
+    if const.CTTSO500_REPORT in key: # XXX: Unclear if this is the right stable prefix, ask Yinan/Oliver
+        if ".msi.json.gz" in key:
+            return ReportType.CTTSO500_MSI
+        if ".tmb." in key:
+            return ReportType.CTTSO500_TMB
+        if "AlignCollapseFusionCaller_metrics." in key:
+            return ReportType.CTTSO500_FUSION_CALLER_METRICS
+        if "Failed_Exon_coverage_QC" in key:
+            return ReportType.CTTSO500_FAILED_EXON_COVERAGE_QC
+        if "SampleAnalysisResults" in key:
+            return ReportType.CTTSO500_SAMPLE_ANALYSIS_RESULTS
+        if "TargetRegionCoverage" in key:
+            return ReportType.CTTSO500_TARGET_REGION_COVERAGE
+        else:
+            return ReportType.CTTSO500
 
     if "-report_inputs." in key:
         return ReportType.REPORT_INPUTS

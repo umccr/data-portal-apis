@@ -805,6 +805,12 @@ class Workflow(models.Model):
 
 class ReportType(models.TextChoices):
     CTTSO500 = "cttso500"
+    CTTSO500_MSI = "cttso500_msi"
+    CTTSO500_TMB = "cttso500_tmb"
+    CTTSO500_FUSION_CALLER_METRICS = "cttso500_fusion_caller_metrics" 
+    CTTSO500_FAILED_EXON_COVERAGE_QC = "cttso500_failed_exon_coverage_qc"
+    CTTSO500_SAMPLE_ANALYSIS_RESULTS = "cttso500_sample_analysis_results"
+    CTTSO500_TARGET_REGION_COVERAGE = "cttso500_target_region_coverage"
     QC_SUMMARY = "qc_summary"
     MULTIQC = "multiqc"
     REPORT_INPUTS = "report_inputs"
