@@ -804,6 +804,7 @@ class Workflow(models.Model):
 
 
 class ReportType(models.TextChoices):
+    CTTSO500 = "cttso500"
     QC_SUMMARY = "qc_summary"
     MULTIQC = "multiqc"
     REPORT_INPUTS = "report_inputs"

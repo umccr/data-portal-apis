@@ -121,6 +121,9 @@ def _extract_report_type(key: str):
     if "multiqc_data.json" in key:
         return ReportType.MULTIQC
 
+    if const.CTTSO500_REPORT in key:
+        return ReportType.CTTSO500
+
     if "-report_inputs." in key:
         return ReportType.REPORT_INPUTS
 
