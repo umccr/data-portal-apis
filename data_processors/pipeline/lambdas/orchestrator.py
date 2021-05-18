@@ -120,7 +120,7 @@ def get_subjects_from_runs(workflows: list) -> list:
     return list(subjects)
 
 
-def extract_sample_library_ids(fastq_list_rows: list[FastqListRow]):
+def extract_sample_library_ids(fastq_list_rows: List[FastqListRow]):
     samples = set()
     libraries = set()
 
@@ -131,7 +131,7 @@ def extract_sample_library_ids(fastq_list_rows: list[FastqListRow]):
     return list(samples), list(libraries)
 
 
-def prepare_tumor_normal_jobs(subjects: list[str]) -> list:
+def prepare_tumor_normal_jobs(subjects: List[str]) -> list:
     jobs = list()
     for subject in subjects:
         job = create_tn_job(subject)
@@ -176,7 +176,7 @@ def create_tn_job(subject_id: str) -> dict:
         logger.debug(f"Skipping subject {subject_id} (tumor FASTQs still missing).")
         return {}
 
-    normal_fastq_list_rows: list[FastqListRow] = list()
+    normal_fastq_list_rows: List[FastqListRow] = list()
     for record in normal_records:
         fastq_rows = FastqListRow.objects.filter(rglb=record.library_id)
         normal_fastq_list_rows.extend(fastq_rows)
@@ -304,6 +304,7 @@ def next_step(this_workflow: Workflow, context):
         # if yes we continue to the T/N workflow
         # if not, we wait (until all Germline workflows have finished)
         running, ended = get_germline_runs(this_sqr)
+        subjects = list()
         if len(running) == 0:
             # determine which samples are available for T/N wokflow
             subjects = get_subjects_from_runs(ended)
@@ -313,6 +314,7 @@ def next_step(this_workflow: Workflow, context):
                 libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
             logger.debug(f"Germline workflow finished, but {len(running)} still running. Wait for them to finish...")
+
         return {
             "subjects": subjects
         }
