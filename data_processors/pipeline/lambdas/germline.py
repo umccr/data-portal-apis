@@ -155,7 +155,11 @@ def handler(event, context) -> dict:
         return results_dict
 
     # construct and format workflow run name convention
-    workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name, seq_run_id=seq_run_id)
+    workflow_run_name = wfl_helper.construct_workflow_name(
+        seq_name=seq_name,
+        seq_run_id=seq_run_id,
+        sample_name=sample_name
+    )
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
