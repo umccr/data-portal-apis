@@ -1,3 +1,5 @@
+from data_processors.pipeline.services import get_germline_runs
+
 try:
     import unzip_requirements
 except ImportError:
@@ -71,25 +73,6 @@ def update_step(wfr_id, wfv_id, wfr_event, context):
         return this_workflow
 
     return None
-
-
-def get_germline_runs(sequence_run: SequenceRun):
-    # query for Workflows associated with this SequenceRun
-    # that are GERMLINE workflows
-    # and that don't have an end status (yet)
-    workflows = Workflow.objects.filter(
-        sequence_run=sequence_run,
-        type_name__iexact=WorkflowType.GERMLINE.value.lower())
-    running = list()
-    ended = list()
-
-    for wf in workflows:
-        if wf.end_status:  # TODO: check if that works
-            ended.append(wf)
-        else:
-            running.append(wf)
-
-    return running, ended
 
 
 def get_library_id_from_workflow(workflow: Workflow):
@@ -303,11 +286,12 @@ def next_step(this_workflow: Workflow, context):
         # check if all other Germline workflows for this run have finished
         # if yes we continue to the T/N workflow
         # if not, we wait (until all Germline workflows have finished)
-        running, ended = get_germline_runs(this_sqr)
+        running: List[Workflow] = services.get_germline_running_by_sequence_run(sequence_run=this_sqr)
+        succeeded: List[Workflow] = services.get_germline_succeeded_by_sequence_run(sequence_run=this_sqr)
         subjects = list()
         if len(running) == 0:
             # determine which samples are available for T/N wokflow
-            subjects = get_subjects_from_runs(ended)
+            subjects = get_subjects_from_runs(succeeded)
             job_list = prepare_tumor_normal_jobs(subjects=subjects)
             if job_list:
                 queue_arn = libssm.get_ssm_param(constant.SQS_TN_QUEUE_ARN)
