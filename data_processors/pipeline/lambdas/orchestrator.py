@@ -189,7 +189,7 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     fastq_list_df = pd.DataFrame(fastq_list_rows)
 
     # Add the sample_library_names attribute to fastq_list_df
-    fastq_list_df["sample_library_names"]: fastq_list_df['rgid'].apply(lambda x: x.rsplit('.', 1)[-1])
+    fastq_list_df["sample_library_names"] = fastq_list_df['rgid'].apply(lambda x: x.rsplit('.', 1)[-1])
 
     # iterate through each sample group by rglb
     for sample_library_name, sample_df in fastq_list_df.groupby("sample_library_names"):
@@ -215,8 +215,6 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
 
         # Skip samples where metadata workflow is set to manual
         if library_metadata["workflow"].unique().item() == "manual":
-            logger.info(f"Skipping sample '{sample_library_name}'. Workflow column for matching "
-                        f"sample '{sample_library_name}' is set to manual")
             # We do not pursue manual samples
             logger.info(f"Skipping sample '{sample_library_name}'. "
                         f"Workflow column is set to manual for at least one library name")
@@ -236,7 +234,7 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
 
         job = {
             "sample_name": sample_library_name,
-            "fastq_list_rows": sample_df.drop(columns=["sample_library_name"]).to_dict(orient="records"),
+            "fastq_list_rows": sample_df.drop(columns=["sample_library_names"]).to_dict(orient="records"),
             "seq_run_id": this_sqr.run_id if this_sqr else None,
             "seq_name": this_sqr.name if this_sqr else None,
             "batch_run_id": int(this_batch_run.id)
