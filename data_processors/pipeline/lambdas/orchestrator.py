@@ -1,5 +1,3 @@
-from data_processors.pipeline.services import get_germline_runs
-
 try:
     import unzip_requirements
 except ImportError:
