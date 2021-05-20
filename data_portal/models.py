@@ -546,7 +546,7 @@ class WorkflowManager(models.Manager):
         return qs
 
     def get_running_by_sequence_run(self, sequence_run: SequenceRun, type_name: str) -> QuerySet:
-        qs: QuerySet = self.objects.filter(
+        qs: QuerySet = self.filter(
             sequence_run=sequence_run,
             type_name__iexact=type_name.lower(),
             end__isnull=True
@@ -554,7 +554,7 @@ class WorkflowManager(models.Manager):
         return qs
 
     def get_succeeded_by_sequence_run(self, sequence_run: SequenceRun, type_name: str) -> QuerySet:
-        qs: QuerySet = self.objects.filter(
+        qs: QuerySet = self.filter(
             sequence_run=sequence_run,
             type_name__iexact=type_name.lower(),
             end__isnull=False,
