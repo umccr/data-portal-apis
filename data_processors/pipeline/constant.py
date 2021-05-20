@@ -95,10 +95,6 @@ class WorkflowHelper(Helper):
     def get_ssm_key_engine_parameters(self):
         return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/engine_parameters"
 
-    def get_sample_type_settings(self, sample_type):
-        # TODO: not used?
-        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/{sample_type}_settings"
-
     def construct_workflow_name(self, **kwargs):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
         utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
