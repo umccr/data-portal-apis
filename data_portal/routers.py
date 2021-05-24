@@ -1,4 +1,4 @@
-from rest_framework_nested import routers
+from rest_framework import routers
 
 
 class OptionalSlashDefaultRouter(routers.DefaultRouter):

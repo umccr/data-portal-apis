@@ -3,10 +3,8 @@ import random
 import uuid
 from typing import Union
 
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import Max, QuerySet, Q
-from rest_framework import serializers
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
@@ -47,14 +45,21 @@ class S3ObjectManager(models.Manager):
 
         return self.filter(id__in=sample_ids)
 
-    def get_all(self):
-        return self.exclude(key__contains='.snakemake')
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.exclude(key__contains='.snakemake')
 
-    def get_by_subject_id(self, subject_id: str, **kwargs) -> QuerySet:
-        qs: QuerySet = self.filter(key__icontains=subject_id).exclude(key__contains='.snakemake')
         bucket = kwargs.get('bucket', None)
         if bucket:
             qs = qs.filter(bucket=bucket)
+
+        subject = kwargs.get('subject', None)
+        if subject:
+            qs = qs.filter(key__icontains=subject)
+
+        run = kwargs.get('run', None)
+        if run:
+            qs = qs.filter(key__icontains=run)
+
         return qs
 
     def get_subject_results(self, subject_id: str, **kwargs) -> QuerySet:
@@ -78,13 +83,6 @@ class S3ObjectManager(models.Manager):
             qs = qs.filter(bucket=bucket)
         return qs
 
-    def get_by_illumina_id(self, illumina_id: str, **kwargs) -> QuerySet:
-        qs: QuerySet = self.filter(key__icontains=illumina_id)
-        bucket = kwargs.get('bucket', None)
-        if bucket:
-            qs = qs.filter(bucket=bucket)
-        return qs
-
 
 class S3Object(models.Model):
     """
@@ -103,6 +101,22 @@ class S3Object(models.Model):
     DEFAULT_SORT_COL = 'last_modified_date'
 
     objects = S3ObjectManager()
+
+
+class LIMSRowManager(models.Manager):
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        subject = kwargs.get('subject', None)
+        if subject:
+            qs = qs.filter(subject_id=subject)
+
+        run = kwargs.get('run', None)
+        if run:
+            qs = qs.filter(illumina_id=run)
+
+        return qs
 
 
 class LIMSRow(models.Model):
@@ -139,6 +153,8 @@ class LIMSRow(models.Model):
     trello = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     todo = models.CharField(max_length=255, null=True, blank=True)
+
+    objects = LIMSRowManager()
 
     def __str__(self):
         return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
@@ -334,27 +350,21 @@ class Configuration(models.Model):
 
 class GDSFileManager(models.Manager):
 
-    def get_all(self):
-        return self.exclude(path__contains='.snakemake')
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.exclude(path__contains='.snakemake')
 
-    def get_by_subject_id(self, subject_id: str, **kwargs) -> QuerySet:
-        qs: QuerySet = self.filter(path__icontains=subject_id).exclude(path__contains='.snakemake')
         volume_name = kwargs.get('volume_name', None)
         if volume_name:
             qs = qs.filter(volume_name=volume_name)
-        volume_id = kwargs.get('volume_id', None)
-        if volume_id:
-            qs = qs.filter(volume_name=volume_id)
-        return qs
 
-    def get_by_illumina_id(self, illumina_id: str, **kwargs) -> QuerySet:
-        qs: QuerySet = self.filter(path__icontains=illumina_id)
-        volume_name = kwargs.get('volume_name', None)
-        if volume_name:
-            qs = qs.filter(volume_name=volume_name)
-        volume_id = kwargs.get('volume_id', None)
-        if volume_id:
-            qs = qs.filter(volume_name=volume_id)
+        subject = kwargs.get('subject', None)
+        if subject:
+            qs = qs.filter(path__icontains=subject)
+
+        run = kwargs.get('run', None)
+        if run:
+            qs = qs.filter(path__icontains=run)
+
         return qs
 
 
