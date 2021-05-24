@@ -338,66 +338,44 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     metadata_df = pd.DataFrame(metadata)
     fastq_list_df = pd.DataFrame(fastq_list_rows)
 
+    # Add the sample_library_names attribute to fastq_list_df
+    fastq_list_df["sample_library_names"] = fastq_list_df['rgid'].apply(lambda x: x.rsplit('.', 1)[-1])
+
     # iterate through each sample group by rglb
-    for rglb, sample_df in fastq_list_df.groupby("rglb"):
-
-        rgsm = sample_df['rgsm'].unique().item()  # get rgsm which should be the same for all libraries
-
-        sample_name = f"{rgsm}_{rglb}"  # this is now "sample name" convention for analysis workflow perspective
+    for sample_library_name, sample_df in fastq_list_df.groupby("sample_library_names"):
 
         # skip Undetermined samples
-        if sample_name.startswith("Undetermined"):
-            logger.warning(f"SKIP '{sample_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
+        if sample_library_name.startswith("Undetermined"):
+            logger.warning(f"SKIP '{sample_library_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
             continue
 
         # skip sample start with NTC_
-        if sample_name.startswith("NTC_"):
-            logger.warning(f"SKIP NTC SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
+        if sample_library_name.startswith("NTC_"):
+            logger.warning(f"SKIP NTC SAMPLE '{sample_library_name}' GERMLINE WORKFLOW LAUNCH.")
             continue
 
-        # collect back BSSH run styled SampleSheet(SampleID) globally unique ID format from rgid
-        sample_library_names = list(map(lambda k: k.split('.')[-1], sample_df.rgid.unique().tolist()))
+        # Get sample metadata
+        library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
+
+        # Check library metadata is not empty
+        if library_metadata.empty:
+            logger.warning(f"Could not get library metadata for sample '{sample_library_name}'. "
+                           f"Skipping sample.")
+            continue
 
         # Skip samples where metadata workflow is set to manual
-        is_manual = False
-        for sample_library_name in sample_library_names:
-            library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
-            if not library_metadata.empty and library_metadata["workflow"].unique().item() == "manual":
-                logger.info(f"Skipping sample '{sample_name}'. Workflow column for matching "
-                            f"sample '{sample_library_name}' is set to manual")
-                is_manual = True
-                break
-
-        # Break out of manual
-        if is_manual:
+        if library_metadata["workflow"].unique().item() == "manual":
             # We do not pursue manual samples
-            logger.info(f"Skipping sample '{sample_name}'. "
+            logger.info(f"Skipping sample '{sample_library_name}'. "
                         f"Workflow column is set to manual for at least one library name")
             continue
 
         # iterate through libraries for this sample and collect their assay types
-        assay_types = []
-        for sample_library_name in sample_library_names:
-            library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
-            if not library_metadata.empty:
-                assay_types.append(library_metadata["type"].unique().item())
-
-        # ensure there are some assay types for this sample
-        if len(set(assay_types)) == 0:
-            logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. NO ASSAY TYPE METADATA FOUND.")
-            continue
-
-        # ensure only one assay type
-        if not len(set(assay_types)) == 1:
-            logger.warning(f"SKIP SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH. MULTIPLE ASSAY TYPES: {assay_types}")
-            continue
-
-        # now we assign this _single_ assay type
-        assay_type = list(set(assay_types))[0]
+        assay_type = library_metadata["type"].unique().item()
 
         # skip germline if assay type is not WGS
         if assay_type != "WGS":
-            logger.warning(f"SKIP {assay_type} SAMPLE '{sample_name}' GERMLINE WORKFLOW LAUNCH.")
+            logger.warning(f"SKIP {assay_type} SAMPLE '{sample_library_name}' GERMLINE WORKFLOW LAUNCH.")
             continue
 
         # convert read_1 and read_2 to cwl file location dict format
@@ -405,8 +383,8 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         sample_df["read_2"] = sample_df["read_2"].apply(cwl_file_path_as_string_to_dict)
 
         job = {
-            "sample_name": sample_name,
-            "fastq_list_rows": sample_df.to_dict(orient="records"),
+            "sample_name": sample_library_name,
+            "fastq_list_rows": sample_df.drop(columns=["sample_library_names"]).to_dict(orient="records"),
             "seq_run_id": this_sqr.run_id if this_sqr else None,
             "seq_name": this_sqr.name if this_sqr else None,
             "batch_run_id": int(this_batch_run.id)
