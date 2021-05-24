@@ -1,9 +1,12 @@
+import json
 import random
 import uuid
 from typing import Union
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import Max, QuerySet, Q
+from rest_framework import serializers
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
@@ -223,6 +226,10 @@ class LabMetadataWorkflow(models.TextChoices):
     RESEARCH = "research"
 
 
+class LabMetadataManager(models.Manager):
+    pass
+
+
 class LabMetadata(models.Model):
     """
     Models a row in the lab tracking sheet data. Fields are the columns.
@@ -255,6 +262,8 @@ class LabMetadata(models.Model):
     workflow = models.CharField(choices=LabMetadataWorkflow.choices, max_length=255)
     coverage = models.CharField(max_length=255, null=True, blank=True)
     truseqindex = models.CharField(max_length=255, null=True, blank=True)
+
+    objects = LabMetadataManager()
 
     def __str__(self):
         return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
@@ -418,6 +427,10 @@ class SequenceRun(models.Model):
                f"Status '{self.status}'"
 
 
+class FastqListRowManager(models.Manager):
+    pass
+
+
 class FastqListRow(models.Model):
     class Meta:
         unique_together = ['rgid']
@@ -432,8 +445,31 @@ class FastqListRow(models.Model):
 
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
 
+    objects = FastqListRowManager()
+
     def __str__(self):
         return f"RGID: {self.rgid}, RGSM: {self.rgsm}, RGLB: {self.rglb}"
+
+    def to_dict(self):
+        dict_obj = {
+            "rgid": self.rgid,
+            "rglb": self.rglb,
+            "rgsm": self.rgsm,
+            "lane": self.lane,
+            "read_1": self.read_1_to_dict(),
+        }
+        if self.read_2:
+            dict_obj["read_2"] = self.read_2_to_dict()
+        return dict_obj
+
+    def __json__(self):
+        return json.dumps(self.to_dict())
+
+    def read_1_to_dict(self):
+        return {"class": "File", "location": self.read_1}
+
+    def read_2_to_dict(self):
+        return {"class": "File", "location": self.read_2}
 
 
 class Batch(models.Model):
@@ -503,9 +539,26 @@ class WorkflowManager(models.Manager):
             sequence_run=sequence_run,
             batch_run=batch_run,
             end__isnull=True,
-            end_status__isnull=True,
+            end_status__isnull=True,  # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
             start__isnull=False,
             input__isnull=False,
+        )
+        return qs
+
+    def get_running_by_sequence_run(self, sequence_run: SequenceRun, type_name: str) -> QuerySet:
+        qs: QuerySet = self.filter(
+            sequence_run=sequence_run,
+            type_name__iexact=type_name.lower(),
+            end__isnull=True
+        )
+        return qs
+
+    def get_succeeded_by_sequence_run(self, sequence_run: SequenceRun, type_name: str) -> QuerySet:
+        qs: QuerySet = self.filter(
+            sequence_run=sequence_run,
+            type_name__iexact=type_name.lower(),
+            end__isnull=False,
+            end_status__iexact=WorkflowStatus.SUCCEEDED.value
         )
         return qs
 

@@ -3,8 +3,9 @@ try:
 except ImportError:
     pass
 
-import django
 import os
+
+import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -14,7 +15,6 @@ django.setup()
 # Standards
 import copy
 import logging
-from datetime import datetime, timezone
 
 # Data portal imports
 from data_portal.models import Workflow
@@ -31,7 +31,9 @@ logger.setLevel(logging.INFO)
 
 
 def sqs_handler(event, context):
-    """event payload dict
+    """
+    Unpack body from SQS wrapper.
+    SQS event payload dict:
     {
         'Records': [
             {
@@ -68,7 +70,7 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        "sample_name": sample_name,
+        "subject_id": "SUBJECT_ID",
         "fastq_list_rows": [{
             "rgid": "index1.index2.lane",
             "rgsm": "sample_name",
@@ -83,9 +85,22 @@ def handler(event, context) -> dict:
               "location": "gds://path/to/read_2.fastq.gz"
             }
         }],
-        "seq_run_id": "sequence run id",
-        "seq_name": "sequence run name",
-        "batch_run_id": "batch run id",
+        "tumor_fastq_list_rows": [{
+            "rgid": "index1.index2.lane",
+            "rgsm": "sample_name",
+            "rglb": "UnknownLibrary",
+            "lane": int,
+            "read_1": {
+              "class": "File",
+              "location": "gds://path/to/read_1.fastq.gz"
+            },
+            "read_2": {
+              "class": "File",
+              "location": "gds://path/to/read_2.fastq.gz"
+            }
+        }],
+        "output_file_prefix": "SAMPLEID_LIBRARYID",
+        "output_directory": "SAMPLEID_LIBRARYID"
     }
 
     :param event:
@@ -93,73 +108,72 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.GERMLINE.name} event")
+    logger.info(f"Start processing {WorkflowType.TUMOR_NORMAL.name} event")
     logger.info(libjson.dumps(event))
 
     # Extract name of sample and the fastq list rows
-    sample_name = event['sample_name']
+    subject_id = event['subject_id']
+    output_file_prefix = event['output_file_prefix']
+    output_directory = event['output_directory']
     fastq_list_rows = event['fastq_list_rows']
-
-    # Set sequence run id
-    seq_run_id = event.get('seq_run_id', None)
-    seq_name = event.get('seq_name', None)
-    # Set batch run id
-    batch_run_id = event.get('batch_run_id', None)
+    tumor_fastq_list_rows = event['tumor_fastq_list_rows']
 
     # Set workflow helper
-    wfl_helper = WorkflowHelper(WorkflowType.GERMLINE)
+    wfl_helper = WorkflowHelper(WorkflowType.TUMOR_NORMAL)
 
-    # Read input template from parameter store
+    # Read input template from parameter store and populate values
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input["sample_name"] = f"{sample_name}"
+    workflow_input["output_file_prefix"] = f"{output_file_prefix}"
+    workflow_input["output_directory"] = f"{output_directory}"
     workflow_input["fastq_list_rows"] = fastq_list_rows
+    workflow_input["tumor_fastq_list_rows"] = tumor_fastq_list_rows
 
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
-    sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
-    batch_run = services.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
-
-    matched_runs = services.search_matching_runs(
-        type_name=WorkflowType.GERMLINE.name,
-        wfl_id=workflow_id,
-        version=workflow_version,
-        sample_name=sample_name,
-        sequence_run=sqr,
-        batch_run=batch_run,
-    )
+    # check if a workflow is already running
+    # TODO: missing criteria to uniquely match workflows to metadata
+    # matched_runs = services.search_matching_runs(
+    #     type_name=WorkflowType.TUMOR_NORMAL.name,
+    #     wfl_id=workflow_id,
+    #     version=workflow_version
+    # )
+    # TODO: the above will block if even one T/N workflow is running. We want to check against the SAME workflow
+    matched_runs = list()
 
     if len(matched_runs) > 0:
         results = []
         for workflow in matched_runs:
+            input_json = libjson.loads(workflow.input)
+
+            if not input_json['output_directory'].contains(subject_id):
+                # TODO: assuming the subject ID is part of the output directory. Need to find better way!
+                # skip workflows of other subjects
+                continue
+
             result = {
-                'sample_name': workflow.sample_name,
                 'id': workflow.id,
                 'wfr_id': workflow.wfr_id,
                 'wfr_name': workflow.wfr_name,
                 'status': workflow.end_status,
                 'start': libdt.serializable_datetime(workflow.start),
-                'sequence_run_id': workflow.sequence_run.id if sqr else None,
-                'batch_run_id': workflow.batch_run.id if batch_run else None,
             }
             results.append(result)
-        results_dict = {
-            'status': "SKIPPED",
-            'reason': "Matching workflow runs found",
-            'event': libjson.dumps(event),
-            'matched_runs': results
-        }
-        logger.info(libjson.dumps(results_dict))
-        return results_dict
 
-    # construct and format workflow run name convention
-    workflow_run_name = wfl_helper.construct_workflow_name(
-        seq_name=seq_name,
-        seq_run_id=seq_run_id,
-        sample_name=sample_name
-    )
+        if len(results):
+            results_dict = {
+                'status': "SKIPPED",
+                'reason': "Matching workflow runs found",
+                'event': libjson.dumps(event),
+                'matched_runs': results
+            }
+            logger.info(libjson.dumps(results_dict))
+            return results_dict
+
+    # If no running workflows were found, we proceed to preparing and kicking it off
+    workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -174,27 +188,24 @@ def handler(event, context) -> dict:
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
             'wfv_id': wfl_run['workflow_version']['id'],
-            'type': WorkflowType.GERMLINE,
+            'type': WorkflowType.TUMOR_NORMAL,
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),
-            'end_status': wfl_run.get('status'),
-            'sequence_run': sqr,
-            'sample_name': sample_name,
-            'batch_run': batch_run,
+            'end_status': wfl_run.get('status')
         }
     )
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
+        'subject_id': subject_id,
         'sample_name': workflow.sample_name,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
-        'start': libdt.serializable_datetime(workflow.start),
-        'batch_run_id': workflow.batch_run.id if batch_run else None,
+        'start': libdt.serializable_datetime(workflow.start)
     }
 
     logger.info(libjson.dumps(result))

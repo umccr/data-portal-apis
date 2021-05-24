@@ -4,6 +4,7 @@ except ImportError:
     pass
 
 import os
+
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
@@ -15,7 +16,8 @@ import logging
 from typing import List
 import pandas as pd
 
-from data_portal.models import Workflow, SequenceRun, Batch, BatchRun
+from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
+    LabMetadataPhenotype, FastqListRow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
@@ -71,6 +73,134 @@ def update_step(wfr_id, wfv_id, wfr_event, context):
     return None
 
 
+def get_library_id_from_workflow(workflow: Workflow):
+    # extract library ID from Germline WF sample_name
+    # TODO: is there a better way? Could use the fastq_list_row entries of the workflow 'input'
+
+    # remove the first part (sample ID) from the sample_name to get the library ID
+    # NOTE: this may not be exactly the library ID used in the Germline workflow (stripped off _topup/_rerun), but
+    #       for our use case that does not matter, as we are merging all libs from the same subject anyway
+    return '_'.join(workflow.sample_name.split('_')[1:])
+
+
+def get_subjects_from_runs(workflows: list) -> list:
+    subjects = set()
+    for workflow in workflows:
+        # use workflow helper class to extract sample/library ID from workflow
+        library_id = get_library_id_from_workflow(workflow)
+        if library_id:
+            # use metadata helper class to get corresponding subject ID
+            subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
+            if subject_id:
+                subjects.add(subject_id)
+            else:
+                raise ValueError(f"No subject for library {library_id}")
+        else:
+            raise ValueError(f"Could not extract LibraryID from workflow {workflow.wfr_id}")
+
+    return list(subjects)
+
+
+def extract_sample_library_ids(fastq_list_rows: List[FastqListRow]):
+    samples = set()
+    libraries = set()
+
+    for row in fastq_list_rows:
+        libraries.add(row.rglb)
+        samples.add(row.rgsm)
+
+    return list(samples), list(libraries)
+
+
+def prepare_tumor_normal_jobs(subjects: List[str]) -> list:
+    jobs = list()
+    for subject in subjects:
+        job = create_tn_job(subject)
+        if job:
+            jobs.append(job)
+        else:
+            logger.debug(f"Not running T/N workflow for {subject}. Conditions not met.")
+
+    return jobs
+
+
+def create_tn_job(subject_id: str) -> dict:
+    # TODO: could query for all records in one go and then filter locally
+    # records = LabMetadata.objects.filter(subject_id=subject_id)
+
+    # extract tumor/normal pairs for a subject (taking into account Type & Phenotype)
+    tumor_records = LabMetadata.objects.filter(
+        subject_id=subject_id,
+        type__iexact=LabMetadataType.WGS.value.lower(),
+        phenotype__iexact=LabMetadataPhenotype.TUMOR.value.lower())
+
+    normal_records = LabMetadata.objects.filter(
+        subject_id=subject_id,
+        type__iexact=LabMetadataType.WGS.value.lower(),
+        phenotype__iexact=LabMetadataPhenotype.NORMAL.value.lower())
+
+    # TODO: sort out topup/rerun logic
+
+    # check if we have records for both phenotypes
+    # entries for tumor and normal don't have to happen at the same time, and in some cases we don't have both at all
+    if len(tumor_records) == 0 or len(normal_records) == 0:
+        logger.warning(f"Skipping subject {subject_id} (tumor or normal lib still missing).")
+        return {}
+
+    # now that we found the metadata records check if FASTQs are available
+    tumor_fastq_list_rows = list()
+    for record in tumor_records:
+        fastq_rows = FastqListRow.objects.filter(rglb=record.library_id)
+        tumor_fastq_list_rows.extend(fastq_rows)
+    if len(tumor_fastq_list_rows) < 1:
+        # TODO: legacy data might be not in fastq_list_row table. Could fall back to alternative lookup
+        logger.debug(f"Skipping subject {subject_id} (tumor FASTQs still missing).")
+        return {}
+
+    normal_fastq_list_rows: List[FastqListRow] = list()
+    for record in normal_records:
+        fastq_rows = FastqListRow.objects.filter(rglb=record.library_id)
+        normal_fastq_list_rows.extend(fastq_rows)
+    if len(normal_fastq_list_rows) < 1:
+        # TODO: legacy data might be not in fastq_list_row table. Could fall back to alternative lookup
+        logger.debug(f"Skipping subject {subject_id} (normal FASTQs still missing).")
+        return {}
+
+    # quick check: at this point we'd expect one library/sample for each normal/tumor
+    # NOTE: IDs are from rglb/rgsm of FastqListRow, so library IDs are stripped of _topup/_rerun extensions
+    # TODO: handle other cases
+    n_samples, n_libraries = extract_sample_library_ids(normal_fastq_list_rows)
+    logger.info(f"Normal samples/Libraries for subject {subject_id}: {n_samples}/{n_libraries}")
+    t_samples, t_libraries = extract_sample_library_ids(tumor_fastq_list_rows)
+    logger.info(f"Tumor samples/Libraries for subject {subject_id}: {t_samples}/{t_libraries}")
+    if len(n_samples) != 1 or len(n_libraries) != 1:
+        raise ValueError(f"Unexpected number of normal samples!")
+    if len(t_samples) != 1 or len(t_libraries) != 1:
+        raise ValueError(f"Unexpected number of tumor samples!")
+
+    tumor_sample_id = t_samples[0]
+
+    # hacky way to convert non-serializable Django Model objects to the Json format we expect
+    # TODO: find a better way to define a Json Serializer for Django Model objects
+    normal_dict_list = list()
+    for row in normal_fastq_list_rows:
+        normal_dict_list.append(row.to_dict())
+    tumor_dict_list = list()
+    for row in tumor_fastq_list_rows:
+        tumor_dict_list.append(row.to_dict())
+
+    # create T/N job definition
+    job_json = {
+        "subject_id": subject_id,
+        "fastq_list_rows": normal_dict_list,
+        "tumor_fastq_list_rows": tumor_dict_list,
+        "output_file_prefix": tumor_sample_id,
+        "output_directory": subject_id
+    }
+
+    return job_json
+
+
 def next_step(this_workflow: Workflow, context):
     """determine next pipeline step based on this_workflow state from database
 
@@ -82,11 +212,11 @@ def next_step(this_workflow: Workflow, context):
         # skip if update_step has skipped
         return
 
+    this_sqr: SequenceRun = this_workflow.sequence_run
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
 
-        this_sqr: SequenceRun = this_workflow.sequence_run
         # a bcl convert workflow run association to a sequence run is very strong and
         # those logic impl this point onward depends on its attribute like sequence run name
         if this_sqr is None:
@@ -149,6 +279,26 @@ def next_step(this_workflow: Workflow, context):
             'batch_run_id': this_batch_run.id,
             'batch_run_step': this_batch_run.step,
             'batch_run_status': "RUNNING" if this_batch_run.running else "NOT_RUNNING"
+        }
+    elif this_workflow.type_name.lower() == WorkflowType.GERMLINE.value.lower():
+        # check if all other Germline workflows for this run have finished
+        # if yes we continue to the T/N workflow
+        # if not, we wait (until all Germline workflows have finished)
+        running: List[Workflow] = services.get_germline_running_by_sequence_run(sequence_run=this_sqr)
+        succeeded: List[Workflow] = services.get_germline_succeeded_by_sequence_run(sequence_run=this_sqr)
+        subjects = list()
+        if len(running) == 0:
+            # determine which samples are available for T/N wokflow
+            subjects = get_subjects_from_runs(succeeded)
+            job_list = prepare_tumor_normal_jobs(subjects=subjects)
+            if job_list:
+                queue_arn = libssm.get_ssm_param(constant.SQS_TN_QUEUE_ARN)
+                libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
+        else:
+            logger.debug(f"Germline workflow finished, but {len(running)} still running. Wait for them to finish...")
+
+        return {
+            "subjects": subjects
         }
 
 
@@ -271,6 +421,7 @@ def parse_bcl_convert_output(output_json: str) -> list:
 
 
 def cwl_file_path_as_string_to_dict(file_path):
+    # TODO: extract to global util?
     """
     Convert "gds://path/to/file" to {"class": "File", "location": "gds://path/to/file"}
     :param file_path:

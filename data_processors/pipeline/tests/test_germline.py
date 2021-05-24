@@ -102,7 +102,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
         mock_sqr: SequenceRun = SequenceRunFactory()
         mock_batch_run: BatchRun = BatchRunFactory()
 
-        wfl_helper = WorkflowHelper(WorkflowType.GERMLINE.value)
+        wfl_helper = WorkflowHelper(WorkflowType.GERMLINE)
 
         mock_germline = Workflow()
         mock_germline.type_name = WorkflowType.GERMLINE.name

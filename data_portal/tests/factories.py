@@ -18,6 +18,11 @@ class TestConstant(Enum):
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
     version = "v1"
     sqr_name = "200508_A01052_0001_BH5LY7ACGT"
+    library_id_normal = "L2100001"
+    library_id_tumor = "L2100002"
+    sample_id = "PRJ210001"
+    sample_name_normal = f"{sample_id}_{library_id_normal}"
+    sample_name_tumor = f"{sample_id}_{library_id_tumor}"
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):
@@ -138,6 +143,29 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     start = make_aware(datetime.now())
     end_status = WorkflowStatus.RUNNING.value
     notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
+    )
+
+
+class GermlineWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    sequence_run = factory.SubFactory(SequenceRunFactory)
+    wfr_id = TestConstant.wfr_id.value
+    wfv_id = TestConstant.wfv_id.value
+    wfl_id = TestConstant.wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.GERMLINE.name
+    input = json.dumps({
+        "mock": "must load template from ssm parameter store"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+    sample_name = TestConstant.sample_name_tumor.value
 
     wfr_name = factory.LazyAttribute(
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"

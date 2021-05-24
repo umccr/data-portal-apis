@@ -4,6 +4,7 @@ from typing import List, Dict
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import QuerySet
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
@@ -740,3 +741,20 @@ def get_fastq_list_row_by_rgid(rgid):
         return None
 
     return fastq_list_row
+
+
+@transaction.atomic
+def get_germline_running_by_sequence_run(sequence_run: SequenceRun):
+    # query for Workflows associated with this SequenceRun
+    # that are GERMLINE workflows
+    qs: QuerySet = Workflow.objects.get_running_by_sequence_run(sequence_run=sequence_run, type_name=WorkflowType.GERMLINE.value.lower())
+    return qs.all()
+
+
+@transaction.atomic
+def get_germline_succeeded_by_sequence_run(sequence_run: SequenceRun):
+    # query for Workflows associated with this SequenceRun
+    # that are GERMLINE workflows
+    qs: QuerySet = Workflow.objects.get_succeeded_by_sequence_run(sequence_run=sequence_run, type_name=WorkflowType.GERMLINE.value.lower())
+    # TODO: sort out duplicated WF records (e.g. due to workflow rerun/resubmission)
+    return qs.all()
