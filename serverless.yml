@@ -118,6 +118,15 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_germline_queue_arn}
     timeout: 28
 
+  sqs_tumor_normal_event_processor:
+    handler: data_processors.pipeline.lambdas.tumor_normal.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_tumor_normal_queue_arn}
+    timeout: 28
+
   sqs_notification_event_processor:
     handler: data_processors.pipeline.lambdas.notification.sqs_handler
     layers:
@@ -135,6 +144,12 @@ functions:
 
   germline:
     handler: data_processors.pipeline.lambdas.germline.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  tumor_normal:
+    handler: data_processors.pipeline.lambdas.tumor_normal.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
@@ -238,6 +253,7 @@ package:
     - venv/**
     - .venv/**
     - env/**
+    - .env/**
     - data/**
     - swagger/**
     - docker-compose.yml

@@ -83,20 +83,20 @@ def get_library_id_from_workflow(workflow: Workflow):
     return '_'.join(workflow.sample_name.split('_')[1:])
 
 
-def get_subjects_from_runs(workflows: list) -> list:
+def get_subjects_from_runs(workflows: List[Workflow]) -> list:
     subjects = set()
     for workflow in workflows:
         # use workflow helper class to extract sample/library ID from workflow
         library_id = get_library_id_from_workflow(workflow)
-        if library_id:
-            # use metadata helper class to get corresponding subject ID
+        logger.info(f"Extracted libraryID {library_id} from workflow {workflow} with sample name: {workflow.sample_name}")
+        # use metadata helper class to get corresponding subject ID
+        try:
             subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
-            if subject_id:
-                subjects.add(subject_id)
-            else:
-                raise ValueError(f"No subject for library {library_id}")
-        else:
-            raise ValueError(f"Could not extract LibraryID from workflow {workflow.wfr_id}")
+        except LabMetadata.DoesNotExist:
+            subject_id = None
+            logger.error(f"No subject for library {library_id}")
+        if subject_id:
+            subjects.add(subject_id)
 
     return list(subjects)
 
@@ -168,15 +168,17 @@ def create_tn_job(subject_id: str) -> dict:
 
     # quick check: at this point we'd expect one library/sample for each normal/tumor
     # NOTE: IDs are from rglb/rgsm of FastqListRow, so library IDs are stripped of _topup/_rerun extensions
-    # TODO: handle other cases
+    # TODO: handle other cases (multiple tumor/normal samples)
     n_samples, n_libraries = extract_sample_library_ids(normal_fastq_list_rows)
     logger.info(f"Normal samples/Libraries for subject {subject_id}: {n_samples}/{n_libraries}")
     t_samples, t_libraries = extract_sample_library_ids(tumor_fastq_list_rows)
     logger.info(f"Tumor samples/Libraries for subject {subject_id}: {t_samples}/{t_libraries}")
     if len(n_samples) != 1 or len(n_libraries) != 1:
-        raise ValueError(f"Unexpected number of normal samples!")
+        logger.warning(f"Unexpected number of normal samples! Skipping subject {subject_id}")
+        return {}
     if len(t_samples) != 1 or len(t_libraries) != 1:
-        raise ValueError(f"Unexpected number of tumor samples!")
+        logger.warning(f"Unexpected number of tumor samples! Skipping subject {subject_id}")
+        return {}
 
     tumor_sample_id = t_samples[0]
 
