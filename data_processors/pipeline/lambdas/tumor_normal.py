@@ -71,6 +71,7 @@ def handler(event, context) -> dict:
     """event payload dict
     {
         "subject_id": "SUBJECT_ID",
+        "sample_name": "TUMOR_SAMPLE_ID",
         "fastq_list_rows": [{
             "rgid": "index1.index2.lane",
             "rgsm": "sample_name",
@@ -117,6 +118,7 @@ def handler(event, context) -> dict:
     output_directory = event['output_directory']
     fastq_list_rows = event['fastq_list_rows']
     tumor_fastq_list_rows = event['tumor_fastq_list_rows']
+    sample_name = event['sample_name']
 
     # Set workflow helper
     wfl_helper = WorkflowHelper(WorkflowType.TUMOR_NORMAL)
@@ -192,7 +194,8 @@ def handler(event, context) -> dict:
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),
-            'end_status': wfl_run.get('status')
+            'end_status': wfl_run.get('status'),
+            'sample_name': sample_name
         }
     )
 

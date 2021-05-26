@@ -14,6 +14,7 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
 
         workflow: dict = tumor_normal.handler({
             "subject_id": "SUBJECT_ID",
+            "sample_name": "SAMPLE_NAME",
             "fastq_list_rows": [{
                 "rgid": "index1.index2.lane",
                 "rgsm": "sample_name",
