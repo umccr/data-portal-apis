@@ -317,8 +317,10 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         build_tn_mock()
 
-        job_dict = orchestrator.create_tn_job(tn_mock_subject_id)
+        job_dict_list = orchestrator.create_tn_jobs(tn_mock_subject_id)
+        self.assertEqual(len(job_dict_list), 1)
 
+        job_dict = job_dict_list[0]
         self.assertEqual(job_dict['subject_id'], tn_mock_subject_id)
         self.assertEqual(job_dict['fastq_list_rows'][0]['rglb'], TestConstant.library_id_normal.value)
         self.assertEqual(job_dict['fastq_list_rows'][0]['read_1']['location'], tn_mock_normal_read_1)
