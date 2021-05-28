@@ -1,14 +1,14 @@
 aws-xray-sdk==2.8.0
-boto3==1.17.61
-botocore==1.20.61
-Django==3.2
+boto3==1.17.83
+botocore==1.20.83
+Django==3.2.3
 django-environ==0.4.5
 django-cors-headers==3.7.0
 djangorestframework==3.12.4
 pymysql==1.0.2
 python-dateutil==2.8.1
-google-auth==1.30.0
-Werkzeug==1.0.1
+google-auth==1.30.1
+Werkzeug==2.0.1
 libica==0.5.0
 gspread==3.7.0
 gspread-pandas==2.3.0
@@ -16,3 +16,4 @@ sample-sheet==0.12.0
 requests==2.25.1
 pandas==1.2.4
 cachetools==4.2.2
+drf_yasg==1.20.0
