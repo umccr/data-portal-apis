@@ -1,25 +1,25 @@
 service: data-portal-api
 
-# NOTE: we still stick to sls v1 bec not all plugins used are compatible with v2
-# especially https://github.com/logandk/serverless-wsgi
-frameworkVersion: ^1.83.3
+frameworkVersion: '^2'
 
 plugins:
   - serverless-wsgi
   - serverless-python-requirements
   - serverless-domain-manager
-  - serverless-aws-documentation
   - serverless-associate-waf
-  - serverless-plugin-scripts
   - serverless-prune-plugin
 
 provider:
+  lambdaHashingVersion: 20201221
   name: aws
   runtime: python3.8
-  stage: ${opt:STAGE}
+  stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
-  deploymentBucket: ${ssm:/data_portal/backend/serverless_deployment_bucket}
-  role: ${ssm:/data_portal/backend/lambda_iam_role_arn}
+  deploymentBucket:
+    name: ${ssm:/data_portal/backend/serverless_deployment_bucket}
+    serverSideEncryption: AES256
+  iam:
+    role: ${ssm:/data_portal/backend/lambda_iam_role_arn}
   vpc:
     securityGroupIds:
       "Fn::Split":
@@ -60,8 +60,8 @@ functions:
     events:
       - schedule:
           rate: cron(0 12 * * ? *)
-          enabled: ${self:custom.enabled.${opt:STAGE}, self:custom.enabled.other}
-    timeout: 60
+          enabled: ${self:custom.enabled.${self:provider.stage}, self:custom.enabled.other}
+    timeout: 120
 
   labmetadata_scheduled_update_processor:
     handler: data_processors.lims.lambdas.labmetadata.scheduled_update_handler
@@ -70,8 +70,8 @@ functions:
     events:
       - schedule:
           rate: cron(0 12 * * ? *)
-          enabled: ${self:custom.enabled.${opt:STAGE}, self:custom.enabled.other}
-    timeout: 60
+          enabled: ${self:custom.enabled.${self:provider.stage}, self:custom.enabled.other}
+    timeout: 120
 
   sqs_s3_event_processor:
     handler: data_processors.s3.lambdas.s3_event.handler
@@ -80,7 +80,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
-    timeout: 28
+    timeout: 120
     # Uncomment to enable xray on this lambda
 #    tracing: Active
 #    environment:
@@ -216,9 +216,6 @@ custom:
   wsgi:
     app: data_portal.wsgi.application
     packRequirements: false
-  scripts:
-    hooks:
-      'deploy:finalize': SLS_DEBUG=true npx serverless invoke -f migrate --STAGE ${opt:STAGE} --noinput
   pythonRequirements:
     dockerizePip: non-linux
     layer: true
@@ -240,32 +237,32 @@ custom:
     number: 3
 
 package:
-  exclude:
-    - .husky/**
-    - .git/**
-    - .idea/**
-    - __pycache__/**
-    - node_modules/**
-    - package.json
-    - yarn.lock
-    - mocks/**
-    - downloads/**
-    - venv/**
-    - .venv/**
-    - env/**
-    - .env/**
-    - data/**
-    - swagger/**
-    - docker-compose.yml
-    - docker-compose.override.sample.yml
-    - docker-compose.override.yml
-    - docker-compose.ci.yml
-    - buildspec.yml
-    - slimpatterns.yml
-    - Makefile
-    - README.md
-    - requirements-dev.txt
-    - requirements-test.txt
-    - haproxy.cfg
-    - loaddata.sh
-    - syncdkr.sh
+  patterns:
+    - '!.husky/**'
+    - '!.git/**'
+    - '!.idea/**'
+    - '!__pycache__/**'
+    - '!node_modules/**'
+    - '!package.json'
+    - '!yarn.lock'
+    - '!mocks/**'
+    - '!downloads/**'
+    - '!venv/**'
+    - '!.venv/**'
+    - '!env/**'
+    - '!.env/**'
+    - '!data/**'
+    - '!swagger/**'
+    - '!docker-compose.yml'
+    - '!docker-compose.override.sample.yml'
+    - '!docker-compose.override.yml'
+    - '!docker-compose.ci.yml'
+    - '!buildspec.yml'
+    - '!slimpatterns.yml'
+    - '!Makefile'
+    - '!README.md'
+    - '!requirements-dev.txt'
+    - '!requirements-test.txt'
+    - '!haproxy.cfg'
+    - '!loaddata.sh'
+    - '!syncdkr.sh'

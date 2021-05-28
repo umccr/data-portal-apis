@@ -106,10 +106,10 @@ yarn install
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-npx serverless info --STAGE dev
-npx serverless invoke -f migrate --STAGE dev --noinput
-npx serverless invoke -f lims_scheduled_update_processor --STAGE dev --noinput
-npx serverless deploy --STAGE dev
+npx serverless info --stage dev
+npx serverless invoke -f migrate --stage dev
+npx serverless invoke -f lims_scheduled_update_processor --stage dev
+npx serverless deploy --stage dev
 ```
 
 > Caveat: If lambda timeout error occur then please try again. Lambda needs warm-up time and LIMS rows are growing, for example.
@@ -127,8 +127,8 @@ npx serverless deploy --STAGE dev
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-SLS_DEBUG=true npx serverless delete_domain --STAGE dev
-SLS_DEBUG=true npx serverless remove --STAGE dev
+SLS_DEBUG=true npx serverless delete_domain --stage dev
+SLS_DEBUG=true npx serverless remove --stage dev
 ```
 
 ## X-Ray
