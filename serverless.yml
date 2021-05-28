@@ -6,7 +6,7 @@ plugins:
   - serverless-wsgi
   - serverless-python-requirements
   - serverless-domain-manager
-  - serverless-associate-waf
+  #- serverless-associate-waf
   - serverless-prune-plugin
 
 provider:
@@ -20,6 +20,40 @@ provider:
     serverSideEncryption: AES256
   iam:
     role: ${ssm:/data_portal/backend/lambda_iam_role_arn}
+  endpointType: regional
+  httpApi:
+    disableDefaultEndpoint: true
+    payload: '2.0'
+    cors:
+      allowedOrigins:
+        - https://data.umccr.org
+        - https://data.prod.umccr.org
+        - https://data.dev.umccr.org
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Amz-Date
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowedMethods:
+        - GET
+        - OPTIONS
+        - HEAD
+        - DELETE
+        - POST
+        - PUT
+        - PATCH
+      allowCredentials: true
+      maxAge: 300
+    authorizers:
+      cognitoJwtAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.${self:provider.region}.amazonaws.com/${ssm:/data_portal/client/cog_user_pool_id}
+        audience:
+          - ${ssm:/data_portal/client/cog_app_client_id_local}
+          - ${ssm:/data_portal/client/cog_app_client_id_stage}
   vpc:
     securityGroupIds:
       "Fn::Split":
@@ -39,12 +73,10 @@ functions:
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     events:
-      - http:
+      - httpApi:
           path: /{proxy+}
-          method: ANY
-          integration: lambda-proxy
-          authorizer: aws_iam
-          cors: true
+          method: '*'
+          authorizer: cognitoJwtAuthorizer
     timeout: 28
 
   migrate:
@@ -229,8 +261,10 @@ custom:
     stage: ${self:provider.stage}
     createRoute53Record: true
     certificateArn: ${ssm:/data_portal/backend/certificate_arn}
-  associateWaf:
-    name: ${ssm:/data_portal/backend/waf_name}
+    apiType: http
+    endpointType: regional
+  #associateWaf:
+  #  name: ${ssm:/data_portal/backend/waf_name}
   prune:
     automatic: true
     includeLayers: true
