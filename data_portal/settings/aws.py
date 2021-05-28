@@ -21,3 +21,18 @@ db_conn_cfg['OPTIONS'] = {
 DATABASES = {
     'default': db_conn_cfg
 }
+
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_CREDENTIALS = False
+
+CORS_ALLOWED_ORIGINS = [
+    'https://data.umccr.org',
+    'https://data.prod.umccr.org',
+    'https://data.dev.umccr.org',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'data.umccr.org',
+    'data.prod.umccr.org',
+    'data.dev.umccr.org',
+]

@@ -44,7 +44,7 @@ provider:
         - POST
         - PUT
         - PATCH
-      allowCredentials: true
+      allowCredentials: false
       maxAge: 300
     authorizers:
       cognitoJwtAuthorizer:

@@ -35,6 +35,8 @@ make start
 ```
 
 - REST API at: http://localhost:8000
+- Swagger at: http://localhost:8000/swagger/
+- ReDoc at: http://localhost:8000/redoc/
 - Look into `Makefile` for more dev routine targets
 
 #### Testing

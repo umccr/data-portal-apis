@@ -157,3 +157,18 @@ XRAY_RECORDER = {
 
 # turn off xray more generally and you can overwrite with env var AWS_XRAY_SDK_ENABLED=true at runtime
 xray.global_sdk_config.set_sdk_enabled(False)
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}
+
+REDOC_SETTINGS = {
+   'LAZY_RENDERING': False,
+}
