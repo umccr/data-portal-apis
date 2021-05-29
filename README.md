@@ -2,6 +2,8 @@
 
 Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal Client](https://github.com/umccr/data-portal-client).
 
+[OpenAPI documentation available here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/umccr/data-portal-apis/dev/swagger/swagger.json). See [User Guide](docs) for API usage.
+
 ## Local Development
 
 #### TL;DR

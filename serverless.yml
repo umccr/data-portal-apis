@@ -75,7 +75,11 @@ functions:
     events:
       - httpApi:
           path: /{proxy+}
-          method: '*'
+          method: GET
+          authorizer: cognitoJwtAuthorizer
+      - httpApi:
+          path: /{proxy+}
+          method: POST
           authorizer: cognitoJwtAuthorizer
     timeout: 28
 

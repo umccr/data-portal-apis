@@ -1,0 +1,1685 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "UMCCR Data Portal API",
+    "description": "UMCCR Data Portal API",
+    "termsOfService": "https://umccr.org/",
+    "contact": {
+      "email": "services@umccr.org"
+    },
+    "license": {
+      "name": "MIT License"
+    },
+    "version": "v1"
+  },
+  "host": "localhost:8000",
+  "schemes": [
+    "http"
+  ],
+  "basePath": "/",
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "paths": {
+    "/buckets/": {
+      "get": {
+        "operationId": "buckets_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "buckets"
+        ]
+      },
+      "parameters": []
+    },
+    "/buckets/{id}/": {
+      "get": {
+        "operationId": "buckets_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "tags": [
+          "buckets"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "A unique integer value identifying this s3 object.",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/file-signed-url": {
+      "get": {
+        "operationId": "file-signed-url_list",
+        "description": "query params\n* bucket: str,    mandatory,  the bucket name\n* key:    str,    mandatory,  the s3 object key",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "file-signed-url"
+        ]
+      },
+      "parameters": []
+    },
+    "/files": {
+      "get": {
+        "operationId": "files_list",
+        "description": "query_params\n* query:          str,    mandatory,  the query string (leave empty for no filter)\n* rowsPerPage:    int,    optional,   number of rows per page. (no effect is randomSamples is set).\n* page:           int,    optional,   the current page number. 0-based.\n* sortCol:        str,    optional,   the column to be sorted\n* sortAsc:        bool,   optional,   sort in ascending order\n* randomSamples:  int,    optional,   retrieve n randomly-selected samples",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "files"
+        ]
+      },
+      "parameters": []
+    },
+    "/gds/": {
+      "get": {
+        "operationId": "gds_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/GDSFileModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "gds"
+        ]
+      },
+      "parameters": []
+    },
+    "/gds/{id}/": {
+      "get": {
+        "operationId": "gds_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GDSFileModel"
+            }
+          }
+        },
+        "tags": [
+          "gds"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/gds/{id}/presign/": {
+      "get": {
+        "operationId": "gds_presign",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GDSFileModel"
+            }
+          }
+        },
+        "tags": [
+          "gds"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/lims/": {
+      "get": {
+        "operationId": "lims_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LIMSRowModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lims"
+        ]
+      },
+      "parameters": []
+    },
+    "/lims/{id}/": {
+      "get": {
+        "operationId": "lims_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/LIMSRowModel"
+            }
+          }
+        },
+        "tags": [
+          "lims"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/metadata/": {
+      "get": {
+        "operationId": "metadata_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LabMetadataModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "metadata"
+        ]
+      },
+      "parameters": []
+    },
+    "/metadata/{id}/": {
+      "get": {
+        "operationId": "metadata_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/LabMetadataModel"
+            }
+          }
+        },
+        "tags": [
+          "metadata"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "A unique integer value identifying this lab metadata.",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/presign/": {
+      "get": {
+        "operationId": "presign_list",
+        "description": "TODO this could extend to support possibly presign list of objects\n:param request:\n:return:",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "presign"
+        ]
+      },
+      "parameters": []
+    },
+    "/reports/": {
+      "get": {
+        "operationId": "reports_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Report"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ]
+      },
+      "parameters": []
+    },
+    "/reports/{id}/": {
+      "get": {
+        "operationId": "reports_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Report"
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "A UUID string identifying this report.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/runs/": {
+      "get": {
+        "operationId": "runs_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ]
+      },
+      "parameters": []
+    },
+    "/runs/{id}/": {
+      "get": {
+        "operationId": "runs_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "A unique integer value identifying this lims row.",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/s3/": {
+      "get": {
+        "operationId": "s3_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/S3ObjectModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "s3"
+        ]
+      },
+      "parameters": []
+    },
+    "/s3/{id}/": {
+      "get": {
+        "operationId": "s3_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/S3ObjectModel"
+            }
+          }
+        },
+        "tags": [
+          "s3"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/s3/{id}/content/": {
+      "get": {
+        "operationId": "s3_content",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/S3ObjectModel"
+            }
+          }
+        },
+        "produces": [
+          "application/json",
+          "image/*",
+          "application/octet-stream"
+        ],
+        "tags": [
+          "s3"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/s3/{id}/presign/": {
+      "get": {
+        "operationId": "s3_presign",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/S3ObjectModel"
+            }
+          }
+        },
+        "tags": [
+          "s3"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/s3/{id}/restore/": {
+      "post": {
+        "operationId": "s3_restore",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/S3ObjectModel"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/S3ObjectModel"
+            }
+          }
+        },
+        "tags": [
+          "s3"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/s3/{id}/status/": {
+      "get": {
+        "operationId": "s3_status",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/S3ObjectModel"
+            }
+          }
+        },
+        "tags": [
+          "s3"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/storage-stats": {
+      "get": {
+        "operationId": "storage-stats_list",
+        "description": "Storage statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "storage-stats"
+        ]
+      },
+      "parameters": []
+    },
+    "/subjects/": {
+      "get": {
+        "operationId": "subjects_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "subjects"
+        ]
+      },
+      "parameters": []
+    },
+    "/subjects/{id}/": {
+      "get": {
+        "operationId": "subjects_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "tags": [
+          "subjects"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "A unique integer value identifying this lims row.",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "GDSFileModel": {
+      "required": [
+        "file_id",
+        "name",
+        "volume_id",
+        "volume_name",
+        "tenant_id",
+        "sub_tenant_id",
+        "path",
+        "time_created",
+        "created_by",
+        "time_modified",
+        "modified_by",
+        "urn",
+        "size_in_bytes",
+        "archive_status",
+        "storage_tier"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "file_id": {
+          "title": "File id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "minLength": 1
+        },
+        "volume_id": {
+          "title": "Volume id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "volume_name": {
+          "title": "Volume name",
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "tenant_id": {
+          "title": "Tenant id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "sub_tenant_id": {
+          "title": "Sub tenant id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "path": {
+          "title": "Path",
+          "type": "string",
+          "minLength": 1
+        },
+        "time_created": {
+          "title": "Time created",
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "title": "Created by",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "time_modified": {
+          "title": "Time modified",
+          "type": "string",
+          "format": "date-time"
+        },
+        "modified_by": {
+          "title": "Modified by",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "inherited_acl": {
+          "title": "Inherited acl",
+          "type": "string",
+          "x-nullable": true
+        },
+        "urn": {
+          "title": "Urn",
+          "type": "string",
+          "minLength": 1
+        },
+        "size_in_bytes": {
+          "title": "Size in bytes",
+          "type": "integer",
+          "maximum": 9223372036854776000,
+          "minimum": -9223372036854776000
+        },
+        "is_uploaded": {
+          "title": "Is uploaded",
+          "type": "boolean",
+          "x-nullable": true
+        },
+        "archive_status": {
+          "title": "Archive status",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "time_archived": {
+          "title": "Time archived",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "storage_tier": {
+          "title": "Storage tier",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "presigned_url": {
+          "title": "Presigned url",
+          "type": "string",
+          "x-nullable": true
+        },
+        "unique_hash": {
+          "title": "Unique hash",
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      }
+    },
+    "LIMSRowModel": {
+      "required": [
+        "illumina_id",
+        "run",
+        "timestamp",
+        "sample_id",
+        "library_id"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "illumina_id": {
+          "title": "Illumina id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "run": {
+          "title": "Run",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string",
+          "format": "date"
+        },
+        "subject_id": {
+          "title": "Subject id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "sample_id": {
+          "title": "Sample id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "library_id": {
+          "title": "Library id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "external_subject_id": {
+          "title": "External subject id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "external_sample_id": {
+          "title": "External sample id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "external_library_id": {
+          "title": "External library id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "sample_name": {
+          "title": "Sample name",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "project_owner": {
+          "title": "Project owner",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "project_name": {
+          "title": "Project name",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "assay": {
+          "title": "Assay",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "phenotype": {
+          "title": "Phenotype",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "source": {
+          "title": "Source",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "quality": {
+          "title": "Quality",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "topup": {
+          "title": "Topup",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "secondary_analysis": {
+          "title": "Secondary analysis",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "fastq": {
+          "title": "Fastq",
+          "type": "string",
+          "x-nullable": true
+        },
+        "number_fastqs": {
+          "title": "Number fastqs",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "results": {
+          "title": "Results",
+          "type": "string",
+          "x-nullable": true
+        },
+        "trello": {
+          "title": "Trello",
+          "type": "string",
+          "x-nullable": true
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string",
+          "x-nullable": true
+        },
+        "todo": {
+          "title": "Todo",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        }
+      }
+    },
+    "LabMetadataModel": {
+      "required": [
+        "library_id",
+        "sample_name",
+        "sample_id",
+        "phenotype",
+        "quality",
+        "source",
+        "type",
+        "assay",
+        "workflow"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "library_id": {
+          "title": "Library id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "sample_name": {
+          "title": "Sample name",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "sample_id": {
+          "title": "Sample id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "external_sample_id": {
+          "title": "External sample id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "subject_id": {
+          "title": "Subject id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "external_subject_id": {
+          "title": "External subject id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "phenotype": {
+          "title": "Phenotype",
+          "type": "string",
+          "enum": [
+            "negative-control",
+            "normal",
+            "tumor"
+          ]
+        },
+        "quality": {
+          "title": "Quality",
+          "type": "string",
+          "enum": [
+            "ascites",
+            "blood",
+            "bone-marrow",
+            "buccal",
+            "cell-line",
+            "cfDNA",
+            "cyst-fluid",
+            "DNA",
+            "eyebrow-hair",
+            "FFPE",
+            "FNA",
+            "OCT",
+            "organoid",
+            "PDX-tissue",
+            "plasma-serum",
+            "RNA",
+            "tissue",
+            "water"
+          ]
+        },
+        "source": {
+          "title": "Source",
+          "type": "string",
+          "enum": [
+            "ascites",
+            "blood",
+            "bone-marrow",
+            "buccal",
+            "cell-line",
+            "cfDNA",
+            "cyst-fluid",
+            "DNA",
+            "eyebrow-hair",
+            "FFPE",
+            "FNA",
+            "OCT",
+            "organoid",
+            "PDX-tissue",
+            "plasma-serum",
+            "RNA",
+            "tissue",
+            "water"
+          ]
+        },
+        "project_name": {
+          "title": "Project name",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "project_owner": {
+          "title": "Project owner",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "experiment_id": {
+          "title": "Experiment id",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "enum": [
+            "ctDNA",
+            "ctTSO",
+            "exome",
+            "other",
+            "10X",
+            "TSO-DNA",
+            "TSO-RNA",
+            "WGS",
+            "WTS"
+          ]
+        },
+        "assay": {
+          "title": "Assay",
+          "type": "string",
+          "enum": [
+            "AgSsCRE",
+            "ctTSO",
+            "NebDNA",
+            "NebDNAu",
+            "NebRNA",
+            "PCR-Free-Tagmentation",
+            "10X-3prime-expression",
+            "10X-5prime-expression",
+            "10X-ATAC",
+            "10X-CITE-feature",
+            "10X-CITE-hashing",
+            "10X-CNV",
+            "10X-VDJ",
+            "10X-VDJ-TCR",
+            "TSODNA",
+            "TSORNA",
+            "TsqNano",
+            "TsqSTR"
+          ]
+        },
+        "override_cycles": {
+          "title": "Override cycles",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "workflow": {
+          "title": "Workflow",
+          "type": "string",
+          "enum": [
+            "bcl",
+            "clinical",
+            "control",
+            "manual",
+            "qc",
+            "research"
+          ]
+        },
+        "coverage": {
+          "title": "Coverage",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "truseqindex": {
+          "title": "Truseqindex",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        }
+      }
+    },
+    "Report": {
+      "required": [
+        "subject_id",
+        "sample_id",
+        "library_id",
+        "type"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "subject_id": {
+          "title": "Subject id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "sample_id": {
+          "title": "Sample id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "library_id": {
+          "title": "Library id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "enum": [
+            "qc_summary",
+            "multiqc",
+            "report_inputs",
+            "hrd_chord",
+            "hrd_hrdetect",
+            "purple_cnv_germ",
+            "purple_cnv_som",
+            "purple_cnv_som_gene",
+            "sigs_dbs",
+            "sigs_indel",
+            "sigs_snv_2015",
+            "sigs_snv_2020",
+            "sv_unmelted",
+            "sv_melted",
+            "sv_bnd_main",
+            "sv_bnd_purpleinf",
+            "sv_nobnd_main",
+            "sv_nobnd_other",
+            "sv_nobnd_manygenes",
+            "sv_nobnd_manytranscripts"
+          ]
+        },
+        "created_by": {
+          "title": "Created by",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "data": {
+          "title": "Data",
+          "type": "object",
+          "x-nullable": true
+        },
+        "s3_object_id": {
+          "title": "S3 object id",
+          "type": "integer",
+          "maximum": 9223372036854776000,
+          "minimum": -9223372036854776000,
+          "x-nullable": true
+        }
+      }
+    },
+    "S3ObjectModel": {
+      "required": [
+        "bucket",
+        "key",
+        "size",
+        "last_modified_date",
+        "e_tag"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "bucket": {
+          "title": "Bucket",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "key": {
+          "title": "Key",
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "title": "Size",
+          "type": "integer",
+          "maximum": 9223372036854776000,
+          "minimum": -9223372036854776000
+        },
+        "last_modified_date": {
+          "title": "Last modified date",
+          "type": "string",
+          "format": "date-time"
+        },
+        "e_tag": {
+          "title": "E tag",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "unique_hash": {
+          "title": "Unique hash",
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

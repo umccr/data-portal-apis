@@ -51,3 +51,6 @@ test_iap_mock:
 
 test_localstack:
 	@curl -s http://localhost:4566/health | jq
+
+openapi:
+	@curl -s http://localhost:8000/swagger.json | jq > swagger/swagger.json
