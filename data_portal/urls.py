@@ -7,7 +7,8 @@ from rest_framework import permissions
 from data_portal import views
 from .routers import OptionalSlashDefaultRouter
 from .viewsets import LIMSRowViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, \
-    RunViewSet, PresignedUrlViewSet, GDSFileViewSet, ReportViewSet, LabMetadataViewSet
+    RunViewSet, PresignedUrlViewSet, GDSFileViewSet, ReportViewSet, LabMetadataViewSet, FastqListRowViewSet, \
+    SequenceRunViewSet, WorkflowViewSet
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
@@ -19,6 +20,11 @@ router.register(r'subjects', SubjectViewSet, basename='subjects')
 router.register(r'runs', RunViewSet, basename='runs')
 router.register(r'reports', ReportViewSet, basename='reports')
 router.register(r'presign', PresignedUrlViewSet, basename='presign')
+
+# ica pipeline workflow automation related endpoints
+router.register(r'fastq', FastqListRowViewSet, basename='fastq')
+router.register(r'sequence', SequenceRunViewSet, basename='sequence')
+router.register(r'workflow', WorkflowViewSet, basename='workflow')
 
 schema_view = get_schema_view(
    openapi.Info(

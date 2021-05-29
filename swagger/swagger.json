@@ -136,6 +136,105 @@
         }
       ]
     },
+    "/fastq/": {
+      "get": {
+        "operationId": "fastq_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/FastqListRow"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "fastq"
+        ]
+      },
+      "parameters": []
+    },
+    "/fastq/{id}/": {
+      "get": {
+        "operationId": "fastq_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/FastqListRow"
+            }
+          }
+        },
+        "tags": [
+          "fastq"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
     "/file-signed-url": {
       "get": {
         "operationId": "file-signed-url_list",
@@ -926,6 +1025,105 @@
         }
       ]
     },
+    "/sequence/": {
+      "get": {
+        "operationId": "sequence_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/SequenceRun"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "sequence"
+        ]
+      },
+      "parameters": []
+    },
+    "/sequence/{id}/": {
+      "get": {
+        "operationId": "sequence_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/SequenceRun"
+            }
+          }
+        },
+        "tags": [
+          "sequence"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
     "/storage-stats": {
       "get": {
         "operationId": "storage-stats_list",
@@ -1041,9 +1239,164 @@
           "type": "integer"
         }
       ]
+    },
+    "/workflow/": {
+      "get": {
+        "operationId": "workflow_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Workflow"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workflow"
+        ]
+      },
+      "parameters": []
+    },
+    "/workflow/{id}/": {
+      "get": {
+        "operationId": "workflow_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Workflow"
+            }
+          }
+        },
+        "tags": [
+          "workflow"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
     }
   },
   "definitions": {
+    "FastqListRow": {
+      "required": [
+        "rgid",
+        "rgsm",
+        "rglb",
+        "lane",
+        "read_1"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "rgid": {
+          "title": "Rgid",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "rgsm": {
+          "title": "Rgsm",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "rglb": {
+          "title": "Rglb",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "lane": {
+          "title": "Lane",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "read_1": {
+          "title": "Read 1",
+          "type": "string",
+          "minLength": 1
+        },
+        "read_2": {
+          "title": "Read 2",
+          "type": "string",
+          "x-nullable": true
+        },
+        "sequence_run": {
+          "title": "Sequence run",
+          "type": "integer",
+          "x-nullable": true
+        }
+      }
+    },
     "GDSFileModel": {
       "required": [
         "file_id",
@@ -1678,6 +2031,233 @@
           "type": "string",
           "maxLength": 64,
           "minLength": 1
+        }
+      }
+    },
+    "SequenceRun": {
+      "required": [
+        "run_id",
+        "date_modified",
+        "status",
+        "gds_folder_path",
+        "gds_volume_name",
+        "reagent_barcode",
+        "v1pre3_id",
+        "acl",
+        "flowcell_barcode",
+        "sample_sheet_name",
+        "api_url",
+        "name",
+        "instrument_run_id",
+        "msg_attr_action",
+        "msg_attr_action_type",
+        "msg_attr_action_date",
+        "msg_attr_produced_by"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "run_id": {
+          "title": "Run id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "date_modified": {
+          "title": "Date modified",
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "gds_folder_path": {
+          "title": "Gds folder path",
+          "type": "string",
+          "minLength": 1
+        },
+        "gds_volume_name": {
+          "title": "Gds volume name",
+          "type": "string",
+          "minLength": 1
+        },
+        "reagent_barcode": {
+          "title": "Reagent barcode",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "v1pre3_id": {
+          "title": "V1pre3 id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "acl": {
+          "title": "Acl",
+          "type": "string",
+          "minLength": 1
+        },
+        "flowcell_barcode": {
+          "title": "Flowcell barcode",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "sample_sheet_name": {
+          "title": "Sample sheet name",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "api_url": {
+          "title": "Api url",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "instrument_run_id": {
+          "title": "Instrument run id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "msg_attr_action": {
+          "title": "Msg attr action",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "msg_attr_action_type": {
+          "title": "Msg attr action type",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "msg_attr_action_date": {
+          "title": "Msg attr action date",
+          "type": "string",
+          "format": "date-time"
+        },
+        "msg_attr_produced_by": {
+          "title": "Msg attr produced by",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        }
+      }
+    },
+    "Workflow": {
+      "required": [
+        "type_name",
+        "wfr_id",
+        "wfl_id",
+        "wfv_id",
+        "version",
+        "input",
+        "start"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "wfr_name": {
+          "title": "Wfr name",
+          "type": "string",
+          "x-nullable": true
+        },
+        "sample_name": {
+          "title": "Sample name",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "type_name": {
+          "title": "Type name",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "wfr_id": {
+          "title": "Wfr id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "wfl_id": {
+          "title": "Wfl id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "wfv_id": {
+          "title": "Wfv id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "version": {
+          "title": "Version",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "input": {
+          "title": "Input",
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "title": "Start",
+          "type": "string",
+          "format": "date-time"
+        },
+        "output": {
+          "title": "Output",
+          "type": "string",
+          "x-nullable": true
+        },
+        "end": {
+          "title": "End",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "end_status": {
+          "title": "End status",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "notified": {
+          "title": "Notified",
+          "type": "boolean",
+          "x-nullable": true
+        },
+        "sequence_run": {
+          "title": "Sequence run",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "batch_run": {
+          "title": "Batch run",
+          "type": "integer",
+          "x-nullable": true
         }
       }
     }

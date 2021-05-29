@@ -406,6 +406,34 @@ class GDSFile(models.Model):
         return f"File '{self.name}' in volume '{self.volume_name}' with path '{self.path}'"
 
 
+class SequenceRunManager(models.Manager):
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        run_id = kwargs.get('run_id', None)
+        if run_id:
+            qs = qs.filter(run_id__iexact=run_id)
+
+        name = kwargs.get('name', None)
+        if name:
+            qs = qs.filter(name__iexact=name)
+
+        run = kwargs.get('run', None)
+        if run:
+            qs = qs.filter(name__iexact=run)
+
+        instrument_run_id = kwargs.get('instrument_run_id', None)
+        if instrument_run_id:
+            qs = qs.filter(instrument_run_id__iexact=instrument_run_id)
+
+        status = kwargs.get('status', None)
+        if status:
+            qs = qs.filter(status__iexact=status)
+
+        return qs
+
+
 class SequenceRun(models.Model):
     class Meta:
         unique_together = ['run_id', 'date_modified', 'status']
@@ -429,6 +457,8 @@ class SequenceRun(models.Model):
     msg_attr_action_date = models.DateTimeField()
     msg_attr_produced_by = models.CharField(max_length=255)
 
+    objects = SequenceRunManager()
+
     def __str__(self):
         return f"Run ID '{self.run_id}', " \
                f"Name '{self.name}', " \
@@ -438,7 +468,39 @@ class SequenceRun(models.Model):
 
 
 class FastqListRowManager(models.Manager):
-    pass
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        sequence_run = kwargs.get('sequence_run', None)
+        if sequence_run:
+            qs = qs.filter(sequence_run_id__exact=sequence_run)
+
+        sequence = kwargs.get('sequence', None)
+        if sequence:
+            qs = qs.filter(sequence_run__name__iexact=sequence)
+
+        run = kwargs.get('run', None)
+        if run:
+            qs = qs.filter(sequence_run__name__iexact=run)
+
+        rgid = kwargs.get('rgid', None)
+        if rgid:
+            qs = qs.filter(rgid__iexact=rgid)
+
+        rgsm = kwargs.get('rgsm', None)
+        if rgsm:
+            qs = qs.filter(rgsm__iexact=rgsm)
+
+        rglb = kwargs.get('rglb', None)
+        if rglb:
+            qs = qs.filter(rglb__iexact=rglb)
+
+        lane = kwargs.get('lane', None)
+        if lane:
+            qs = qs.filter(lane__exact=lane)
+
+        return qs
 
 
 class FastqListRow(models.Model):
@@ -570,6 +632,35 @@ class WorkflowManager(models.Manager):
             end__isnull=False,
             end_status__iexact=WorkflowStatus.SUCCEEDED.value
         )
+        return qs
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        sequence_run = kwargs.get('sequence_run', None)
+        if sequence_run:
+            qs = qs.filter(sequence_run_id__exact=sequence_run)
+
+        sequence = kwargs.get('sequence', None)
+        if sequence:
+            qs = qs.filter(sequence_run__name__iexact=sequence)
+
+        run = kwargs.get('run', None)
+        if run:
+            qs = qs.filter(sequence_run__name__iexact=run)
+
+        sample_name = kwargs.get('sample_name', None)
+        if sample_name:
+            qs = qs.filter(sample_name__iexact=sample_name)
+
+        type_name = kwargs.get('type_name', None)
+        if type_name:
+            qs = qs.filter(type_name__iexact=type_name)
+
+        end_status = kwargs.get('end_status', None)
+        if end_status:
+            qs = qs.filter(end_status__iexact=end_status)
+
         return qs
 
 

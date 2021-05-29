@@ -66,3 +66,72 @@ _Get a Subject:_
 ```
 curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/subjects/SBJ00700 | jq
 ```
+
+## Pipeline Endpoints
+
+ICA pipeline workflow automation related endpoints
+
+### Fastq Endpoint
+
+_List Fastq entries:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/fastq | jq
+```
+
+_Get a Fastq record:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/fastq/35 | jq
+```
+
+_Get Fastq record(s) by Sequence Run:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/fastq?run=200612_A01052_0017_BH5LYWDSXY | jq
+```
+
+_Get Fastq record(s) by `rglb`:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/fastq?rglb=L2000176 | jq
+```
+
+Similarly, you can filter request parameters on `rgid`, `rgsm`, `lane`.
+
+
+### Sequence Endpoint
+
+_List Sequence entries:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/sequence | jq
+```
+
+_Get a Sequence record:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/sequence/217 | jq
+```
+
+_Get Sequence record(s) by `name`:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/sequence?name=200612_A01052_0017_BH5LYWDSXY | jq
+```
+
+Similarly, you can filter request parameters on `run_id`, `instrument_run_id`, `status`.
+
+### Workflow Endpoint
+
+_Workflow is more to say "WorkflowRun"_
+
+_List Workflow entries:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/workflow | jq
+```
+
+_Get a Workflow record:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/workflow/800 | jq
+```
+
+_Get Workflow record(s) by `name`:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" https://api.data.dev.umccr.org/workflow?run=200612_A01052_0017_BH5LYWDSXY | jq
+```
+
+Similarly, you can filter request parameters on `sample_name`, `type_name`, `end_status`.

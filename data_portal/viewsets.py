@@ -9,11 +9,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from utils import libs3, libjson, ica
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
-    SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer
+    SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer, \
+    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer
 
 logger = logging.getLogger()
 
@@ -271,3 +272,78 @@ class PresignedUrlViewSet(ViewSet):
             return Response({'error': 'Missing required parameters: bucket or key'})
 
         return _presign_response(bucket, key)
+
+
+class FastqListRowViewSet(ReadOnlyModelViewSet):
+    serializer_class = FastqListRowSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = ['id', 'rgid', 'rgsm', 'rglb', 'lane']
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        sequence_run = self.request.query_params.get('sequence_run', None)
+        sequence = self.request.query_params.get('sequence', None)
+        run = self.request.query_params.get('run', None)
+        rgid = self.request.query_params.get('rgid', None)
+        rgsm = self.request.query_params.get('rgsm', None)
+        rglb = self.request.query_params.get('rglb', None)
+        lane = self.request.query_params.get('lane', None)
+        return FastqListRow.objects.get_by_keyword(
+            sequence_run=sequence_run,
+            sequence=sequence,
+            run=run,
+            rgid=rgid,
+            rgsm=rgsm,
+            rglb=rglb,
+            lane=lane,
+        )
+
+
+class SequenceRunViewSet(ReadOnlyModelViewSet):
+    serializer_class = SequenceRunSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = ['id', 'run_id', 'date_modified', 'status', 'gds_folder_path', 'gds_volume_name', 'name']
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        run_id = self.request.query_params.get('run_id', None)
+        name = self.request.query_params.get('name', None)
+        run = self.request.query_params.get('run', None)
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        status_ = self.request.query_params.get('status', None)
+        return SequenceRun.objects.get_by_keyword(
+            run_id=run_id,
+            name=name,
+            run=run,
+            instrument_run_id=instrument_run_id,
+            status=status_,
+        )
+
+
+class WorkflowViewSet(ReadOnlyModelViewSet):
+    serializer_class = WorkflowSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = ['id', 'wfr_name', 'sample_name', 'type_name', 'wfr_id', 'version', 'start', 'end', 'end_status']
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        sequence_run = self.request.query_params.get('sequence_run', None)
+        sequence = self.request.query_params.get('sequence', None)
+        run = self.request.query_params.get('run', None)
+        sample_name = self.request.query_params.get('sample_name', None)
+        type_name = self.request.query_params.get('type_name', None)
+        end_status = self.request.query_params.get('end_status', None)
+        return Workflow.objects.get_by_keyword(
+            sequence_run=sequence_run,
+            sequence=sequence,
+            run=run,
+            sample_name=sample_name,
+            type_name=type_name,
+            end_status=end_status,
+        )
