@@ -110,11 +110,11 @@ class LIMSRowManager(models.Manager):
 
         subject = kwargs.get('subject', None)
         if subject:
-            qs = qs.filter(subject_id=subject)
+            qs = qs.filter(subject_id__iexact=subject)
 
         run = kwargs.get('run', None)
         if run:
-            qs = qs.filter(illumina_id=run)
+            qs = qs.filter(illumina_id__iexact=run)
 
         return qs
 
@@ -243,7 +243,35 @@ class LabMetadataWorkflow(models.TextChoices):
 
 
 class LabMetadataManager(models.Manager):
-    pass
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        subject = kwargs.get('subject', None)
+        if subject:
+            qs = qs.filter(subject_id__iexact=subject)
+
+        sample = kwargs.get('sample', None)
+        if sample:
+            qs = qs.filter(sample_id__iexact=sample)
+
+        library = kwargs.get('library', None)
+        if library:
+            qs = qs.filter(library_id__iexact=library)
+
+        phenotype = kwargs.get('phenotype', None)
+        if phenotype:
+            qs = qs.filter(phenotype__iexact=phenotype)
+
+        type_ = kwargs.get('type', None)
+        if type_:
+            qs = qs.filter(type__iexact=type_)
+
+        project = kwargs.get('project', None)
+        if project:
+            qs = qs.filter(project_name__iexact=project)
+
+        return qs
 
 
 class LabMetadata(models.Model):
@@ -740,6 +768,27 @@ class ReportManager(models.Manager):
         report.s3_object_id = None if s3_object is None else s3_object.id
         report.save()
         return report
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        subject = kwargs.get('subject', None)
+        if subject:
+            qs = qs.filter(subject_id__iexact=subject)
+
+        sample = kwargs.get('sample', None)
+        if sample:
+            qs = qs.filter(sample_id__iexact=sample)
+
+        library = kwargs.get('library', None)
+        if library:
+            qs = qs.filter(library_id__iexact=library)
+
+        type_ = kwargs.get('type', None)
+        if type_:
+            qs = qs.filter(type__iexact=type_)
+
+        return qs
 
 
 class Report(models.Model):

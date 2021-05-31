@@ -585,9 +585,8 @@
         {
           "name": "id",
           "in": "path",
-          "description": "A unique integer value identifying this lab metadata.",
           "required": true,
-          "type": "integer"
+          "type": "string"
         }
       ]
     },
@@ -701,10 +700,8 @@
         {
           "name": "id",
           "in": "path",
-          "description": "A UUID string identifying this report.",
           "required": true,
-          "type": "string",
-          "format": "uuid"
+          "type": "string"
         }
       ]
     },
@@ -1240,9 +1237,9 @@
         }
       ]
     },
-    "/workflow/": {
+    "/workflows/": {
       "get": {
-        "operationId": "workflow_list",
+        "operationId": "workflows_list",
         "description": "",
         "parameters": [
           {
@@ -1308,14 +1305,14 @@
           }
         },
         "tags": [
-          "workflow"
+          "workflows"
         ]
       },
       "parameters": []
     },
-    "/workflow/{id}/": {
+    "/workflows/{id}/": {
       "get": {
-        "operationId": "workflow_read",
+        "operationId": "workflows_read",
         "description": "",
         "parameters": [],
         "responses": {
@@ -1327,7 +1324,7 @@
           }
         },
         "tags": [
-          "workflow"
+          "workflows"
         ]
       },
       "parameters": [

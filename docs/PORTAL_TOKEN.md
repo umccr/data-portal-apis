@@ -2,9 +2,11 @@
 
 ### Getting Portal JWT token
 
-- Login to https://data.umccr.org
+- Login to
+    - PROD: https://data.umccr.org
+    - DEV: https://data.dev.umccr.org
 - Click your username at top right corner > Token
-- This will prompt PAT dialog. Click **COPY** button to copy in JWT token into your clipboard.
+- This will prompt token dialog. Click **COPY** button to copy in JWT token into your clipboard.
 > 🙋‍♂️ WARNING: THIS IS YOUR PERSONAL ACCESS TOKEN (PAT). **YOU SHOULD NOT SHARE WITH ANY THIRD PARTY**.
 
 ### Exporting token

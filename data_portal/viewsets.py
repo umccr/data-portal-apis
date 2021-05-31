@@ -23,6 +23,11 @@ LIMS_SEARCH_ORDER_FIELDS = [
     'library_id', 'external_sample_id', 'project_name', 'illumina_id',
 ]
 
+METADATA_SEARCH_ORDER_FIELDS = [
+    'library_id', 'sample_name', 'sample_id', 'external_sample_id', 'subject_id', 'external_subject_id', 'phenotype',
+    'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
+]
+
 
 def _presign_response(bucket, key):
     response = libs3.presign_s3_file(bucket, key)
@@ -47,13 +52,29 @@ class LIMSRowViewSet(ReadOnlyModelViewSet):
 
 
 class LabMetadataViewSet(ReadOnlyModelViewSet):
-    queryset = LabMetadata.objects.all()
     serializer_class = LabMetadataModelSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = '__all__'
-    ordering = ['library_id']
+    ordering_fields = METADATA_SEARCH_ORDER_FIELDS
+    ordering = ['-subject_id']
     search_fields = ordering_fields
+
+    def get_queryset(self):
+        subject = self.request.query_params.get('subject', None)
+        sample = self.request.query_params.get('sample', None)
+        library = self.request.query_params.get('library', None)
+        phenotype = self.request.query_params.get('phenotype', None)
+        type_ = self.request.query_params.get('type', None)
+        project = self.request.query_params.get('project', None)
+
+        return LabMetadata.objects.get_by_keyword(
+            subject=subject,
+            sample=sample,
+            library=library,
+            phenotype=phenotype,
+            type=type_,
+            project=project,
+        )
 
 
 class S3ObjectViewSet(ReadOnlyModelViewSet):
@@ -247,13 +268,25 @@ class RunViewSet(ReadOnlyModelViewSet):
 
 
 class ReportViewSet(ReadOnlyModelViewSet):
-    queryset = Report.objects.all()
     serializer_class = ReportSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = '__all__'
+    ordering_fields = ['subject_id', 'sample_id', 'library_id', 'type']
     ordering = ['-subject_id']
     search_fields = ordering_fields
+
+    def get_queryset(self):
+        subject = self.request.query_params.get('subject', None)
+        sample = self.request.query_params.get('sample', None)
+        library = self.request.query_params.get('library', None)
+        type_ = self.request.query_params.get('type', None)
+
+        return Report.objects.get_by_keyword(
+            subject=subject,
+            sample=sample,
+            library=library,
+            type=type_,
+        )
 
 
 class PresignedUrlViewSet(ViewSet):
