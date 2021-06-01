@@ -14,11 +14,10 @@ django.setup()
 
 import logging
 from typing import List
-import pandas as pd
 from collections import defaultdict
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
-    LabMetadataPhenotype, FastqListRow
+    LabMetadataPhenotype, FastqListRow, LabMetadataWorkflow, LabMetadataAssay
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
@@ -345,63 +344,47 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     job_list = []
     fastq_list_rows: List[dict] = libjson.loads(this_batch.context_data)
 
-    # get metadata for determining which sample need to be run through the germline workflow
-    metadata: dict = demux_metadata.handler({
-        'gdsVolume': this_sqr.gds_volume_name,
-        'gdsBasePath': this_sqr.gds_folder_path,
-        'gdsSamplesheet': this_sqr.sample_sheet_name,
-    }, None)
-
-    metadata_df = pd.DataFrame(metadata)
-    fastq_list_df = pd.DataFrame(fastq_list_rows)
-
-    # Add the sample_library_names attribute to fastq_list_df
-    fastq_list_df["sample_library_names"] = fastq_list_df['rgid'].apply(lambda x: x.rsplit('.', 1)[-1])
-
     # iterate through each sample group by rglb
-    for sample_library_name, sample_df in fastq_list_df.groupby("sample_library_names"):
+    for row in fastq_list_rows:
+        rgid = row['rgid']
 
-        # skip Undetermined samples
-        if sample_library_name.startswith("Undetermined"):
-            logger.warning(f"SKIP '{sample_library_name}' SAMPLE GERMLINE WORKFLOW LAUNCH.")
+        if row['read_1'].startswith("Undetermined"):
+            logger.info(f"SKIP GERMLINE workflow for {rgid}. Undetermined FASTQs.")
             continue
 
-        # skip sample start with NTC_
-        if sample_library_name.startswith("NTC_"):
-            logger.warning(f"SKIP NTC SAMPLE '{sample_library_name}' GERMLINE WORKFLOW LAUNCH.")
+        # Get the metadata for the library
+        # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
+        rglb = row['rglb']
+        print(f"DEBUG {rglb}")
+        lib_metadata: LabMetadata = LabMetadata.objects.get(library_id=rglb)
+        # make sure we have recognised sample (e.g. not undetermined)
+        if not lib_metadata:
+            logger.error(f"SKIP GERMLINE workflow for {rgid}. No metadata for {rglb}, this should not happen!")
             continue
 
-        # Get sample metadata
-        library_metadata: pd.DataFrame = metadata_df.query(f"sample=='{sample_library_name}'")
-
-        # Check library metadata is not empty
-        if library_metadata.empty:
-            logger.warning(f"Could not get library metadata for sample '{sample_library_name}'. "
-                           f"Skipping sample.")
+        # skip negative control samples
+        if lib_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
+            logger.info(f"SKIP GERMLINE workflow for '{rgid}'. Negative-control.")
             continue
 
         # Skip samples where metadata workflow is set to manual
-        if library_metadata["workflow"].unique().item() == "manual":
+        if lib_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             # We do not pursue manual samples
-            logger.info(f"Skipping sample '{sample_library_name}'. "
-                        f"Workflow column is set to manual for at least one library name")
+            logger.info(f"SKIP GERMLINE workflow for '{rgid}'. Workflow set to manual.")
             continue
 
-        # iterate through libraries for this sample and collect their assay types
-        assay_type = library_metadata["type"].unique().item()
-
         # skip germline if assay type is not WGS
-        if assay_type != "WGS":
-            logger.warning(f"SKIP {assay_type} SAMPLE '{sample_library_name}' GERMLINE WORKFLOW LAUNCH.")
+        if lib_metadata.type.lower() != LabMetadataType.WGS.value.lower():
+            logger.warning(f"SKIP GERMLINE workflow for '{rgid}'. 'WGS' != '{lib_metadata.type}'.")
             continue
 
         # convert read_1 and read_2 to cwl file location dict format
-        sample_df["read_1"] = sample_df["read_1"].apply(cwl_file_path_as_string_to_dict)
-        sample_df["read_2"] = sample_df["read_2"].apply(cwl_file_path_as_string_to_dict)
+        row["read_1"] = cwl_file_path_as_string_to_dict(row["read_1"])
+        row["read_2"] = cwl_file_path_as_string_to_dict(row["read_2"])
 
         job = {
-            "sample_name": sample_library_name,
-            "fastq_list_rows": sample_df.drop(columns=["sample_library_names"]).to_dict(orient="records"),
+            "sample_name": rgid,
+            "fastq_list_rows": row,
             "seq_run_id": this_sqr.run_id if this_sqr else None,
             "seq_name": this_sqr.name if this_sqr else None,
             "batch_run_id": int(this_batch_run.id)
