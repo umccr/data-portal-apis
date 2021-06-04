@@ -1,3 +1,5 @@
+from typing import List
+
 try:
     import unzip_requirements
 except ImportError:
@@ -11,16 +13,19 @@ django.setup()
 
 # ---
 
-import pandas as pd
 import copy
 import logging
-from datetime import datetime, timezone
+from tempfile import NamedTemporaryFile
 
-from data_portal.models import Workflow
+import pandas as pd
+from contextlib import closing
+from data_portal.models import Workflow, LabMetadata
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper
-from data_processors.pipeline.lambdas import wes_handler, demux_metadata
-from utils import libjson, libssm, libdt, metadata_globals
+from data_processors.pipeline.lambdas import wes_handler
+from utils import libjson, libssm, libdt, gds
+from sample_sheet import SampleSheet
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -193,6 +198,66 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
     return {}
 
 
+# TODO: extract into utils?
+def get_library_id_from_sample_name(sample_name: str):
+    # format: samplename_libraryid_extension
+    # we are only interested in the library ID
+    fragments = sample_name.split("_")
+    # if there is an extension, the library ID is the second to last fragment
+    if "_topup" in sample_name or "_rerun" in sample_name:
+        return fragments[-2]
+    # if not, then the library ID is the last fragment
+    return fragments[-1]
+
+
+# TODO: extract SampleSheet handling/utils into separate module?
+def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) -> List[str]:
+    if not samplesheet_path.startswith(os.path.sep):
+        samplesheet_path = os.path.sep + samplesheet_path
+    logger.info(f"Extracting sample names from gds://{gds_volume}{samplesheet_path}")
+
+    ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, samplesheet_path)
+    if ntf is None:
+        reason = f"Abort extracting metadata process. " \
+                 f"Can not download sample sheet from GDS: gds://{gds_volume}{samplesheet_path}"
+        logger.error(reason)
+        raise ValueError(reason)
+
+    logger.info(f"Local sample sheet path: {ntf.name}")
+    sample_names = set()
+    with closing(ntf) as f:
+        samplesheet = SampleSheet(f.name)
+        for sample in samplesheet:
+            sample_names.add(get_library_id_from_sample_name(sample.Sample_ID))
+
+    logger.info(f"Extracted sample names: {sample_names}")
+
+    return list(sample_names)
+
+
+def get_metadata_df(gds_volume_name, sample_sheet_gds_path) -> pd.DataFrame:
+    # Get libraries and metadata associated with this run/SampleSheet
+    sample_names: List[str] = get_sample_names_from_samplesheet(gds_volume=gds_volume_name,
+                                                                samplesheet_path=os.path.sep + sample_sheet_gds_path)
+
+    metadata_df: pd.DataFrame = pd.DataFrame()
+    for sample_name in sample_names:
+        lib_id = get_library_id_from_sample_name(sample_name)
+        try:
+            meta: LabMetadata = LabMetadata.objects.get(library_id__iexact=lib_id)
+        except LabMetadata.DoesNotExist as err:
+            logger.error(f"LabMetadata query for library_id {lib_id} did not find any data! {err}")
+            return metadata_df
+        except LabMetadata.MultipleObjectsReturned as err:
+            logger.error(f"LabMetadata query for library_id {lib_id} found multiple entries! {err}")
+            return metadata_df
+
+        new_row = {'sample': sample_name, 'type': meta.type, 'assay': meta.assay,
+                   'override_cycles': meta.override_cycles}
+        metadata_df = metadata_df.append(new_row, ignore_index=True)
+    return metadata_df
+
+
 def handler(event, context) -> dict:
     """event payload dict
     {
@@ -221,59 +286,54 @@ def handler(event, context) -> dict:
 
     # read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
-    sample_sheet_gds_path = f"{run_folder}/{SampleSheetCSV.FILENAME.value}"
+    sample_sheet_gds_folder_path = f"{gds_folder_path}/{SampleSheetCSV.FILENAME.value}"
+    sample_sheet_gds_full_path = f"{run_folder}/{SampleSheetCSV.FILENAME.value}"
 
-    metadata: list = demux_metadata.handler({
-        'gdsVolume': gds_volume_name,
-        'gdsBasePath': gds_folder_path,
-        'gdsSamplesheet': SampleSheetCSV.FILENAME.value
-    }, None)
-
-    # Easier to handle as a pandas dataframe
-    metadata_df = pd.DataFrame(metadata)
+    metadata_df = get_metadata_df(gds_volume_name, sample_sheet_gds_folder_path)
 
     # Get instrument type from run id
     instrument = get_instrument_by_seq_name(seq_name)
 
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input['samplesheet']['location'] = sample_sheet_gds_path
+    workflow_input['samplesheet']['location'] = sample_sheet_gds_full_path
     workflow_input['bcl_input_directory']['location'] = run_folder
     workflow_input['runfolder_name'] = seq_name
 
     settings_by_samples = []
-    for (sample_type, assay), sample_group_df in metadata_df.groupby(["type", "assay"]):
-        # Get the values in the override cycles column
-        override_cycles_list = sample_group_df["override_cycles"].unique().tolist()
+    if not metadata_df.empty:
+        for (sample_type, assay), sample_group_df in metadata_df.groupby(["type", "assay"]):
+            # Get the values in the override cycles column
+            override_cycles_list = sample_group_df["override_cycles"].unique().tolist()
 
-        # Get the samplesheet midfix and also the output directory for each batch
-        if len(override_cycles_list) == 1:
-            batch_name = "{}_{}".format(sample_type, assay)
-        else:
-            batch_name = None
+            # Get the samplesheet midfix and also the output directory for each batch
+            if len(override_cycles_list) == 1:
+                batch_name = "{}_{}".format(sample_type, assay)
+            else:
+                batch_name = None
 
-        # Get the settings for the assay
-        assay_settings = get_settings_by_instrument_type_assay(instrument, sample_type, assay)
+            # Get the settings for the assay
+            assay_settings = get_settings_by_instrument_type_assay(instrument, sample_type, assay)
 
-        for override_cycles in override_cycles_list:
-            # Make a copy of the settings
-            settings = assay_settings.copy()
+            for override_cycles in override_cycles_list:
+                # Make a copy of the settings
+                settings = assay_settings.copy()
 
-            # batch_name is previously defined ONLY if there's one override cycles setting per sample_type and assay
-            if batch_name is None:
-                batch_name = "{}_{}_{}".format(sample_type, assay, override_cycles.replace(";", "_"))
+                # batch_name is previously defined ONLY if there's one override cycles setting per sample_type and assay
+                if batch_name is None:
+                    batch_name = "{}_{}_{}".format(sample_type, assay, override_cycles.replace(";", "_"))
 
-            # Shrink the samples list to those only with matching override cycles
-            samples_list = sample_group_df.query("override_cycles==\"{}\"".format(override_cycles))["sample"].tolist()
+                # Shrink the samples list to those only with matching override cycles
+                samples_list = sample_group_df.query("override_cycles==\"{}\"".format(override_cycles))["sample"].tolist()
 
-            # Overwrite any override cycles settings
-            settings["override_cycles"] = override_cycles
+                # Overwrite any override cycles settings
+                settings["override_cycles"] = override_cycles
 
-            # Append settings
-            settings_by_samples.append({
-                "batch_name": batch_name,
-                "samples": samples_list,
-                "settings": settings
-            })
+                # Append settings
+                settings_by_samples.append({
+                    "batch_name": batch_name,
+                    "samples": samples_list,
+                    "settings": settings
+                })
 
     # Validate settings before placing as input
     # Check settings before appending

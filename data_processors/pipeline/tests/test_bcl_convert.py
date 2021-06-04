@@ -5,7 +5,8 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when, verify, contains
 
-from data_portal.models import SequenceRun, Workflow
+from data_portal.models import SequenceRun, Workflow, LabMetadata, LabMetadataType, LabMetadataAssay, \
+    LabMetadataWorkflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType, ICA_GDS_FASTQ_VOL
 from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
@@ -17,15 +18,31 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
         super(BCLConvertUnitTests, self).setUp()
-        when(demux_metadata).handler(...).thenReturn(
+        # when(demux_metadata).handler(...).thenReturn(
+        #     [
+        #             {
+        #               "sample": "PTC_EXPn200908LL_L2000001",
+        #               "override_cycles": "Y100;I8N2;I8N2;Y100",
+        #               "type": "WGS",
+        #               "assay": "TsqNano",
+        #               "workflow": "research"
+        #             }
+        #     ]
+        # )
+
+        # L2000001
+        mock_labmetadata = LabMetadata()
+        mock_labmetadata.library_id = "L2000001"
+        mock_labmetadata.sample_name = "PTC_EXPn200908LL_L2000001"
+        mock_labmetadata.override_cycles = "Y100;I8N2;I8N2;Y100"
+        mock_labmetadata.type = LabMetadataType.WGS.value
+        mock_labmetadata.assay = LabMetadataAssay.TSQ_NANO.value
+        mock_labmetadata.workflow = LabMetadataWorkflow.RESEARCH.value
+        mock_labmetadata.save()
+
+        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
             [
-                    {
-                      "sample": "PTC_EXPn200908LL_L2000001",
-                      "override_cycles": "Y100;I8N2;I8N2;Y100",
-                      "type": "WGS",
-                      "assay": "TsqNano",
-                      "workflow": "research"
-                    }
+                "PTC_EXPn200908LL_L2000001"
             ]
         )
 
@@ -141,15 +158,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         """
 
         # This will fail metadata validation since there exists no samples
-        when(demux_metadata).handler(...).thenReturn(
+        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
             [
-              {
-                "sample": "",
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano",
-                "workflow": "research"
-              }
+                ""
             ]
         )
 
@@ -167,9 +178,6 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # assert bcl convert workflow runs 0 in db
         no_bcl_convert_workflow_runs = Workflow.objects.all()
         self.assertEqual(0, no_bcl_convert_workflow_runs.count())
-
-        # should call to slack webhook once
-        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
     def test_validate_metadata_blank_samples(self):
         """
