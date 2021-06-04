@@ -97,15 +97,15 @@ aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_proc
 - First, install `serverless` CLI and its plugins dependencies:
 ```
 node --version
-v12.18.2
+v12.22.1
 
 npm i -g yarn
 yarn install
 ```
 
-> NOTE: if you want to install serverless cli globally, make sure to install specific version defined in `package.json` for example `yarn global add serverless@1.83.3`. Otherwise, highly recommend to use local _locked version_ through `npx` as follows.
+> NOTE: if you want to install serverless cli globally, make sure to install specific version defined in `package.json` for example `yarn global add serverless@2.44.0`. Otherwise, highly recommend to use local _locked version_ through `npx` as follows.
 
-- You can `serverless` invoke or deploy from local. But favour over [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
+- You can `serverless` invoke or deploy from local. However, we favour [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
 - Serverless deployment targets only to AWS. AWS account specific variables will be loaded from SSM Parameter Store of respective login session:
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
@@ -115,8 +115,6 @@ npx serverless invoke -f migrate --stage dev
 npx serverless invoke -f lims_scheduled_update_processor --stage dev
 npx serverless deploy --stage dev
 ```
-
-> Caveat: If lambda timeout error occur then please try again. Lambda needs warm-up time and LIMS rows are growing, for example.
 
 ## Deployment
 

@@ -288,8 +288,8 @@ class LabMetadata(models.Model):
     #  do we want to store clarity-generated lib id, and what do we want to call it?
     # external_library_id = models.CharField(max_length=255)
 
-    library_id = models.CharField(max_length=255,unique=True,blank=False)
-    sample_name = models.CharField(max_length=255,blank=False)
+    library_id = models.CharField(max_length=255, unique=True, blank=False)
+    sample_name = models.CharField(max_length=255, blank=False)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)
     subject_id = models.CharField(max_length=255, null=True, blank=True)
