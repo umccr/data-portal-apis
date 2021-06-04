@@ -17,10 +17,10 @@ from typing import List
 from collections import defaultdict
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
-    LabMetadataPhenotype, FastqListRow, LabMetadataWorkflow, LabMetadataAssay
+    LabMetadataPhenotype, FastqListRow, LabMetadataWorkflow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
+from data_processors.pipeline.lambdas import workflow_update, fastq_list_row
 from utils import libjson, libsqs, libssm
 
 logger = logging.getLogger()

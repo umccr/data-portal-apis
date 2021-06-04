@@ -293,14 +293,6 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         build_tn_mock()
 
         logger.info("-" * 32)
-        when(orchestrator.demux_metadata).handler(...).thenReturn([
-            {
-                "sample": mock_sample_name,
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano"
-            }
-        ])
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,

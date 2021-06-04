@@ -3,13 +3,13 @@ from datetime import datetime
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
-from mockito import when, verify, contains
+from mockito import when, verify
 
 from data_portal.models import SequenceRun, Workflow, LabMetadata, LabMetadataType, LabMetadataAssay, \
     LabMetadataWorkflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType, ICA_GDS_FASTQ_VOL
-from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
+from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType
+from data_processors.pipeline.lambdas import bcl_convert
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libslack
 
