@@ -196,7 +196,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
         mock_labmetadata_1 = LabMetadata()
         mock_labmetadata_1.library_id = "L2000001"
-        mock_labmetadata_1.sample_name = "PTC_EXPn200908LL_L2000001"
+        mock_labmetadata_1.sample_id = "PTC_EXPn200908LL"
         mock_labmetadata_1.override_cycles = "Y100;I8N2;I8N2;Y100"
         mock_labmetadata_1.type = LabMetadataType.WGS.value
         mock_labmetadata_1.assay = LabMetadataAssay.TSQ_NANO.value
@@ -204,7 +204,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_labmetadata_1.save()
         mock_labmetadata_2 = LabMetadata()
         mock_labmetadata_2.library_id = "L2000001_topup"
-        mock_labmetadata_2.sample_name = "PTC_EXPn200908LL_L2000001_topup"
+        mock_labmetadata_2.sample_id = "PTC_EXPn200908LL"
         mock_labmetadata_2.override_cycles = "Y100;I8N2;I8N2;Y100"
         mock_labmetadata_2.type = LabMetadataType.WGS.value
         mock_labmetadata_2.assay = LabMetadataAssay.TSQ_NANO.value

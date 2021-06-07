@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
-from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow
+from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow, LabMetadata
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from utils import libslack, lookup, libjson, libdt
 
@@ -758,3 +758,16 @@ def get_germline_succeeded_by_sequence_run(sequence_run: SequenceRun):
     qs: QuerySet = Workflow.objects.get_succeeded_by_sequence_run(sequence_run=sequence_run, type_name=WorkflowType.GERMLINE.value.lower())
     # TODO: sort out duplicated WF records (e.g. due to workflow rerun/resubmission)
     return qs.all()
+
+
+def get_metadata_by_sample_library_name(sample_library_name: str):
+    try:
+        qs: QuerySet = LabMetadata.objects.get_by_sample_library_name(sample_library_name=sample_library_name)
+        meta: LabMetadata = qs.get()
+        return meta
+    except LabMetadata.DoesNotExist as err:
+        logger.error(f"LabMetadata query for sample_library_name {sample_library_name} did not find any data! {err}")
+        return None
+    except LabMetadata.MultipleObjectsReturned as err:
+        logger.error(f"LabMetadata query for sample_library_name {sample_library_name} found multiple entries! {err}")
+        return None

@@ -1,5 +1,3 @@
-from typing import List
-
 try:
     import unzip_requirements
 except ImportError:
@@ -16,10 +14,11 @@ django.setup()
 import copy
 import logging
 from tempfile import NamedTemporaryFile
+from typing import List
 
 import pandas as pd
 from contextlib import closing
-from data_portal.models import Workflow, LabMetadata
+from data_portal.models import Workflow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
@@ -228,32 +227,35 @@ def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) ->
     with closing(ntf) as f:
         samplesheet = SampleSheet(f.name)
         for sample in samplesheet:
-            sample_names.add(get_library_id_from_sample_name(sample.Sample_ID))
+            sample_names.add(sample.Sample_ID)
 
     logger.info(f"Extracted sample names: {sample_names}")
 
     return list(sample_names)
 
 
-def get_metadata_df(gds_volume_name, sample_sheet_gds_path) -> pd.DataFrame:
-    # Get libraries and metadata associated with this run/SampleSheet
-    sample_names: List[str] = get_sample_names_from_samplesheet(gds_volume=gds_volume_name,
-                                                                samplesheet_path=os.path.sep + sample_sheet_gds_path)
+def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
+    """Get libraries and metadata associated with this run/SampleSheet"""
+
+    sample_names: List[str] = get_sample_names_from_samplesheet(
+        gds_volume=gds_volume,
+        samplesheet_path=samplesheet_path
+    )
 
     metadata_df: pd.DataFrame = pd.DataFrame()
     for sample_name in sample_names:
-        lib_id = get_library_id_from_sample_name(sample_name)
-        try:
-            meta: LabMetadata = LabMetadata.objects.get(library_id__iexact=lib_id)
-        except LabMetadata.DoesNotExist as err:
-            logger.error(f"LabMetadata query for library_id {lib_id} did not find any data! {err}")
-            return metadata_df
-        except LabMetadata.MultipleObjectsReturned as err:
-            logger.error(f"LabMetadata query for library_id {lib_id} found multiple entries! {err}")
-            return metadata_df
+        meta = services.get_metadata_by_sample_library_name(sample_library_name=sample_name)
 
-        new_row = {'sample': sample_name, 'type': meta.type, 'assay': meta.assay,
-                   'override_cycles': meta.override_cycles}
+        if meta is None:
+            # error condition: all or nothing -- all samples must have metadata, otherwise return empty DF
+            return pd.DataFrame()
+
+        new_row = {
+            'sample': sample_name,
+            'type': meta.type,
+            'assay': meta.assay,
+            'override_cycles': meta.override_cycles
+        }
         metadata_df = metadata_df.append(new_row, ignore_index=True)
     return metadata_df
 
