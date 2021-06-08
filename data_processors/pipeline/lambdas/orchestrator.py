@@ -355,7 +355,6 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
         rglb = row['rglb']
-        print(f"DEBUG {rglb}")
         lib_metadata: LabMetadata = LabMetadata.objects.get(library_id=rglb)
         # make sure we have recognised sample (e.g. not undetermined)
         if not lib_metadata:
