@@ -290,6 +290,7 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_sample_names_from_samplesheet
         """
 
+        # SEQ-II validation dataset
         gds_volume = "umccr-raw-sequence-data-dev"
         samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
 
@@ -314,6 +315,7 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
 
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
 
+        # SEQ-II validation dataset
         gds_volume = "umccr-raw-sequence-data-dev"
         samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
 
@@ -327,3 +329,9 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
 
         self.assertTrue(not metadata_df.empty)
         self.assertTrue("PTC_SsCRE200323LL_L2000172_topup" in metadata_df["sample"].tolist())
+
+        if "" in metadata_df["override_cycles"].unique().tolist():
+            logger.info("-" * 32)
+            logger.info("THERE SEEM TO BE BLANK OVERRIDE_CYCLES METADATA FOR SOME SAMPLES...")
+            self.assertFalse("" in metadata_df["override_cycles"].tolist())
+            # This probably mean need to fix data, look for corresponding Lab Metadata entry...
