@@ -248,18 +248,17 @@ def handler(event, context) -> dict:
         # Get the samplesheet midfix and also the output directory for each batch
         if len(override_cycles_list) == 1:
             batch_name = "{}_{}".format(sample_type, assay)
-        else:
-            batch_name = None
 
         # Get the settings for the assay
         assay_settings = get_settings_by_instrument_type_assay(instrument, sample_type, assay)
 
         for override_cycles in override_cycles_list:
+
             # Make a copy of the settings
             settings = assay_settings.copy()
 
             # batch_name is previously defined ONLY if there's one override cycles setting per sample_type and assay
-            if batch_name is None:
+            if not len(override_cycles_list) == 1:
                 batch_name = "{}_{}_{}".format(sample_type, assay, override_cycles.replace(";", "_"))
 
             # Shrink the samples list to those only with matching override cycles
