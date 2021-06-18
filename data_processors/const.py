@@ -10,9 +10,15 @@ GDRIVE_SERVICE_ACCOUNT = "/umccr/google/drive/lims_service_account_json"
 TRACKING_SHEET_ID = "/umccr/google/drive/tracking_sheet_id"
 LIMS_SHEET_ID = "/umccr/google/drive/lims_sheet_id"
 
-JSON_GZ = "json.gz"
-CANCER_REPORT_TABLES = "cancer_report_tables"
-MULTIQC_REPORT = "multiqc_report_data"
+REPORT_EXTENSIONS = [
+    "json.gz",
+    "json",
+]
+
+REPORT_KEYWORDS = [
+    "cancer_report_tables",
+    "multiqc_report_data",
+]
 
 # Operational limit for decompressed report json data size ~10MB
 MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES = 11000000

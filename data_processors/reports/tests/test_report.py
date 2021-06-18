@@ -4,7 +4,8 @@ from django.db.models import QuerySet
 from django.utils.timezone import make_aware
 from mockito import when, unstub
 
-from data_portal.models import S3Object, Report
+from data_portal.models import S3Object, Report, ReportType
+from data_processors import const
 from data_processors.reports import services
 from data_processors.reports.lambdas import report_event
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
@@ -74,6 +75,27 @@ class ReportUnitTests(ReportUnitTestCase):
         # try report filter query on data JSONField where `Probability` is 0.034, should be 1 match
         qs: QuerySet = Report.objects.filter(data__contains=[{"Probability": 0.034}])
         self.assertEqual(1, qs.count())
+
+    def test_report_delete_event(self):
+        """
+        python manage.py test data_processors.reports.tests.test_report.ReportUnitTests.test_report_delete_event
+        """
+        mock_report = Report(
+            subject_id="SBJ00001",
+            sample_id="PRJ000001",
+            library_id="L0000001",
+            type=ReportType.HRD_HRDETECT,
+            created_by=const.REPORT_KEYWORDS[0],
+            data={},
+            s3_object_id=1,
+        )
+        mock_report.save()
+        logger.info(mock_report)
+        self.assertEqual(1, Report.objects.count())
+
+        report = services.persist_report("bucket", KEY_EXPECTED, helper.S3EventType.EVENT_OBJECT_REMOVED.value)
+        self.assertIsNotNone(report)
+        self.assertEqual(0, Report.objects.count())
 
 
 class ReportIntegrationTests(ReportIntegrationTestCase):

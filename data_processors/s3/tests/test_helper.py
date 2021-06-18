@@ -1,5 +1,6 @@
+from data_processors import const
 from data_processors.s3 import helper
-from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase
+from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase, logger
 
 _mock_event_no_records = {
     "Records": [
@@ -43,6 +44,8 @@ MOCK_REPORT_EVENT = {
     ]
 }
 
+MOCK_KEY = "cancer_report_tables/json/hrd/SBJ00001__SBJ00001_PRJ000001_L0000001-hrdetect.json.gz"
+
 
 class S3EventHelperUnitTests(S3EventUnitTestCase):
 
@@ -61,6 +64,33 @@ class S3EventHelperUnitTests(S3EventUnitTestCase):
         event_records_dict = helper.parse_raw_s3_event_records(_mock_event_no_records['Records'])
         self.assertEqual(len(event_records_dict['s3_event_records']), 0)
         self.assertEqual(len(event_records_dict['report_event_records']), 0)
+
+    def test_extract_report_format(self):
+        """
+        python manage.py test data_processors.s3.tests.test_helper.S3EventHelperUnitTests.test_extract_report_format
+        """
+        ext = helper.extract_report_format(MOCK_KEY)
+        logger.info(ext)
+        self.assertIsNotNone(ext)
+        self.assertEqual(ext, const.REPORT_EXTENSIONS[0])
+
+    def test_extract_report_source(self):
+        """
+        python manage.py test data_processors.s3.tests.test_helper.S3EventHelperUnitTests.test_extract_report_source
+        """
+        source = helper.extract_report_source(MOCK_KEY)
+        logger.info(source)
+        self.assertIsNotNone(source)
+        self.assertEqual(source, const.REPORT_KEYWORDS[0])
+
+    def test_is_report(self):
+        """
+        python manage.py test data_processors.s3.tests.test_helper.S3EventHelperUnitTests.test_is_report
+        """
+        self.assertTrue(helper.is_report(MOCK_KEY))
+        self.assertFalse(helper.is_report("something.else"))
+        self.assertFalse(helper.is_report(const.REPORT_EXTENSIONS[0]))
+        self.assertFalse(helper.is_report(const.REPORT_KEYWORDS[0]))
 
 
 class S3EventHelperIntegrationTests(S3EventIntegrationTestCase):
