@@ -16,13 +16,16 @@ import logging
 from typing import List
 import pandas as pd
 from collections import defaultdict
+from datetime import datetime
 
+from data_processors import const
+from utils.regex_globals import SAMPLE_REGEX_OBJS
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
-    LabMetadataPhenotype, FastqListRow
+    LabMetadataPhenotype, FastqListRow, LIMSRow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
-from utils import libjson, libsqs, libssm
+from utils import libjson, libsqs, libssm, libgdrive
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -244,6 +247,10 @@ def next_step(this_workflow: Workflow, context):
         if this_workflow.output is None:
             raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
 
+        # TODO: this is the place where we need to update the Google LIMS. All information should be present
+        # TODO: this is also the place where we update the additional LabMetadata (e.g. linking library to run + lane)
+        update_google_lims(this_workflow)
+
         # create a batch if not exist
         batch_name = this_sqr.name if this_sqr else f"{this_workflow.type_name}__{this_workflow.wfr_id}"
         this_batch = services.get_or_create_batch(name=batch_name, created_by=this_workflow.wfr_id)
@@ -446,3 +453,134 @@ def cwl_file_path_as_string_to_dict(file_path):
     """
 
     return {"class": "File", "location": file_path}
+
+
+def get_libs_from_run(workflow: Workflow) -> List[dict]:
+    """
+    Example structure
+    {
+        "id": "L2100001",
+        "lane": "2",
+        "run_id": "r.aiursfhpwugrpghur",
+        "run_name": "210101_A00130_0100_BH2N5WDMXX"
+    }
+    :param workflow: the Workflow object
+    :return:
+    """
+    run_name = workflow.sequence_run.name
+    run_id = workflow.sequence_run.run_id
+
+    # get BCL Convert workflow output (which contains FastqListRow records)
+    fastq_list_output = parse_bcl_convert_output(workflow.output)
+
+    lib_records: List[dict] = list()
+    for fqlr in fastq_list_output:
+        lane = fqlr['lane']
+        library_id = SAMPLE_REGEX_OBJS['unique_id'].fullmatch(fqlr['rgsm']).group(2)
+        lib_records.append({
+            "id": library_id,
+            "lane": lane,
+            "run_id": run_id,
+            "run_name": run_name
+        })
+
+    return lib_records
+
+
+def get_run_number_from_run_name(run_name: str) -> int:
+    # TODO: check/test
+    return int(run_name.split('_')[2])
+
+
+def get_timestamp_from_run_name(run_name: str) -> str:
+    # TODO: check/test
+    date_part = run_name.split('_')[0]
+    # convert to format YYYY-MM-DD
+    return datetime.strptime(date_part, '%y%m%d').strftime('%Y-%m-%d')
+
+
+def create_lims_entry(lib_id: str, lane: str, seq_run_name: str) -> LIMSRow:
+    # convert library ID + lane + run ID into a Google LIMS record
+    # TODO: deal with multiple/non return
+    lab_meta: LabMetadata = LabMetadata.objects.get(library_id=lib_id)
+
+    lims_row = LIMSRow(
+        illumina_id=seq_run_name,
+        run=get_run_number_from_run_name(seq_run_name),
+        timestamp=get_timestamp_from_run_name(seq_run_name),
+        subject_id=lab_meta.subject_id,
+        sample_id=lab_meta.sample_id,
+        library_id=lab_meta.library_id,
+        external_subject_id=lab_meta.external_subject_id,
+        external_sample_id=lab_meta.external_sample_id,
+        sample_name=lab_meta.sample_name,
+        project_owner=lab_meta.project_owner,
+        project_name=lab_meta.project_name,
+        type=lab_meta.type,
+        assay=lab_meta.assay,
+        phenotype=lab_meta.phenotype,
+        source=lab_meta.source,
+        quality=lab_meta.quality,
+    )
+
+    return lims_row
+
+
+def convert_limsrow_to_tuple(limsrow: LIMSRow) -> tuple:
+    return (
+        limsrow.illumina_id,
+        limsrow.run,
+        limsrow.timestamp,
+        limsrow.subject_id,
+        limsrow.sample_id,
+        limsrow.library_id,
+        limsrow.external_subject_id,
+        limsrow.external_sample_id,
+        '-',  # ExternalLibraryID
+        limsrow.sample_name,
+        limsrow.project_owner,
+        limsrow.project_name,
+        '-',  # ProjectCustodian
+        limsrow.type,
+        limsrow.assay,
+        limsrow.override_cycles,
+        limsrow.phenotype,
+        limsrow.source,
+        limsrow.quality,
+        '-',  # Topup
+        '-',  # SecondaryAnalysis
+        limsrow.workflow,
+        '-',  # Tags
+        '-',  # FASTQ path pattern
+        '-',  # Number of FASTQs
+        '-',  # Results
+        '-',  # Trello
+        '-',  # Notes
+        '-'  # ToDo
+    )
+
+
+def update_google_lims_sheet(lims_rows: List[LIMSRow]):
+    # TODO: check/test
+    lims_sheet_id = libssm.get_secret(const.LIMS_SHEET_ID)
+    account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
+
+    data: List[tuple] = list()
+    for row in lims_rows:
+        data.append(convert_limsrow_to_tuple(row))
+
+    libgdrive.append_records(account_info=account_info, file_id=lims_sheet_id, data=data)
+
+
+def update_google_lims(workflow: Workflow):
+    # Need to find all libraries (+ lane) that were part of this run
+    # need to use the "_topup" version of the libraries (or include the lane to the Google LIMS)
+    library_records = get_libs_from_run(workflow=workflow)
+
+    lims_rows = list()
+    for lib_rec in library_records:
+        lims_row = create_lims_entry(lib_id=lib_rec['id'], lane=lib_rec['lane'], seq_run_name=lib_rec['run_name'])
+        lims_rows.append(lims_row)
+
+    update_google_lims_sheet(lims_rows)
+    pass
