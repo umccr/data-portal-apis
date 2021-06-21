@@ -23,8 +23,7 @@ from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetada
     LabMetadataPhenotype, FastqListRow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata
-from data_processors.pipeline.lambdas.update_google_lims import update_google_lims
+from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata, update_google_lims
 from utils import libjson, libsqs, libssm
 
 logger = logging.getLogger()
@@ -248,7 +247,7 @@ def next_step(this_workflow: Workflow, context):
             raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
 
         # TODO: extract into separate function/lambda: compile corresponding event/payload and invoke async
-        update_google_lims(this_workflow)
+        update_google_lims.update_google_lims(this_workflow)
 
         # create a batch if not exist
         batch_name = this_sqr.name if this_sqr else f"{this_workflow.type_name}__{this_workflow.wfr_id}"

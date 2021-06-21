@@ -12,7 +12,7 @@ from data_portal.models import Workflow, BatchRun, Batch, SequenceRun, LabMetada
     LabMetadataPhenotype, FastqListRow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory, GermlineWorkflowFactory
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import orchestrator, fastq_list_row, wes_handler
+from data_processors.pipeline.lambdas import orchestrator, fastq_list_row, wes_handler, update_google_lims
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
@@ -65,6 +65,11 @@ def build_tn_mock():
 
 
 class OrchestratorUnitTests(PipelineUnitTestCase):
+
+    def setUp(self) -> None:
+        super(OrchestratorUnitTests, self).setUp()
+        # ignore the google lims update (that's covered elsewhere)
+        when(update_google_lims).update_google_lims(any).thenReturn(True)
 
     def test_parse_bcl_convert_output(self):
         """

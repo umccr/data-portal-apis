@@ -136,4 +136,3 @@ def update_google_lims(workflow: Workflow):
         lims_rows.append(lims_row)
 
     update_google_lims_sheet(lims_rows)
-    pass

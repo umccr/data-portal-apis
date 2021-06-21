@@ -8,7 +8,7 @@ from mockito import when, verify
 from data_portal.models import GDSFile, SequenceRun, Workflow, BatchRun
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowRunEventType
-from data_processors.pipeline.lambdas import sqs_iap_event, demux_metadata
+from data_processors.pipeline.lambdas import sqs_iap_event, demux_metadata, update_google_lims
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 from utils import libslack, libjson
@@ -208,6 +208,8 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
                 "workflow": "research"
             },
         ])
+        # ignore the google lims update (that's covered elsewhere)
+        when(update_google_lims).update_google_lims(any).thenReturn(True)
 
     def test_uploaded_gds_file_event(self):
         """
