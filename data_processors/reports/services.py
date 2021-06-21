@@ -1,10 +1,10 @@
 import logging
 import re
 import sys
-import uuid
+# import uuid
 from typing import Tuple
 
-#from aws_xray_sdk.core import xray_recorder
+# from aws_xray_sdk.core import xray_recorder
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import QuerySet
@@ -27,7 +27,7 @@ def _extract_report_unique_key(key: str) -> Tuple:
     :param key: S3 key string
     :return: subject_id, sample_id, library_id Or None
     """
-    #subsegment = xray_recorder.current_subsegment()
+    # subsegment = xray_recorder.current_subsegment()
 
     subject_id_pattern = 'SBJ\d{5}'
     sample_id_pattern = '(?:PRJ|CCR|MDX)\d{6}'
@@ -69,7 +69,7 @@ def _extract_report_type(key: str):
     :param key:
     :return: report type Or None
     """
-#    subsegment = xray_recorder.current_subsegment()
+    # subsegment = xray_recorder.current_subsegment()
 
     # normalize
     key = key.lower()
@@ -134,35 +134,19 @@ def _extract_report_type(key: str):
     return None
 
 
-@transaction.atomic
-def persist_report(bucket: str, key: str, event_type):
+def parse_report_data(bucket, key):
     """
-    Depends on event type, persist Report into db. Remove otherwise.
+    Read report from bucket and parse its JSON content into Python dict
 
     :param bucket:
     :param key:
-    :param event_type:
+    :return:
     """
+    # subsegment = xray_recorder.current_subsegment()
 
-    subject_id, sample_id, library_id = _extract_report_unique_key(key)
-    if subject_id is None or sample_id is None or library_id is None:
+    if helper.extract_report_format(key) is None:
+        logger.warning(f"Unsupported report format. Skip parsing report data: s3://{bucket}/{key}")
         return None
-
-    report_type = _extract_report_type(key)
-    if report_type is None:
-        return None
-
-    if event_type == helper.S3EventType.EVENT_OBJECT_CREATED.value:
-        return _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
-    elif event_type == helper.S3EventType.EVENT_OBJECT_REMOVED.value:
-        _sync_report_deleted(key, subject_id, sample_id, library_id, report_type)
-        return None
-
-
-def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
-#    subsegment = xray_recorder.current_subsegment()
-
-    qs: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
 
     decompressed_report: bytes = libs3.get_s3_object_to_bytes(bucket, key)
 
@@ -185,20 +169,58 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
         msg = f"Report too large. Decompressed size in bytes: {decompressed_report_size_in_bytes}. " \
               f"Capturing report metadata only. Skip ingesting report data: s3://{bucket}/{key}"
         logger.warning(msg)
-        #subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
+        # subsegment.put_metadata(f"WARN__{str(uuid.uuid4())}", {
         #     'key': key,
         #     'message': msg,
-        # }, 'sync_report_created')
+        # }, 'parse_report_data')
         data = None
     else:
         data = libjson.loads(decompressed_report)
+
+    return data
+
+
+@transaction.atomic
+def persist_report(bucket: str, key: str, event_type):
+    """
+    Depends on event type, persist Report into db. Remove otherwise.
+
+    :param bucket:
+    :param key:
+    :param event_type:
+    """
+
+    if not helper.is_report(key):
+        logger.warning(f"Unrecognised report format or reporting source. Skip persisting report: s3://{bucket}/{key}")
+        return None
+
+    subject_id, sample_id, library_id = _extract_report_unique_key(key)
+    if subject_id is None or sample_id is None or library_id is None:
+        return None
+
+    report_type = _extract_report_type(key)
+    if report_type is None:
+        return None
+
+    if event_type == helper.S3EventType.EVENT_OBJECT_CREATED.value:
+        return _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
+    elif event_type == helper.S3EventType.EVENT_OBJECT_REMOVED.value:
+        return _sync_report_deleted(key, subject_id, sample_id, library_id, report_type)
+
+
+def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str, library_id: str, report_type: str):
+    # subsegment = xray_recorder.current_subsegment()
+
+    qs: QuerySet = S3Object.objects.filter(bucket=bucket, key=key)
+
+    data = parse_report_data(bucket, key)
 
     report = Report.objects.create_or_update_report(
         subject_id=subject_id,
         sample_id=sample_id,
         library_id=library_id,
         report_type=report_type,
-        created_by=const.CANCER_REPORT_TABLES if (const.CANCER_REPORT_TABLES or const.MULTIQC_REPORT) in key else None,
+        created_by=helper.extract_report_source(key),
         data=data,
         s3_object=qs.get() if qs.exists() else None
     )
@@ -227,6 +249,8 @@ def _sync_report_deleted(key: str, subject_id: str, sample_id: str, library_id: 
         #     'report': str(report),
         # }, 'sync_report_deleted')
         report.delete()
+        return report
     except ObjectDoesNotExist as e:
         logger.info(f"No deletion required. Non-existent Report (subject_id={subject_id}, sample_id={sample_id}, "
                     f"library_id={library_id}, type={report_type}) : {str(e)}")
+        return None
