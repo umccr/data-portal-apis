@@ -1,7 +1,12 @@
 import json
+from datetime import datetime, timedelta
 
-from data_portal.models import Workflow, LIMSRow, LabMetadata
+from django.utils.timezone import make_aware
+from mockito import when
+
+from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
+from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import update_google_lims
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import PipelineUnitTestCase
@@ -61,13 +66,11 @@ def create_mock_lims_row() -> LIMSRow:
     )
 
 
-def create_mock_workflow() -> Workflow:
-
-    mock_sqr = SequenceRunFactory()
-
+def create_mock_workflow(id: str) -> Workflow:
     mock_workflow = Workflow()
-    mock_workflow.wfr_id = f"wfr.{_rand(32)}"
-    mock_workflow.sequence_run = mock_sqr
+    mock_workflow.wfr_id = id
+    mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+    mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
     mock_workflow.output = json.dumps(mock_workflow_output)
 
     return mock_workflow
@@ -104,7 +107,11 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_get_libs_from_run
         """
-        mock_workflow = create_mock_workflow()
+        mock_workflow = create_mock_workflow(f"wfr.{_rand(32)}")
+        mock_sqr: SequenceRun = SequenceRunFactory()
+        mock_sqr.name = mock_run_name
+        mock_workflow.sequence_run = mock_sqr
+
         res = update_google_lims.get_libs_from_run(mock_workflow)
 
         self.assertTrue(isinstance(res, list))
@@ -118,7 +125,6 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_create_lims_entry
         """
-
         mock_lab_meta: LabMetadata = LabMetadata(
             library_id=mock_library_id,
             sample_id=mock_sample_id,
@@ -140,3 +146,54 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         self.assertEqual(lims_row.workflow, mock_workflow_type)
         self.assertEqual(lims_row.run, update_google_lims.get_run_number_from_run_name(mock_run_name))
         self.assertEqual(lims_row.timestamp, update_google_lims.get_timestamp_from_run_name(mock_run_name))
+
+    def test_get_workflow_for_seq_run_name(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_get_workflow_for_seq_run_name
+        """
+        # persist a mock SequenceRun that is shared by all workflows
+        mock_sqr: SequenceRun = SequenceRunFactory()
+        mock_sqr.name = mock_run_name
+        mock_sqr.save()
+
+        # create a first workflow to test the normal case
+        # where we have a 1:1 mapping of sequence run name to workflow runs
+        wf = create_mock_workflow("wfr.12345")
+        start = datetime.utcnow() - timedelta(days=2)
+        wf.start = make_aware(start)
+        wf.end = make_aware(start + timedelta(days=1))
+        wf.sequence_run = mock_sqr
+        wf.save()
+
+        wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
+        self.assertEqual(wf_res.sequence_run.name, mock_run_name)
+        self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
+        self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
+
+        # now add a second workflow for the same sequence run to test the case
+        # where we have more than one workflow runs for the same sequence run name
+        wf = create_mock_workflow("wfr.67890")
+        start = datetime.utcnow() - timedelta(days=1)
+        wf.start = make_aware(start)
+        wf.end = make_aware(start + timedelta(days=1))
+        wf.sequence_run = mock_sqr
+        wf.save()
+
+        wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
+        self.assertEqual(wf_res.sequence_run.name, mock_run_name)
+        self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
+        self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
+        # we need to have the newer workflow (wf2)
+        self.assertEqual(wf_res.wfr_id, "wfr.67890")
+
+        # add a third backdated workflow just to test that
+        # we are not picking up the creation time (instead of the intended end time)
+        wf = create_mock_workflow("wfr.01234")
+        start = datetime.utcnow() - timedelta(days=10)
+        wf.start = make_aware(start)
+        wf.end = make_aware(start + timedelta(days=1))
+        wf.sequence_run = mock_sqr
+        wf.save()
+
+        wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
+        self.assertEqual(wf_res.wfr_id, "wfr.67890")  # we are still expecting wf2, as it's the latest wf

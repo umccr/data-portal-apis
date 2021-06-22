@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import List
 
-from data_portal.models import Workflow, LIMSRow, LabMetadata
+from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_processors import const
+from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from utils.tools import parse_bcl_convert_output
 from utils import libssm, libgdrive
 from utils.regex_globals import SAMPLE_REGEX_OBJS
@@ -122,7 +123,8 @@ def update_google_lims_sheet(lims_rows: List[LIMSRow]):
     for row in lims_rows:
         data.append(convert_limsrow_to_tuple(row))
 
-    libgdrive.append_records(account_info=account_info, file_id=lims_sheet_id, data=data)
+    resp = libgdrive.append_records(account_info=account_info, file_id=lims_sheet_id, data=data)
+    return resp
 
 
 def update_google_lims(workflow: Workflow):
@@ -135,4 +137,61 @@ def update_google_lims(workflow: Workflow):
         lims_row = create_lims_entry(lib_id=lib_rec['id'], seq_run_name=lib_rec['run_name'])
         lims_rows.append(lims_row)
 
-    update_google_lims_sheet(lims_rows)
+    resp = update_google_lims_sheet(lims_rows)
+    return resp
+
+
+def get_workflow_for_seq_run_name(seq_run_name: str) -> Workflow:
+
+    search_resp = Workflow.objects.filter(type_name=WorkflowType.BCL_CONVERT.value,
+                                          end_status=WorkflowStatus.SUCCEEDED.value)
+    if len(search_resp) < 1:
+        raise ValueError(f"Could not find successful BCL Convert workflows!")
+
+    # collect workflows with matching sequence run name
+    workflows: List[Workflow] = list()
+    for wf in search_resp:
+        seq_run: SequenceRun = wf.sequence_run
+        if seq_run.name == seq_run_name:
+            workflows.append(wf)
+
+    if len(workflows) < 1:
+        raise ValueError(f"Could not find workflow for sequence run {seq_run_name}")
+
+    if len(workflows) == 1:
+        return workflows[0]
+
+    # if there are more than one matching workflows (e.g. due to reruns) get the latest one
+    latest_wf = workflows[0]  # assume the first record is the latest one
+    # see if there is a newer one
+    for nest_wf in workflows:
+        if nest_wf.end > latest_wf.end:
+            latest_wf = nest_wf
+    return latest_wf
+
+
+def handler(event, context):
+    """
+    Update the Google LIMS sheet given either an ICA workflow run ID or an Illumina Sequence run name.
+    Only one of those parameters is required.
+    {
+        "wfr_id": "wfr.08de0d4af8894f0e95d6bc1f58adf1dc",
+        "sequence_run_name": "201027_A01052_0022_BH5KDCESXY"
+    }
+    :param event: request payload as above with either Workflow Run ID or Sequence Run name
+    :param context: Not used
+    :return: dict response of the Google Sheets update request
+    """
+    # we want a Workflow object, which we can get either directly using a workflow ID
+    # or via a sequence run lookup/mapping
+    wrf_id = event.get('wfr_id')
+    seq_run_name = event.get('sequence_run_name')
+    if wrf_id:
+        # there should be exactly one record for any 'wfr' ID
+        workflow = Workflow.objects.get(wfr_id=wrf_id)
+    elif seq_run_name:
+        workflow = get_workflow_for_seq_run_name(seq_run_name)
+    else:
+        raise ValueError(f"Event does not contain expected parameters (wfr_id/sequence_run_name): {event}")
+
+    return update_google_lims(workflow)
