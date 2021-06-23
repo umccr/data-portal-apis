@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+from unittest import skip
 
 from django.utils.timezone import make_aware
 from mockito import when
@@ -9,8 +10,7 @@ from data_portal.tests.factories import SequenceRunFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import update_google_lims
 from data_processors.pipeline.tests import _rand
-from data_processors.pipeline.tests.case import PipelineUnitTestCase
-
+from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase
 
 lc_no = 29  # number of lims columns
 lc_idx_run_name = 0  # index of IlluminaID/RunName column
@@ -197,3 +197,83 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
 
         wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.wfr_id, "wfr.67890")  # we are still expecting wf2, as it's the latest wf
+
+
+class UpdateGoogleLimsUnitTestsIntegrationTests(PipelineIntegrationTestCase):
+    # integration test hit actual File or API endpoint, thus, manual run in most cases
+    # required appropriate access mechanism setup such as active aws login session
+    # uncomment @skip and hit the each test case!
+    # and keep decorated @skip after tested
+
+    @skip
+    def test_handler(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTestsIntegrationTests.test_handler
+        """
+        # create mock entries
+        wfr_id = "wfr.0011223344"
+
+        mock_sqr: SequenceRun = SequenceRunFactory()
+        mock_sqr.name = mock_run_name
+        mock_sqr.save()
+
+        wf = create_mock_workflow(wfr_id)
+        wf.sequence_run = mock_sqr
+        start = datetime.utcnow() - timedelta(days=1)
+        wf.start = make_aware(start)
+        wf.end = make_aware(start + timedelta(days=1))
+        wf.save()
+
+        # create LabMetadata entries for the libraries referenced in the workflow output
+        lm1 = LabMetadata(
+            library_id=mock_library_id,
+            sample_name=mock_rgms_1,
+            sample_id=mock_sample_id,
+            external_sample_id=f"extid-{mock_sample_id}",
+            subject_id="SBJ99999",
+            external_subject_id="ext-SBJ99999",
+            phenotype="tumor",
+            quality="good",
+            source="tissue",
+            project_name="FOO",
+            project_owner="FooBar",
+            experiment_id="exp_id_123",
+            type="WGS",
+            assay="TsqNano",
+            override_cycles="F:F:F:F",
+            workflow="clinical",
+            coverage="80",
+            truseqindex="noidea",
+        )
+        lm1.save()
+
+        lm2 = LabMetadata(
+            library_id=mock_library_id_2,
+            sample_name=mock_rgms_2,
+            sample_id=mock_sample_id,
+            external_sample_id=f"extid-{mock_sample_id}",
+            subject_id="SBJ99999",
+            external_subject_id="ext-SBJ99999",
+            phenotype="tumor",
+            quality="good",
+            source="tissue",
+            project_name="FOO",
+            project_owner="FooBar",
+            experiment_id="exp_id_123",
+            type="WGS",
+            assay="TsqNano",
+            override_cycles="F:F:F:F",
+            workflow="clinical",
+            coverage="80",
+            truseqindex="noidea",
+
+        )
+        lm2.save()
+
+        event = {
+            "wfr_id": wfr_id
+        }
+        resp = update_google_lims.handler(event=event, context=None)
+        print(resp)
+        self.assertEqual(resp['updates']['updatedRows'], 2)
+        self.assertEqual(resp['updates']['updatedColumns'], lc_no)
