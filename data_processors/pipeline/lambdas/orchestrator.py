@@ -348,10 +348,6 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     for row in fastq_list_rows:
         rgid = row['rgid']
 
-        if row['read_1'].startswith("Undetermined"):
-            logger.info(f"SKIP GERMLINE workflow for {rgid}. Undetermined FASTQs.")
-            continue
-
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
         rglb = row['rglb']
