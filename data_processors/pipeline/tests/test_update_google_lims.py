@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from unittest import skip
 
 from django.utils.timezone import make_aware
-from mockito import when
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
@@ -170,7 +169,7 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
         self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
 
-        # now add a second workflow for the same sequence run to test the case
+        # now add a second (newer) workflow for the same sequence run to test the case
         # where we have more than one workflow runs for the same sequence run name
         wf = create_mock_workflow("wfr.67890")
         start = datetime.utcnow() - timedelta(days=1)
@@ -183,11 +182,11 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         self.assertEqual(wf_res.sequence_run.name, mock_run_name)
         self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
         self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
-        # we need to have the newer workflow (wf2)
+        # we need to have the newer workflow (wfr.67890)
         self.assertEqual(wf_res.wfr_id, "wfr.67890")
 
         # add a third backdated workflow just to test that
-        # we are not picking up the creation time (instead of the intended end time)
+        # we are not picking up the creation time/order (instead of the intended end time)
         wf = create_mock_workflow("wfr.01234")
         start = datetime.utcnow() - timedelta(days=10)
         wf.start = make_aware(start)
@@ -196,7 +195,7 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         wf.save()
 
         wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
-        self.assertEqual(wf_res.wfr_id, "wfr.67890")  # we are still expecting wf2, as it's the latest wf
+        self.assertEqual(wf_res.wfr_id, "wfr.67890")  # we are still expecting wfr.67890, as it's the latest workflow
 
 
 class UpdateGoogleLimsUnitTestsIntegrationTests(PipelineIntegrationTestCase):
@@ -275,5 +274,7 @@ class UpdateGoogleLimsUnitTestsIntegrationTests(PipelineIntegrationTestCase):
         }
         resp = update_google_lims.handler(event=event, context=None)
         print(resp)
+        # we expect two rows to be added (according to the LabMetadata above (lm1, lm2)
         self.assertEqual(resp['updates']['updatedRows'], 2)
+        # the Google sheet contains lc_no (29) populated columns
         self.assertEqual(resp['updates']['updatedColumns'], lc_no)

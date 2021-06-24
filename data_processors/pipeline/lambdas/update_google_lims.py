@@ -1,3 +1,17 @@
+try:
+    import unzip_requirements
+except ImportError:
+    pass
+
+import os
+
+import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
+django.setup()
+
+# ---
+
 from datetime import datetime
 from typing import List
 
@@ -115,7 +129,6 @@ def convert_limsrow_to_tuple(limsrow: LIMSRow) -> tuple:
 
 
 def update_google_lims_sheet(lims_rows: List[LIMSRow]):
-    # TODO: check/test
     lims_sheet_id = libssm.get_secret(const.LIMS_SHEET_ID)
     account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
 

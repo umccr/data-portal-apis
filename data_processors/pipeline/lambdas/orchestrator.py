@@ -1,5 +1,3 @@
-from utils.tools import parse_bcl_convert_output
-
 try:
     import unzip_requirements
 except ImportError:
@@ -24,7 +22,7 @@ from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetada
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, demux_metadata, update_google_lims
-from utils import libjson, libsqs, libssm
+from utils import libjson, libsqs, libssm, tools
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -271,7 +269,7 @@ def next_step(this_workflow: Workflow, context):
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
                 fastq_list_rows: List = fastq_list_row.handler({
-                    'fastq_list_rows': parse_bcl_convert_output(this_workflow.output),
+                    'fastq_list_rows': tools.parse_bcl_convert_output(this_workflow.output),
                     'seq_name': this_sqr.name,
                 }, None)
 
