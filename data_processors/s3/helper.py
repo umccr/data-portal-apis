@@ -33,13 +33,40 @@ class S3EventRecord:
         self.s3_object_meta = s3_object_meta
 
 
-def is_report_record(s3_object_meta):
+def extract_report_format(key: str):
     """
-    Check S3 object key to determine whether further processing is required for report data ingestion
-    Filtering strategy is finding a very discriminated "keyword" in S3 object key
+    We limit that all reports must be provided in JSON format.
     """
-    key = s3_object_meta['key']
-    return (const.CANCER_REPORT_TABLES or const.MULTIQC_REPORT) in key
+
+    key = key.lower()
+
+    for ext in const.REPORT_EXTENSIONS:
+        if key.endswith(ext):
+            return ext
+
+    return None
+
+
+def extract_report_source(key: str):
+    """
+    Check S3 object key to determine report source.
+    """
+
+    key = key.lower()
+
+    for keyword in const.REPORT_KEYWORDS:
+        if keyword in key:
+            return keyword
+
+    return None
+
+
+def is_report(key: str) -> bool:
+    """
+    Use report format and reporting source to determine further processing is required for report data ingestion.
+    Filtering strategy is finding a very discriminated "keyword" in S3 object key and must be JSON format.
+    """
+    return True if extract_report_format(key) is not None and extract_report_source(key) is not None else False
 
 
 def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
@@ -78,7 +105,7 @@ def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
             s3_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
 
             # filter early for records that need further processing
-            if is_report_record(s3_object_meta):
+            if is_report(s3_object_meta['key']):
                 report_event_records.append({
                     'event_type': event_type.value,
                     'event_time': event_time,
