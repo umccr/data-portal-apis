@@ -1,12 +1,9 @@
-import pandas as pd
-
 try:
     import unzip_requirements
 except ImportError:
     pass
 
 import os
-
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
@@ -14,6 +11,7 @@ django.setup()
 
 # ---
 
+import pandas as pd
 import logging
 from typing import List
 from collections import defaultdict
