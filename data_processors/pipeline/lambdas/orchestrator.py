@@ -1,3 +1,5 @@
+import pandas as pd
+
 try:
     import unzip_requirements
 except ImportError:
@@ -345,41 +347,42 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
     fastq_list_rows: List[dict] = libjson.loads(this_batch.context_data)
 
     # iterate through each sample group by rglb
-    for row in fastq_list_rows:
-        rgid = row['rgid']
-
+    for rglb, rglb_df in pd.DataFrame(fastq_list_rows).groupby("rglb"):
+        # Check rgsm is identical
+        # .item() will raise error if there exists more than one sample name for a given library
+        rgsm = rglb_df['rgsm'].unique().item()
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
-        rglb = row['rglb']
         lib_metadata: LabMetadata = LabMetadata.objects.get(library_id=rglb)
         # make sure we have recognised sample (e.g. not undetermined)
         if not lib_metadata:
-            logger.error(f"SKIP GERMLINE workflow for {rgid}. No metadata for {rglb}, this should not happen!")
+            logger.error(f"SKIP GERMLINE workflow for {rgsm}_{rglb}. No metadata for {rglb}, this should not happen!")
             continue
 
         # skip negative control samples
         if lib_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-            logger.info(f"SKIP GERMLINE workflow for '{rgid}'. Negative-control.")
+            logger.info(f"SKIP GERMLINE workflow for '{rgsm}_{rglb}'. Negative-control.")
             continue
 
         # Skip samples where metadata workflow is set to manual
         if lib_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             # We do not pursue manual samples
-            logger.info(f"SKIP GERMLINE workflow for '{rgid}'. Workflow set to manual.")
+            logger.info(f"SKIP GERMLINE workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
             continue
 
         # skip germline if assay type is not WGS
         if lib_metadata.type.lower() != LabMetadataType.WGS.value.lower():
-            logger.warning(f"SKIP GERMLINE workflow for '{rgid}'. 'WGS' != '{lib_metadata.type}'.")
+            logger.warning(f"SKIP GERMLINE workflow for '{rgsm}_{rglb}'. 'WGS' != '{lib_metadata.type}'.")
             continue
 
         # convert read_1 and read_2 to cwl file location dict format
-        row["read_1"] = cwl_file_path_as_string_to_dict(row["read_1"])
-        row["read_2"] = cwl_file_path_as_string_to_dict(row["read_2"])
+
+        rglb_df["read_1"] = rglb_df["read_1"].apply(lambda x: cwl_file_path_as_string_to_dict(x))
+        rglb_df["read_2"] = rglb_df["read_2"].apply(lambda x: cwl_file_path_as_string_to_dict(x))
 
         job = {
-            "sample_name": rgid,
-            "fastq_list_rows": row,
+            "sample_name": f"{rgsm}_{rglb}",
+            "fastq_list_rows": rglb_df.to_json(orient="records"),
             "seq_run_id": this_sqr.run_id if this_sqr else None,
             "seq_name": this_sqr.name if this_sqr else None,
             "batch_run_id": int(this_batch_run.id)
