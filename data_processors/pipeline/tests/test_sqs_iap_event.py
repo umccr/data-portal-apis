@@ -2,13 +2,14 @@ from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import make_aware
-from libica.openapi import libwes, libgds
+from libica.openapi import libwes
 from mockito import when, verify
 
-from data_portal.models import GDSFile, SequenceRun, Workflow, BatchRun
+from data_portal.models import GDSFile, SequenceRun, Workflow, BatchRun, LabMetadata, LabMetadataType, LabMetadataAssay, \
+    LabMetadataWorkflow
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory, TestConstant
 from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowRunEventType
-from data_processors.pipeline.lambdas import sqs_iap_event, demux_metadata, update_google_lims
+from data_processors.pipeline.lambdas import sqs_iap_event, bcl_convert, update_google_lims
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 from utils import libslack, libjson
@@ -192,22 +193,30 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
         super(SQSIAPEventUnitTests, self).setUp()
-        when(demux_metadata).handler(...).thenReturn([
-            {
-                "sample": "PTC_EXPn200908LL_L2000001",
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano",
-                "workflow": "research"
-            },
-            {
-                "sample": "PTC_EXPn200908LL_L2000001_topup",
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano",
-                "workflow": "research"
-            },
-        ])
+
+        mock_labmetadata_1 = LabMetadata()
+        mock_labmetadata_1.library_id = "L2000001"
+        mock_labmetadata_1.sample_id = "PTC_EXPn200908LL"
+        mock_labmetadata_1.override_cycles = "Y100;I8N2;I8N2;Y100"
+        mock_labmetadata_1.type = LabMetadataType.WGS.value
+        mock_labmetadata_1.assay = LabMetadataAssay.TSQ_NANO.value
+        mock_labmetadata_1.workflow = LabMetadataWorkflow.RESEARCH.value
+        mock_labmetadata_1.save()
+        mock_labmetadata_2 = LabMetadata()
+        mock_labmetadata_2.library_id = "L2000001_topup"
+        mock_labmetadata_2.sample_id = "PTC_EXPn200908LL"
+        mock_labmetadata_2.override_cycles = "Y100;I8N2;I8N2;Y100"
+        mock_labmetadata_2.type = LabMetadataType.WGS.value
+        mock_labmetadata_2.assay = LabMetadataAssay.TSQ_NANO.value
+        mock_labmetadata_2.workflow = LabMetadataWorkflow.RESEARCH.value
+        mock_labmetadata_2.save()
+
+        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
+            [
+                "PTC_EXPn200908LL_L2000001",
+                "PTC_EXPn200908LL_L2000001_topup"
+            ]
+        )
         # ignore the google lims update (that's covered elsewhere)
         when(update_google_lims).update_google_lims(any).thenReturn(True)
 

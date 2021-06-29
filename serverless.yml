@@ -232,12 +232,6 @@ functions:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
 
-  demux_metadata:
-    handler: data_processors.pipeline.lambdas.demux_metadata.handler
-    layers:
-      - { Ref: PythonRequirementsLambdaLayer }
-    timeout: 28
-
   notification:
     handler: data_processors.pipeline.lambdas.notification.handler
     layers:

@@ -1,14 +1,16 @@
 import json
 from datetime import datetime
+from unittest import skip
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
-from mockito import when, verify, contains
+from mockito import when, verify
 
-from data_portal.models import SequenceRun, Workflow
+from data_portal.models import SequenceRun, Workflow, LabMetadata, LabMetadataType, LabMetadataAssay, \
+    LabMetadataWorkflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowHelper, WorkflowType, ICA_GDS_FASTQ_VOL
-from data_processors.pipeline.lambdas import bcl_convert, demux_metadata
+from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.lambdas import bcl_convert
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libslack
 
@@ -17,72 +19,21 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
         super(BCLConvertUnitTests, self).setUp()
-        when(demux_metadata).handler(...).thenReturn(
+
+        mock_labmetadata = LabMetadata()
+        mock_labmetadata.library_id = "L2000001"
+        mock_labmetadata.sample_id = "PTC_EXPn200908LL"
+        mock_labmetadata.override_cycles = "Y100;I8N2;I8N2;Y100"
+        mock_labmetadata.type = LabMetadataType.WGS.value
+        mock_labmetadata.assay = LabMetadataAssay.TSQ_NANO.value
+        mock_labmetadata.workflow = LabMetadataWorkflow.RESEARCH.value
+        mock_labmetadata.save()
+
+        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
             [
-                    {
-                      "sample": "PTC_EXPn200908LL_L2000001",
-                      "override_cycles": "Y100;I8N2;I8N2;Y100",
-                      "type": "WGS",
-                      "assay": "TsqNano",
-                      "workflow": "research"
-                    }
+                "PTC_EXPn200908LL_L2000001"
             ]
         )
-
-        # This introspect `libssm` module import in `bcl_convert` lambda module
-        # and patch `get_ssm_param()` function argument equal to `wfl_helper.get_ssm_key_input()`
-        # i.e. /iap/workflow/bcl_convert/input.
-        # Then instead of retrieving from actual SSM parameter store, it return the mock template in JSON string
-        #
-        # NOTE:
-        # Ideally we shouldn't mock this. because we also wanted to test such that someone would go directly modify
-        # SSM parameter without changing corresponding code in Portal -- we want to capture that during Continuous
-        # Integration (CI) build phase and before deploying to target environment (Continuous Delivery (CD))
-        # Leaving here for showing mock construct and ad-hoc test use case. Perhaps keep it commented out when no use.
-        wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
-        # Use Ctrl + "/" (whilst lines below are highlighted) to comment or uncomment these lines
-        # when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_input())).thenReturn(
-        #     json.dumps(
-        #         {
-        #             "bcl_input_directory": {
-        #                 "class": "Directory",
-        #                 "location": "PLACEHOLDER"
-        #             },
-        #             "samplesheet": {
-        #                 "class": "File",
-        #                 "location": "PLACEHOLDER"
-        #             },
-        #             "settings_by_samples": [],
-        #             "samplesheet_outdir": "samplesheets-by-assay-type",
-        #             "ignore_missing_samples": True,
-        #             "samplesheet_output_format": "v2",
-        #             "bcl_sampleproject_subdirectories_bcl_conversion": True,
-        #             "strict_mode_bcl_conversion": True,
-        #             "delete_undetermined_indices_bcl_conversion": True,
-        #             "runfolder_name": "PLACEHOLDER"
-        #         }
-        #     )
-        # )
-        # 
-        # when(bcl_convert.libssm).get_ssm_param(contains(ICA_GDS_FASTQ_VOL)).thenReturn(
-        #    "fastq-vol"
-        # )
-        # 
-        # when(bcl_convert.libssm).get_ssm_param(contains(wfl_helper.get_ssm_key_engine_parameters())).thenReturn(
-        #    json.dumps(
-        #        {
-        #            "outputDirectory": "PLACEHOLDER"
-        #        }
-        #    )
-        # )
-        # 
-        # when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_id()).thenReturn(
-        #    "wfl....."
-        # )
-        # 
-        # when(bcl_convert.libssm).get_ssm_param(wfl_helper.get_ssm_key_version()).thenReturn(
-        #    "version..."
-        # )
 
     def test_handler(self):
         """
@@ -141,15 +92,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         """
 
         # This will fail metadata validation since there exists no samples
-        when(demux_metadata).handler(...).thenReturn(
+        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
             [
-              {
-                "sample": "",
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano",
-                "workflow": "research"
-              }
+                ""
             ]
         )
 
@@ -167,9 +112,6 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # assert bcl convert workflow runs 0 in db
         no_bcl_convert_workflow_runs = Workflow.objects.all()
         self.assertEqual(0, no_bcl_convert_workflow_runs.count())
-
-        # should call to slack webhook once
-        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
     def test_validate_metadata_blank_samples(self):
         """
@@ -338,5 +280,58 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
 
 class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
-    # write test case here if to actually hit IAP endpoints
-    pass
+    # Comment @skip
+    # export AWS_PROFILE=dev
+    # run the test
+
+    @skip
+    def test_get_sample_names_from_samplesheet(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_sample_names_from_samplesheet
+        """
+
+        # SEQ-II validation dataset
+        gds_volume = "umccr-raw-sequence-data-dev"
+        samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
+
+        sample_names = bcl_convert.get_sample_names_from_samplesheet(
+            gds_volume=gds_volume,
+            samplesheet_path=samplesheet_path
+        )
+
+        self.assertIsNotNone(sample_names)
+        self.assertTrue("PTC_SsCRE200323LL_L2000172_topup" in sample_names)
+
+    @skip
+    def test_get_metadata_df(self):
+        """
+        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_metadata_df
+        """
+
+        # first need to populate LabMetadata tables
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({'sheet': "2020"}, None)
+        labmetadata.scheduled_update_handler({'sheet': "2021"}, None)
+
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # SEQ-II validation dataset
+        gds_volume = "umccr-raw-sequence-data-dev"
+        samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
+
+        metadata_df = bcl_convert.get_metadata_df(
+            gds_volume=gds_volume,
+            samplesheet_path=samplesheet_path
+        )
+
+        logger.info("-" * 32)
+        logger.info(f"\n{metadata_df}")
+
+        self.assertTrue(not metadata_df.empty)
+        self.assertTrue("PTC_SsCRE200323LL_L2000172_topup" in metadata_df["sample"].tolist())
+
+        if "" in metadata_df["override_cycles"].unique().tolist():
+            logger.info("-" * 32)
+            logger.info("THERE SEEM TO BE BLANK OVERRIDE_CYCLES METADATA FOR SOME SAMPLES...")
+            self.assertFalse("" in metadata_df["override_cycles"].tolist())
+            # This probably mean need to fix data, look for corresponding Lab Metadata entry...
