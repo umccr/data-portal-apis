@@ -20,8 +20,8 @@ from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetada
     LabMetadataPhenotype, FastqListRow, LabMetadataWorkflow
 from data_processors.pipeline import services, constant
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import workflow_update, fastq_list_row
-from utils import libjson, libsqs, libssm
+from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, update_google_lims
+from utils import libjson, libsqs, libssm, tools
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -243,6 +243,9 @@ def next_step(this_workflow: Workflow, context):
         if this_workflow.output is None:
             raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
 
+        # TODO: extract into separate function/lambda: compile corresponding event/payload and invoke async
+        update_google_lims.update_google_lims(this_workflow)
+
         # create a batch if not exist
         batch_name = this_sqr.name if this_sqr else f"{this_workflow.type_name}__{this_workflow.wfr_id}"
         this_batch = services.get_or_create_batch(name=batch_name, created_by=this_workflow.wfr_id)
@@ -265,7 +268,7 @@ def next_step(this_workflow: Workflow, context):
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
                 fastq_list_rows: List = fastq_list_row.handler({
-                    'fastq_list_rows': parse_bcl_convert_output(this_workflow.output),
+                    'fastq_list_rows': tools.parse_bcl_convert_output(this_workflow.output),
                     'seq_name': this_sqr.name,
                 }, None)
 
@@ -389,31 +392,6 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         job_list.append(job)
 
     return job_list
-
-
-def parse_bcl_convert_output(output_json: str) -> list:
-    """
-    NOTE: as of BCL Convert CWL workflow version 3.7.5, it uses fastq_list_rows format
-    Given bcl convert workflow output json, return fastq_list_rows
-    See Example IAP Run > Outputs
-    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.84abc203cabd4dc196a6cf9bb49d5f74/3.7.5.md
-
-    :param output_json: workflow run output in json format
-    :return fastq_list_rows: list of fastq list rows in fastq list format
-    """
-    output: dict = libjson.loads(output_json)
-
-    lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']  # lookup in order, return on first found
-    look_up_key = None
-    for k in lookup_keys:
-        if k in output.keys():
-            look_up_key = k
-            break
-
-    if look_up_key is None:
-        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting one of {lookup_keys}. Found {output.keys()}")
-
-    return output[look_up_key]
 
 
 def cwl_file_path_as_string_to_dict(file_path):

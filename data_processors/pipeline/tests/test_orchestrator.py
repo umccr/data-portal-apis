@@ -7,11 +7,12 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
+import utils.tools
 from data_portal.models import Workflow, BatchRun, Batch, SequenceRun, LabMetadata, LabMetadataType, \
     LabMetadataPhenotype, FastqListRow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory, GermlineWorkflowFactory
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import orchestrator, fastq_list_row, wes_handler
+from data_processors.pipeline.lambdas import orchestrator, fastq_list_row, wes_handler, update_google_lims
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
@@ -68,12 +69,17 @@ def build_tn_mock():
 
 class OrchestratorUnitTests(PipelineUnitTestCase):
 
+    def setUp(self) -> None:
+        super(OrchestratorUnitTests, self).setUp()
+        # ignore the google lims update (that's covered elsewhere)
+        when(update_google_lims).update_google_lims(any).thenReturn(True)
+
     def test_parse_bcl_convert_output(self):
         """
         python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output
         """
 
-        result = orchestrator.parse_bcl_convert_output(json.dumps({
+        result = utils.tools.parse_bcl_convert_output(json.dumps({
             "main/fastq_list_rows": [{'rgid': "main/fastq_list_rows"}],
             "fastq_list_rows": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}]
         }))
@@ -88,7 +94,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_alt
         """
 
-        result = orchestrator.parse_bcl_convert_output(json.dumps({
+        result = utils.tools.parse_bcl_convert_output(json.dumps({
             "fastq_list_rows2": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
             "fastq_list_rows": [{'rgid': "fastq_list_rows"}]
         }))
@@ -104,7 +110,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         """
 
         try:
-            orchestrator.parse_bcl_convert_output(json.dumps({
+            utils.tools.parse_bcl_convert_output(json.dumps({
                 "fastq_list_rows/main": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
                 "fastq_list_rowz": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS_TOO"}]
             }))
