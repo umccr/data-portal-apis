@@ -18,6 +18,9 @@ from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, Pi
 
 tn_mock_subject_id = "SBJ00001"
 tn_mock_normal_read_1 = "gds://volume/path/normal_read_1.fastq.gz"
+mock_library_id = "LPRJ200438"
+mock_sample_id = "PRJ200438"
+mock_sample_name = f"{mock_sample_id}_{mock_library_id}"
 
 
 def build_tn_mock():
@@ -158,22 +161,22 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
                 {
                     "rgid": "CATGCGAT.4",
                     "rglb": "UnknownLibrary",
-                    "rgsm": "PRJ200438_LPRJ200438",
+                    "rgsm": mock_sample_name,
                     "lane": 4,
                     "read_1": {
                         "class": "File",
-                        "basename": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
-                        "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R1_001.fastq.gz",
-                        "nameroot": "PRJ200438_LPRJ200438_S1_L004_R1_001.fastq",
+                        "basename": f"{mock_sample_name}_S1_L004_R1_001.fastq.gz",
+                        "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R1_001.fastq.gz",
+                        "nameroot": f"{mock_sample_name}_S1_L004_R1_001.fastq",
                         "nameext": ".gz",
                         "http://commonwl.org/cwltool#generation": 0,
                         "size": 16698849950
                     },
                     "read_2": {
                         "class": "File",
-                        "basename": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
-                        "location": "gds://fastqvol/bcl-convert-test/outputs/10X/PRJ200438_LPRJ200438_S1_L004_R2_001.fastq.gz",
-                        "nameroot": "PRJ200438_LPRJ200438_S1_L004_R2_001.fastq",
+                        "basename": f"{mock_sample_name}_S1_L004_R2_001.fastq.gz",
+                        "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R2_001.fastq.gz",
+                        "nameroot": f"{mock_sample_name}_S1_L004_R2_001.fastq",
                         "nameext": ".gz",
                         "http://commonwl.org/cwltool#generation": 0,
                         "size": 38716143739
@@ -187,15 +190,13 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         mock_wfl_run.workflow_version = workflow_version
         when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
 
-        when(orchestrator.demux_metadata).handler(...).thenReturn([
-            {
-                "sample": "PRJ200438_LPRJ200438",
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano",
-                "workflow": "research"
-            }
-        ])
+        #LPRJ200438
+        mock_labmetadata_tumor = LabMetadata()
+        mock_labmetadata_tumor.subject_id = tn_mock_subject_id
+        mock_labmetadata_tumor.library_id = mock_library_id
+        mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
+        mock_labmetadata_tumor.type = LabMetadataType.WGS.value
+        mock_labmetadata_tumor.save()
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,
@@ -292,14 +293,6 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         build_tn_mock()
 
         logger.info("-" * 32)
-        when(orchestrator.demux_metadata).handler(...).thenReturn([
-            {
-                "sample": "PRJ200438_LPRJ200438",
-                "override_cycles": "Y100;I8N2;I8N2;Y100",
-                "type": "WGS",
-                "assay": "TsqNano"
-            }
-        ])
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,
