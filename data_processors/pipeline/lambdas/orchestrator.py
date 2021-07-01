@@ -18,10 +18,10 @@ from collections import defaultdict
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
     LabMetadataPhenotype, FastqListRow, LabMetadataWorkflow
-from data_processors.pipeline import services, constant
+from data_processors.pipeline import services, constant, tools
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, update_google_lims
-from utils import libjson, libsqs, libssm, tools
+from utils import libjson, libsqs, libssm
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -378,8 +378,8 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
 
         # convert read_1 and read_2 to cwl file location dict format
 
-        rglb_df["read_1"] = rglb_df["read_1"].apply(lambda x: cwl_file_path_as_string_to_dict(x))
-        rglb_df["read_2"] = rglb_df["read_2"].apply(lambda x: cwl_file_path_as_string_to_dict(x))
+        rglb_df["read_1"] = rglb_df["read_1"].apply(lambda x: tools.cwl_file_path_as_string_to_dict(x))
+        rglb_df["read_2"] = rglb_df["read_2"].apply(lambda x: tools.cwl_file_path_as_string_to_dict(x))
 
         job = {
             "sample_name": f"{rgsm}_{rglb}",
@@ -392,14 +392,3 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         job_list.append(job)
 
     return job_list
-
-
-def cwl_file_path_as_string_to_dict(file_path):
-    # TODO: extract to global util?
-    """
-    Convert "gds://path/to/file" to {"class": "File", "location": "gds://path/to/file"}
-    :param file_path:
-    :return:
-    """
-
-    return {"class": "File", "location": file_path}

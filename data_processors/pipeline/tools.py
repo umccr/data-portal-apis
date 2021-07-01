@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""tools module
+
+aka Pipeline werkzeug! :D
+A catchall module for pipeline related functions impl that does not fit elsewhere, yet.
+"""
 from utils import libjson
 
 
@@ -24,3 +30,13 @@ def parse_bcl_convert_output(output_json: str) -> list:
         raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting one of {lookup_keys}. Found {output.keys()}")
 
     return output[look_up_key]
+
+
+def cwl_file_path_as_string_to_dict(file_path):
+    """
+    Convert "gds://path/to/file" to {"class": "File", "location": "gds://path/to/file"}
+    :param file_path:
+    :return:
+    """
+
+    return {"class": "File", "location": file_path}

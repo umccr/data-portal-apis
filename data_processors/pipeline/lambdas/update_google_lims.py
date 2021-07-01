@@ -4,7 +4,6 @@ except ImportError:
     pass
 
 import os
-
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
@@ -18,7 +17,7 @@ from typing import List
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_processors import const
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from utils.tools import parse_bcl_convert_output
+from data_processors.pipeline.tools import parse_bcl_convert_output
 from utils import libssm, libgdrive
 from utils.regex_globals import SAMPLE_REGEX_OBJS
 

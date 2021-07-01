@@ -7,7 +7,6 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-import utils.tools
 from data_portal.models import Workflow, BatchRun, Batch, SequenceRun, LabMetadata, LabMetadataType, \
     LabMetadataPhenotype, FastqListRow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory, GermlineWorkflowFactory
@@ -73,50 +72,6 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         super(OrchestratorUnitTests, self).setUp()
         # ignore the google lims update (that's covered elsewhere)
         when(update_google_lims).update_google_lims(any).thenReturn(True)
-
-    def test_parse_bcl_convert_output(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output
-        """
-
-        result = utils.tools.parse_bcl_convert_output(json.dumps({
-            "main/fastq_list_rows": [{'rgid': "main/fastq_list_rows"}],
-            "fastq_list_rows": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}]
-        }))
-
-        logger.info("-" * 32)
-        logger.info(f"Orchestrator parse_bcl_convert_output: {json.dumps(result)}")
-
-        self.assertEqual(result[0]['rgid'], "main/fastq_list_rows")
-
-    def test_parse_bcl_convert_output_alt(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_alt
-        """
-
-        result = utils.tools.parse_bcl_convert_output(json.dumps({
-            "fastq_list_rows2": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
-            "fastq_list_rows": [{'rgid': "fastq_list_rows"}]
-        }))
-
-        logger.info("-" * 32)
-        logger.info(f"Orchestrator parse_bcl_convert_output alt: {json.dumps(result)}")
-
-        self.assertEqual(result[0]['rgid'], "fastq_list_rows")
-
-    def test_parse_bcl_convert_output_error(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_parse_bcl_convert_output_error
-        """
-
-        try:
-            utils.tools.parse_bcl_convert_output(json.dumps({
-                "fastq_list_rows/main": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
-                "fastq_list_rowz": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS_TOO"}]
-            }))
-        except Exception as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-        self.assertRaises(json.JSONDecodeError)
 
     def test_workflow_output_not_json(self):
         """
