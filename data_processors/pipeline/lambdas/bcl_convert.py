@@ -158,6 +158,8 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
         settings = ADAPTERS_BY_KIT["nextera"].copy()
         # We also wish to keep the indexes as reads
         settings["create_fastq_for_index_reads"] = True
+        settings["minimum_trimmed_read_length"] = 8
+        settings["mask_short_reads"] = 8
         return settings
 
     # Then if assay is TSO -> return TSO parameters
