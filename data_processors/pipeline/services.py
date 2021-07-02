@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_aware
 
-from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow
+from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow, LabMetadata
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.tools import lookup
 from utils import libslack, libjson, libdt
@@ -759,3 +759,73 @@ def get_germline_succeeded_by_sequence_run(sequence_run: SequenceRun):
     qs: QuerySet = Workflow.objects.get_succeeded_by_sequence_run(sequence_run=sequence_run, type_name=WorkflowType.GERMLINE.value.lower())
     # TODO: sort out duplicated WF records (e.g. due to workflow rerun/resubmission)
     return qs.all()
+
+
+@transaction.atomic
+def get_subjects_from_runs(workflows: List[Workflow]) -> list:
+    subjects = set()
+    for workflow in workflows:
+        # use workflow helper class to extract sample/library ID from workflow
+        library_id = get_library_id_from_workflow(workflow)
+        logger.info(f"Extracted libraryID {library_id} from workflow {workflow} with sample name: {workflow.sample_name}")
+        # use metadata helper class to get corresponding subject ID
+        try:
+            subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
+        except LabMetadata.DoesNotExist:
+            subject_id = None
+            logger.error(f"No subject for library {library_id}")
+        if subject_id:
+            subjects.add(subject_id)
+
+    return list(subjects)
+
+
+def get_library_id_from_workflow(workflow: Workflow):
+    # extract library ID from Germline WF sample_name
+    # TODO: is there a better way? Could use the fastq_list_row entries of the workflow 'input'
+
+    # remove the first part (sample ID) from the sample_name to get the library ID
+    # NOTE: this may not be exactly the library ID used in the Germline workflow (stripped off _topup/_rerun), but
+    #       for our use case that does not matter, as we are merging all libs from the same subject anyway
+    return '_'.join(workflow.sample_name.split('_')[1:])
+
+
+def extract_sample_library_ids(fastq_list_rows: List[FastqListRow]):
+    samples = set()
+    libraries = set()
+
+    for row in fastq_list_rows:
+        libraries.add(row.rglb)
+        samples.add(row.rgsm)
+
+    return list(samples), list(libraries)
+
+
+@transaction.atomic
+def get_workflow_for_seq_run_name(seq_run_name: str) -> Workflow:
+
+    search_resp = Workflow.objects.filter(type_name=WorkflowType.BCL_CONVERT.value,
+                                          end_status=WorkflowStatus.SUCCEEDED.value)
+    if len(search_resp) < 1:
+        raise ValueError(f"Could not find successful BCL Convert workflows!")
+
+    # collect workflows with matching sequence run name
+    workflows: List[Workflow] = list()
+    for wf in search_resp:
+        seq_run: SequenceRun = wf.sequence_run
+        if seq_run.name == seq_run_name:
+            workflows.append(wf)
+
+    if len(workflows) < 1:
+        raise ValueError(f"Could not find workflow for sequence run {seq_run_name}")
+
+    if len(workflows) == 1:
+        return workflows[0]
+
+    # if there are more than one matching workflows (e.g. due to reruns) get the latest one
+    latest_wf = workflows[0]  # assume the first record is the latest one
+    # see if there is a newer one
+    for nest_wf in workflows:
+        if nest_wf.end > latest_wf.end:
+            latest_wf = nest_wf
+    return latest_wf

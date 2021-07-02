@@ -6,8 +6,17 @@ Pronounce "lib·aw·kuh" module. But you understand as Orchestrator related util
 A catchall module for pipeline Orchestration related functions impl that does not fit elsewhere, yet.
 
 Oh yah, impls are like "killer whale" yosh!! 💪
+
+NOTE: Please retain function into their stateless as much as possible. i.e. in > Fn() > out
+Input and output arguments are typically their Primitive forms such as str, int, list, dict, etc..
 """
+import logging
+from datetime import datetime
+
 from utils import libjson
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def parse_bcl_convert_output(output_json: str) -> list:
@@ -43,3 +52,13 @@ def cwl_file_path_as_string_to_dict(file_path):
     """
 
     return {"class": "File", "location": file_path}
+
+
+def get_run_number_from_run_name(run_name: str) -> int:
+    return int(run_name.split('_')[2])
+
+
+def get_timestamp_from_run_name(run_name: str) -> str:
+    date_part = run_name.split('_')[0]
+    # convert to format YYYY-MM-DD
+    return datetime.strptime(date_part, '%y%m%d').strftime('%Y-%m-%d')

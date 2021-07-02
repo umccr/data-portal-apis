@@ -214,8 +214,8 @@ functions:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
 
-  update_google_lims:
-    handler: data_processors.pipeline.lambdas.update_google_lims.handler
+  google_lims_update:
+    handler: data_processors.pipeline.lambdas.google_lims_update.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28

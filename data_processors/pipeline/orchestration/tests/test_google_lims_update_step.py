@@ -1,15 +1,16 @@
 import json
 from datetime import datetime, timedelta
-from unittest import skip
 
 from django.utils.timezone import make_aware
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
+from data_processors.pipeline import services
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import update_google_lims
+from data_processors.pipeline.orchestration import google_lims_update_step
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase
+from data_processors.pipeline.tools import liborca
 
 lc_no = 29  # number of lims columns
 lc_idx_run_name = 0  # index of IlluminaID/RunName column
@@ -75,28 +76,14 @@ def create_mock_workflow(id: str) -> Workflow:
     return mock_workflow
 
 
-class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
-
-    def test_get_run_number_from_run_name(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_get_run_number_from_run_name
-        """
-        run_no = update_google_lims.get_run_number_from_run_name(mock_run_name)
-        self.assertEqual(run_no, 1)
-
-    def test_get_timestamp_from_run_name(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_get_timestamp_from_run_name
-        """
-        run_date = update_google_lims.get_timestamp_from_run_name(mock_run_name)
-        self.assertEqual(run_date, "2020-05-08")
+class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
 
     def test_convert_limsrow_to_tuple(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_convert_limsrow_to_tuple
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_convert_limsrow_to_tuple
         """
         lims_row: LIMSRow = create_mock_lims_row()
-        lims_tuple: tuple = update_google_lims.convert_limsrow_to_tuple(limsrow=lims_row)
+        lims_tuple: tuple = google_lims_update_step.convert_limsrow_to_tuple(limsrow=lims_row)
 
         self.assertEqual(len(lims_tuple), lc_no)
         self.assertEqual(lims_tuple[lc_idx_run_name], mock_run_name)
@@ -104,14 +91,14 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
 
     def test_get_libs_from_run(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_get_libs_from_run
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_get_libs_from_run
         """
         mock_workflow = create_mock_workflow(f"wfr.{_rand(32)}")
         mock_sqr: SequenceRun = SequenceRunFactory()
         mock_sqr.name = mock_run_name
         mock_workflow.sequence_run = mock_sqr
 
-        res = update_google_lims.get_libs_from_run(mock_workflow)
+        res = google_lims_update_step.get_libs_from_run(mock_workflow)
 
         self.assertTrue(isinstance(res, list))
         self.assertEqual(len(res), 2)
@@ -122,7 +109,7 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
 
     def test_create_lims_entry(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_create_lims_entry
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_create_lims_entry
         """
         mock_lab_meta: LabMetadata = LabMetadata(
             library_id=mock_library_id,
@@ -137,18 +124,18 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         )
         mock_lab_meta.save()
 
-        lims_row: LIMSRow = update_google_lims.create_lims_entry(mock_library_id, mock_run_name)
+        lims_row: LIMSRow = google_lims_update_step.create_lims_entry(mock_library_id, mock_run_name)
 
         self.assertEqual(lims_row.illumina_id, mock_run_name)
         self.assertEqual(lims_row.library_id, mock_library_id)
         self.assertEqual(lims_row.sample_id, mock_sample_id)
         self.assertEqual(lims_row.workflow, mock_workflow_type)
-        self.assertEqual(lims_row.run, update_google_lims.get_run_number_from_run_name(mock_run_name))
-        self.assertEqual(lims_row.timestamp, update_google_lims.get_timestamp_from_run_name(mock_run_name))
+        self.assertEqual(lims_row.run, liborca.get_run_number_from_run_name(mock_run_name))
+        self.assertEqual(lims_row.timestamp, liborca.get_timestamp_from_run_name(mock_run_name))
 
     def test_get_workflow_for_seq_run_name(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTests.test_get_workflow_for_seq_run_name
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_get_workflow_for_seq_run_name
         """
         # persist a mock SequenceRun that is shared by all workflows
         mock_sqr: SequenceRun = SequenceRunFactory()
@@ -164,7 +151,7 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         wf.sequence_run = mock_sqr
         wf.save()
 
-        wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
+        wf_res = services.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.sequence_run.name, mock_run_name)
         self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
         self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
@@ -178,7 +165,7 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         wf.sequence_run = mock_sqr
         wf.save()
 
-        wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
+        wf_res = services.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.sequence_run.name, mock_run_name)
         self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
         self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
@@ -194,87 +181,14 @@ class UpdateGoogleLimsUnitTests(PipelineUnitTestCase):
         wf.sequence_run = mock_sqr
         wf.save()
 
-        wf_res = update_google_lims.get_workflow_for_seq_run_name(mock_run_name)
+        wf_res = services.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.wfr_id, "wfr.67890")  # we are still expecting wfr.67890, as it's the latest workflow
 
 
-class UpdateGoogleLimsUnitTestsIntegrationTests(PipelineIntegrationTestCase):
+class GoogleLimsUpdateStepIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
     # uncomment @skip and hit the each test case!
     # and keep decorated @skip after tested
 
-    @skip
-    def test_handler(self):
-        """
-        python manage.py test data_processors.pipeline.tests.test_update_google_lims.UpdateGoogleLimsUnitTestsIntegrationTests.test_handler
-        """
-        # create mock entries
-        wfr_id = "wfr.0011223344"
-
-        mock_sqr: SequenceRun = SequenceRunFactory()
-        mock_sqr.name = mock_run_name
-        mock_sqr.save()
-
-        wf = create_mock_workflow(wfr_id)
-        wf.sequence_run = mock_sqr
-        start = datetime.utcnow() - timedelta(days=1)
-        wf.start = make_aware(start)
-        wf.end = make_aware(start + timedelta(days=1))
-        wf.save()
-
-        # create LabMetadata entries for the libraries referenced in the workflow output
-        lm1 = LabMetadata(
-            library_id=mock_library_id,
-            sample_name=mock_rgms_1,
-            sample_id=mock_sample_id,
-            external_sample_id=f"extid-{mock_sample_id}",
-            subject_id="SBJ99999",
-            external_subject_id="ext-SBJ99999",
-            phenotype="tumor",
-            quality="good",
-            source="tissue",
-            project_name="FOO",
-            project_owner="FooBar",
-            experiment_id="exp_id_123",
-            type="WGS",
-            assay="TsqNano",
-            override_cycles="F:F:F:F",
-            workflow="clinical",
-            coverage="80",
-            truseqindex="noidea",
-        )
-        lm1.save()
-
-        lm2 = LabMetadata(
-            library_id=mock_library_id_2,
-            sample_name=mock_rgms_2,
-            sample_id=mock_sample_id,
-            external_sample_id=f"extid-{mock_sample_id}",
-            subject_id="SBJ99999",
-            external_subject_id="ext-SBJ99999",
-            phenotype="tumor",
-            quality="good",
-            source="tissue",
-            project_name="FOO",
-            project_owner="FooBar",
-            experiment_id="exp_id_123",
-            type="WGS",
-            assay="TsqNano",
-            override_cycles="F:F:F:F",
-            workflow="clinical",
-            coverage="80",
-            truseqindex="noidea",
-
-        )
-        lm2.save()
-
-        event = {
-            "wfr_id": wfr_id
-        }
-        resp = update_google_lims.handler(event=event, context=None)
-        print(resp)
-        # we expect two rows to be added (according to the LabMetadata above (lm1, lm2)
-        self.assertEqual(resp['updates']['updatedRows'], 2)
-        # the Google sheet contains lc_no (29) populated columns
-        self.assertEqual(resp['updates']['updatedColumns'], lc_no)
+    pass
