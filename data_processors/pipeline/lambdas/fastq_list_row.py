@@ -15,8 +15,7 @@ import logging
 from typing import List
 import pandas as pd
 
-from utils.regex_globals import SAMPLE_REGEX_OBJS
-
+from data_processors.pipeline.tools import libregex
 from utils import libjson, gds
 
 logger = logging.getLogger()
@@ -82,7 +81,7 @@ def handler(event, context) -> List[dict]:
         # If we must skip all together, let skip early better!
 
         # Get values from sample regex
-        sample_match = SAMPLE_REGEX_OBJS['unique_id'].match(row['rgsm'])
+        sample_match = libregex.SAMPLE_REGEX_OBJS['unique_id'].match(row['rgsm'])
 
         # Check sample_match isn't none (otherwise we're in trouble)
         if sample_match is None:
@@ -114,10 +113,10 @@ def handler(event, context) -> List[dict]:
         rglb = sample_match.group(2)
 
         # Split out _topup$
-        rglb = SAMPLE_REGEX_OBJS['topup'].split(rglb, 1)[0]
+        rglb = libregex.SAMPLE_REGEX_OBJS['topup'].split(rglb, 1)[0]
 
         # Split out _rerun$
-        rglb = SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
+        rglb = libregex.SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
 
         # Assign to new row attr
         new_row['rglb'] = rglb

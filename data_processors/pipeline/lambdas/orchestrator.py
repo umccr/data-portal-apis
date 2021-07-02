@@ -18,7 +18,8 @@ from collections import defaultdict
 
 from data_portal.models import Workflow, SequenceRun, Batch, BatchRun, LabMetadata, LabMetadataType, \
     LabMetadataPhenotype, FastqListRow, LabMetadataWorkflow
-from data_processors.pipeline import services, constant, tools
+from data_processors.pipeline import services, constant
+from data_processors.pipeline.tools import liborca
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update, fastq_list_row, update_google_lims
 from utils import libjson, libsqs, libssm
@@ -268,7 +269,7 @@ def next_step(this_workflow: Workflow, context):
                 # parse bcl convert output and get all output locations
                 # build a sample info and its related fastq locations
                 fastq_list_rows: List = fastq_list_row.handler({
-                    'fastq_list_rows': tools.parse_bcl_convert_output(this_workflow.output),
+                    'fastq_list_rows': liborca.parse_bcl_convert_output(this_workflow.output),
                     'seq_name': this_sqr.name,
                 }, None)
 
@@ -378,8 +379,8 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
 
         # convert read_1 and read_2 to cwl file location dict format
 
-        rglb_df["read_1"] = rglb_df["read_1"].apply(lambda x: tools.cwl_file_path_as_string_to_dict(x))
-        rglb_df["read_2"] = rglb_df["read_2"].apply(lambda x: tools.cwl_file_path_as_string_to_dict(x))
+        rglb_df["read_1"] = rglb_df["read_1"].apply(lambda x: liborca.cwl_file_path_as_string_to_dict(x))
+        rglb_df["read_2"] = rglb_df["read_2"].apply(lambda x: liborca.cwl_file_path_as_string_to_dict(x))
 
         job = {
             "sample_name": f"{rgsm}_{rglb}",

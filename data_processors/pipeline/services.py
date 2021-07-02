@@ -10,7 +10,8 @@ from django.utils.timezone import make_aware, is_aware
 
 from data_portal.models import GDSFile, SequenceRun, Workflow, Batch, BatchRun, FastqListRow
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from utils import libslack, lookup, libjson, libdt
+from data_processors.pipeline.tools import lookup
+from utils import libslack, libjson, libdt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

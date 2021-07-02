@@ -17,9 +17,8 @@ from typing import List
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_processors import const
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
-from data_processors.pipeline.tools import parse_bcl_convert_output
+from data_processors.pipeline.tools import liborca, libregex
 from utils import libssm, libgdrive
-from utils.regex_globals import SAMPLE_REGEX_OBJS
 
 
 def get_libs_from_run(workflow: Workflow) -> List[dict]:
@@ -38,12 +37,12 @@ def get_libs_from_run(workflow: Workflow) -> List[dict]:
     run_id = workflow.sequence_run.run_id
 
     # get BCL Convert workflow output (which contains FastqListRow records)
-    fastq_list_output = parse_bcl_convert_output(workflow.output)
+    fastq_list_output = liborca.parse_bcl_convert_output(workflow.output)
 
     lib_records: List[dict] = list()
     for fqlr in fastq_list_output:
         lane = fqlr['lane']
-        library_id = SAMPLE_REGEX_OBJS['unique_id'].fullmatch(fqlr['rgsm']).group(2)
+        library_id = libregex.SAMPLE_REGEX_OBJS['unique_id'].fullmatch(fqlr['rgsm']).group(2)
         lib_records.append({
             "id": library_id,
             "lane": lane,

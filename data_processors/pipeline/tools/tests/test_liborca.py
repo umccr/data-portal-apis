@@ -1,17 +1,17 @@
 import json
 
-from data_processors.pipeline import tools
+from data_processors.pipeline.tools import liborca
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
 
 
-class ToolsUnitTests(PipelineUnitTestCase):
+class LibOrcaUnitTests(PipelineUnitTestCase):
 
     def test_parse_bcl_convert_output(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_tools.ToolsUnitTests.test_parse_bcl_convert_output
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_bcl_convert_output
         """
 
-        result = tools.parse_bcl_convert_output(json.dumps({
+        result = liborca.parse_bcl_convert_output(json.dumps({
             "main/fastq_list_rows": [{'rgid': "main/fastq_list_rows"}],
             "fastq_list_rows": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}]
         }))
@@ -23,10 +23,10 @@ class ToolsUnitTests(PipelineUnitTestCase):
 
     def test_parse_bcl_convert_output_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_tools.ToolsUnitTests.test_parse_bcl_convert_output_alt
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_bcl_convert_output_alt
         """
 
-        result = tools.parse_bcl_convert_output(json.dumps({
+        result = liborca.parse_bcl_convert_output(json.dumps({
             "fastq_list_rows2": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
             "fastq_list_rows": [{'rgid': "fastq_list_rows"}]
         }))
@@ -38,11 +38,11 @@ class ToolsUnitTests(PipelineUnitTestCase):
 
     def test_parse_bcl_convert_output_error(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_tools.ToolsUnitTests.test_parse_bcl_convert_output_error
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_bcl_convert_output_error
         """
 
         try:
-            tools.parse_bcl_convert_output(json.dumps({
+            liborca.parse_bcl_convert_output(json.dumps({
                 "fastq_list_rows/main": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS"}],
                 "fastq_list_rowz": [{'rgid': "YOU_SHOULD_NOT_SEE_THIS_TOO"}]
             }))

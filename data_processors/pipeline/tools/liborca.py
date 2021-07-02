@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""tools module
+"""liborca module
 
-aka Pipeline werkzeug! :D
-A catchall module for pipeline related functions impl that does not fit elsewhere, yet.
+Pronounce "lib·aw·kuh" module. But you understand as Orchestrator related utilities or werkzeug! :D
+
+A catchall module for pipeline Orchestration related functions impl that does not fit elsewhere, yet.
+
+Oh yah, impls are like "killer whale" yosh!! 💪
 """
 from utils import libjson
 
