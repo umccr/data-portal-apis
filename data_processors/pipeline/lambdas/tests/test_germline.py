@@ -17,7 +17,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_germline.GermlineUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_handler
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -53,7 +53,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
 
     def test_handler_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_germline.GermlineUnitTests.test_handler_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -97,7 +97,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
 
     def test_handler_skipped(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_germline.GermlineUnitTests.test_handler_skipped
+        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_handler_skipped
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
         mock_batch_run: BatchRun = BatchRunFactory()
@@ -148,7 +148,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
 
     def test_sqs_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_germline.GermlineUnitTests.test_sqs_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_sqs_handler
         """
 
         mock_sqr: SequenceRun = SequenceRunFactory()

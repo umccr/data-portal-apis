@@ -20,7 +20,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
     def test_bcl_convert_workflow_output_not_json(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_bcl_convert_workflow_output_not_json
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_bcl_convert_workflow_output_not_json
 
         Should raise:
             [ERROR] JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
@@ -52,7 +52,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
     def test_bcl_convert_output_unknown_format(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_orchestrator.OrchestratorUnitTests.test_bcl_convert_output_unknown_format
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_bcl_convert_output_unknown_format
         """
         self.verify_local()
 

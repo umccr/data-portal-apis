@@ -37,7 +37,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_handler
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -58,7 +58,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_handler_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_handler_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -88,7 +88,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_handler_metadata_validation_fail(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_handler_metadata_validation_fail
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_handler_metadata_validation_fail
         """
 
         # This will fail metadata validation since there exists no samples
@@ -115,7 +115,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_validate_metadata_blank_samples(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_blank_samples
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_blank_samples
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -146,7 +146,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_validate_no_batch_name(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_no_batch_name
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_no_batch_name
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -179,7 +179,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_validate_metadata_no_samples(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_no_samples
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_no_samples
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -210,7 +210,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_validate_metadata_no_override_cycles(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_no_override_cycles
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_no_override_cycles
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -245,7 +245,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
     def test_validate_metadata_pass(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_pass
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_pass
         """
         mock_event = {
             'gds_volume_name': "bssh.xxxx",
@@ -287,7 +287,7 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_get_sample_names_from_samplesheet(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_sample_names_from_samplesheet
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_sample_names_from_samplesheet
         """
 
         # SEQ-II validation dataset
@@ -305,7 +305,7 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_get_metadata_df(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_metadata_df
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_metadata_df
         """
 
         # first need to populate LabMetadata tables

@@ -220,7 +220,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_uploaded_gds_file_event(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_uploaded_gds_file_event
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_uploaded_gds_file_event
         """
 
         gds_file_message = {
@@ -322,7 +322,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_unsupported_ens_event_type(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_unsupported_ens_event_type
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_unsupported_ens_event_type
         """
         self.verify_local()
 
@@ -349,7 +349,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_deleted_gds_file_event(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_deleted_gds_file_event
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_deleted_gds_file_event
         """
 
         gds_file: GDSFile = GDSFileFactory()
@@ -404,7 +404,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_delete_non_existent_gds_file(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_delete_non_existent_gds_file
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_delete_non_existent_gds_file
         """
 
         gds_file_message = {
@@ -436,7 +436,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_sequence_run_event(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_sequence_run_event
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_sequence_run_event
         """
 
         mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
@@ -525,7 +525,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_wes_runs_event_germline(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline
         """
 
         self.verify_local()
@@ -561,7 +561,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_wes_runs_event_germline_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline_alt
         """
 
         self.verify_local()
@@ -599,7 +599,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_wes_runs_event_run_succeeded(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_succeeded
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_succeeded
 
         Precondition:
         BCL Convert workflow is Running. Had sent notification status Running to slack sometime before...
@@ -654,7 +654,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_wes_runs_event_run_failed(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_failed
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_failed
 
         Precondition:
         BCL Convert workflow is Running. Had sent notification status Running to slack sometime before...
@@ -716,7 +716,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_wes_runs_event_run_failed_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_failed_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_run_failed_alt
 
         Similar to above ^^^
         But, both WES Run and Run History API event disagree (may be much more delay) with SQS message WES EventType!
@@ -763,7 +763,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def test_wes_runs_event_not_in_automation(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_not_in_automation
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_not_in_automation
 
         Scenario:
         Testing wes.runs event's workflow is not in Portal workflow runs automation database. Therefore, skip.

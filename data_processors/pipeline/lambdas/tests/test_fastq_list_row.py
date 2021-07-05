@@ -74,7 +74,7 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq_list_row.FastqListRowUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq_list_row.FastqListRowUnitTests.test_handler
 
         Parse a standard bcl convert output fastq_list_rows objects to be ready to be imported as a fastq list object
         """
@@ -117,7 +117,7 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
     def test_handler_file_not_found(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq_list_row.FastqListRowUnitTests.test_handler_file_not_found
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq_list_row.FastqListRowUnitTests.test_handler_file_not_found
         """
         read_1_location = f"gds://{self.mock_fastq_list_rows[0]['read_1']['location']}"
         when(fastq_list_row.gds).check_file(...).thenRaise(FileNotFoundError(f"Could not get file: {read_1_location}"))
@@ -133,7 +133,7 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
 
     def test_create_fastq_list_row(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq_list_row.FastqListRowUnitTests.test_create_fastq_list_row
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq_list_row.FastqListRowUnitTests.test_create_fastq_list_row
         """
         self.verify_local()
 

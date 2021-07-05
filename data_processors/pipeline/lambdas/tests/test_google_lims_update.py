@@ -64,7 +64,7 @@ class GoogleLimsUpdateIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_google_lims_update.GoogleLimsUpdateIntegrationTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_google_lims_update.GoogleLimsUpdateIntegrationTests.test_handler
         """
         # create mock entries
         wfr_id = "wfr.0011223344"

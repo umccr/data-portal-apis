@@ -14,7 +14,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_openapi_type(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_openapi_type
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_openapi_type
 
         Monitor mock container if you like:  docker logs -f iap_mock_wes_1
             [HTTP SERVER] get /v1/workflows/runs/wfr.anything_work Request received
@@ -41,7 +41,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_launch(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_launch
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_launch
 
         Monitor mock container if you like:  docker logs -f iap_mock_wes_1
             [HTTP SERVER] post /v1/workflows/wfl.any_work_hitting_prism_dynamic_mock/versions/v1:launch Request received
@@ -57,7 +57,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_launch_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_launch_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_launch_alt
         """
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -75,7 +75,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_launch_lambda_return_serialized(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_launch_lambda_return_serialized
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_launch_lambda_return_serialized
         """
         wfl_run: dict = wes_handler.launch({
             'workflow_id': "wfl.any_work_hitting_prism_dynamic_mock",
@@ -100,7 +100,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_get_workflow_run(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run
         """
         wfl_run_status = wes_handler.get_workflow_run({
             'wfr_id': "wfr.xxx",
@@ -115,7 +115,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_get_workflow_run_alt(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt
         """
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -133,7 +133,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_get_workflow_run_alt2(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt2
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt2
         """
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -154,7 +154,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_get_workflow_run_alt3(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt3
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt3
         """
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -175,7 +175,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_get_workflow_run_alt4(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt4
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt4
         """
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -218,7 +218,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
 
     def test_get_workflow_run_alt5(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt5
+        python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_get_workflow_run_alt5
         """
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value

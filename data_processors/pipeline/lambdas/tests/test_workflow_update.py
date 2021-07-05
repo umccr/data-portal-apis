@@ -17,7 +17,7 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_workflow_update.WorkflowUpdateUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_workflow_update.WorkflowUpdateUnitTests.test_handler
         """
         mock_workflow: Workflow = WorkflowFactory()
 
@@ -58,7 +58,7 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
 
     def test_wfr_not_in_db(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_workflow_update.WorkflowUpdateUnitTests.test_wfr_not_in_db
+        python manage.py test data_processors.pipeline.lambdas.tests.test_workflow_update.WorkflowUpdateUnitTests.test_wfr_not_in_db
         """
         mock_workflow: Workflow = WorkflowFactory()
 
@@ -72,7 +72,7 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
 
     def test_notified_status(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_workflow_update.WorkflowUpdateUnitTests.test_notified_status
+        python manage.py test data_processors.pipeline.lambdas.tests.test_workflow_update.WorkflowUpdateUnitTests.test_notified_status
         """
         mock_workflow: Workflow = WorkflowFactory()
 

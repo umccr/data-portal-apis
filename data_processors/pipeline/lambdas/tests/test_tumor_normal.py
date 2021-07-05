@@ -9,7 +9,7 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_tumor_normal.TumorNormalUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_tumor_normal.TumorNormalUnitTests.test_handler
         """
 
         workflow: dict = tumor_normal.handler({

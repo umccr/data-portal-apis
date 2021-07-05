@@ -12,7 +12,7 @@ class FastQUnitTests(PipelineUnitTestCase):
 
     def test_parse_gds_path(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq.FastQUnitTests.test_parse_gds_path
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq.FastQUnitTests.test_parse_gds_path
         """
         gds_path = "gds://raw-sequence-data-dev/999999_Z99999_0010_AG2CTTAGCT/SampleSheet.csv"
         path_elements = gds_path.replace("gds://", "").split("/")
@@ -34,7 +34,7 @@ class FastQUnitTests(PipelineUnitTestCase):
 
     def test_extract_fastq_sample_name(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq.FastQUnitTests.test_extract_fastq_sample_name
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq.FastQUnitTests.test_extract_fastq_sample_name
         """
         filenames = [
             "NA12345 - 4KC_S7_L001_R1_001.fastq.gz",
@@ -66,7 +66,7 @@ class FastQUnitTests(PipelineUnitTestCase):
 
     def test_fastq_map_build(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq.FastQUnitTests.test_fastq_map_build
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq.FastQUnitTests.test_fastq_map_build
         """
         wfr_id = f"wfr.{_rand(32)}"
         locations = [f"gds://{wfr_id}/bclConversion_launch/try-1/out-dir-bclConvert", ]
@@ -93,7 +93,7 @@ class FastQUnitTests(PipelineUnitTestCase):
 
     def test_fastq_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq.FastQUnitTests.test_fastq_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq.FastQUnitTests.test_fastq_handler
         """
         self.verify_local()
         fastq.handler({'locations': ["gds://anything/work/for/hitting/prism/dynamic/mock", ]}, None)
@@ -106,7 +106,7 @@ class FastQIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_fastq_handler(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_fastq.FastQIntegrationTests.test_fastq_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_fastq.FastQIntegrationTests.test_fastq_handler
         """
 
         event = {

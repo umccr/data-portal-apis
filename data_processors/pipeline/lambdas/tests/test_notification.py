@@ -37,7 +37,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
 
     def test_notify_workflow_status_batch_completed(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_notification.NotificationUnitTests.test_notify_workflow_status_batch_completed
+        python manage.py test data_processors.pipeline.lambdas.tests.test_notification.NotificationUnitTests.test_notify_workflow_status_batch_completed
         """
         mock_bcl_workflow = WorkflowFactory()
         self.mock_sqr: SequenceRun = mock_bcl_workflow.sequence_run
@@ -63,7 +63,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
 
     def test_notify_workflow_status_batch_running(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_notification.NotificationUnitTests.test_notify_workflow_status_batch_running
+        python manage.py test data_processors.pipeline.lambdas.tests.test_notification.NotificationUnitTests.test_notify_workflow_status_batch_running
         """
         mock_bcl_workflow = WorkflowFactory()
         self.mock_sqr: SequenceRun = mock_bcl_workflow.sequence_run
@@ -91,7 +91,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
 
     def test_notify_workflow_status_batch_skip(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_notification.NotificationUnitTests.test_notify_workflow_status_batch_skip
+        python manage.py test data_processors.pipeline.lambdas.tests.test_notification.NotificationUnitTests.test_notify_workflow_status_batch_skip
         """
         mock_bcl_workflow = WorkflowFactory()
         self.mock_sqr: SequenceRun = mock_bcl_workflow.sequence_run

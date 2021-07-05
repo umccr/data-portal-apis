@@ -11,7 +11,7 @@ class GdsSearchLambdaUnitTests(PipelineUnitTestCase):
 
     def test_search_gds_file_with_token(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_gds_search.GdsSearchLambdaUnitTests.test_search_gds_file_with_token
+        python manage.py test data_processors.pipeline.lambdas.tests.test_gds_search.GdsSearchLambdaUnitTests.test_search_gds_file_with_token
         """
         logger.info("Test match")
         search_payload = {
@@ -34,7 +34,7 @@ class GdsSearchLambdaUnitTests(PipelineUnitTestCase):
 
     def test_search_gds_file_with_token_presigned(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_gds_search.GdsSearchLambdaUnitTests.test_search_gds_file_with_token_presigned
+        python manage.py test data_processors.pipeline.lambdas.tests.test_gds_search.GdsSearchLambdaUnitTests.test_search_gds_file_with_token_presigned
         """
         logger.info("Test match")
         search_payload = {
@@ -49,7 +49,7 @@ class GdsSearchLambdaUnitTests(PipelineUnitTestCase):
 
     def test_search_gds_file_with_regex(self):
         """
-        python manage.py test data_processors.pipeline.tests.test_gds_search.GdsSearchLambdaUnitTests.test_search_gds_file_with_regex
+        python manage.py test data_processors.pipeline.lambdas.tests.test_gds_search.GdsSearchLambdaUnitTests.test_search_gds_file_with_regex
         """
         logger.info("Test match")
         search_payload = {
