@@ -14,9 +14,9 @@ django.setup()
 import logging
 
 from data_portal.models import Workflow
-from data_processors.pipeline import services, constant
+from data_processors.pipeline.services import workflow_srv, notification_srv
 from data_processors.pipeline.lambdas import wes_handler
-from data_processors.pipeline.constant import WorkflowType
+from data_processors.pipeline.constant import WorkflowType, SQS_NOTIFICATION_QUEUE_ARN
 from utils import libjson, libssm, libsqs
 
 logger = logging.getLogger()
@@ -47,7 +47,7 @@ def handler(event, context):
     wfv_id = event['wfv_id']
     wfr_event = event.get('wfr_event')
 
-    wfl_in_db: Workflow = services.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
+    wfl_in_db: Workflow = workflow_srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
 
     if not wfl_in_db:
         logger.info(f"Run ID '{wfr_id}' is not found in Portal workflow runs automation database. Skipping...")
@@ -72,7 +72,7 @@ def handler(event, context):
             _notified = False
 
     # update db record
-    updated_workflow: Workflow = services.create_or_update_workflow(
+    updated_workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'wfr_id': wfr_id,
             'wfv_id': wfv_id,
@@ -92,14 +92,14 @@ def handler(event, context):
             logger.info(f"{updated_workflow.type_name} '{updated_workflow.wfr_id}' workflow status "
                         f"'{updated_workflow.end_status}' is already notified once. Not reporting to Slack!")
         else:
-            queue_arn = libssm.get_ssm_param(constant.SQS_NOTIFICATION_QUEUE_ARN)
+            queue_arn = libssm.get_ssm_param(SQS_NOTIFICATION_QUEUE_ARN)
             message = {
                 'batch_run_id': updated_workflow.batch_run.id,
                 'workflow_id': updated_workflow.id,
             }
             libsqs.dispatch_notification(queue_arn=queue_arn, message=message, group_id="BATCH_RUN")
     else:
-        services.notify_workflow_status(updated_workflow)
+        notification_srv.notify_workflow_status(updated_workflow)
 
     result = {
         'id': updated_workflow.id,

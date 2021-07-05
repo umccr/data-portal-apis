@@ -19,8 +19,8 @@ from typing import List
 import pandas as pd
 from contextlib import closing
 from data_portal.models import Workflow, LabMetadata
-from data_processors.pipeline import services, constant
-from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper
+from data_processors.pipeline.services import notification_srv, sequence_srv, workflow_srv
+from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper, ICA_GDS_FASTQ_VOL
 from data_processors.pipeline.lambdas import wes_handler
 from utils import libjson, libssm, libdt, gds
 from sample_sheet import SampleSheet
@@ -62,7 +62,12 @@ def validate_metadata(event, settings_by_samples):
     # Check at least one batch is returned
     if settings_by_samples is None or len(settings_by_samples) == 0:
         reason = f"{prefix} settings_by_samples attribute was blank {suffix}"
-        services.notify_outlier(topic="No settings by samples found", reason=reason, status="Aborted", event=event)
+        notification_srv.notify_outlier(
+            topic="No settings by samples found",
+            reason=reason,
+            status="Aborted",
+            event=event
+        )
         return reason
 
     # Check through each settings by samples
@@ -74,7 +79,7 @@ def validate_metadata(event, settings_by_samples):
         if settings_by_samples_batch.get("batch_name", None) is None or \
                 settings_by_samples_batch.get("batch_name") == "":
             reason = f"{prefix} batch {settings_by_samples_batch} did not have \"batch_name\" attribute"
-            services.notify_outlier(topic="Batch Name not found", reason=reason, status="Aborted", event=event)
+            notification_srv.notify_outlier(topic="Batch Name not found", reason=reason, status="Aborted", event=event)
             return reason
 
     # Check non-zero length samples
@@ -84,13 +89,13 @@ def validate_metadata(event, settings_by_samples):
         if settings_by_samples_batch.get("samples", None) is None or \
                 len(settings_by_samples_batch.get("samples")) == 0:
             reason = f"{prefix} no samples found for batch {batch_name}"
-            services.notify_outlier(topic="Samples not found", reason=reason, status="Aborted", event=event)
+            notification_srv.notify_outlier(topic="Samples not found", reason=reason, status="Aborted", event=event)
             return reason
         # Check each samples value is not null
         for sample in settings_by_samples_batch.get("samples"):
             if sample is None or sample == "":
                 reason = f"{prefix} found blank sample in {batch_name}"
-                services.notify_outlier(topic="Sample was blank", reason=reason, status="Aborted", event=event)
+                notification_srv.notify_outlier(topic="Sample was blank", reason=reason, status="Aborted", event=event)
                 return reason
 
     # Check settings section
@@ -100,12 +105,17 @@ def validate_metadata(event, settings_by_samples):
         if settings_by_samples_batch.get("settings", None) is None or \
                 len(settings_by_samples_batch.get("settings")) == 0:
             reason = f"{prefix} no settings found for batch {batch_name}"
-            services.notify_outlier(topic="Settings not found", reason=reason, status="Aborted", event=event)
+            notification_srv.notify_outlier(topic="Settings not found", reason=reason, status="Aborted", event=event)
             return reason
         # Check override cycles section
         if settings_by_samples_batch.get("settings").get("override_cycles", None) is None:
             reason = f"{prefix} no override cycles found for batch {batch_name}"
-            services.notify_outlier(topic="Override cycles not found", reason=reason, status="Aborted", event=event)
+            notification_srv.notify_outlier(
+                topic="Override cycles not found",
+                reason=reason,
+                status="Aborted",
+                event=event
+            )
             return reason
 
     pass
@@ -348,7 +358,7 @@ def handler(event, context) -> dict:
     workflow_input['settings_by_samples'] = settings_by_samples
 
     # prepare engine_parameters
-    gds_fastq_vol = libssm.get_ssm_param(constant.ICA_GDS_FASTQ_VOL)
+    gds_fastq_vol = libssm.get_ssm_param(ICA_GDS_FASTQ_VOL)
     engine_params_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_engine_parameters())
     workflow_engine_params: dict = copy.deepcopy(libjson.loads(engine_params_template))
     workflow_engine_params['outputDirectory'] = f"gds://{gds_fastq_vol}/{seq_name}"
@@ -357,7 +367,7 @@ def handler(event, context) -> dict:
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
-    sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
+    sqr = sequence_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
 
     # construct and format workflow run name convention
     workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name, seq_run_id=seq_run_id)
@@ -370,7 +380,7 @@ def handler(event, context) -> dict:
         'workflow_engine_parameters': workflow_engine_params
     }, context)
 
-    workflow: Workflow = services.create_or_update_workflow(
+    workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,

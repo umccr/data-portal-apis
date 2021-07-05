@@ -12,7 +12,7 @@ django.setup()
 # ---
 
 from data_portal.models import Workflow
-from data_processors.pipeline import services
+from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import google_lims_update_step
 
 
@@ -36,7 +36,7 @@ def handler(event, context):
         # there should be exactly one record for any 'wfr' ID
         workflow = Workflow.objects.get(wfr_id=wrf_id)
     elif seq_run_name:
-        workflow = services.get_workflow_for_seq_run_name(seq_run_name)
+        workflow = workflow_srv.get_workflow_for_seq_run_name(seq_run_name)
     else:
         raise ValueError(f"Event does not contain expected parameters (wfr_id/sequence_run_name): {event}")
 

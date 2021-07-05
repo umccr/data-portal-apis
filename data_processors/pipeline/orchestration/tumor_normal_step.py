@@ -3,7 +3,8 @@ from collections import defaultdict
 from typing import List
 
 from data_portal.models import Workflow, LabMetadata, LabMetadataType, LabMetadataPhenotype, FastqListRow
-from data_processors.pipeline import services, constant
+from data_processors.pipeline import constant
+from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 from utils import libssm, libsqs
 
 logger = logging.getLogger(__name__)
@@ -14,12 +15,12 @@ def perform(this_sqr):
     # check if all other Germline workflows for this run have finished
     # if yes we continue to the T/N workflow
     # if not, we wait (until all Germline workflows have finished)
-    running: List[Workflow] = services.get_germline_running_by_sequence_run(sequence_run=this_sqr)
-    succeeded: List[Workflow] = services.get_germline_succeeded_by_sequence_run(sequence_run=this_sqr)
+    running: List[Workflow] = workflow_srv.get_germline_running_by_sequence_run(sequence_run=this_sqr)
+    succeeded: List[Workflow] = workflow_srv.get_germline_succeeded_by_sequence_run(sequence_run=this_sqr)
     subjects = list()
     if len(running) == 0:
         # determine which samples are available for T/N wokflow
-        subjects = services.get_subjects_from_runs(succeeded)
+        subjects = metadata_srv.get_subjects_from_runs(succeeded)
         job_list = prepare_tumor_normal_jobs(subjects=subjects)
         if job_list:
             queue_arn = libssm.get_ssm_param(constant.SQS_TN_QUEUE_ARN)
@@ -102,9 +103,9 @@ def create_job_json(subject_id: str, normal_fastq_list_rows: List[FastqListRow],
     # NOTE: IDs are from rglb/rgsm of FastqListRow, so library IDs are stripped of _topup/_rerun extensions
     # TODO: handle other cases (multiple tumor/normal samples)
     # TODO: if more than one tumor (but only one normal) treat as two runs, one for each tumor (using the same normal)
-    n_samples, n_libraries = services.extract_sample_library_ids(normal_fastq_list_rows)
+    n_samples, n_libraries = fastq_srv.extract_sample_library_ids(normal_fastq_list_rows)
     logger.info(f"Normal samples/Libraries for subject {subject_id}: {n_samples}/{n_libraries}")
-    t_samples, t_libraries = services.extract_sample_library_ids(tumor_fastq_list_rows)
+    t_samples, t_libraries = fastq_srv.extract_sample_library_ids(tumor_fastq_list_rows)
     logger.info(f"Tumor samples/Libraries for subject {subject_id}: {t_samples}/{t_libraries}")
     if len(n_samples) != 1 or len(n_libraries) != 1:
         logger.warning(f"Unexpected number of normal samples! Skipping subject {subject_id}")

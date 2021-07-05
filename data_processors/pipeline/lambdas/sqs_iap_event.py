@@ -14,7 +14,7 @@ django.setup()
 import logging
 
 from data_portal.models import SequenceRun
-from data_processors.pipeline import services
+from data_processors.pipeline.services import gds_srv, sequence_srv, notification_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
 from data_processors.pipeline.constant import ENSEventType
 from utils import libjson
@@ -68,9 +68,9 @@ def handler(event, context):
 
 def handle_gds_files_event(event_action, message_body):
     if event_action == 'deleted':
-        services.delete_gds_file(message_body)
+        gds_srv.delete_gds_file(message_body)
     else:
-        services.create_or_update_gds_file(message_body)
+        gds_srv.create_or_update_gds_file(message_body)
 
 
 def handle_bssh_run_event(message, event_action, event_type, context):
@@ -80,11 +80,11 @@ def handle_bssh_run_event(message, event_action, event_type, context):
     payload.update(messageAttributesActionType=event_type)
     payload.update(messageAttributesActionDate=message['messageAttributes']['actiondate']['stringValue'])
     payload.update(messageAttributesProducedBy=message['messageAttributes']['producedby']['stringValue'])
-    sqr: SequenceRun = services.create_or_update_sequence_run(payload)
+    sqr: SequenceRun = sequence_srv.create_or_update_sequence_run(payload)
     if sqr:
         ts = message['attributes']['ApproximateFirstReceiveTimestamp']
         aws_account = message['eventSourceARN'].split(':')[4]
-        services.notify_sequence_run_status(sqr=sqr, sqs_record_timestamp=int(ts), aws_account=aws_account)
+        notification_srv.notify_sequence_run_status(sqr=sqr, sqs_record_timestamp=int(ts), aws_account=aws_account)
 
         # Once Sequence Run status is good, launch bcl convert workflow
         # Using bssh.runs event status PendingAnalysis for now, See https://github.com/umccr-illumina/stratus/issues/95

@@ -4,8 +4,8 @@ from mockito import when
 
 from data_portal.models import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory
-from data_processors.pipeline import services
 from data_processors.pipeline.lambdas import fastq_list_row
+from data_processors.pipeline.services import fastq_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
 
 
@@ -148,10 +148,10 @@ class FastqListRowUnitTests(PipelineUnitTestCase):
         stub_flr = result[0]
 
         # Create row
-        services.create_or_update_fastq_list_row(stub_flr, sequence_run=mock_sqr)
+        fastq_srv.create_or_update_fastq_list_row(stub_flr, sequence_run=mock_sqr)
 
         # Get row
-        flr_in_db = services.get_fastq_list_row_by_rgid(rgid=stub_flr['rgid'])
+        flr_in_db = fastq_srv.get_fastq_list_row_by_rgid(rgid=stub_flr['rgid'])
 
         logger.info("-" * 32)
         logger.info("Example FastqListRow from db:")

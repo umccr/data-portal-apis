@@ -12,7 +12,7 @@ django.setup()
 # ---
 
 import logging
-from data_processors.pipeline import services
+from data_processors.pipeline.services import gds_srv
 from libica.openapi import libgds
 from utils import libjson, ica
 
@@ -70,12 +70,12 @@ def handler(event, context):
     regex = event.get('regex')
     if regex:
         logger.info("Proceeding with regex")
-        query_set = services.get_gds_files_for_regex(volume_name=gds_volume_name, pattern=regex)
+        query_set = gds_srv.get_gds_files_for_regex(volume_name=gds_volume_name, pattern=regex)
 
     tokens = event.get('tokens')
     if tokens:
         logger.info("Proceeding with tokens")
-        query_set = services.get_gds_files_for_path_tokens(volume_name=gds_volume_name, path_tokens=tokens)
+        query_set = gds_srv.get_gds_files_for_path_tokens(volume_name=gds_volume_name, path_tokens=tokens)
 
     if not query_set.exists():
         logger.error(f"No GDS file records found for search criteria: {libjson.dumps(event)}")

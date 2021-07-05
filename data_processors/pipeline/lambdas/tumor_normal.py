@@ -4,7 +4,6 @@ except ImportError:
     pass
 
 import os
-
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
@@ -12,20 +11,16 @@ django.setup()
 
 # ---
 
-# Standards
 import copy
 import logging
 
-# Data portal imports
 from data_portal.models import Workflow
-from data_processors.pipeline import services
+from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.constant import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
 
-# Utils imports
 from utils import libjson, libssm, libdt
 
-# Set loggers
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -184,7 +179,7 @@ def handler(event, context) -> dict:
         'workflow_input': workflow_input,
     }, context)
 
-    workflow: Workflow = services.create_or_update_workflow(
+    workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,

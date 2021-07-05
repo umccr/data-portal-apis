@@ -5,9 +5,9 @@ from django.utils.timezone import make_aware
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline import services
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.orchestration import google_lims_update_step
+from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase
 from data_processors.pipeline.tools import liborca
@@ -151,7 +151,7 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         wf.sequence_run = mock_sqr
         wf.save()
 
-        wf_res = services.get_workflow_for_seq_run_name(mock_run_name)
+        wf_res = workflow_srv.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.sequence_run.name, mock_run_name)
         self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
         self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
@@ -165,7 +165,7 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         wf.sequence_run = mock_sqr
         wf.save()
 
-        wf_res = services.get_workflow_for_seq_run_name(mock_run_name)
+        wf_res = workflow_srv.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.sequence_run.name, mock_run_name)
         self.assertEqual(wf_res.type_name, WorkflowType.BCL_CONVERT.value)
         self.assertEqual(wf_res.end_status, WorkflowStatus.SUCCEEDED.value)
@@ -181,7 +181,7 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         wf.sequence_run = mock_sqr
         wf.save()
 
-        wf_res = services.get_workflow_for_seq_run_name(mock_run_name)
+        wf_res = workflow_srv.get_workflow_for_seq_run_name(mock_run_name)
         self.assertEqual(wf_res.wfr_id, "wfr.67890")  # we are still expecting wfr.67890, as it's the latest workflow
 
 

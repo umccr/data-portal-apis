@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""orchestrator module
+
+Orchestrator (lambda) module is the key actor (controller) of Portal Workflow Automation.
+Typically this module has 3 simple interfaces:
+    1. handler()        -- for SQS event
+    2. update_step()    -- update some workflow
+    3. next_step()      -- determine next workflow, if any
+
+See "orchestration" package for _steps_ modules that compliment Genomic workflow core orchestration domain logic.
+"""
 try:
     import unzip_requirements
 except ImportError:
@@ -14,7 +25,7 @@ django.setup()
 import logging
 
 from data_portal.models import Workflow, SequenceRun
-from data_processors.pipeline import services
+from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import wgs_qc_step, tumor_normal_step, google_lims_update_step
 from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update
@@ -61,7 +72,7 @@ def update_step(wfr_id, wfv_id, wfr_event, context):
     }, context)
 
     if updated_workflow:
-        this_workflow: Workflow = services.get_workflow_by_ids(
+        this_workflow: Workflow = workflow_srv.get_workflow_by_ids(
             wfr_id=updated_workflow['wfr_id'],
             wfv_id=updated_workflow['wfv_id']
         )

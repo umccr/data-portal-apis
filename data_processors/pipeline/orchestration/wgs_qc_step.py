@@ -5,9 +5,9 @@ import pandas as pd
 
 from data_portal.models import Batch, BatchRun, SequenceRun, LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, \
     LabMetadataType
-from data_processors.pipeline import services, constant
-from data_processors.pipeline.constant import WorkflowType
+from data_processors.pipeline.constant import WorkflowType, SQS_GERMLINE_QUEUE_ARN
 from data_processors.pipeline.lambdas import fastq_list_row
+from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tools import liborca
 from utils import libssm, libsqs, libjson
 
@@ -18,10 +18,10 @@ logger.setLevel(logging.INFO)
 def perform(this_sqr, this_workflow):
     # create a batch if not exist
     batch_name = this_sqr.name if this_sqr else f"{this_workflow.type_name}__{this_workflow.wfr_id}"
-    this_batch = services.get_or_create_batch(name=batch_name, created_by=this_workflow.wfr_id)
+    this_batch = batch_srv.get_or_create_batch(name=batch_name, created_by=this_workflow.wfr_id)
 
     # register a new batch run for this_batch run step
-    this_batch_run = services.skip_or_create_batch_run(
+    this_batch_run = batch_srv.skip_or_create_batch_run(
         batch=this_batch,
         run_step=WorkflowType.GERMLINE.value.upper()
     )
@@ -43,22 +43,22 @@ def perform(this_sqr, this_workflow):
             }, None)
 
             # cache batch context data in db
-            this_batch = services.update_batch(this_batch.id, context_data=fastq_list_rows)
+            this_batch = batch_srv.update_batch(this_batch.id, context_data=fastq_list_rows)
 
             # Initialise fastq list rows object in model
             for row in fastq_list_rows:
-                services.create_or_update_fastq_list_row(row, this_sqr)
+                fastq_srv.create_or_update_fastq_list_row(row, this_sqr)
 
         # prepare job list and dispatch to job queue
         job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
         if job_list:
-            queue_arn = libssm.get_ssm_param(constant.SQS_GERMLINE_QUEUE_ARN)
+            queue_arn = libssm.get_ssm_param(SQS_GERMLINE_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
-            services.reset_batch_run(this_batch_run.id)  # reset running if job_list is empty
+            batch_srv.reset_batch_run(this_batch_run.id)  # reset running if job_list is empty
 
     except Exception as e:
-        services.reset_batch_run(this_batch_run.id)  # reset running
+        batch_srv.reset_batch_run(this_batch_run.id)  # reset running
         raise e
 
     return {

@@ -13,7 +13,7 @@ django.setup()
 
 import logging
 
-from data_processors.pipeline import services
+from data_processors.pipeline.services import batch_srv, notification_srv
 from utils import libjson
 
 logger = logging.getLogger()
@@ -67,20 +67,20 @@ def handler(event, context):
     """
     batch_run_id = event['batch_run_id']
 
-    batch_run = services.get_batch_run_none_or_all_running(batch_run_id=batch_run_id)
+    batch_run = batch_srv.get_batch_run_none_or_all_running(batch_run_id=batch_run_id)
     if batch_run:
         logger.info(f"[RUNNING] Batch Run ID [{batch_run.id}]. Processing notification.")
-        resp = services.notify_batch_run_status(batch_run_id=batch_run.id)
+        resp = notification_srv.notify_batch_run_status(batch_run_id=batch_run.id)
         return {
             'batch_run_id': batch_run_id,
             'notification': resp,
         }
 
     if batch_run is None:
-        batch_run = services.get_batch_run_none_or_all_completed(batch_run_id=batch_run_id)
+        batch_run = batch_srv.get_batch_run_none_or_all_completed(batch_run_id=batch_run_id)
         if batch_run:
             logger.info(f"[COMPLETED] Batch Run ID [{batch_run.id}]. Processing notification.")
-            resp = services.notify_batch_run_status(batch_run_id=batch_run.id)
+            resp = notification_srv.notify_batch_run_status(batch_run_id=batch_run.id)
             return {
                 'batch_run_id': batch_run_id,
                 'notification': resp,
