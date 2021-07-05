@@ -7,7 +7,7 @@ from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, \
     Report, ReportType
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 

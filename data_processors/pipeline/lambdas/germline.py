@@ -16,7 +16,7 @@ import logging
 
 from data_portal.models import Workflow
 from data_processors.pipeline.services import sequence_srv, batch_srv, workflow_srv
-from data_processors.pipeline.constant import WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
 
 from utils import libjson, libssm, libdt

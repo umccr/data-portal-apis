@@ -9,7 +9,7 @@ from mockito import when
 from data_portal.models import LabMetadata, FastqListRow, LabMetadataPhenotype, \
     LabMetadataType, Workflow
 from data_portal.tests.factories import TestConstant, GermlineWorkflowFactory
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import tumor_normal_step, google_lims_update_step
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger

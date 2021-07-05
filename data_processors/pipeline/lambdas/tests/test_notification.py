@@ -5,7 +5,7 @@ from mockito import verify
 
 from data_portal.models import BatchRun, Workflow, SequenceRun
 from data_portal.tests.factories import BatchRunFactory, WorkflowFactory
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import notification
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger

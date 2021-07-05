@@ -8,7 +8,7 @@ from mockito import when, verify
 from data_portal.models import GDSFile, SequenceRun, Workflow, BatchRun, LabMetadata, LabMetadataType, LabMetadataAssay, \
     LabMetadataWorkflow
 from data_portal.tests.factories import GDSFileFactory, WorkflowFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowRunEventType
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowRunEventType
 from data_processors.pipeline.lambdas import sqs_iap_event, bcl_convert
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase

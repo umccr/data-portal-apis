@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""wgs_qc_step module
+
+See domain package __init__.py doc string.
+See orchestration package __init__.py doc string.
+"""
 import logging
 from typing import List
 
@@ -5,7 +11,8 @@ import pandas as pd
 
 from data_portal.models import Batch, BatchRun, SequenceRun, LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, \
     LabMetadataType
-from data_processors.pipeline.constant import WorkflowType, SQS_GERMLINE_QUEUE_ARN
+from data_processors.pipeline.domain.config import SQS_GERMLINE_QUEUE_ARN
+from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.lambdas import fastq_list_row
 from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tools import liborca

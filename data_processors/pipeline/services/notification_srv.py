@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from django.db import transaction
 
 from data_portal.models import SequenceRun, Workflow
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.services import batch_srv
 from data_processors.pipeline.tools import lookup
 from utils import libslack, libdt

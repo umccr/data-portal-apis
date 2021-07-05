@@ -5,7 +5,7 @@ from django.utils.timezone import make_aware
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.orchestration import google_lims_update_step
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.tests import _rand

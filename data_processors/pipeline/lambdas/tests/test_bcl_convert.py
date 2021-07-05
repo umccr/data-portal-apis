@@ -9,7 +9,7 @@ from mockito import when, verify
 from data_portal.models import SequenceRun, Workflow, LabMetadata, LabMetadataType, LabMetadataAssay, \
     LabMetadataWorkflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import bcl_convert
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libslack

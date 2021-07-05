@@ -9,7 +9,7 @@ from mockito import when
 from data_portal.models import Batch, BatchRun, SequenceRun, Workflow, LabMetadata, LabMetadataPhenotype, \
     LabMetadataType
 from data_portal.tests.factories import WorkflowFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import wes_handler, fastq_list_row, orchestrator
 from data_processors.pipeline.orchestration import wgs_qc_step
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger

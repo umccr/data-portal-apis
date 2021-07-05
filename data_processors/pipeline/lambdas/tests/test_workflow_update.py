@@ -7,7 +7,7 @@ from mockito import when
 
 from data_portal.models import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase

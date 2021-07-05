@@ -27,7 +27,7 @@ import logging
 from data_portal.models import Workflow, SequenceRun
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import wgs_qc_step, tumor_normal_step, google_lims_update_step
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update
 from utils import libjson
 

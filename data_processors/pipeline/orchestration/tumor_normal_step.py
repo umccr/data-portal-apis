@@ -1,9 +1,15 @@
+# -*- coding: utf-8 -*-
+"""tumor_normal_step module
+
+See domain package __init__.py doc string.
+See orchestration package __init__.py doc string.
+"""
 import logging
 from collections import defaultdict
 from typing import List
 
 from data_portal.models import Workflow, LabMetadata, LabMetadataType, LabMetadataPhenotype, FastqListRow
-from data_processors.pipeline import constant
+from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 from utils import libssm, libsqs
 
@@ -23,7 +29,7 @@ def perform(this_sqr):
         subjects = metadata_srv.get_subjects_from_runs(succeeded)
         job_list = prepare_tumor_normal_jobs(subjects=subjects)
         if job_list:
-            queue_arn = libssm.get_ssm_param(constant.SQS_TN_QUEUE_ARN)
+            queue_arn = libssm.get_ssm_param(SQS_TN_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
     else:
         logger.debug(f"Germline workflow finished, but {len(running)} still running. Wait for them to finish...")

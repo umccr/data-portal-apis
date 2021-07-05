@@ -5,7 +5,7 @@ from libica.openapi import libwes
 from mockito import when
 
 from data_portal.tests.factories import TestConstant
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowRunEventType
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowRunEventType
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 

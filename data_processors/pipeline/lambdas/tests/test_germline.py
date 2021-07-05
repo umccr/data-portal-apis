@@ -7,7 +7,7 @@ from mockito import when
 
 from data_portal.models import Workflow, SequenceRun, BatchRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchRunFactory
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import germline
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libjson, libssm

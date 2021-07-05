@@ -1,20 +1,14 @@
 # -*- coding: utf-8 -*-
-"""module for pipeline constants
+"""workflow domain module
 
-Let's be Pythonic 💪 let's not mutate CAPITAL_VARIABLE elsewhere!
-Consider Enum, if there's a need for (name, value) and better protected tuple pair.
-Or consider Helper class-ing where composite builder is needed.
+Domain models related to Workflow Automation.
+See domain package __init__.py doc string.
+See orchestration package __init__.py doc string.
 """
 from datetime import datetime, timezone
 from enum import Enum
 
-
-ICA_GDS_FASTQ_VOL = "/iap/gds/fastq_vol"
-ICA_WORKFLOW_PREFIX = "/iap/workflow"
-
-SQS_TN_QUEUE_ARN = "/data_portal/backend/sqs_tumor_normal_queue_arn"
-SQS_GERMLINE_QUEUE_ARN = "/data_portal/backend/sqs_germline_queue_arn"
-SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"
+from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 
 
 class SampleSheetCSV(Enum):
@@ -53,24 +47,6 @@ class WorkflowRunEventType(Enum):
     RUNSUCCEEDED = "RunSucceeded"
     RUNFAILED = "RunFailed"
     RUNABORTED = "RunAborted"
-
-
-class FastQReadType(Enum):
-    """Enum as in form of
-    FRIENDLY_NAME_OF_SUPPORTED_FASTQ_READ_TYPE = NUMBER_OF_FASTQ_FILES_PRODUCE
-
-    REF:
-    FASTQ files explained
-    https://sapac.support.illumina.com/bulletins/2016/04/fastq-files-explained.html?langsel=/au/
-
-    bcl2fastq2 Conversion Software v2.20 User Guide
-    https://sapac.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html?langsel=/au/
-
-    BCL Convert v3.4 User Guide
-    """
-    SINGLE_READ = 1
-    PAIRED_END = 2
-    PAIRED_END_TWO_LANES_SPLIT = 4  # i.e. bcl-convert (or bcl2fastq) run without --no-lane-splitting
 
 
 class Helper(object):

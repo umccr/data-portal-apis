@@ -8,7 +8,7 @@ from django.db.models import Max, QuerySet, Q
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
-from data_processors.pipeline.constant import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 
 
 class S3ObjectManager(models.Manager):

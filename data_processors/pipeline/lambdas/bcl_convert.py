@@ -20,7 +20,8 @@ import pandas as pd
 from contextlib import closing
 from data_portal.models import Workflow, LabMetadata
 from data_processors.pipeline.services import notification_srv, sequence_srv, workflow_srv
-from data_processors.pipeline.constant import WorkflowType, SampleSheetCSV, WorkflowHelper, ICA_GDS_FASTQ_VOL
+from data_processors.pipeline.domain.config import ICA_GDS_FASTQ_VOL
+from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
 from utils import libjson, libssm, libdt, gds
 from sample_sheet import SampleSheet

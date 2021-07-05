@@ -15,7 +15,7 @@ import logging
 
 from libica.openapi import libwes
 
-from data_processors.pipeline.constant import WorkflowStatus, WorkflowRunEventType
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowRunEventType
 from utils import libjson, ica
 
 logger = logging.getLogger()

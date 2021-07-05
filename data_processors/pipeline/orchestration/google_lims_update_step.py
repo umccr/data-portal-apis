@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""google_lims_update_step module
+
+See domain package __init__.py doc string.
+See orchestration package __init__.py doc string.
+"""
 from typing import List
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata

@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 from django.utils.timezone import make_aware, is_aware
 
 from data_portal.models import SequenceRun, Workflow
-from data_processors.pipeline.constant import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from utils import libjson
 
 logger = logging.getLogger(__name__)

@@ -16,7 +16,7 @@ import logging
 from data_portal.models import SequenceRun
 from data_processors.pipeline.services import gds_srv, sequence_srv, notification_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
-from data_processors.pipeline.constant import ENSEventType
+from data_processors.pipeline.domain.workflow import ENSEventType
 from utils import libjson
 
 logger = logging.getLogger()
