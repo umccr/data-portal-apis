@@ -33,6 +33,7 @@ class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
     DRAGEN_WGS_QC = "dragen_wgs_qc"
     TUMOR_NORMAL = "tumor_normal"
+    CTTSO = "ctTSO"
 
 
 class WorkflowStatus(Enum):
@@ -74,7 +75,13 @@ class WorkflowHelper(Helper):
     def construct_workflow_name(self, **kwargs):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
         utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-        if self.type == WorkflowType.DRAGEN_WGS_QC:
+        # Primary analysis
+        if self.type == WorkflowType.BCL_CONVERT:
+            seq_name = kwargs['seq_name']
+            seq_run_id = kwargs['seq_run_id']
+            return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{seq_run_id}__{utc_now_ts}"
+        # Secondary analysis
+        elif self.type in [ WorkflowType.DRAGEN_WGS_QC, WorkflowType.CTTSO ]:
             seq_name = kwargs['seq_name']
             seq_run_id = kwargs['seq_run_id']
             sample_name = kwargs['sample_name']
@@ -82,9 +89,5 @@ class WorkflowHelper(Helper):
         elif self.type == WorkflowType.TUMOR_NORMAL:
             subject_id = kwargs['subject_id']
             return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{utc_now_ts}"
-        elif self.type == WorkflowType.BCL_CONVERT:
-            seq_name = kwargs['seq_name']
-            seq_run_id = kwargs['seq_run_id']
-            return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{seq_run_id}__{utc_now_ts}"
         else:
             raise ValueError(f"Unsupported workflow type: {self.type.name}")

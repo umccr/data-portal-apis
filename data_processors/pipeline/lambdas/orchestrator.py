@@ -26,7 +26,7 @@ import logging
 
 from data_portal.models import Workflow, SequenceRun
 from data_processors.pipeline.services import workflow_srv
-from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step
+from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, ct_tso_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update
 from utils import libjson
@@ -101,13 +101,15 @@ def next_step(this_workflow: Workflow, context):
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
 
+        # Secondary analysis stage
+
         # bcl convert workflow run must have output in order to continue next step
         if this_workflow.output is None:
             raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
 
         google_lims_update_step.perform(this_workflow)
 
-        return dragen_wgs_qc_step.perform(this_sqr, this_workflow)
+        return [dragen_wgs_qc_step.perform(this_sqr, this_workflow), ct_tso_step.perform(this_sqr, this_workflow)]
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
 
