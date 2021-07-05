@@ -29,10 +29,10 @@ def get_subjects_from_runs(workflows: List[Workflow]) -> list:
 
 
 def get_library_id_from_workflow(workflow: Workflow):
-    # extract library ID from Germline WF sample_name
+    # extract library ID from DRAGEN_WGS_QC Workflow sample_name
     # TODO: is there a better way? Could use the fastq_list_row entries of the workflow 'input'
 
     # remove the first part (sample ID) from the sample_name to get the library ID
-    # NOTE: this may not be exactly the library ID used in the Germline workflow (stripped off _topup/_rerun), but
+    # NOTE: this may not be exactly the library ID used in the DRAGEN_WGS_QC workflow (stripped off _topup/_rerun), but
     #       for our use case that does not matter, as we are merging all libs from the same subject anyway
     return '_'.join(workflow.sample_name.split('_')[1:])

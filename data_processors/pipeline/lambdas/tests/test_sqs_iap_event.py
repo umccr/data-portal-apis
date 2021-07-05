@@ -523,9 +523,9 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         success_bcl_convert_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, success_bcl_convert_workflow_runs.count())
 
-    def test_wes_runs_event_germline(self):
+    def test_wes_runs_event_dragen_wgs_qc(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_dragen_wgs_qc
         """
 
         self.verify_local()
@@ -559,9 +559,9 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         # should call to slack webhook once for BCL Convert workflow
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
-    def test_wes_runs_event_germline_alt(self):
+    def test_wes_runs_event_dragen_wgs_qc_alt(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_germline_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_dragen_wgs_qc_alt
         """
 
         self.verify_local()
@@ -586,7 +586,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             , None
         )
 
-        # assert germline workflow launch has skipped and won't save into portal db
+        # assert DRAGEN_WGS_QC workflow launch has skipped and won't save into portal db
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one bcl convert workflow
 
@@ -701,7 +701,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             workflow_status=WorkflowStatus.FAILED
         ), None)
 
-        # assert germline workflow launch has skipped and won't save into portal db
+        # assert DRAGEN_WGS_QC workflow launch has skipped and won't save into portal db
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one Failed bcl convert workflow
 
@@ -748,7 +748,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             workflow_status=WorkflowStatus.FAILED
         ), None)
 
-        # assert germline workflow launch has skipped and won't save into portal db
+        # assert DRAGEN_WGS_QC workflow launch has skipped and won't save into portal db
         all_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, all_workflow_runs.count())  # should contain only one Failed bcl convert workflow
 

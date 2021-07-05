@@ -11,7 +11,7 @@ from data_portal.models import Batch, BatchRun, SequenceRun, Workflow, LabMetada
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import wes_handler, fastq_list_row, orchestrator
-from data_processors.pipeline.orchestration import wgs_qc_step
+from data_processors.pipeline.orchestration import dragen_wgs_qc_step
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 tn_mock_subject_id = "SBJ00001"
@@ -20,14 +20,14 @@ mock_sample_id = "PRJ200438"
 mock_sample_name = f"{mock_sample_id}_{mock_library_id}"
 
 
-class WGSQCStepUnitTests(PipelineUnitTestCase):
+class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
-        super(WGSQCStepUnitTests, self).setUp()
+        super(DragenWgsQcStepUnitTests, self).setUp()
 
-    def test_germline(self):
+    def test_dragen_wgs_qc(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_wgs_qc_step.WGSQCStepUnitTests.test_germline
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepUnitTests.test_dragen_wgs_qc
         """
         self.verify_local()
 
@@ -94,9 +94,9 @@ class WGSQCStepUnitTests(PipelineUnitTestCase):
             logger.info(f"BATCH_RUN: {br}")
         self.assertTrue(BatchRun.objects.all()[0].running)
 
-    def test_germline_none(self):
+    def test_dragen_wgs_qc_none(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_wgs_qc_step.WGSQCStepUnitTests.test_germline_none
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepUnitTests.test_dragen_wgs_qc_none
 
         Similar to ^^ test case but BCL Convert output is None
         """
@@ -125,16 +125,16 @@ class WGSQCStepUnitTests(PipelineUnitTestCase):
         self.assertRaises(json.JSONDecodeError)
 
 
-class WGSQCStepIntegrationTests(PipelineIntegrationTestCase):
+class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
     # uncomment @skip and hit the each test case!
     # and keep decorated @skip after tested
 
     @skip
-    def test_prepare_germline_jobs(self):
+    def test_prepare_dragen_wgs_qc_jobs(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_wgs_qc_step.WGSQCStepIntegrationTests.test_prepare_germline_jobs
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepIntegrationTests.test_prepare_dragen_wgs_qc_jobs
         """
 
         # --- Setup these values
@@ -187,9 +187,9 @@ class WGSQCStepIntegrationTests(PipelineIntegrationTestCase):
         mock_sqr_run.save()
 
         print('-'*32)
-        logger.info("PREPARE GERMLINE JOBS:")
+        logger.info("PREPARE DRAGEN_WGS_QC JOBS:")
 
-        job_list = wgs_qc_step.prepare_germline_jobs(
+        job_list = dragen_wgs_qc_step.prepare_dragen_wgs_qc_jobs(
             this_batch=mock_batch,
             this_batch_run=mock_batch_run,
             this_sqr=mock_sqr_run,

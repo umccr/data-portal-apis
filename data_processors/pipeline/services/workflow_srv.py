@@ -116,18 +116,22 @@ def search_matching_runs(**kwargs):
 
 
 @transaction.atomic
-def get_germline_running_by_sequence_run(sequence_run: SequenceRun):
-    # query for Workflows associated with this SequenceRun
-    # that are GERMLINE workflows
-    qs: QuerySet = Workflow.objects.get_running_by_sequence_run(sequence_run=sequence_run, type_name=WorkflowType.GERMLINE.value.lower())
+def get_running_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType):
+    """query for Workflows associated with this SequenceRun"""
+    qs: QuerySet = Workflow.objects.get_running_by_sequence_run(
+        sequence_run=sequence_run,
+        type_name=workflow_type.value.lower()
+    )
     return qs.all()
 
 
 @transaction.atomic
-def get_germline_succeeded_by_sequence_run(sequence_run: SequenceRun):
-    # query for Workflows associated with this SequenceRun
-    # that are GERMLINE workflows
-    qs: QuerySet = Workflow.objects.get_succeeded_by_sequence_run(sequence_run=sequence_run, type_name=WorkflowType.GERMLINE.value.lower())
+def get_succeeded_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType):
+    """query for Succeeded Workflows associated with this SequenceRun"""
+    qs: QuerySet = Workflow.objects.get_succeeded_by_sequence_run(
+        sequence_run=sequence_run,
+        type_name=workflow_type.value.lower()
+    )
     # TODO: sort out duplicated WF records (e.g. due to workflow rerun/resubmission)
     return qs.all()
 

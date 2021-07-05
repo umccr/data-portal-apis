@@ -15,25 +15,25 @@ from utils import libslack
 class NotificationUnitTests(PipelineUnitTestCase):
 
     def _gen(self, count, end, end_status):
-        germlines = []
+        dragen_wgs_qc_list = []
         for cnt in range(1, count+1):
-            mock_germline = Workflow()
-            mock_germline.sequence_run = self.mock_sqr
-            mock_germline.batch_run = self.mock_batch_run
+            mock_dragen_wgs_qc = Workflow()
+            mock_dragen_wgs_qc.sequence_run = self.mock_sqr
+            mock_dragen_wgs_qc.batch_run = self.mock_batch_run
 
-            mock_germline.type_name = WorkflowType.GERMLINE.name
-            mock_germline.version = "1.0.1-8e3c687"
-            mock_germline.wfr_id = f"wfr.{_rand(32)}"
+            mock_dragen_wgs_qc.type_name = WorkflowType.DRAGEN_WGS_QC.name
+            mock_dragen_wgs_qc.version = "1.0.1-8e3c687"
+            mock_dragen_wgs_qc.wfr_id = f"wfr.{_rand(32)}"
 
-            mock_germline.sample_name = f"SAMPLE_NAME_{cnt}"
-            mock_germline.start = make_aware(datetime.utcnow() - timedelta(hours=1))
-            mock_germline.end = end
-            mock_germline.end_status = end_status
+            mock_dragen_wgs_qc.sample_name = f"SAMPLE_NAME_{cnt}"
+            mock_dragen_wgs_qc.start = make_aware(datetime.utcnow() - timedelta(hours=1))
+            mock_dragen_wgs_qc.end = end
+            mock_dragen_wgs_qc.end_status = end_status
 
-            mock_germline.save()
+            mock_dragen_wgs_qc.save()
 
-            germlines.append(mock_germline)
-        return germlines
+            dragen_wgs_qc_list.append(mock_dragen_wgs_qc)
+        return dragen_wgs_qc_list
 
     def test_notify_workflow_status_batch_completed(self):
         """
@@ -53,8 +53,8 @@ class NotificationUnitTests(PipelineUnitTestCase):
         # should call to slack webhook once
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
-        # all germline should be notified
-        for g in Workflow.objects.filter(type_name=WorkflowType.GERMLINE.name).all():
+        # all DRAGEN_WGS_QC should be notified
+        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.name).all():
             self.assertTrue(g.notified)
 
         # batch run running should be reset
@@ -81,8 +81,8 @@ class NotificationUnitTests(PipelineUnitTestCase):
         # should call to slack webhook once
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
-        # all germline should be notified
-        for g in Workflow.objects.filter(type_name=WorkflowType.GERMLINE.name).all():
+        # all DRAGEN_WGS_QC should be notified
+        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.name).all():
             self.assertTrue(g.notified)
 
         # batch run should be running
@@ -98,17 +98,17 @@ class NotificationUnitTests(PipelineUnitTestCase):
         self.mock_batch_run: BatchRun = BatchRunFactory()
         self._gen(count=5, end=None, end_status=WorkflowStatus.RUNNING.value)
 
-        mock_succeeded_germline = Workflow()
-        mock_succeeded_germline.sequence_run = self.mock_sqr
-        mock_succeeded_germline.batch_run = self.mock_batch_run
-        mock_succeeded_germline.type_name = WorkflowType.GERMLINE.name
-        mock_succeeded_germline.version = "1.0.1-8e3c687"
-        mock_succeeded_germline.wfr_id = f"wfr.{_rand(32)}"
-        mock_succeeded_germline.sample_name = f"SAMPLE_NAME_6"
-        mock_succeeded_germline.start = make_aware(datetime.utcnow() - timedelta(hours=1))
-        mock_succeeded_germline.end = make_aware(datetime.utcnow())
-        mock_succeeded_germline.end_status = WorkflowStatus.SUCCEEDED.value
-        mock_succeeded_germline.save()
+        mock_succeeded_dragen_wgs_qc = Workflow()
+        mock_succeeded_dragen_wgs_qc.sequence_run = self.mock_sqr
+        mock_succeeded_dragen_wgs_qc.batch_run = self.mock_batch_run
+        mock_succeeded_dragen_wgs_qc.type_name = WorkflowType.DRAGEN_WGS_QC.name
+        mock_succeeded_dragen_wgs_qc.version = "1.0.1-8e3c687"
+        mock_succeeded_dragen_wgs_qc.wfr_id = f"wfr.{_rand(32)}"
+        mock_succeeded_dragen_wgs_qc.sample_name = f"SAMPLE_NAME_6"
+        mock_succeeded_dragen_wgs_qc.start = make_aware(datetime.utcnow() - timedelta(hours=1))
+        mock_succeeded_dragen_wgs_qc.end = make_aware(datetime.utcnow())
+        mock_succeeded_dragen_wgs_qc.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_succeeded_dragen_wgs_qc.save()
 
         resp = notification.handler({'batch_run_id': self.mock_batch_run.id}, None)
         logger.info("-" * 32)
@@ -118,19 +118,19 @@ class NotificationUnitTests(PipelineUnitTestCase):
 
         # 5 RUNNING, 1 SUCCEEDED
         self.assertEqual(1, Workflow.objects.filter(
-            type_name=WorkflowType.GERMLINE.name,
+            type_name=WorkflowType.DRAGEN_WGS_QC.name,
             end_status=WorkflowStatus.SUCCEEDED.value
         ).count())
         self.assertEqual(5, Workflow.objects.filter(
-            type_name=WorkflowType.GERMLINE.name,
+            type_name=WorkflowType.DRAGEN_WGS_QC.name,
             end_status=WorkflowStatus.RUNNING.value
         ).count())
 
         # should not call to slack webhook
         verify(libslack.http.client.HTTPSConnection, times=0).request(...)
 
-        # all germline should NOT be notified
-        for g in Workflow.objects.filter(type_name=WorkflowType.GERMLINE.name).all():
+        # all DRAGEN_WGS_QC should NOT be notified
+        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.name).all():
             self.assertFalse(g.notified)
 
         # batch run should be still running

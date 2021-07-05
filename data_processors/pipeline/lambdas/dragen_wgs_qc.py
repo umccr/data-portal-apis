@@ -88,7 +88,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.GERMLINE.name} event")
+    logger.info(f"Start processing {WorkflowType.DRAGEN_WGS_QC.name} event")
     logger.info(libjson.dumps(event))
 
     # Extract name of sample and the fastq list rows
@@ -102,7 +102,7 @@ def handler(event, context) -> dict:
     batch_run_id = event.get('batch_run_id', None)
 
     # Set workflow helper
-    wfl_helper = WorkflowHelper(WorkflowType.GERMLINE)
+    wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_WGS_QC)
 
     # Read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
@@ -118,7 +118,7 @@ def handler(event, context) -> dict:
     batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
     matched_runs = workflow_srv.search_matching_runs(
-        type_name=WorkflowType.GERMLINE.name,
+        type_name=WorkflowType.DRAGEN_WGS_QC.name,
         wfl_id=workflow_id,
         version=workflow_version,
         sample_name=sample_name,
@@ -169,7 +169,7 @@ def handler(event, context) -> dict:
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
             'wfv_id': wfl_run['workflow_version']['id'],
-            'type': WorkflowType.GERMLINE,
+            'type': WorkflowType.DRAGEN_WGS_QC,
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),

@@ -11,7 +11,7 @@ import pandas as pd
 
 from data_portal.models import Batch, BatchRun, SequenceRun, LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, \
     LabMetadataType
-from data_processors.pipeline.domain.config import SQS_GERMLINE_QUEUE_ARN
+from data_processors.pipeline.domain.config import SQS_DRAGEN_WGS_QC_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.lambdas import fastq_list_row
 from data_processors.pipeline.services import batch_srv, fastq_srv
@@ -30,7 +30,7 @@ def perform(this_sqr, this_workflow):
     # register a new batch run for this_batch run step
     this_batch_run = batch_srv.skip_or_create_batch_run(
         batch=this_batch,
-        run_step=WorkflowType.GERMLINE.value.upper()
+        run_step=WorkflowType.DRAGEN_WGS_QC.value.upper()
     )
     if this_batch_run is None:
         # skip the request if there is on going existing batch_run for the same batch run step
@@ -57,9 +57,9 @@ def perform(this_sqr, this_workflow):
                 fastq_srv.create_or_update_fastq_list_row(row, this_sqr)
 
         # prepare job list and dispatch to job queue
-        job_list = prepare_germline_jobs(this_batch, this_batch_run, this_sqr)
+        job_list = prepare_dragen_wgs_qc_jobs(this_batch, this_batch_run, this_sqr)
         if job_list:
-            queue_arn = libssm.get_ssm_param(SQS_GERMLINE_QUEUE_ARN)
+            queue_arn = libssm.get_ssm_param(SQS_DRAGEN_WGS_QC_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
             batch_srv.reset_batch_run(this_batch_run.id)  # reset running if job_list is empty
@@ -78,13 +78,13 @@ def perform(this_sqr, this_workflow):
     }
 
 
-def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
+def prepare_dragen_wgs_qc_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun) -> List[dict]:
     """
-    NOTE: as of GERMLINE CWL workflow version 3.7.5--1.3.5, it uses fastq_list_rows format
+    NOTE: as of DRAGEN_WGS_QC CWL workflow version 3.7.5--1.3.5, it uses fastq_list_rows format
     See Example IAP Run > Inputs
     https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.5cc28c147e4e4dfa9e418523188aacec/3.7.5--1.3.5.md
 
-    Germline job preparation is at _pure_ Library level aggregate.
+    DRAGEN_WGS_QC job preparation is at _pure_ Library level aggregate.
     Here "Pure" Library ID means without having _topup(N) or _rerun(N) suffixes.
     The fastq_list_row lambda already stripped these topup/rerun suffixes (i.e. what is in this_batch.context_data cache).
     Therefore, it aggregates all fastq list at
@@ -92,9 +92,9 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
             - all different lane(s)
             - all topup(s)
             - all rerun(s)
-    This constitute one Germline job (i.e. one Germline workflow run).
+    This constitute one DRAGEN_WGS_QC job (i.e. one DRAGEN_WGS_QC workflow run).
 
-    See OrchestratorIntegrationTests.test_prepare_germline_jobs() for example job list of SEQ-II validation run.
+    See test_prepare_dragen_wgs_qc_jobs() integration test for example job list of SEQ-II validation run.
 
     :param this_batch:
     :param this_batch_run:
@@ -114,23 +114,25 @@ def prepare_germline_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr:
         lib_metadata: LabMetadata = LabMetadata.objects.get(library_id=rglb)
         # make sure we have recognised sample (e.g. not undetermined)
         if not lib_metadata:
-            logger.error(f"SKIP GERMLINE workflow for {rgsm}_{rglb}. No metadata for {rglb}, this should not happen!")
+            logger.error(
+                f"SKIP DRAGEN_WGS_QC workflow for {rgsm}_{rglb}. No metadata for {rglb}, this should not happen!"
+            )
             continue
 
         # skip negative control samples
         if lib_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-            logger.info(f"SKIP GERMLINE workflow for '{rgsm}_{rglb}'. Negative-control.")
+            logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Negative-control.")
             continue
 
         # Skip samples where metadata workflow is set to manual
         if lib_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             # We do not pursue manual samples
-            logger.info(f"SKIP GERMLINE workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
+            logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
             continue
 
-        # skip germline if assay type is not WGS
+        # skip DRAGEN_WGS_QC if assay type is not WGS
         if lib_metadata.type.lower() != LabMetadataType.WGS.value.lower():
-            logger.warning(f"SKIP GERMLINE workflow for '{rgsm}_{rglb}'. 'WGS' != '{lib_metadata.type}'.")
+            logger.warning(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. 'WGS' != '{lib_metadata.type}'.")
             continue
 
         # convert read_1 and read_2 to cwl file location dict format

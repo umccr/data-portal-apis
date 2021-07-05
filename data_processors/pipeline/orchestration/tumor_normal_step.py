@@ -10,6 +10,7 @@ from typing import List
 
 from data_portal.models import Workflow, LabMetadata, LabMetadataType, LabMetadataPhenotype, FastqListRow
 from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
+from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 from utils import libssm, libsqs
 
@@ -18,11 +19,17 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_sqr):
-    # check if all other Germline workflows for this run have finished
+    # check if all other DRAGEN_WGS_QC workflows for this run have finished
     # if yes we continue to the T/N workflow
-    # if not, we wait (until all Germline workflows have finished)
-    running: List[Workflow] = workflow_srv.get_germline_running_by_sequence_run(sequence_run=this_sqr)
-    succeeded: List[Workflow] = workflow_srv.get_germline_succeeded_by_sequence_run(sequence_run=this_sqr)
+    # if not, we wait (until all DRAGEN_WGS_QC workflows have finished)
+    running: List[Workflow] = workflow_srv.get_running_by_sequence_run(
+        sequence_run=this_sqr,
+        workflow_type=WorkflowType.DRAGEN_WGS_QC
+    )
+    succeeded: List[Workflow] = workflow_srv.get_succeeded_by_sequence_run(
+        sequence_run=this_sqr,
+        workflow_type=WorkflowType.DRAGEN_WGS_QC
+    )
     subjects = list()
     if len(running) == 0:
         # determine which samples are available for T/N wokflow
@@ -32,7 +39,7 @@ def perform(this_sqr):
             queue_arn = libssm.get_ssm_param(SQS_TN_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
     else:
-        logger.debug(f"Germline workflow finished, but {len(running)} still running. Wait for them to finish...")
+        logger.debug(f"DRAGEN_WGS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
 
     return {
         "subjects": subjects

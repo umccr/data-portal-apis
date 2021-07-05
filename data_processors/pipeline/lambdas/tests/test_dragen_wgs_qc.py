@@ -8,20 +8,20 @@ from mockito import when
 from data_portal.models import Workflow, SequenceRun, BatchRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowHelper
-from data_processors.pipeline.lambdas import germline
+from data_processors.pipeline.lambdas import dragen_wgs_qc
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libjson, libssm
 
 
-class GermlineUnitTests(PipelineUnitTestCase):
+class DragenWgsQcUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
-        workflow: dict = germline.handler({
+        workflow: dict = dragen_wgs_qc.handler({
             "sample_name": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
@@ -44,16 +44,16 @@ class GermlineUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-" * 32)
-        logger.info("Example germline.handler lambda output:")
+        logger.info("Example dragen_wgs_qc.handler lambda output:")
         logger.info(json.dumps(workflow))
 
-        # assert germline workflow launch success and save workflow run in db
+        # assert DRAGEN_WGS_QC workflow launch success and save workflow run in db
         workflows = Workflow.objects.all()
         self.assertEqual(1, workflows.count())
 
     def test_handler_alt(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_handler_alt
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
 
@@ -66,7 +66,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
         mock_wfr.workflow_version = workflow_version
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
-        workflow: dict = germline.handler({
+        workflow: dict = dragen_wgs_qc.handler({
             "sample_name": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
@@ -88,34 +88,34 @@ class GermlineUnitTests(PipelineUnitTestCase):
             "seq_name": mock_sqr.name,
         }, None)
         logger.info("-" * 32)
-        logger.info("Example germline.handler lambda output:")
+        logger.info("Example dragen_wgs_qc.handler lambda output:")
         logger.info(json.dumps(workflow))
 
-        # assert germline workflow launch success and save workflow run in db
+        # assert DRAGEN_WGS_QC workflow launch success and save workflow run in db
         workflows = Workflow.objects.all()
         self.assertEqual(1, workflows.count())
 
     def test_handler_skipped(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_handler_skipped
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_skipped
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
         mock_batch_run: BatchRun = BatchRunFactory()
 
-        wfl_helper = WorkflowHelper(WorkflowType.GERMLINE)
+        wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_WGS_QC)
 
-        mock_germline = Workflow()
-        mock_germline.type_name = WorkflowType.GERMLINE.name
-        mock_germline.wfl_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-        mock_germline.version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
-        mock_germline.sample_name = "SAMPLE_NAME"
-        mock_germline.sequence_run = mock_sqr
-        mock_germline.batch_run = mock_batch_run
-        mock_germline.start = make_aware(datetime.utcnow())
-        mock_germline.input = libjson.dumps({'mock': "MOCK_INPUT_JSON"})
-        mock_germline.save()
+        mock_dragen_wgs_qc = Workflow()
+        mock_dragen_wgs_qc.type_name = WorkflowType.DRAGEN_WGS_QC.name
+        mock_dragen_wgs_qc.wfl_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
+        mock_dragen_wgs_qc.version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
+        mock_dragen_wgs_qc.sample_name = "SAMPLE_NAME"
+        mock_dragen_wgs_qc.sequence_run = mock_sqr
+        mock_dragen_wgs_qc.batch_run = mock_batch_run
+        mock_dragen_wgs_qc.start = make_aware(datetime.utcnow())
+        mock_dragen_wgs_qc.input = libjson.dumps({'mock': "MOCK_INPUT_JSON"})
+        mock_dragen_wgs_qc.save()
 
-        result: dict = germline.handler({
+        result: dict = dragen_wgs_qc.handler({
             "sample_name": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
@@ -139,7 +139,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-" * 32)
-        logger.info("Example germline.handler lambda output:")
+        logger.info("Example dragen_wgs_qc.handler lambda output:")
         logger.info(json.dumps(result))
         self.assertEqual('SKIPPED', result['status'])
 
@@ -148,7 +148,7 @@ class GermlineUnitTests(PipelineUnitTestCase):
 
     def test_sqs_handler(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_germline.GermlineUnitTests.test_sqs_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_sqs_handler
         """
 
         mock_sqr: SequenceRun = SequenceRunFactory()
@@ -189,14 +189,14 @@ class GermlineUnitTests(PipelineUnitTestCase):
             ]
         }
 
-        results = germline.sqs_handler(mock_event, None)
+        results = dragen_wgs_qc.sqs_handler(mock_event, None)
         logger.info("-" * 32)
-        logger.info("Example germline.sqs_handler lambda output:")
+        logger.info("Example dragen_wgs_qc.sqs_handler lambda output:")
         logger.info(json.dumps(results))
 
         self.assertEqual(len(results), 1)
 
 
-class GermlineIntegrationTests(PipelineIntegrationTestCase):
+class DragenWgsQcIntegrationTests(PipelineIntegrationTestCase):
     # write test case here if to actually hit IAP endpoints
     pass

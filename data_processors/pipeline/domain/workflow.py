@@ -31,7 +31,7 @@ class ENSEventType(Enum):
 
 class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
-    GERMLINE = "germline"
+    DRAGEN_WGS_QC = "dragen_wgs_qc"
     TUMOR_NORMAL = "tumor_normal"
 
 
@@ -56,8 +56,8 @@ class Helper(object):
 class WorkflowHelper(Helper):
     prefix = "umccr__automated"
 
-    def __init__(self, type: WorkflowType):
-        self.type = type
+    def __init__(self, type_: WorkflowType):
+        self.type = type_
 
     def get_ssm_key_id(self):
         return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id"
@@ -74,7 +74,7 @@ class WorkflowHelper(Helper):
     def construct_workflow_name(self, **kwargs):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
         utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-        if self.type == WorkflowType.GERMLINE:
+        if self.type == WorkflowType.DRAGEN_WGS_QC:
             seq_name = kwargs['seq_name']
             seq_run_id = kwargs['seq_run_id']
             sample_name = kwargs['sample_name']

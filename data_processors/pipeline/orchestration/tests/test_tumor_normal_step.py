@@ -8,7 +8,7 @@ from mockito import when
 
 from data_portal.models import LabMetadata, FastqListRow, LabMetadataPhenotype, \
     LabMetadataType, Workflow
-from data_portal.tests.factories import TestConstant, GermlineWorkflowFactory
+from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import tumor_normal_step, google_lims_update_step
@@ -75,7 +75,7 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         """
         self.verify_local()
 
-        mock_germline_workflow: Workflow = GermlineWorkflowFactory()
+        mock_dragen_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
 
         build_tn_mock()
 

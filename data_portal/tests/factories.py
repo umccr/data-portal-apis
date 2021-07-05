@@ -149,7 +149,7 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     )
 
 
-class GermlineWorkflowFactory(factory.django.DjangoModelFactory):
+class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
@@ -158,7 +158,7 @@ class GermlineWorkflowFactory(factory.django.DjangoModelFactory):
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
-    type_name = WorkflowType.GERMLINE.name
+    type_name = WorkflowType.DRAGEN_WGS_QC.name
     input = json.dumps({
         "mock": "must load template from ssm parameter store"
     })
@@ -186,7 +186,7 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
         model = BatchRun
 
     batch = factory.SubFactory(BatchFactory)
-    step = WorkflowType.GERMLINE.name
+    step = WorkflowType.DRAGEN_WGS_QC.name
     running = True
     notified = True
 

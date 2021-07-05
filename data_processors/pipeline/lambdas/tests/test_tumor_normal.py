@@ -48,7 +48,7 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-" * 32)
-        logger.info("Example germline.handler lambda output:")
+        logger.info("Example tumor_normal.handler lambda output:")
         logger.info(json.dumps(workflow))
 
         # assert tumor_normal workflow launch success and save workflow run in db
