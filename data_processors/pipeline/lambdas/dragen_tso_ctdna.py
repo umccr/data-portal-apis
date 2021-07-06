@@ -108,7 +108,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.CTTSO.name} event")
+    logger.info(f"Start processing {WorkflowType.DRAGEN_TSO_CTDNA.name} event")
     logger.info(libjson.dumps(event))
 
     # Set sequence run id
@@ -120,7 +120,7 @@ def handler(event, context) -> dict:
     sample_name = event['tso500_sample']['sample_name']
 
     # Set workflow helper
-    wfl_helper = WorkflowHelper(WorkflowType.CTTSO)
+    wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_TSO_CTDNA)
 
     # Read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
@@ -139,7 +139,7 @@ def handler(event, context) -> dict:
     batch_run = services.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
     matched_runs = services.search_matching_runs(
-        type_name=WorkflowType.CTTSO.name,
+        type_name=WorkflowType.DRAGEN_TSO_CTDNA.name,
         wfl_id=workflow_id,
         version=workflow_version,
         sample_name=sample_name,
@@ -190,7 +190,7 @@ def handler(event, context) -> dict:
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
             'wfv_id': wfl_run['workflow_version']['id'],
-            'type': WorkflowType.CTTSO,
+            'type': WorkflowType.DRAGEN_TSO_CTDNA,
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),

@@ -11,4 +11,5 @@ ICA_WORKFLOW_PREFIX = "/iap/workflow"
 
 SQS_TN_QUEUE_ARN = "/data_portal/backend/sqs_tumor_normal_queue_arn"
 SQS_DRAGEN_WGS_QC_QUEUE_ARN = "/data_portal/backend/sqs_dragen_wgs_qc_queue_arn"
+SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN = "/data_portal/backend/sqs_ct_tso_queue_arn"
 SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"

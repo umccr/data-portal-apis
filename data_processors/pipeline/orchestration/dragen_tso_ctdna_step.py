@@ -11,7 +11,7 @@ import pandas as pd
 
 from data_portal.models import Batch, BatchRun, SequenceRun, LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, \
     LabMetadataType
-from data_processors.pipeline.domain.config import SQS_CT_TSO_QUEUE_ARN
+from data_processors.pipeline.domain.config import SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.lambdas import fastq_list_row
 from data_processors.pipeline.services import batch_srv, fastq_srv
@@ -68,9 +68,9 @@ def perform(this_sqr, this_workflow):
         run_info_xml, run_parameters_xml = get_run_xml_files_from_bcl_convert_workflow(this_workflow.input)
 
         # prepare job list and dispatch to job queue
-        job_list = prepare_ct_tso_jobs(this_batch, this_batch_run, this_sqr, samplesheet, run_info_xml, run_parameters_xml)
+        job_list = prepare_dragen_tso_ctdna_jobs(this_batch, this_batch_run, this_sqr, samplesheet, run_info_xml, run_parameters_xml)
         if job_list:
-            queue_arn = libssm.get_ssm_param(SQS_CT_TSO_QUEUE_ARN)
+            queue_arn = libssm.get_ssm_param(SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
             batch_srv.reset_batch_run(this_batch_run.id)  # reset running if job_list is empty
@@ -89,7 +89,7 @@ def perform(this_sqr, this_workflow):
     }
 
 
-def prepare_ct_tso_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun, samplesheet, run_info_xml, run_parameters_xml) -> List[dict]:
+def prepare_dragen_tso_ctdna_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: SequenceRun, samplesheet, run_info_xml, run_parameters_xml) -> List[dict]:
     """
     NOTE: This launches the cttso cwl workflow that mimics the ISL workflow
     See Example IAP Run > Inputs
