@@ -190,7 +190,7 @@ def handler(event, context) -> dict:
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
             'wfv_id': wfl_run['workflow_version']['id'],
-            'type': WorkflowType.GERMLINE,
+            'type': WorkflowType.CTTSO,
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),

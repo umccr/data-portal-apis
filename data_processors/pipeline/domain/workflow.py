@@ -33,7 +33,7 @@ class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
     DRAGEN_WGS_QC = "dragen_wgs_qc"
     TUMOR_NORMAL = "tumor_normal"
-    CTTSO = "ctTSO"
+    CTTSO = "dragen_cttso"
 
 
 class WorkflowStatus(Enum):

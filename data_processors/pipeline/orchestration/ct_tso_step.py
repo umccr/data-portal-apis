@@ -11,7 +11,7 @@ import pandas as pd
 
 from data_portal.models import Batch, BatchRun, SequenceRun, LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, \
     LabMetadataType
-from data_processors.pipeline.domain.config import SQS_GERMLINE_QUEUE_ARN
+from data_processors.pipeline.domain.config import SQS_CT_TSO_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.lambdas import fastq_list_row
 from data_processors.pipeline.services import batch_srv, fastq_srv
@@ -22,7 +22,7 @@ import re
 
 # GLOBALS
 SAMPLESHEET_ASSAY_TYPE_REGEX = r"^(?:SampleSheet\.)(\S+)(?:\.csv)$"
-CTTSO_ASSAY_TYPE = "ctDNA_ctTSO"
+CTTSO_ASSAY_TYPE = [ "ctDNA_ctTSO", "ctTSO_ctTSO" ]  # FIXME this will conform to one of these elements at some point.
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -70,7 +70,7 @@ def perform(this_sqr, this_workflow):
         # prepare job list and dispatch to job queue
         job_list = prepare_ct_tso_jobs(this_batch, this_batch_run, this_sqr, samplesheet, run_info_xml, run_parameters_xml)
         if job_list:
-            queue_arn = libssm.get_ssm_param(SQS_GERMLINE_QUEUE_ARN)
+            queue_arn = libssm.get_ssm_param(SQS_CT_TSO_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
             batch_srv.reset_batch_run(this_batch_run.id)  # reset running if job_list is empty
@@ -95,7 +95,7 @@ def prepare_ct_tso_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: S
     See Example IAP Run > Inputs
     https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.5cc28c147e4e4dfa9e418523188aacec/3.7.5--1.3.5.md
 
-    Germline job preparation is at _pure_ Library level aggregate.
+    ctTSO job preparation is at _pure_ Library level aggregate.
     Here "Pure" Library ID means without having _topup(N) or _rerun(N) suffixes.
     The fastq_list_row lambda already stripped these topup/rerun suffixes (i.e. what is in this_batch.context_data cache).
     Therefore, it aggregates all fastq list at
@@ -103,9 +103,9 @@ def prepare_ct_tso_jobs(this_batch: Batch, this_batch_run: BatchRun, this_sqr: S
             - all different lane(s)
             - all topup(s)
             - all rerun(s)
-    This constitute one Germline job (i.e. one Germline workflow run).
+    This constitute one ctTSO job (i.e. one ctTSO workflow run).
 
-    See OrchestratorIntegrationTests.test_prepare_germline_jobs() for example job list of SEQ-II validation run.
+    See OrchestratorIntegrationTests.test_prepare_ct_tso_jobs() for example job list of SEQ-II validation run.
 
     :param this_batch:
     :param this_batch_run:
@@ -188,8 +188,11 @@ def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
         # Collect midfix of samplesheet
         assay_type = regex_obj.group(1)
 
-        if assay_type == CTTSO_ASSAY_TYPE:
+        if assay_type in CTTSO_ASSAY_TYPE:
             return samplesheet_location
+
+    logger.warning("Did not get a ct tso samplesheet from the bclconvert output")
+    return None
 
 
 def get_run_xml_files_from_bcl_convert_workflow(bcl_convert_input):
