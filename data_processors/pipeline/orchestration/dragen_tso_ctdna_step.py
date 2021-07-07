@@ -11,7 +11,7 @@ import json
 import pandas as pd
 
 from data_portal.models import Batch, BatchRun, SequenceRun, LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, \
-    LabMetadataType
+    LabMetadataType, LabMetadataAssay
 from data_processors.pipeline.domain.config import SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.lambdas import fastq_list_row
@@ -142,9 +142,11 @@ def prepare_dragen_tso_ctdna_jobs(this_batch: Batch, this_batch_run: BatchRun, t
             logger.info(f"SKIP CT TSO workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
             continue
 
-        # skip germline if assay type is not WGS
-        if lib_metadata.type.lower() != LabMetadataType.CT_TSO.value.lower():
-            logger.warning(f"SKIP ctTSO workflow for '{rgsm}_{rglb}'. 'ctTSO' != '{lib_metadata.type}'.")
+        # skip if assay is not CT_TSO and type is not CT_DNA
+        if not (lib_metadata.type.lower() == LabMetadataType.CT_DNA.value.lower() and
+                lib_metadata.assay.lower() == LabMetadataAssay.CT_TSO.value.lower()):
+            logger.warning(f"SKIP ctTSO workflow for '{rgsm}_{rglb}'. "
+                           f"type: 'ctDNA' != '{lib_metadata.type}' or assay: 'ctTSO' != '{lib_metadata.assay}'")
             continue
 
         # convert read_1 and read_2 to cwl file location dict format
