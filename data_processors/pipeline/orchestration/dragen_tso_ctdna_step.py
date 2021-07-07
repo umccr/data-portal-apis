@@ -195,7 +195,7 @@ def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
         assay_type = regex_obj.group(1)
 
         if assay_type in CTTSO_ASSAY_TYPE:
-            return samplesheet_location
+            return str(samplesheet_location)
 
     logger.warning("Did not get a ct tso samplesheet from the bclconvert output")
     return None
