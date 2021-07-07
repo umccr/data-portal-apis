@@ -6,6 +6,7 @@ See orchestration package __init__.py doc string.
 """
 import logging
 from typing import List
+import json
 
 import pandas as pd
 
@@ -176,6 +177,9 @@ def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
     """
     Get the gds path containing the samplesheet used for splitting ctTSO samples
     """
+
+    workflow_output = json.loads(workflow_output)
+
     samplesheet_locations = [Path(samplesheet.get("location"))
                              for samplesheet in workflow_output['split_sheets']]
 
@@ -201,6 +205,8 @@ def get_run_xml_files_from_bcl_convert_workflow(bcl_convert_input):
     :param bcl_convert_input:
     :return:
     """
+
+    bcl_convert_input = json.loads(bcl_convert_input)
 
     bcl_input_dir = bcl_convert_input['bcl_input_directory']['location']
 

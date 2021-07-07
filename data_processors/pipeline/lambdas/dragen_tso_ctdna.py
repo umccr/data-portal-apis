@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 # Data portal imports
 from data_portal.models import Workflow
 from data_processors.pipeline import services
-from data_processors.pipeline.constant import WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
 
 # Utils imports

@@ -6,12 +6,14 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
+from utils import libssm
 from data_portal.models import Batch, BatchRun, SequenceRun, Workflow, LabMetadata, LabMetadataPhenotype, \
     LabMetadataType
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import wes_handler, fastq_list_row, orchestrator
 from data_processors.pipeline.orchestration import dragen_tso_ctdna_step
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 tn_mock_subject_id = "SBJ00001"
@@ -32,13 +34,19 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
         self.verify_local()
 
         mock_bcl_workflow: Workflow = WorkflowFactory()
+        wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
 
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
+        mock_wfl_run.input = json.loads(libssm.get_ssm_param(wfl_helper.get_ssm_key_input()))
+        mock_wfl_run.input['bcl_input_directory'] = {
+            "class": "Directory",
+            "location": "gds://bssh-path/Runs/210701_A01052_0055_AH7KWGDSX2_r.abc123456"
+        }
         mock_wfl_run.output = {
-            "main/fastq_list_rows": [
+            "fastq_list_rows": [
                 {
                     "rgid": "CATGCGAT.4",
                     "rglb": "UnknownLibrary",
@@ -63,6 +71,17 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
                         "size": 38716143739
                     }
                 }
+            ],
+            "split_sheets": [
+                              {
+                                "location": "gds://umccr-fastq-data-prod/210701_A01052_0055_AH7KWGDSX2/SampleSheet.ctDNA_ctTSO.csv",
+                                "basename": "SampleSheet.ctDNA_ctTSO.csv",
+                                "nameroot": "SampleSheet.ctDNA_ctTSO",
+                                "nameext": ".csv",
+                                "class": "File",
+                                "size": 1804,
+                                "http://commonwl.org/cwltool#generation": 0
+                              }
             ]
         }
 
