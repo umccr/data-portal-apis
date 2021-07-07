@@ -212,7 +212,7 @@ def get_run_xml_files_from_bcl_convert_workflow(bcl_convert_input):
 
     bcl_input_dir = bcl_convert_input['bcl_input_directory']['location']
 
-    return Path(bcl_input_dir) / "RunInfo.xml", Path(bcl_input_dir) / "RunParameters.xml"
+    return str(Path(bcl_input_dir) / "RunInfo.xml"), str(Path(bcl_input_dir) / "RunParameters.xml")
 
 
 
