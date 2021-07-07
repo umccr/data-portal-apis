@@ -36,7 +36,7 @@ def perform(this_sqr, this_workflow):
     # register a new batch run for this_batch run step
     this_batch_run = batch_srv.skip_or_create_batch_run(
         batch=this_batch,
-        run_step=WorkflowType.CTTSO.value.upper()
+        run_step=WorkflowType.DRAGEN_TSO_CTDNA.value.upper()
     )
     if this_batch_run is None:
         # skip the request if there is on going existing batch_run for the same batch run step

@@ -81,7 +81,7 @@ class WorkflowHelper(Helper):
             seq_run_id = kwargs['seq_run_id']
             return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{seq_run_id}__{utc_now_ts}"
         # Secondary analysis
-        elif self.type in [ WorkflowType.DRAGEN_WGS_QC, WorkflowType.CTTSO ]:
+        elif self.type in [ WorkflowType.DRAGEN_WGS_QC, WorkflowType.DRAGEN_TSO_CTDNA ]:
             seq_name = kwargs['seq_name']
             seq_run_id = kwargs['seq_run_id']
             sample_name = kwargs['sample_name']
