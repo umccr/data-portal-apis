@@ -110,7 +110,10 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
             logger.info(f"BATCH: {b}")
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
-        self.assertTrue(BatchRun.objects.all()[0].running)
+        tso_ctdna_batch_runs = [batchrun
+                                for batchrun in BatchRun.objects.all()
+                                if batchrun.step == "DRAGEN_TSO_CTDNA"]
+        self.assertTrue(tso_ctdna_batch_runs[0].running)
 
     def test_dragen_tso_ctdna_none(self):
         """
@@ -152,7 +155,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_prepare_dragen_tso_ctdna_jobs(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_prepare_dragen_tso_ctdna_jobs
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepIntegrationTests.test_prepare_dragen_tso_ctdna_jobs
         """
 
         # --- Setup these values
