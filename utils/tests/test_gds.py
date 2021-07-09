@@ -1,6 +1,5 @@
 import csv
 import json
-import logging
 import os
 from contextlib import closing
 from tempfile import NamedTemporaryFile
@@ -9,33 +8,15 @@ from unittest import TestCase, skip
 
 import requests
 from libica.openapi import libgds
-from mockito import unstub, when, mock
+from mockito import when, mock
 
 from utils import gds
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+from utils.tests.test_ica import IcaUnitTests, logger
 
 gds_path = "gds://umccr-fastq-data-dev/200612_A01052_0017_BH5LYWDSXY/TSO-DNA_TSODNA/UMCCR/PTC_TSO200609VD_L2000552_S1_L003_R1_001.fastq.gz"
 
 
-class GdsUnitTests(TestCase):
-
-    def setUp(self) -> None:
-        super(GdsUnitTests, self).setUp()
-        os.environ['ICA_BASE_URL'] = "http://localhost"
-        os.environ['ICA_ACCESS_TOKEN'] = "mock"
-
-    def tearDown(self) -> None:
-        del os.environ['ICA_BASE_URL']
-        del os.environ['ICA_ACCESS_TOKEN']
-        unstub()
-
-    def verify_local(self):
-        logger.info(f"ICA_BASE_URL={os.getenv('ICA_BASE_URL')}")
-        assert os.environ['ICA_BASE_URL'] == "http://localhost"
-        assert os.environ['ICA_ACCESS_TOKEN'] == "mock"
-        self.assertEqual(os.environ['ICA_BASE_URL'], "http://localhost")
+class GdsUnitTests(IcaUnitTests):
 
     def test_parse_gds_path(self):
         """

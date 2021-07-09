@@ -6,13 +6,15 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Batch, BatchRun, SequenceRun, Workflow, LabMetadata, LabMetadataPhenotype, \
-    LabMetadataType
+from data_portal.models import Batch, BatchRun, Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType
 from data_portal.tests.factories import WorkflowFactory, TestConstant
-from data_processors.pipeline.domain.workflow import WorkflowStatus
-from data_processors.pipeline.lambdas import wes_handler, fastq_list_row, orchestrator
-from data_processors.pipeline.orchestration import dragen_wgs_qc_step
+from data_processors.pipeline.domain.batch import Batcher
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
+from data_processors.pipeline.lambdas import orchestrator
+from data_processors.pipeline.orchestration import dragen_wgs_qc_step, fastq_update_step
+from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
+from utils import wes
 
 tn_mock_subject_id = "SBJ00001"
 mock_library_id = "LPRJ200438"
@@ -32,6 +34,13 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         self.verify_local()
 
         mock_bcl_workflow: Workflow = WorkflowFactory()
+        mock_bcl_workflow.input = json.dumps({
+            'bcl_input_directory': {
+                "class": "Directory",
+                "location": "gds://bssh-path/Runs/210701_A01052_0055_AH7KWGDSX2_r.abc123456"
+            }
+        })
+        mock_bcl_workflow.save()
 
         mock_wfl_run = libwes.WorkflowRun()
         mock_wfl_run.id = TestConstant.wfr_id.value
@@ -63,6 +72,17 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
                         "size": 38716143739
                     }
                 }
+            ],
+            "split_sheets": [
+                {
+                    "location": "gds://umccr-fastq-data-prod/210701_A01052_0055_AH7KWGDSX2/SampleSheet.ctDNA_ctTSO.csv",
+                    "basename": "SampleSheet.ctDNA_ctTSO.csv",
+                    "nameroot": "SampleSheet.ctDNA_ctTSO",
+                    "nameext": ".csv",
+                    "class": "File",
+                    "size": 1804,
+                    "http://commonwl.org/cwltool#generation": 0
+                }
             ]
         }
 
@@ -92,7 +112,9 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
             logger.info(f"BATCH: {b}")
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
-        self.assertTrue(BatchRun.objects.all()[0].running)
+
+        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.name]
+        self.assertTrue(wgs_qc_batch_runs[0].running)
 
     def test_dragen_wgs_qc_none(self):
         """
@@ -137,68 +159,61 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepIntegrationTests.test_prepare_dragen_wgs_qc_jobs
         """
 
-        # --- Setup these values
+        # --- pick one successful BCL Convert run in development project
 
-        bssh_run_id = "r.Uvlx2DEIME-KH0BRyF9XBg"
-        bssh_run_name = "200612_A01052_0017_BH5LYWDSXY"
-        bssh_run_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg"
-        bssh_run_volume = "umccr-raw-sequence-data-dev"
-        bssh_samplesheet_name = "SampleSheet.csv"
-        bcl_convert_wfr_id = "wfr.81cf25d7226a4874be43e4b15c1f5687"
+        # FIXME required to switch PROD `export AWS_PROFILE=prod` as no validation run data avail in DEV yet
+        #   use `ica workflows runs get wfr.xxx` to see run details
+        bcl_convert_wfr_id = "wfr.18210c790f30452992c5fd723521f014"
+        total_jobs_to_eval = 8
 
-        # --- Get pipeline state
+        # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 
-        bcl_convert_run = wes_handler.get_workflow_run({'wfr_id': bcl_convert_wfr_id}, None)
+        # first --
+        # - we need metadata!
+        # - populate LabMetadata tables in test db
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({'sheet': "2020"}, None)
+        labmetadata.scheduled_update_handler({'sheet': "2021"}, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
 
-        print('-' * 32)
+        # second --
+        # - we need to have BCL Convert workflow in db
+        # - WorkflowFactory also create related fixture sub factory SequenceRunFactory and linked them
+        mock_bcl_convert: Workflow = WorkflowFactory()
 
-        fastq_list = fastq_list_row.handler({
-            'fastq_list_rows': bcl_convert_run['output']['fastq_list_rows'],
-            'seq_name': bssh_run_name
-        }, None)
+        # third --
+        # - grab workflow run from WES endpoint
+        # - sync input and output attributes to our mock BCL Convert workflow in db
+        bcl_convert_run = wes.get_run(bcl_convert_wfr_id, to_dict=True)
+        mock_bcl_convert.input = json.dumps(bcl_convert_run['input'])
+        mock_bcl_convert.output = json.dumps(bcl_convert_run['output'])
+        mock_bcl_convert.save()
 
-        # --- Make mock pipeline state in test db
+        # fourth --
+        # - replay FastqListRow update step after BCL Convert workflow succeeded
+        fastq_update_step.perform(mock_bcl_convert)
 
-        mock_batch = Batch(name="Test", created_by="Test", context_data=json.dumps(fastq_list))
-        mock_batch.save()
-
-        mock_batch_run = BatchRun(batch=mock_batch, step="Test")
-        mock_batch_run.save()
-
-        mock_sqr_run = SequenceRun(
-            run_id=bssh_run_id,
-            date_modified=make_aware(datetime.utcnow()),
-            status="PendingAnalysis",
-            instrument_run_id=bssh_run_name,
-            gds_folder_path=bssh_run_path,
-            gds_volume_name=bssh_run_volume,
-            reagent_barcode="NV9999999-RGSBS",
-            v1pre3_id="666666",
-            acl=["wid:acgtacgt-9999-38ed-99fa-94fe79523959"],
-            flowcell_barcode="BARCODEEE",
-            sample_sheet_name=bssh_samplesheet_name,
-            api_url=f"https://ilmn/v2/runs/r.ACGTlKjDgEy099ioQOeOWg",
-            name=bssh_run_name,
-            msg_attr_action="statuschanged",
-            msg_attr_action_type="bssh.runs",
-            msg_attr_action_date="2020-05-09T22:17:10.815Z",
-            msg_attr_produced_by="BaseSpaceSequenceHub"
+        # fifth --
+        # - we also need Batch and BatchRun since DRAGEN_WGS_QC workflows (jobs) are running in batch manner
+        # - we will use Batcher to create them, just like in dragen_wgs_qc_step.perform()
+        batcher = Batcher(
+            workflow=mock_bcl_convert,
+            run_step=WorkflowType.DRAGEN_WGS_QC.value.upper(),
+            batch_srv=batch_srv,
+            fastq_srv=fastq_srv,
+            logger=logger
         )
-        mock_sqr_run.save()
 
         print('-'*32)
         logger.info("PREPARE DRAGEN_WGS_QC JOBS:")
 
-        job_list = dragen_wgs_qc_step.prepare_dragen_wgs_qc_jobs(
-            this_batch=mock_batch,
-            this_batch_run=mock_batch_run,
-            this_sqr=mock_sqr_run,
-        )
+        job_list = dragen_wgs_qc_step.prepare_dragen_wgs_qc_jobs(batcher)
 
         print('-'*32)
         logger.info("JOB LIST JSON:")
         print()
         print(json.dumps(job_list))
         print()
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
         self.assertIsNotNone(job_list)
-        self.assertEqual(len(job_list), 8)
+        self.assertEqual(len(job_list), total_jobs_to_eval)

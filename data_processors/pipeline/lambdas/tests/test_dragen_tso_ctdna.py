@@ -5,8 +5,8 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Workflow, SequenceRun, BatchRun
-from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchRunFactory
+from data_portal.models import Workflow, SequenceRun, BatchRun, Batch
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import dragen_tso_ctdna
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
@@ -134,7 +134,14 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_tso_ctdna.DragenTsoCtDnaTests.test_handler_skipped
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
-        mock_batch_run: BatchRun = BatchRunFactory()
+        mock_batch: Batch = BatchFactory()
+        mock_batch_run: BatchRun = BatchRun(
+            batch=mock_batch,
+            step=WorkflowType.DRAGEN_TSO_CTDNA.name,
+            running=True,
+            notified=True
+        )
+        mock_batch_run.save()
 
         wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_TSO_CTDNA)
 
@@ -142,7 +149,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         mock_dragen_tso_ctdna.type_name = WorkflowType.DRAGEN_TSO_CTDNA.name
         mock_dragen_tso_ctdna.wfl_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
         mock_dragen_tso_ctdna.version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
-        mock_dragen_tso_ctdna.sample_name = "SAMPLE_NAME"
+        mock_dragen_tso_ctdna.sample_name = "sample_name"
         mock_dragen_tso_ctdna.sequence_run = mock_sqr
         mock_dragen_tso_ctdna.batch_run = mock_batch_run
         mock_dragen_tso_ctdna.start = make_aware(datetime.utcnow())
@@ -186,6 +193,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
             },
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
+            "batch_run_id": mock_batch_run.id,
         }, None)
 
         logger.info("-" * 32)

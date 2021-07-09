@@ -64,6 +64,17 @@ def create_or_update_fastq_list_row(fastq_list_row: dict, sequence_run: Sequence
 
 
 @transaction.atomic
+def get_fastq_list_row_by_sequence_name(sequence_name):
+    qs = FastqListRow.objects.filter(sequence_run__name__iexact=sequence_name)
+    if qs.exists():
+        fqlr_list = []
+        for fqlr in qs.all():
+            fqlr_list.append(fqlr.to_dict())
+        return fqlr_list
+    return None
+
+
+@transaction.atomic
 def get_fastq_list_row_by_rgid(rgid):
     try:
         fastq_list_row = FastqListRow.objects.get(rgid=rgid)

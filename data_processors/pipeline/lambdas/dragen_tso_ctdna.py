@@ -11,21 +11,16 @@ django.setup()
 
 # ---
 
-# Standards
 import copy
 import logging
-from datetime import datetime, timezone
 
-# Data portal imports
 from data_portal.models import Workflow
-from data_processors.pipeline import services
+from data_processors.pipeline.services import sequence_srv, batch_srv, workflow_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
 
-# Utils imports
 from utils import libjson, libssm, libdt
 
-# Set loggers
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -100,6 +95,8 @@ def handler(event, context) -> dict:
           "class": "File",
           "location": "path/to/dir/RunParameters.xml"
         },
+        "seq_run_id": "sequence run id",
+        "seq_name": "sequence run name",
         "batch_run_id": "batch run id",
     }
 
@@ -135,10 +132,10 @@ def handler(event, context) -> dict:
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
-    sqr = services.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
-    batch_run = services.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
+    sqr = sequence_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
+    batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
-    matched_runs = services.search_matching_runs(
+    matched_runs = workflow_srv.search_matching_runs(
         type_name=WorkflowType.DRAGEN_TSO_CTDNA.name,
         wfl_id=workflow_id,
         version=workflow_version,
@@ -184,7 +181,7 @@ def handler(event, context) -> dict:
         'workflow_input': workflow_input,
     }, context)
 
-    workflow: Workflow = services.create_or_update_workflow(
+    workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
@@ -204,7 +201,7 @@ def handler(event, context) -> dict:
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
-        'tso500_sample_objs': workflow.tso500_samples,
+        'sample_name': workflow.sample_name,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
