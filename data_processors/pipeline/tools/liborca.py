@@ -54,6 +54,15 @@ def cwl_file_path_as_string_to_dict(file_path):
     return {"class": "File", "location": file_path}
 
 
+def cwl_dir_path_as_string_to_dict(dir_path):
+    """
+    Convert "gds://path/to/dir to {"class": "Directory", "location": "gds://path/to/dir"}
+    :param dir_path:
+    :return:
+    """
+    return {"class": "Directory", "location": dir_path}
+
+
 def get_run_number_from_run_name(run_name: str) -> int:
     return int(run_name.split('_')[2])
 

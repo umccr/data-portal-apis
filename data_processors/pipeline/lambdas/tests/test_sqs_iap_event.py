@@ -548,7 +548,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         )
 
         self.assertEqual(1, Workflow.objects.all().count())
-        self.assertEqual(1, BatchRun.objects.count())
+        self.assertTrue(BatchRun.objects.count() > 1)
 
         logger.info(f"-"*32)
         for wfl in Workflow.objects.all():

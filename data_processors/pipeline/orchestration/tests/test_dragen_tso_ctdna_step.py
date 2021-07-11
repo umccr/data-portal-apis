@@ -6,12 +6,13 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Batch, BatchRun, Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType
+from data_portal.models import Batch, BatchRun, Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType, \
+    LabMetadataAssay
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.lambdas import orchestrator
-from data_processors.pipeline.orchestration import dragen_wgs_qc_step, fastq_update_step
+from data_processors.pipeline.orchestration import fastq_update_step, dragen_tso_ctdna_step
 from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 from utils import wes
@@ -22,14 +23,56 @@ mock_sample_id = "PRJ200438"
 mock_sample_name = f"{mock_sample_id}_{mock_library_id}"
 
 
-class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
+def _mock_bcl_convert_output():
+    return {
+        "fastq_list_rows": [
+            {
+                "rgid": "CATGCGAT.4",
+                "rglb": "UnknownLibrary",
+                "rgsm": mock_sample_name,
+                "lane": 4,
+                "read_1": {
+                    "class": "File",
+                    "basename": f"{mock_sample_name}_S1_L004_R1_001.fastq.gz",
+                    "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R1_001.fastq.gz",
+                    "nameroot": f"{mock_sample_name}_S1_L004_R1_001.fastq",
+                    "nameext": ".gz",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "size": 16698849950
+                },
+                "read_2": {
+                    "class": "File",
+                    "basename": f"{mock_sample_name}_S1_L004_R2_001.fastq.gz",
+                    "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R2_001.fastq.gz",
+                    "nameroot": f"{mock_sample_name}_S1_L004_R2_001.fastq",
+                    "nameext": ".gz",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "size": 38716143739
+                }
+            }
+        ],
+        "split_sheets": [
+            {
+                "location": "gds://umccr-fastq-data-prod/210701_A01052_0055_AH7KWGDSX2/SampleSheet.ctDNA_ctTSO.csv",
+                "basename": "SampleSheet.ctDNA_ctTSO.csv",
+                "nameroot": "SampleSheet.ctDNA_ctTSO",
+                "nameext": ".csv",
+                "class": "File",
+                "size": 1804,
+                "http://commonwl.org/cwltool#generation": 0
+            }
+        ]
+    }
+
+
+class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
-        super(DragenWgsQcStepUnitTests, self).setUp()
+        super(DragenTsoCtDnaStepUnitTests, self).setUp()
 
-    def test_dragen_wgs_qc(self):
+    def test_dragen_tso_ctdna(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepUnitTests.test_dragen_wgs_qc
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_dragen_tso_ctdna
         """
         self.verify_local()
 
@@ -46,45 +89,7 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         mock_wfl_run.id = TestConstant.wfr_id.value
         mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
         mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
-        mock_wfl_run.output = {
-            "main/fastq_list_rows": [
-                {
-                    "rgid": "CATGCGAT.4",
-                    "rglb": "UnknownLibrary",
-                    "rgsm": mock_sample_name,
-                    "lane": 4,
-                    "read_1": {
-                        "class": "File",
-                        "basename": f"{mock_sample_name}_S1_L004_R1_001.fastq.gz",
-                        "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R1_001.fastq.gz",
-                        "nameroot": f"{mock_sample_name}_S1_L004_R1_001.fastq",
-                        "nameext": ".gz",
-                        "http://commonwl.org/cwltool#generation": 0,
-                        "size": 16698849950
-                    },
-                    "read_2": {
-                        "class": "File",
-                        "basename": f"{mock_sample_name}_S1_L004_R2_001.fastq.gz",
-                        "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R2_001.fastq.gz",
-                        "nameroot": f"{mock_sample_name}_S1_L004_R2_001.fastq",
-                        "nameext": ".gz",
-                        "http://commonwl.org/cwltool#generation": 0,
-                        "size": 38716143739
-                    }
-                }
-            ],
-            "split_sheets": [
-                {
-                    "location": "gds://umccr-fastq-data-prod/210701_A01052_0055_AH7KWGDSX2/SampleSheet.ctDNA_ctTSO.csv",
-                    "basename": "SampleSheet.ctDNA_ctTSO.csv",
-                    "nameroot": "SampleSheet.ctDNA_ctTSO",
-                    "nameext": ".csv",
-                    "class": "File",
-                    "size": 1804,
-                    "http://commonwl.org/cwltool#generation": 0
-                }
-            ]
-        }
+        mock_wfl_run.output = _mock_bcl_convert_output()
 
         workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
         workflow_version.id = TestConstant.wfv_id.value
@@ -96,7 +101,8 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         mock_labmetadata_tumor.subject_id = tn_mock_subject_id
         mock_labmetadata_tumor.library_id = mock_library_id
         mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
-        mock_labmetadata_tumor.type = LabMetadataType.WGS.value
+        mock_labmetadata_tumor.type = LabMetadataType.CT_DNA.value
+        mock_labmetadata_tumor.assay = LabMetadataAssay.CT_TSO.value
         mock_labmetadata_tumor.save()
 
         result = orchestrator.handler({
@@ -113,12 +119,12 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
 
-        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.name]
-        self.assertTrue(wgs_qc_batch_runs[0].running)
+        tso_ctdna_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_TSO_CTDNA.name]
+        self.assertTrue(tso_ctdna_batch_runs[0].running)
 
-    def test_dragen_wgs_qc_none(self):
+    def test_dragen_tso_ctdna_none(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepUnitTests.test_dragen_wgs_qc_none
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_dragen_tso_ctdna_none
 
         Similar to ^^ test case but BCL Convert output is None
         """
@@ -146,25 +152,52 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(json.JSONDecodeError)
 
+    def test_get_ct_tso_samplesheet_from_bcl_convert_output(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_get_ct_tso_samplesheet_from_bcl_convert_output
+        """
+        mock_bcl_convert_output_json_str = json.dumps(_mock_bcl_convert_output())
+        ss = dragen_tso_ctdna_step.get_ct_tso_samplesheet_from_bcl_convert_output(mock_bcl_convert_output_json_str)
+        logger.info(ss)
+        self.assertTrue(ss.startswith('gds://'))
+        self.assertTrue(ss.endswith('.csv'))
 
-class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
+    def test_get_run_xml_files_from_bcl_convert_workflow(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_get_run_xml_files_from_bcl_convert_workflow
+        """
+        mock_bcl_convert_input = json.dumps({
+            'bcl_input_directory': {
+                "class": "Directory",
+                "location": "gds://bssh-path/Runs/210701_A01052_0055_AH7KWGDSX2_r.abc123456"
+            }
+        })
+
+        xml_files = dragen_tso_ctdna_step.get_run_xml_files_from_bcl_convert_workflow(mock_bcl_convert_input)
+        for file in xml_files:
+            logger.info(file)
+            self.assertTrue(file.startswith('gds://'))
+            self.assertTrue(file.endswith('.xml'))
+
+
+class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
     # uncomment @skip and hit the each test case!
     # and keep decorated @skip after tested
 
     @skip
-    def test_prepare_dragen_wgs_qc_jobs(self):
+    def test_prepare_dragen_tso_ctdna_jobs(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepIntegrationTests.test_prepare_dragen_wgs_qc_jobs
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepIntegrationTests.test_prepare_dragen_tso_ctdna_jobs
         """
 
         # --- pick one successful BCL Convert run in development project
 
         # FIXME required to switch PROD `export AWS_PROFILE=prod` as no validation run data avail in DEV yet
         #   use `ica workflows runs get wfr.xxx` to see run details
-        bcl_convert_wfr_id = "wfr.18210c790f30452992c5fd723521f014"
-        total_jobs_to_eval = 8
+        bcl_convert_wfr_id = "wfr.41eda23e48a04cdca71b2875686c2439"
+        total_jobs_to_eval = 15
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 
@@ -198,16 +231,16 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # - we will use Batcher to create them, just like in dragen_wgs_qc_step.perform()
         batcher = Batcher(
             workflow=mock_bcl_convert,
-            run_step=WorkflowType.DRAGEN_WGS_QC.value.upper(),
+            run_step=WorkflowType.DRAGEN_TSO_CTDNA.value.upper(),
             batch_srv=batch_srv,
             fastq_srv=fastq_srv,
             logger=logger
         )
 
         print('-'*32)
-        logger.info("PREPARE DRAGEN_WGS_QC JOBS:")
+        logger.info("PREPARE DRAGEN_TSO_CTDNA JOBS:")
 
-        job_list = dragen_wgs_qc_step.prepare_dragen_wgs_qc_jobs(batcher)
+        job_list = dragen_tso_ctdna_step.prepare_dragen_tso_ctdna_jobs(batcher)
 
         print('-'*32)
         logger.info("JOB LIST JSON:")
