@@ -104,7 +104,7 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
 
         job = {
             "library_id": f"{rglb}",
-            "fastq_list_rows": rglb_df.to_json(orient="records"),
+            "fastq_list_rows": rglb_df.to_dict(orient="records"),
             "seq_run_id": batcher.sqr.run_id if batcher.sqr else None,
             "seq_name": batcher.sqr.name if batcher.sqr else None,
             "batch_run_id": int(batcher.batch_run.id)

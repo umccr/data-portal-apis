@@ -126,7 +126,7 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
                 "sample_type": "DNA",
                 "pair_id": f"{rgsm}"
             },
-            "fastq_list_rows": rglb_df.to_json(orient="records"),
+            "fastq_list_rows": rglb_df.to_dict(orient="records"),
             "samplesheet": liborca.cwl_file_path_as_string_to_dict(samplesheet),
             "run_info_xml": liborca.cwl_file_path_as_string_to_dict(run_info_xml),
             "run_parameters_xml": liborca.cwl_file_path_as_string_to_dict(run_parameters_xml),
