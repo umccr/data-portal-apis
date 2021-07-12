@@ -103,7 +103,7 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
             continue
 
         job = {
-            "sample_name": f"{rgsm}_{rglb}",
+            "library_id": f"{rglb}",
             "fastq_list_rows": rglb_df.to_json(orient="records"),
             "seq_run_id": batcher.sqr.run_id if batcher.sqr else None,
             "seq_name": batcher.sqr.name if batcher.sqr else None,

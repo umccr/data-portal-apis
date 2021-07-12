@@ -22,7 +22,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         mock_sqr: SequenceRun = SequenceRunFactory()
 
         workflow: dict = dragen_wgs_qc.handler({
-            "sample_name": "SAMPLE_NAME",
+            "library_id": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -67,7 +67,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
         workflow: dict = dragen_wgs_qc.handler({
-            "sample_name": "SAMPLE_NAME",
+            "library_id": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -116,7 +116,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         mock_dragen_wgs_qc.save()
 
         result: dict = dragen_wgs_qc.handler({
-            "sample_name": "SAMPLE_NAME",
+            "library_id": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -154,7 +154,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         mock_sqr: SequenceRun = SequenceRunFactory()
 
         mock_job = {
-            "sample_name": "SAMPLE_NAME",
+            "library_id": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
