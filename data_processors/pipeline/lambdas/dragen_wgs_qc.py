@@ -108,7 +108,7 @@ def handler(event, context) -> dict:
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input["output_file_prefix"] = f"{library_id}"
-    workflow_input["output_directory"] = f"{library_id}_dragen_qc"
+    workflow_input["output_directory"] = f"{library_id}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
 
     # read workflow id and version from parameter store
