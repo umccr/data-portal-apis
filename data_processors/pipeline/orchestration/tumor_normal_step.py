@@ -32,10 +32,13 @@ def perform(this_sqr):
     )
     subjects = list()
     if len(running) == 0:
+        logger.info("All QC workflows finished, proceeding to T/N preparation")
         # determine which samples are available for T/N wokflow
         subjects = metadata_srv.get_subjects_from_runs(succeeded)
+        logger.info(f"Preparing T/N workflows for subjects {subjects}")
         job_list = prepare_tumor_normal_jobs(subjects=subjects)
         if job_list:
+            logger.info(F"Submitting {len(job_list)} T/N jobs.")
             queue_arn = libssm.get_ssm_param(SQS_TN_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
     else:

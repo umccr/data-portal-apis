@@ -21,6 +21,7 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_workflow: Workflow):
+    logger.info(f"Preparing {WorkflowType.DRAGEN_WGS_QC.value} workflows")
 
     batcher = Batcher(
         workflow=this_workflow,

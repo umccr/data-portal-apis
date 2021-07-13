@@ -101,6 +101,7 @@ def next_step(this_workflow: Workflow, context):
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        logger.info(f"Received successful BCL Convert workflow notification")
 
         # Secondary analysis stage
 
@@ -108,15 +109,19 @@ def next_step(this_workflow: Workflow, context):
         if this_workflow.output is None:
             raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
 
+        logger.info("Updating FASTQ entries (FastqListRows)")
         fastq_update_step.perform(this_workflow)
 
+        logger.info("Updating Google LIMS")
         google_lims_update_step.perform(this_workflow)
 
+        logger.info("Proceeding to next workflows")
         return [
             dragen_wgs_qc_step.perform(this_workflow),
             dragen_tso_ctdna_step.perform(this_workflow),
         ]
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
+        logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
         return tumor_normal_step.perform(this_sqr)
