@@ -151,14 +151,14 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
     AgSsCRE: Agilent SureSelect Clinical Research Exome -> Set Adapters when running on MiSeq
     TSORNA: TSO500 (solid) RNA -> Set adapters, min read length and enable trimming
     TSODNA: TSO500 (solid) DNA -> Set adapters, min read length and enable trimming
-    10X-5prime-expression: 10X -> Set Nextera adapters
-    10X-3prime-expression: 10X -> Set Nextera adapters
-    10X-VDJ-TCR -> Set Nextera adapters
-    10X-CITE-feature -> Set Nextera adapters
-    10X-CITE-hashing -> Set Nextera adapters
-    10X-ATAC -> Set Nextera adapters
-    10X-VDJ -> Set Nextera adapters
-    10X-CNV -> Set Nextera adapters
+    10X-5prime-expression: 10X -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-3prime-expression: 10X -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-VDJ-TCR -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-CITE-feature -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-CITE-hashing -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-ATAC -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-VDJ -> Set create_index_reads, update trimmed_read_length and mask short reads
+    10X-CNV -> Set create_index_reads, update trimmed_read_length and mask short reads
     ctTSO: TSO500 (liquid) -> Set adapters, min read length and enable trimming
     PCR-Free-Tagmentation -> Set PCR-Free-Tagmentation Adapters
     """
@@ -166,11 +166,14 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
     # First start with if type == 10X -> return nextera adapters
     if sample_type == "10X":
         # Return nextera adapter
-        settings = ADAPTERS_BY_KIT["nextera"].copy()
+        # settings = ADAPTERS_BY_KIT["nextera"].copy()  # FIXME - 10X adapter settings based on kit used
+        # See: https://kb.10xgenomics.com/hc/en-us/articles/360061619811-Why-are-different-index-plates-required-for-different-library-types-
         # We also wish to keep the indexes as reads
-        settings["create_fastq_for_index_reads"] = True
-        settings["minimum_trimmed_read_length"] = 8
-        settings["mask_short_reads"] = 8
+        settings = {
+          "create_fastq_for_index_reads": True,
+          "minimum_trimmed_read_length": 8,
+          "mask_short_reads": 8
+        }
         return settings
 
     # Then if assay is TSO -> return TSO parameters
