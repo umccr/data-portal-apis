@@ -5,7 +5,7 @@ You may wish to model Domain objects here. Domain class (object) are not always 
 persistence entities (i.e. Django ORM models).
 
 Think of Struct (ala C/Rust)! Or, some template Class or complex data type (ala Java) that you'd like to model.
-These could just be DTO (Data Transfer Object) or data carrier (ala Plain Object Java Object _POJO_ manner) instances.
+These could just be DTO (Data Transfer Object) or data carrier (ala Plain Old Java Object _POJO_ manner) instances.
 Or, also can contain lot of methods and functions to enrich Domain behaviour.
 
 Please note that in Python, there isn't strict rule or clear distinction on how to approach modelling a Domain problem.
