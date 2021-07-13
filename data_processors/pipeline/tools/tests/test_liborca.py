@@ -51,6 +51,45 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(json.JSONDecodeError)
 
+    def test_parse_bcl_convert_output_split_sheets(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_bcl_convert_output_split_sheets
+        """
+
+        result = liborca.parse_bcl_convert_output_split_sheets(json.dumps({
+            "main/split_sheets": [
+                {
+                    "location": "gds://umccr-fastq-data/ABCD/SampleSheet.WGS_TsqNano.csv",
+                    "basename": "SampleSheet.WGS_TsqNano.csv",
+                    "nameroot": "SampleSheet.WGS_TsqNano",
+                    "nameext": ".csv",
+                    "class": "File",
+                    "size": 1394,
+                    "http://commonwl.org/cwltool#generation": 0
+                },
+            ],
+            "split_sheets": [{'location': "YOU_SHOULD_NOT_SEE_THIS"}]
+        }))
+
+        logger.info("-" * 32)
+        logger.info(f"parse_bcl_convert_output: {json.dumps(result)}")
+
+        self.assertEqual(result[0]['location'], "gds://umccr-fastq-data/ABCD/SampleSheet.WGS_TsqNano.csv")
+
+    def test_parse_bcl_convert_output_split_sheets_error(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_bcl_convert_output_split_sheets_error
+        """
+
+        try:
+            liborca.parse_bcl_convert_output_split_sheets(json.dumps({
+                "split_sheets/main": [{'location': "YOU_SHOULD_NOT_SEE_THIS"}],
+                "split_sheetz": [{'location': "YOU_SHOULD_NOT_SEE_THIS_TOO"}]
+            }))
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(json.JSONDecodeError)
+
     def test_get_run_number_from_run_name(self):
         """
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_get_run_number_from_run_name

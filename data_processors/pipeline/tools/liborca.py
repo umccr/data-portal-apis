@@ -19,19 +19,21 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def parse_bcl_convert_output(output_json: str) -> list:
+def parse_bcl_convert_output(output_json: str, lookup_keys=None) -> list:
     """
-    NOTE: as of BCL Convert CWL workflow version 3.7.5, it uses fastq_list_rows format
-    Given bcl convert workflow output json, return fastq_list_rows
-    See Example IAP Run > Outputs
-    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.84abc203cabd4dc196a6cf9bb49d5f74/3.7.5.md
+    Parse BCL Convert workflow run output and get fastq_list_rows
 
+    :param lookup_keys: List of string to lookup a key from BCL Convert output
     :param output_json: workflow run output in json format
     :return fastq_list_rows: list of fastq list rows in fastq list format
     """
     output: dict = libjson.loads(output_json)
 
-    lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']  # lookup in order, return on first found
+    default_lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']  # lookup in order, return on first found
+
+    if lookup_keys is None:
+        lookup_keys = default_lookup_keys
+
     look_up_key = None
     for k in lookup_keys:
         if k in output.keys():
@@ -39,9 +41,22 @@ def parse_bcl_convert_output(output_json: str) -> list:
             break
 
     if look_up_key is None:
-        raise KeyError(f"Unexpected BCL Convert CWL output format. Expecting one of {lookup_keys}. Found {output.keys()}")
+        raise KeyError(f"Unexpected BCL Convert output format. Expecting one of {lookup_keys}. Found {output.keys()}")
 
     return output[look_up_key]
+
+
+def parse_bcl_convert_output_split_sheets(output_json: str) -> list:
+    """
+    Parse BCL Convert workflow run output and get split_sheets
+
+    :param output_json: workflow run output in json format
+    :return split_sheets: list of split_sheets
+    """
+
+    lookup_keys = ['main/split_sheets', 'split_sheets']  # lookup in order, return on first found
+
+    return parse_bcl_convert_output(output_json, lookup_keys)
 
 
 def cwl_file_path_as_string_to_dict(file_path):

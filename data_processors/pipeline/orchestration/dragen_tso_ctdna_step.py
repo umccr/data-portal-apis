@@ -145,10 +145,10 @@ def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
     Get the gds path containing the samplesheet used for splitting ctTSO samples
     """
 
-    workflow_output = json.loads(workflow_output)
+    split_sheets = liborca.parse_bcl_convert_output_split_sheets(workflow_output)
 
     samplesheet_locations = []
-    for samplesheet in workflow_output['split_sheets']:
+    for samplesheet in split_sheets:
         samplesheet_locations.append(samplesheet['location'])
 
     for samplesheet_location in samplesheet_locations:
