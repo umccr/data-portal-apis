@@ -119,6 +119,10 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
         samplesheet = get_ct_tso_samplesheet_from_bcl_convert_output(batcher.workflow.output)
         run_info_xml, run_parameters_xml = get_run_xml_files_from_bcl_convert_workflow(batcher.workflow.input)
 
+        # Update read 1 and read 2 strings to cwl file paths
+        rglb_df["read_1"] = rglb_df["read_1"].apply(liborca.cwl_file_path_as_string_to_dict)
+        rglb_df["read_2"] = rglb_df["read_2"].apply(liborca.cwl_file_path_as_string_to_dict)
+
         job = {
             "tso500_sample": {
                 "sample_id": f"{samplesheet_sample_id}",  # This must match the sample sheet
