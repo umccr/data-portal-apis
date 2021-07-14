@@ -69,7 +69,7 @@ def get_fastq_list_row_by_sequence_name(sequence_name):
     if qs.exists():
         fqlr_list = []
         for fqlr in qs.all():
-            fqlr_list.append(fqlr.to_dict())
+            fqlr_list.append(fqlr.as_dict())
         return fqlr_list
     return None
 

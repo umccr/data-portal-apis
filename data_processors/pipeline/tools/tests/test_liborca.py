@@ -103,3 +103,24 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         """
         run_date = liborca.get_timestamp_from_run_name(TestConstant.sqr_name.value)
         self.assertEqual(run_date, "2020-05-08")
+
+    def test_cwl_file_path_as_string_to_dict(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_cwl_file_path_as_string_to_dict
+        """
+        result = liborca.cwl_file_path_as_string_to_dict("gds://this/path/to.fastq.gz")
+        logger.info(result)
+        self.assertTrue(isinstance(result, dict))
+        self.assertTrue("class" in result.keys())
+
+    def test_cwl_file_path_as_string_to_dict_alt(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_cwl_file_path_as_string_to_dict_alt
+        """
+        result = liborca.cwl_file_path_as_string_to_dict({
+            'class': "File",
+            'location': "gds://this/path/to.fastq.gz"
+        })
+        logger.info(result)
+        self.assertTrue(isinstance(result, dict))
+        self.assertTrue("class" in result.keys())
