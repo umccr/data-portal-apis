@@ -14,6 +14,7 @@ from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WGS_QC_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.services import batch_srv, fastq_srv
+from data_processors.pipeline.tools import liborca
 from utils import libssm, libsqs, libjson
 
 logger = logging.getLogger(__name__)
@@ -102,6 +103,10 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
         if lib_metadata.type.lower() != LabMetadataType.WGS.value.lower():
             logger.warning(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. 'WGS' != '{lib_metadata.type}'.")
             continue
+
+        # Update read 1 and read 2 strings to cwl file paths
+        rglb_df["read_1"] = rglb_df["read_1"].apply(liborca.cwl_file_path_as_string_to_dict)
+        rglb_df["read_2"] = rglb_df["read_2"].apply(liborca.cwl_file_path_as_string_to_dict)
 
         job = {
             "library_id": f"{rglb}",
