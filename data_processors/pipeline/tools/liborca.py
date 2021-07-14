@@ -66,6 +66,13 @@ def cwl_file_path_as_string_to_dict(file_path):
     :return:
     """
 
+    if isinstance(file_path, dict):
+        keys = file_path.keys()
+        if "class" in keys and "location" in keys:
+            if file_path['class'] == "File":
+                # it seems file_path is already in CWL File object form, return as-is
+                return file_path
+
     return {"class": "File", "location": file_path}
 
 

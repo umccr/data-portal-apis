@@ -552,6 +552,21 @@ class FastqListRow(models.Model):
     def __str__(self):
         return f"RGID: {self.rgid}, RGSM: {self.rgsm}, RGLB: {self.rglb}"
 
+    def as_dict(self):
+        """as-is in dict i.e., no transformation"""
+        d = {
+            "rgid": self.rgid,
+            "rglb": self.rglb,
+            "rgsm": self.rgsm,
+            "lane": self.lane,
+            "read_1": self.read_1,
+            "read_2": self.read_2
+        }
+        return d
+
+    def as_json(self):
+        return json.dumps(self.as_dict())
+
     def to_dict(self):
         dict_obj = {
             "rgid": self.rgid,
