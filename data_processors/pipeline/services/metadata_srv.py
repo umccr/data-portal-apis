@@ -2,11 +2,56 @@ import logging
 from typing import List
 
 from django.db import transaction
+from django.db.models import QuerySet
 
 from data_portal.models import Workflow, LabMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+@transaction.atomic
+def get_metadata_by_library_id(library_id):
+    """Return exact 1 match entry by library_id from Lab Metadata table. None otherwise."""
+    try:
+        meta: LabMetadata = LabMetadata.objects.get(library_id__iexact=library_id)
+        return meta
+    except LabMetadata.DoesNotExist as err:
+        logger.error(f"LabMetadata query for library_id {library_id} did not find any data! {err}")
+        return None
+    except LabMetadata.MultipleObjectsReturned as err:
+        logger.error(f"LabMetadata query for library_id {library_id} found multiple entries! {err}")
+        return None
+
+
+@transaction.atomic
+def filter_metadata_by_library_id(library_id):
+    """Return matching entry(-ies) by library_id from Lab Metadata table. Empty list otherwise."""
+    meta_list = list()
+    qs: QuerySet = LabMetadata.objects.filter(library_id__icontains=library_id)
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
+    return meta_list
+
+
+@transaction.atomic
+def get_metadata_by_sample_name_as_in_samplesheet(sample_name):
+    """
+    Return matching entry(-ies) by sample_name_as_in_samplesheet i.e., sample_name as in sample_id_library_id
+    Library ID also is in its absolute form i.e. with _top(N)/_rerun(N) suffixes
+
+    NOTE:
+    this is not ideal form. we aim to improve this and we should advocate _pure_ Library ID form.
+    however, we have this for the sake of legacy data support.
+
+    :param sample_name:
+    :return: LabMetadata otherwise None
+    """
+    qs: QuerySet = LabMetadata.objects.get_by_sample_library_name(sample_library_name=sample_name)
+    if qs.exists():
+        return qs.get()  # there should be exact match 1 entry only
+    return None
 
 
 @transaction.atomic

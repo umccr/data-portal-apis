@@ -12,6 +12,7 @@ from data_portal.tests.factories import SequenceRunFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import bcl_convert
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
+from data_processors.pipeline.tools import liborca
 from utils import libslack
 
 
@@ -29,7 +30,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         mock_labmetadata.workflow = LabMetadataWorkflow.RESEARCH.value
         mock_labmetadata.save()
 
-        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
+        when(liborca).get_sample_names_from_samplesheet(...).thenReturn(
             [
                 "PTC_EXPn200908LL_L2000001"
             ]
@@ -92,7 +93,7 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         """
 
         # This will fail metadata validation since there exists no samples
-        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
+        when(liborca).get_sample_names_from_samplesheet(...).thenReturn(
             [
                 ""
             ]
@@ -283,24 +284,6 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip
     # export AWS_PROFILE=dev
     # run the test
-
-    @skip
-    def test_get_sample_names_from_samplesheet(self):
-        """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertIntegrationTests.test_get_sample_names_from_samplesheet
-        """
-
-        # SEQ-II validation dataset
-        gds_volume = "umccr-raw-sequence-data-dev"
-        samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
-
-        sample_names = bcl_convert.get_sample_names_from_samplesheet(
-            gds_volume=gds_volume,
-            samplesheet_path=samplesheet_path
-        )
-
-        self.assertIsNotNone(sample_names)
-        self.assertTrue("PTC_SsCRE200323LL_L2000172_topup" in sample_names)
 
     @skip
     def test_get_metadata_df(self):

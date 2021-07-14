@@ -4,7 +4,8 @@ import uuid
 from typing import Union
 
 from django.db import models
-from django.db.models import Max, QuerySet, Q
+from django.db.models import Max, QuerySet, Q, Value
+from django.db.models.functions import Concat
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
@@ -273,6 +274,18 @@ class LabMetadataManager(models.Manager):
         if project:
             qs = qs.filter(project_name__iexact=project)
 
+        return qs
+
+    def get_by_sample_library_name(self, sample_library_name) -> QuerySet:
+        """
+        Here we project (or annotate) virtual attribute called "sample_library_name" which is using database built-in
+        concat function of two existing columns sample_id and library_id.
+
+        :param sample_library_name:
+        :return: QuerySet
+        """
+        qs: QuerySet = self.annotate(sample_library_name=Concat('sample_id', Value('_'), 'library_id'))
+        qs = qs.filter(sample_library_name__iexact=sample_library_name)
         return qs
 
 

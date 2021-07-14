@@ -11,9 +11,15 @@ NOTE: Please retain function into their stateless as much as possible. i.e. in >
 Input and output arguments are typically their Primitive forms such as str, int, list, dict, etc..
 """
 import logging
+import os
+from contextlib import closing
 from datetime import datetime
+from tempfile import NamedTemporaryFile
+from typing import List
 
-from utils import libjson
+from sample_sheet import SampleSheet
+
+from utils import libjson, gds
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -93,3 +99,38 @@ def get_timestamp_from_run_name(run_name: str) -> str:
     date_part = run_name.split('_')[0]
     # convert to format YYYY-MM-DD
     return datetime.strptime(date_part, '%y%m%d').strftime('%Y-%m-%d')
+
+
+def get_library_id_from_sample_name(sample_name: str):
+    # format: samplename_libraryid_extension
+    # we are only interested in the library ID
+    fragments = sample_name.split("_")
+    # if there is an extension, the library ID is the second to last fragment
+    if "_topup" in sample_name or "_rerun" in sample_name:
+        return fragments[-2]
+    # if not, then the library ID is the last fragment
+    return fragments[-1]
+
+
+def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) -> List[str]:
+    if not samplesheet_path.startswith(os.path.sep):
+        samplesheet_path = os.path.sep + samplesheet_path
+    logger.info(f"Extracting sample names from gds://{gds_volume}{samplesheet_path}")
+
+    ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, samplesheet_path)
+    if ntf is None:
+        reason = f"Abort extracting metadata process. " \
+                 f"Can not download sample sheet from GDS: gds://{gds_volume}{samplesheet_path}"
+        logger.error(reason)
+        raise ValueError(reason)
+
+    logger.info(f"Local sample sheet path: {ntf.name}")
+    sample_names = set()
+    with closing(ntf) as f:
+        samplesheet = SampleSheet(f.name)
+        for sample in samplesheet:
+            sample_names.add(sample.Sample_ID)
+
+    logger.info(f"Extracted sample names: {sample_names}")
+
+    return list(sample_names)

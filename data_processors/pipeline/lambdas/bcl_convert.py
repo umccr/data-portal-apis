@@ -3,8 +3,8 @@ try:
 except ImportError:
     pass
 
-import django
 import os
+import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -13,19 +13,16 @@ django.setup()
 
 import copy
 import logging
-from tempfile import NamedTemporaryFile
 from typing import List
 
 import pandas as pd
-from contextlib import closing
 from data_portal.models import Workflow, LabMetadata
-from data_processors.pipeline.services import notification_srv, sequence_srv, workflow_srv
+from data_processors.pipeline.services import notification_srv, sequence_srv, workflow_srv, metadata_srv
 from data_processors.pipeline.domain.config import ICA_GDS_FASTQ_VOL
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, WorkflowHelper
 from data_processors.pipeline.lambdas import wes_handler
-from utils import libjson, libssm, libdt, gds
-from sample_sheet import SampleSheet
-
+from data_processors.pipeline.tools import liborca
+from utils import libjson, libssm, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -213,66 +210,37 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
     return {}
 
 
-# TODO: extract into utils?
-def get_library_id_from_sample_name(sample_name: str):
-    # format: samplename_libraryid_extension
-    # we are only interested in the library ID
-    fragments = sample_name.split("_")
-    # if there is an extension, the library ID is the second to last fragment
-    if "_topup" in sample_name or "_rerun" in sample_name:
-        return fragments[-2]
-    # if not, then the library ID is the last fragment
-    return fragments[-1]
-
-
-# TODO: extract SampleSheet handling/utils into separate module?
-def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) -> List[str]:
-    if not samplesheet_path.startswith(os.path.sep):
-        samplesheet_path = os.path.sep + samplesheet_path
-    logger.info(f"Extracting sample names from gds://{gds_volume}{samplesheet_path}")
-
-    ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, samplesheet_path)
-    if ntf is None:
-        reason = f"Abort extracting metadata process. " \
-                 f"Can not download sample sheet from GDS: gds://{gds_volume}{samplesheet_path}"
-        logger.error(reason)
-        raise ValueError(reason)
-
-    logger.info(f"Local sample sheet path: {ntf.name}")
-    sample_names = set()
-    with closing(ntf) as f:
-        samplesheet = SampleSheet(f.name)
-        for sample in samplesheet:
-            sample_names.add(sample.Sample_ID)
-
-    logger.info(f"Extracted sample names: {sample_names}")
-
-    return list(sample_names)
-
-
 def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
     """Get libraries and metadata associated with this run/SampleSheet"""
 
-    sample_names: List[str] = get_sample_names_from_samplesheet(
+    sample_names: List[str] = liborca.get_sample_names_from_samplesheet(
         gds_volume=gds_volume,
         samplesheet_path=samplesheet_path
     )
 
     metadata_df: pd.DataFrame = pd.DataFrame()
-    for sample_name in sample_names:
-        lib_id = get_library_id_from_sample_name(sample_name)
-        try:
-            meta: LabMetadata = LabMetadata.objects.get(library_id__iexact=lib_id)
-        except LabMetadata.DoesNotExist as err:
-            logger.error(f"LabMetadata query for library_id {lib_id} did not find any data! {err}")
-            return metadata_df
-        except LabMetadata.MultipleObjectsReturned as err:
-            logger.error(f"LabMetadata query for library_id {lib_id} found multiple entries! {err}")
-            return metadata_df
 
-        new_row = {'sample': sample_name, 'type': meta.type, 'assay': meta.assay,
-                   'override_cycles': meta.override_cycles}
+    for sample_name in sample_names:
+        # NOTE: ideally we wish to query with just _pure_ Library ID like so:
+        # library_id = liborca.get_library_id_from_sample_name(sample_name)
+        # single_matched_entry: LabMetadata = metadata_srv.get_metadata_by_library_id(library_id)
+        # all_matched_entries: List[LabMetadata] = metadata_srv.filter_metadata_by_library_id(library_id)
+
+        meta: LabMetadata = metadata_srv.get_metadata_by_sample_name_as_in_samplesheet(sample_name)
+
+        if meta is None:
+            logger.error(f"LabMetadata query for {sample_name} did not find any metadata!")
+            return pd.DataFrame()
+
+        new_row = {
+            'sample': sample_name,
+            'type': meta.type,
+            'assay': meta.assay,
+            'override_cycles': meta.override_cycles
+        }
+
         metadata_df = metadata_df.append(new_row, ignore_index=True)
+
     return metadata_df
 
 

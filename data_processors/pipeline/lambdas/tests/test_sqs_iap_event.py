@@ -12,6 +12,7 @@ from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowTyp
 from data_processors.pipeline.lambdas import sqs_iap_event, bcl_convert
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
+from data_processors.pipeline.tools import liborca
 from utils import libslack, libjson
 
 
@@ -211,7 +212,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         mock_labmetadata_2.workflow = LabMetadataWorkflow.RESEARCH.value
         mock_labmetadata_2.save()
 
-        when(bcl_convert).get_sample_names_from_samplesheet(...).thenReturn(
+        when(liborca).get_sample_names_from_samplesheet(...).thenReturn(
             [
                 "PTC_EXPn200908LL_L2000001",
                 "PTC_EXPn200908LL_L2000001_topup"

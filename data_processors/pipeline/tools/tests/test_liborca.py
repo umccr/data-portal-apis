@@ -1,8 +1,9 @@
 import json
+from unittest import skip
 
 from data_portal.tests.factories import TestConstant
 from data_processors.pipeline.tools import liborca
-from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
+from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
 
 class LibOrcaUnitTests(PipelineUnitTestCase):
@@ -124,3 +125,27 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         logger.info(result)
         self.assertTrue(isinstance(result, dict))
         self.assertTrue("class" in result.keys())
+
+
+class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
+    # Comment @skip
+    # export AWS_PROFILE=dev
+    # run the test
+
+    @skip
+    def test_get_sample_names_from_samplesheet(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_get_sample_names_from_samplesheet
+        """
+
+        # SEQ-II validation dataset
+        gds_volume = "umccr-raw-sequence-data-dev"
+        samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
+
+        sample_names = liborca.get_sample_names_from_samplesheet(
+            gds_volume=gds_volume,
+            samplesheet_path=samplesheet_path
+        )
+
+        self.assertIsNotNone(sample_names)
+        self.assertTrue("PTC_SsCRE200323LL_L2000172_topup" in sample_names)
