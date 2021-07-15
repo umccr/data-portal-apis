@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def perform(this_sqr):
+def perform(this_workflow):
+    this_sqr = this_workflow.sequence_run
+
     # check if all other DRAGEN_WGS_QC workflows for this run have finished
     # if yes we continue to the T/N workflow
     # if not, we wait (until all DRAGEN_WGS_QC workflows have finished)

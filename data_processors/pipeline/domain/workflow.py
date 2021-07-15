@@ -91,3 +91,27 @@ class WorkflowHelper(Helper):
             return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{utc_now_ts}"
         else:
             raise ValueError(f"Unsupported workflow type: {self.type.name}")
+
+
+class WorkflowRule:
+    """
+    WorkflowRule model that check some state must conform in wrapped Workflow. Each rule start with must_XX expression.
+    If rule is passed, return itself back. So that we can perform chain validation. Otherwise, it raise exception and
+    halt the app. It is desirable to halt the execution as continue doing so is harmful to the system.
+    """
+
+    def __init__(self, this_workflow):
+        self.workflow = this_workflow
+
+    def must_associate_sequence_run(self):
+        this_sqr = self.workflow.sequence_run
+        if this_sqr is None:
+            raise ValueError(f"Workflow {self.workflow.type_name} wfr_id: '{self.workflow.wfr_id}' must be associated "
+                             f"with a SequenceRun. SequenceRun is: {this_sqr}")
+        return self
+
+    def must_have_output(self):
+        # use case e.g. bcl convert workflow run must have output in order to continue next step(s)
+        if self.workflow.output is None:
+            raise ValueError(f"Workflow '{self.workflow.wfr_id}' output is None")
+        return self

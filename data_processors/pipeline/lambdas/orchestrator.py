@@ -25,11 +25,11 @@ django.setup()
 import logging
 from typing import List
 
-from data_portal.models import Workflow, SequenceRun
+from data_portal.models import Workflow
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
     dragen_tso_ctdna_step, fastq_update_step
-from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from utils import libjson
 
@@ -109,11 +109,6 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         logger.warning(f"Skip next step as null workflow received")
         return
 
-    this_sqr: SequenceRun = this_workflow.sequence_run
-    if this_sqr is None:
-        raise ValueError(f"Workflow {this_workflow.type_name} wfr_id: '{this_workflow.wfr_id}' must be associated "
-                         f"with a SequenceRun. SequenceRun is: {this_sqr}")
-
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
@@ -121,9 +116,7 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
 
         # Secondary analysis stage
 
-        # bcl convert workflow run must have output in order to continue next step(s)
-        if this_workflow.output is None:
-            raise ValueError(f"Workflow '{this_workflow.wfr_id}' output is None")
+        WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
 
         results = list()
 
@@ -156,12 +149,14 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
         logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
+        WorkflowRule(this_workflow).must_associate_sequence_run()
+
         results = list()
 
         if "TUMOR_NORMAL_STEP" in skip:
             logger.info("Skip performing TUMOR_NORMAL_STEP")
         else:
             logger.info("Performing TUMOR_NORMAL_STEP")
-            results.append(tumor_normal_step.perform(this_sqr))
+            results.append(tumor_normal_step.perform(this_workflow))
 
         return results
