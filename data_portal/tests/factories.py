@@ -6,7 +6,7 @@ import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, \
-    Report, ReportType
+    Report, ReportType, LabMetadata
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -23,6 +23,30 @@ class TestConstant(Enum):
     sample_id = "PRJ210001"
     sample_name_normal = f"{sample_id}_{library_id_normal}"
     sample_name_tumor = f"{sample_id}_{library_id_tumor}"
+
+
+class LabMetadataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LabMetadata
+
+    library_id = TestConstant.library_id_normal.value
+    sample_name = "Ambiguous Sample"
+    sample_id = TestConstant.sample_id.value
+    external_sample_id = "DNA123456"
+    subject_id = "SBJ000001"
+    external_subject_id = "PM1234567"
+    phenotype = "normal"
+    quality = "good"
+    source = "blood"
+    project_name = "CUP"
+    project_owner = "UMCCR"
+    experiment_id = "TSqN123456LL"
+    type = "WGS"
+    assay = "TsqNano"
+    override_cycles = "Y151;I8;I8;Y151"
+    workflow = "clinical"
+    coverage = "40.0"
+    truseqindex = "A09"
 
 
 class S3ObjectFactory(factory.django.DjangoModelFactory):

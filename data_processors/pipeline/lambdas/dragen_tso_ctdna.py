@@ -108,13 +108,10 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.DRAGEN_TSO_CTDNA.name} event")
     logger.info(libjson.dumps(event))
 
-    # Set sequence run id
     seq_run_id = event.get('seq_run_id', None)
     seq_name = event.get('seq_name', None)
-    # Set batch run id
     batch_run_id = event.get('batch_run_id', None)
-    # Get sample name
-    sample_name = event['tso500_sample']['sample_name']
+    library_id = event['library_id']
 
     # Set workflow helper
     wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_TSO_CTDNA)
@@ -139,7 +136,7 @@ def handler(event, context) -> dict:
         type_name=WorkflowType.DRAGEN_TSO_CTDNA.name,
         wfl_id=workflow_id,
         version=workflow_version,
-        sample_name=sample_name,
+        sample_name=library_id,
         sequence_run=sqr,
         batch_run=batch_run
     )
@@ -171,7 +168,7 @@ def handler(event, context) -> dict:
     workflow_run_name = wfl_helper.construct_workflow_name(
         seq_name=seq_name,
         seq_run_id=seq_run_id,
-        sample_name=sample_name
+        sample_name=library_id
     )
 
     wfl_run = wes_handler.launch({
@@ -193,7 +190,7 @@ def handler(event, context) -> dict:
             'start': wfl_run.get('time_started'),
             'end_status': wfl_run.get('status'),
             'sequence_run': sqr,
-            'sample_name': sample_name,
+            'sample_name': library_id,
             'batch_run': batch_run,
         }
     )
@@ -201,7 +198,7 @@ def handler(event, context) -> dict:
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
-        'sample_name': workflow.sample_name,
+        'library_id': workflow.sample_name,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,

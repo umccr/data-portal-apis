@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import QuerySet
 
 from data_portal.models import Workflow, LabMetadata
+from data_processors.pipeline.domain.workflow import WorkflowType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,7 +37,7 @@ def filter_metadata_by_library_id(library_id):
 
 
 @transaction.atomic
-def get_metadata_by_sample_name_as_in_samplesheet(sample_name):
+def get_metadata_by_sample_library_name_as_in_samplesheet(sample_library_name):
     """
     Return matching entry(-ies) by sample_name_as_in_samplesheet i.e., sample_name as in sample_id_library_id
     Library ID also is in its absolute form i.e. with _top(N)/_rerun(N) suffixes
@@ -45,10 +46,10 @@ def get_metadata_by_sample_name_as_in_samplesheet(sample_name):
     this is not ideal form. we aim to improve this and we should advocate _pure_ Library ID form.
     however, we have this for the sake of legacy data support.
 
-    :param sample_name:
+    :param sample_library_name:
     :return: LabMetadata otherwise None
     """
-    qs: QuerySet = LabMetadata.objects.get_by_sample_library_name(sample_library_name=sample_name)
+    qs: QuerySet = LabMetadata.objects.get_by_sample_library_name(sample_library_name=sample_library_name)
     if qs.exists():
         return qs.get()  # there should be exact match 1 entry only
     return None
@@ -74,10 +75,13 @@ def get_subjects_from_runs(workflows: List[Workflow]) -> list:
 
 
 def get_library_id_from_workflow(workflow: Workflow):
-    # extract library ID from DRAGEN_WGS_QC Workflow sample_name
-    # TODO: is there a better way? Could use the fastq_list_row entries of the workflow 'input'
+    # FIXME This may be gone for good. See https://github.com/umccr/data-portal-apis/issues/244
 
-    # remove the first part (sample ID) from the sample_name to get the library ID
-    # NOTE: this may not be exactly the library ID used in the DRAGEN_WGS_QC workflow (stripped off _topup/_rerun), but
-    #       for our use case that does not matter, as we are merging all libs from the same subject anyway
+    # these workflows use library_id
+    if workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() \
+            or workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower():
+        return workflow.sample_name  # << NOTE: this is library_id
+
+    # otherwise assume legacy naming
+    # remove the first part (Sample ID) from the sample_library_name to get the Library ID
     return '_'.join(workflow.sample_name.split('_')[1:])

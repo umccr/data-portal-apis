@@ -13,7 +13,7 @@ from data_portal.models import LabMetadata, LabMetadataPhenotype, LabMetadataWor
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WGS_QC_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
-from data_processors.pipeline.services import batch_srv, fastq_srv
+from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv
 from data_processors.pipeline.tools import liborca
 from utils import libssm, libsqs, libjson
 
@@ -80,28 +80,27 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
 
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
-        lib_metadata: LabMetadata = LabMetadata.objects.get(library_id=rglb)
+        meta: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
         # make sure we have recognised sample (e.g. not undetermined)
-        if not lib_metadata:
-            logger.error(
-                f"SKIP DRAGEN_WGS_QC workflow for {rgsm}_{rglb}. No metadata for {rglb}, this should not happen!"
-            )
+        if meta is None:
+            logger.error(f"SKIP DRAGEN_WGS_QC workflow for {rgsm}_{rglb}. "
+                         f"No metadata for {rglb}, this should not happen!")
             continue
 
         # skip negative control samples
-        if lib_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
+        if meta.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
             logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Negative-control.")
             continue
 
         # Skip samples where metadata workflow is set to manual
-        if lib_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
+        if meta.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             # We do not pursue manual samples
             logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
             continue
 
         # skip DRAGEN_WGS_QC if assay type is not WGS
-        if lib_metadata.type.lower() != LabMetadataType.WGS.value.lower():
-            logger.warning(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. 'WGS' != '{lib_metadata.type}'.")
+        if meta.type.lower() != LabMetadataType.WGS.value.lower():
+            logger.warning(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. 'WGS' != '{meta.type}'.")
             continue
 
         # Update read 1 and read 2 strings to cwl file paths

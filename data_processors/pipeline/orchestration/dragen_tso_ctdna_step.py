@@ -17,7 +17,7 @@ from data_portal.models import Workflow, LabMetadata, LabMetadataPhenotype, LabM
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.config import SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
-from data_processors.pipeline.services import batch_srv, fastq_srv
+from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv
 from data_processors.pipeline.tools import liborca
 from utils import libssm, libsqs, libjson
 
@@ -87,29 +87,29 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
 
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
-        lib_metadata: LabMetadata = LabMetadata.objects.get(library_id=rglb)
+        meta: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
         # make sure we have recognised sample (e.g. not undetermined)
-        if not lib_metadata:
+        if meta is None:
             logger.error(f"SKIP DRAGEN_TSO_CTDNA workflow for {rgsm}_{rglb}. "
                          f"No metadata for {rglb}, this should not happen!")
             continue
 
         # skip negative control samples
-        if lib_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
+        if meta.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
             logger.info(f"SKIP DRAGEN_TSO_CTDNA workflow for '{rgsm}_{rglb}'. Negative-control.")
             continue
 
         # Skip samples where metadata workflow is set to manual
-        if lib_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
+        if meta.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             # We do not pursue manual samples
             logger.info(f"SKIP DRAGEN_TSO_CTDNA workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
             continue
 
         # skip if assay is not CT_TSO and type is not CT_DNA
-        if not (lib_metadata.type.lower() == LabMetadataType.CT_DNA.value.lower() and
-                lib_metadata.assay.lower() == LabMetadataAssay.CT_TSO.value.lower()):
+        if not (meta.type.lower() == LabMetadataType.CT_DNA.value.lower() and
+                meta.assay.lower() == LabMetadataAssay.CT_TSO.value.lower()):
             logger.warning(f"SKIP DRAGEN_TSO_CTDNA workflow for '{rgsm}_{rglb}'. "
-                           f"Type: 'ctDNA' != '{lib_metadata.type}' or Assay: 'ctTSO' != '{lib_metadata.assay}'")
+                           f"Type: 'ctDNA' != '{meta.type}' or Assay: 'ctTSO' != '{meta.assay}'")
             continue
 
         # Sample ID
@@ -136,7 +136,8 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
             "run_parameters_xml": liborca.cwl_file_path_as_string_to_dict(run_parameters_xml),
             "seq_run_id": batcher.sqr.run_id if batcher.sqr else None,
             "seq_name": batcher.sqr.name if batcher.sqr else None,
-            "batch_run_id": int(batcher.batch_run.id)
+            "batch_run_id": int(batcher.batch_run.id),
+            "library_id": f"{rglb}",
         }
 
         job_list.append(job)

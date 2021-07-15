@@ -226,7 +226,7 @@ def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
         # single_matched_entry: LabMetadata = metadata_srv.get_metadata_by_library_id(library_id)
         # all_matched_entries: List[LabMetadata] = metadata_srv.filter_metadata_by_library_id(library_id)
 
-        meta: LabMetadata = metadata_srv.get_metadata_by_sample_name_as_in_samplesheet(sample_name)
+        meta: LabMetadata = metadata_srv.get_metadata_by_sample_library_name_as_in_samplesheet(sample_name)
 
         if meta is None:
             logger.error(f"LabMetadata query for {sample_name} did not find any metadata!")

@@ -58,6 +58,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
             },
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
+            "library_id": "sample_library",
         }, None)
 
         logger.info("-" * 32)
@@ -120,6 +121,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
             },
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
+            "library_id": "sample_library",
         }, None)
         logger.info("-" * 32)
         logger.info("Example dragen_tso_ctdna.handler lambda output:")
@@ -149,7 +151,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         mock_dragen_tso_ctdna.type_name = WorkflowType.DRAGEN_TSO_CTDNA.name
         mock_dragen_tso_ctdna.wfl_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
         mock_dragen_tso_ctdna.version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
-        mock_dragen_tso_ctdna.sample_name = "sample_name"
+        mock_dragen_tso_ctdna.sample_name = TestConstant.library_id_normal.value
         mock_dragen_tso_ctdna.sequence_run = mock_sqr
         mock_dragen_tso_ctdna.batch_run = mock_batch_run
         mock_dragen_tso_ctdna.start = make_aware(datetime.utcnow())
@@ -194,6 +196,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
             "batch_run_id": mock_batch_run.id,
+            "library_id": TestConstant.library_id_normal.value,
         }, None)
 
         logger.info("-" * 32)
@@ -248,7 +251,8 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
             },
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
-            "batch_run_id": 1
+            "batch_run_id": 1,
+            "library_id": "sample_library",
         }
 
         mock_event = {
