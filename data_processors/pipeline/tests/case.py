@@ -6,7 +6,7 @@ from django.test import TestCase
 from mockito import mock, when, unstub
 
 from data_portal.tests.factories import TestConstant
-from utils import libslack, libaws
+from utils import libslack, libaws, libgdrive
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -39,6 +39,22 @@ class PipelineUnitTestCase(TestCase):
             aws_session_token=f"{uuid.uuid4()}_{uuid.uuid4()}"
         )
         when(libaws).sqs_client(...).thenReturn(mock_sqs)
+
+        # At the mo, Google Sheet append update response is ignored. If you like proper response struct then
+        # See https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/append#response-body
+        # See doc string gspread.models.Spreadsheet.values_append()
+        mock_sheet_resp = {
+            'spreadsheetId': '1vX89Km1D8dm12aTl_552GMVPwOkEHo6sdf1zgI6Rq0g',
+            'tableRange': 'Sheet1!A1:AC4557',
+            'updates': {
+                'spreadsheetId': '1vX89Km1D8dm12aTl_552GMVPwOkEHo6sdf1zgI6Rq0g',
+                'updatedRange': 'Sheet1!A4558:AC4558',
+                'updatedRows': 1,
+                'updatedColumns': 24,
+                'updatedCells': 24
+            }
+        }
+        when(libgdrive).append_records(...).thenReturn(mock_sheet_resp)
 
     def tearDown(self) -> None:
         del os.environ['ICA_BASE_URL']
