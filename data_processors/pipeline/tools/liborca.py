@@ -10,6 +10,7 @@ Oh yah, impls are like "killer whale" yosh!! 💪
 NOTE: Please retain function into their stateless as much as possible. i.e. in > Fn() > out
 Input and output arguments are typically their Primitive forms such as str, int, list, dict, etc..
 """
+from data_portal.models import LabMetadata
 import logging
 import os
 from contextlib import closing
@@ -134,3 +135,19 @@ def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) ->
     logger.info(f"Extracted sample names: {sample_names}")
 
     return list(sample_names)
+
+
+def get_subject_id_from_libary_id(library_id):
+    """
+    Get subject from a library id through metadata objects list
+    :param library_id:
+    :return:
+    """
+    try:
+        subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
+    except LabMetadata.DoesNotExist:
+        subject_id = None
+        logger.error(f"No subject for library {library_id}")
+
+    return subject_id
+

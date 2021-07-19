@@ -17,9 +17,17 @@ from libica.openapi import libwes
 
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowRunEventType
 from utils import libjson, ica
+from pathlib import Path
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+# Set engine parameters
+# FIXME gds://production/temp/analysis_data to go into hardcoded var
+# FIXME gds://production should be an ssm parameter - so we run with gds://development in the dev env
+TEMP_ANALYSIS_DATA_DIR = Path("gds://production/temp/analysis_data")
+# FIXME gd://production/analysis_data to go into hard coded var
+ANALYSIS_DATA_DIR = Path("gds://production/analysis_data")
 
 
 def launch(event, context) -> dict:
@@ -175,3 +183,21 @@ def _extended_get_workflow_run(wfr_id, wfr_event, run_api):
     result = {'status': _status, 'end': _end, 'output': _output}
     logger.info(libjson.dumps(result))
     return result
+
+
+def get_gds_work_dir(subpath):
+    """
+    Return the full work path
+    :param subpath: Path
+    :return:
+    """
+    return str(TEMP_ANALYSIS_DATA_DIR / subpath)
+
+
+def get_gds_output_dir(subpath):
+    """
+    Return the full output directory path
+    :param subpath:
+    :return:
+    """
+    return str(ANALYSIS_DATA_DIR / subpath)
