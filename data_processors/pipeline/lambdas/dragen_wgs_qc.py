@@ -16,7 +16,7 @@ import logging
 
 from data_portal.models import Workflow
 from data_processors.pipeline.services import sequence_srv, batch_srv, workflow_srv
-from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper, EngineParametersSecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 from pathlib import Path
 from utils import libjson, libssm, libdt
@@ -163,27 +163,18 @@ def handler(event, context) -> dict:
 
     # Get each of the engine parameters
     subject_id = get_subject_id_from_libary_id(library_id)
-
     # Get timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+    timestamp = datetime.utcnow()
 
-    # Engine parameter subpath
-    engine_parameter_subpath = Path(subject_id) / \
-                               Path(str(WorkflowType.DRAGEN_WGS_QC)) / \
-                               Path(timestamp) / \
-                               Path(f"{library_id}_{WorkflowType.DRAGEN_WGS_QC}")
-
-    engine_parameters = {
-        "workDirectory": get_gds_work_dir(engine_parameter_subpath),
-        "outputDirectory": get_gds_output_dir(engine_parameter_subpath)
-    }
-
+    # Create engine params helper
+    engine_params_obj = EngineParametersSecondaryAnalysisHelper(WorkflowType.DRAGEN_WGS_QC)
+    
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
         'workflow_version': workflow_version,
         'workflow_run_name': workflow_run_name,
         'workflow_input': workflow_input,
-        'workflow_engine_parameters': engine_parameters
+        'workflow_engine_parameters': engine_params_obj.get_engine_params_dict(subject_id, timestamp)
     }, context)
 
     workflow: Workflow = workflow_srv.create_or_update_workflow(

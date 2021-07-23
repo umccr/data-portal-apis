@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from enum import Enum
 
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
-
+from utils import libssm, libdt
+from pathlib import Path
 
 class SampleSheetCSV(Enum):
     NAME = "SampleSheet"
@@ -52,6 +53,66 @@ class WorkflowRunEventType(Enum):
 
 class Helper(object):
     pass
+
+
+class EngineParametersHelper(Helper):
+    """
+    Given a workflow type, provide methods for generating the full engine parameter values
+    """
+    def __init__(self, type_: WorkflowType):
+        self.type = type_
+
+    # Get roots from ssm
+    @staticmethod
+    def get_ssm_key_workdir_root():
+        # ssm outputs will be gds://production/temp
+        return f"{ICA_WORKFLOW_PREFIX}/workdir_root"
+
+    @staticmethod
+    def get_ssm_key_output_root():
+        # ssm outputs will be gds://production/
+        return f"{ICA_WORKFLOW_PREFIX}/output_root"
+
+    def construct_workdir(self, subject_id, timestamp: datetime):
+        """
+        Construct a work directory given a subject ID and a timestamp
+        :return:
+        """
+        return self.get_ssm_key_workdir_root() + self.get_mid_path(subject_id, timestamp)
+
+    def construct_outputdir(self, subject_id, timestamp: datetime):
+        """
+        Construct an output directory given a subject ID and a timestamp
+        :param subject_id:
+        :param timestamp:
+        :return:
+        """
+        return self.get_ssm_key_output_root() + self.get_mid_path(subject_id, timestamp)
+
+    def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
+        """
+        Implemented in subclasses
+        """
+        raise NotImplementedError
+
+    def get_engine_params_dict(self, subject_id: str, timestamp: datetime) -> dict:
+        """
+        Returns the dictionary of workflow engine parameters
+        :return:
+        """
+        return {
+            "workDirectory": self.construct_workdir(subject_id, timestamp),
+            "outputDirectory": self.construct_outputdir(subject_id, timestamp)
+        }
+
+
+class EngineParametersSecondaryAnalysisHelper(EngineParametersHelper):
+    """
+    Construct the engine parameters for secondary analysis
+    """
+
+    def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
+        return str(Path("analysis_data") / subject_id / str(self.type) / libdt.folder_friendly_timestamp(timestamp))
 
 
 class WorkflowHelper(Helper):
