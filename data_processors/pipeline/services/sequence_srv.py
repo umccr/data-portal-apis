@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import QuerySet
 
 from data_portal.models import SequenceRun, Sequence
+from data_processors.pipeline.tools import liborca
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -16,6 +17,11 @@ def create_or_update_sequence_run(payload: dict):
     instrument_run_id = payload.get('instrumentRunId')
     date_modified = payload.get('dateModified')
     status = payload.get('status')
+    sample_sheet_name = payload.get('sampleSheetName')
+    gds_folder_path = payload.get('gdsFolderPath')
+    gds_volume_name = payload.get('gdsVolumeName')
+    reagent_barcode = payload.get('reagentBarcode')
+    flowcell_barcode = payload.get('flowcellBarcode')
 
     seq: Sequence = Sequence.objects.get(instrument_run_id=instrument_run_id, run_id=run_id)
     if not seq:
@@ -23,14 +29,16 @@ def create_or_update_sequence_run(payload: dict):
         seq = Sequence()
         seq.run_id = run_id
         seq.instrument_run_id = instrument_run_id
-        seq.run_config = None  # TODO: pull in from RunInfo.xml
-        seq.sample_sheet_name = None  # TODO: pull in from SampleSheet.csv
-        seq.sample_sheet_config = None  # TODO: pull in from SampleSheet.csv
-        seq.gds_folder_path = payload.get('gdsFolderPath')
-        seq.gds_volume_name = payload.get('gdsVolumeName')
-        seq.reagent_barcode = payload.get('reagentBarcode')
-        seq.flowcell_barcode = payload.get('flowcellBarcode')
-        seq.status = "New"  # TODO: define status values
+        seq.sample_sheet_name = sample_sheet_name
+        seq.gds_folder_path = gds_folder_path
+        seq.gds_volume_name = gds_volume_name
+        seq.reagent_barcode = reagent_barcode
+        seq.flowcell_barcode = flowcell_barcode
+        seq.status = status
+        seq.sample_sheet_config = liborca.get_sample_names_from_samplesheet(gds_volume=gds_volume_name,
+                                                                            samplesheet_path=f"{gds_folder_path}/{sample_sheet_name}")
+        seq.run_config = liborca.get_run_config_from_runinfo(gds_volume=gds_volume_name,
+                                                             runinfo_path=f"{gds_folder_path}/RunInfo.xml")
         seq.save()
 
     qs = SequenceRun.objects.filter(run_id=run_id, date_modified=date_modified, status=status)
@@ -42,13 +50,13 @@ def create_or_update_sequence_run(payload: dict):
         sqr.sequence = seq
         sqr.date_modified = date_modified
         sqr.status = status
-        sqr.gds_folder_path = payload.get('gdsFolderPath')
-        sqr.gds_volume_name = payload.get('gdsVolumeName')
-        sqr.reagent_barcode = payload.get('reagentBarcode')
+        sqr.gds_folder_path = gds_folder_path
+        sqr.gds_volume_name = gds_volume_name
+        sqr.reagent_barcode = reagent_barcode
         sqr.v1pre3_id = payload.get('v1pre3Id')
         sqr.acl = payload.get('acl')
-        sqr.flowcell_barcode = payload.get('flowcellBarcode')
-        sqr.sample_sheet_name = payload.get('sampleSheetName')
+        sqr.flowcell_barcode = flowcell_barcode
+        sqr.sample_sheet_name = sample_sheet_name
         sqr.api_url = payload.get('apiUrl')
         sqr.name = payload.get('name')
         sqr.msg_attr_action = payload.get('messageAttributesAction')
