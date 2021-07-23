@@ -171,3 +171,50 @@ def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) ->
     logger.info(f"Extracted sample names: {sample_names}")
 
     return list(sample_names)
+
+
+# TODO: combine with above
+def get_samplesheet_config_from_file(gds_volume: str, samplesheet_path: str) -> dict:
+    if not samplesheet_path.startswith(os.path.sep):
+        runinfo_path = os.path.sep + samplesheet_path
+    logger.info(f"Extracting samplesheet config from gds://{gds_volume}{samplesheet_path}")
+
+    ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, samplesheet_path)
+    if ntf is None:
+        reason = f"Abort extracting metadata process. " \
+                 f"Can not download file from GDS: gds://{gds_volume}{runinfo_path}"
+        logger.error(reason)
+        raise ValueError(reason)
+
+    logger.info(f"Local sample sheet path: {ntf.name}")
+    samplesheet_config = {}  # TODO: could have domain model for this
+    with closing(ntf) as f:
+        samplesheet = SampleSheet(f.name)
+        # TODO: complete
+
+    logger.info(f"Extracted run config: {samplesheet_config}")
+
+    return samplesheet_config
+
+
+def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> dict:
+    if not runinfo_path.startswith(os.path.sep):
+        runinfo_path = os.path.sep + runinfo_path
+    logger.info(f"Extracting run config from gds://{gds_volume}{runinfo_path}")
+
+    ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, runinfo_path)
+    if ntf is None:
+        reason = f"Abort extracting metadata process. " \
+                 f"Can not download file from GDS: gds://{gds_volume}{runinfo_path}"
+        logger.error(reason)
+        raise ValueError(reason)
+
+    logger.info(f"Local sample sheet path: {ntf.name}")
+    run_config = {}  # TODO: could have domain model for this
+    with closing(ntf) as f:
+        # TODO parse RunInfo.xml
+        pass
+
+    logger.info(f"Extracted run config: {run_config}")
+
+    return run_config
