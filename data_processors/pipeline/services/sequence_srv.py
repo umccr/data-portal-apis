@@ -4,7 +4,7 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import SequenceRun
+from data_portal.models import SequenceRun, Sequence
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -13,14 +13,33 @@ logger.setLevel(logging.INFO)
 @transaction.atomic
 def create_or_update_sequence_run(payload: dict):
     run_id = payload.get('id')
+    instrument_run_id = payload.get('instrumentRunId')
     date_modified = payload.get('dateModified')
     status = payload.get('status')
+
+    seq: Sequence = Sequence.objects.get(instrument_run_id=instrument_run_id, run_id=run_id)
+    if not seq:
+        logger.info(f"Creating new Sequence (instrument_run_id={instrument_run_id}, run_id={run_id})")
+        seq = Sequence()
+        seq.run_id = run_id
+        seq.instrument_run_id = instrument_run_id
+        seq.run_config = None  # TODO: pull in from RunInfo.xml
+        seq.sample_sheet_name = None  # TODO: pull in from SampleSheet.csv
+        seq.sample_sheet_config = None  # TODO: pull in from SampleSheet.csv
+        seq.gds_folder_path = payload.get('gdsFolderPath')
+        seq.gds_volume_name = payload.get('gdsVolumeName')
+        seq.reagent_barcode = payload.get('reagentBarcode')
+        seq.flowcell_barcode = payload.get('flowcellBarcode')
+        seq.status = "New"  # TODO: define status values
+        seq.save()
 
     qs = SequenceRun.objects.filter(run_id=run_id, date_modified=date_modified, status=status)
     if not qs.exists():
         logger.info(f"Creating new SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
         sqr = SequenceRun()
+        sqr.instrument_run_id = instrument_run_id
         sqr.run_id = run_id
+        sqr.sequence = seq
         sqr.date_modified = date_modified
         sqr.status = status
         sqr.gds_folder_path = payload.get('gdsFolderPath')
@@ -32,7 +51,6 @@ def create_or_update_sequence_run(payload: dict):
         sqr.sample_sheet_name = payload.get('sampleSheetName')
         sqr.api_url = payload.get('apiUrl')
         sqr.name = payload.get('name')
-        sqr.instrument_run_id = payload.get('instrumentRunId')
         sqr.msg_attr_action = payload.get('messageAttributesAction')
         sqr.msg_attr_action_date = payload.get('messageAttributesActionDate')
         sqr.msg_attr_action_type = payload.get('messageAttributesActionType')
@@ -41,6 +59,10 @@ def create_or_update_sequence_run(payload: dict):
         return sqr
     else:
         logger.info(f"Ignore existing SequenceRun (run_id={run_id}, date_modified={date_modified}, status={status})")
+        if seq.status != status:
+            logger.info(f"Updating Sequence status to {status}")
+            seq.status = status
+            seq.save()
         return None
 
 

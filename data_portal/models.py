@@ -504,6 +504,8 @@ class GDSFile(models.Model):
 
 
 class Sequence(models.Model):
+    class Meta:
+        unique_together = ['instrument_run_id', 'run_id']
 
     id = models.BigAutoField(primary_key=True)
     instrument_run_id = models.CharField(max_length=255)
