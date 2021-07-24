@@ -16,4 +16,4 @@
 ```
 export PORTAL_TOKEN=eyJraWQiOiJi<..shorten..for..brevity...>Ls4-2HTHSW2ohmQ
 ```
-> 🙋‍♂️ If you'd like to do a quick detour about JWT token with R, check it out  [portal_decode.R](portal_decode.R)
+> 🙋‍♂️ If you'd like to do a quick detour about JWT token with R, check it out  [portal_decode.R](examples/portal_decode.R)
