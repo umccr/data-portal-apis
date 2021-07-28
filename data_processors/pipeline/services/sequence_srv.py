@@ -35,8 +35,8 @@ def create_or_update_sequence_run(payload: dict):
         seq.reagent_barcode = reagent_barcode
         seq.flowcell_barcode = flowcell_barcode
         seq.status = status
-        seq.sample_sheet_config = liborca.get_sample_names_from_samplesheet(gds_volume=gds_volume_name,
-                                                                            samplesheet_path=f"{gds_folder_path}/{sample_sheet_name}")
+        seq.sample_sheet_config = liborca.get_samplesheet_json_from_file(gds_volume=gds_volume_name,
+                                                                         samplesheet_path=f"{gds_folder_path}/{sample_sheet_name}")
         seq.run_config = liborca.get_run_config_from_runinfo(gds_volume=gds_volume_name,
                                                              runinfo_path=f"{gds_folder_path}/RunInfo.xml")
         seq.save()

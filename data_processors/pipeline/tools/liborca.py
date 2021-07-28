@@ -10,6 +10,7 @@ Oh yah, impls are like "killer whale" yosh!! 💪
 NOTE: Please retain function into their _stateless_ as much as possible. i.e. in > Fn() > out
 Input and output arguments are typically their _Primitive_ forms such as str, int, list, dict, etc..
 """
+import json
 import logging
 import os
 import re
@@ -173,31 +174,33 @@ def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) ->
     return list(sample_names)
 
 
-# TODO: combine with above
-def get_samplesheet_config_from_file(gds_volume: str, samplesheet_path: str) -> dict:
+# TODO: combine with above?
+def get_samplesheet_json_from_file(gds_volume: str, samplesheet_path: str) -> str:
+    # TODO: represent SampleSheet better, perhaps as domain object?
     if not samplesheet_path.startswith(os.path.sep):
-        runinfo_path = os.path.sep + samplesheet_path
+        samplesheet_path = os.path.sep + samplesheet_path
     logger.info(f"Extracting samplesheet config from gds://{gds_volume}{samplesheet_path}")
 
     ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, samplesheet_path)
     if ntf is None:
         reason = f"Abort extracting metadata process. " \
-                 f"Can not download file from GDS: gds://{gds_volume}{runinfo_path}"
+                 f"Cannot download file from GDS: gds://{gds_volume}{samplesheet_path}"
         logger.error(reason)
         raise ValueError(reason)
 
     logger.info(f"Local sample sheet path: {ntf.name}")
-    samplesheet_config = {}  # TODO: could have domain model for this
     with closing(ntf) as f:
         samplesheet = SampleSheet(f.name)
-        # TODO: complete
+        samplesheet_config = samplesheet.to_json()
 
-    logger.info(f"Extracted run config: {samplesheet_config}")
+    logger.info(f"Extracted samplesheet config: {samplesheet_config}")
 
     return samplesheet_config
 
 
-def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> dict:
+def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> str:
+    # TODO: represent RunInfo better, perhaps as domain object?
+    import xml.etree.ElementTree as et
     if not runinfo_path.startswith(os.path.sep):
         runinfo_path = os.path.sep + runinfo_path
     logger.info(f"Extracting run config from gds://{gds_volume}{runinfo_path}")
@@ -210,11 +213,16 @@ def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> dict:
         raise ValueError(reason)
 
     logger.info(f"Local sample sheet path: {ntf.name}")
-    run_config = {}  # TODO: could have domain model for this
-    with closing(ntf) as f:
-        # TODO parse RunInfo.xml
-        pass
+    tree = et.ElementTree(file=ntf)
+    root = tree.getroot()
+    cyc = {}
+    for read in root.findall('Run/Reads/Read'):
+        cyc[read.get('Number')] = read.get('NumCycles')
+
+    run_config = {
+        "RunCycles": f"{cyc['1']},{cyc['2']},{cyc['3']},{cyc['4']}"
+    }
 
     logger.info(f"Extracted run config: {run_config}")
 
-    return run_config
+    return json.dumps(run_config)
