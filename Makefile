@@ -7,13 +7,16 @@ install:
 	@npx husky install
 
 up:
-	@docker-compose up -d
+	@docker compose up -d
 
 down:
-	@docker-compose down
+	@docker compose down
 
 stop:
-	@docker-compose down
+	@docker compose down
+
+ps:
+	@docker compose ps
 
 start:
 	@pip install -r requirements-dev.txt

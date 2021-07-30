@@ -8,7 +8,7 @@
 #   3. load db dump into local stack db container
 #
 # REQUIRED CLI:
-#   aws, docker, docker-compose
+#   aws, docker
 #
 # USAGE:
 # Typically use in conjunction with Makefile:
@@ -35,11 +35,6 @@ command -v docker >/dev/null 2>&1 || {
   exit 1
 }
 
-command -v docker-compose >/dev/null 2>&1 || {
-  echo >&2 "DOCKER-COMPOSE COMMAND NOT FOUND. ABORTING..."
-  exit 1
-}
-
 aws sts get-caller-identity >/dev/null 2>&1 || {
   echo >&2 "UNABLE TO LOCATE CREDENTIALS. YOUR AWS LOGIN SESSION HAVE EXPIRED. PLEASE LOGIN. ABORTING..."
   exit 1
@@ -49,7 +44,7 @@ aws sts get-caller-identity >/dev/null 2>&1 || {
 
 echo "...Base project directory at $(pwd)"
 
-db_container=$(docker-compose ps -q db)
+db_container=$(docker compose ps -q db)
 
 sync_db_dump() {
   echo "...Syncing database dump from S3 bucket"
