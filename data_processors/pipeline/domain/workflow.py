@@ -80,7 +80,7 @@ class EngineParametersHelper(Helper):
         """
         return self.get_ssm_key_workdir_root() + self.get_mid_path(subject_id, timestamp)
 
-    def construct_outputdir(self, subject_id, timestamp: datetime):
+    def construct_outdir(self, subject_id, timestamp: datetime):
         """
         Construct an output directory given a subject ID and a timestamp
         :param subject_id:
@@ -102,7 +102,7 @@ class EngineParametersHelper(Helper):
         """
         return {
             "workDirectory": self.construct_workdir(subject_id, timestamp),
-            "outputDirectory": self.construct_outputdir(subject_id, timestamp)
+            "outputDirectory": self.construct_outdir(subject_id, timestamp)
         }
 
 

@@ -18,16 +18,12 @@ from data_portal.models import Workflow
 from data_processors.pipeline.services import sequence_srv, batch_srv, workflow_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper, EngineParametersSecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
-from pathlib import Path
 from utils import libjson, libssm, libdt
 from datetime import datetime
 from data_processors.pipeline.tools.liborca import get_subject_id_from_libary_id
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-from wes_handler import get_gds_work_dir, get_gds_output_dir
-
 
 def sqs_handler(event, context):
     """event payload dict
@@ -163,12 +159,13 @@ def handler(event, context) -> dict:
 
     # Get each of the engine parameters
     subject_id = get_subject_id_from_libary_id(library_id)
+
     # Get timestamp
     timestamp = datetime.utcnow()
 
     # Create engine params helper
     engine_params_obj = EngineParametersSecondaryAnalysisHelper(WorkflowType.DRAGEN_WGS_QC)
-    
+
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
         'workflow_version': workflow_version,

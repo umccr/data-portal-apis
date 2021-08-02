@@ -16,8 +16,10 @@ import logging
 
 from data_portal.models import Workflow
 from data_processors.pipeline.services import workflow_srv
-from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper, EngineParametersSecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
+from datetime import datetime
+from data_processors.pipeline.tools.liborca import get_subject_id_from_libary_id
 
 from utils import libjson, libssm, libdt
 
@@ -169,6 +171,12 @@ def handler(event, context) -> dict:
             logger.info(libjson.dumps(results_dict))
             return results_dict
 
+    # Get timestamp
+    timestamp = datetime.utcnow()
+
+    # Create engine params helper
+    engine_params_obj = EngineParametersSecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
+
     # If no running workflows were found, we proceed to preparing and kicking it off
     workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id)
 
@@ -177,6 +185,7 @@ def handler(event, context) -> dict:
         'workflow_version': workflow_version,
         'workflow_run_name': workflow_run_name,
         'workflow_input': workflow_input,
+        'workflow_engine_parameters': engine_params_obj.get_engine_params_dict(subject_id, timestamp)
     }, context)
 
     workflow: Workflow = workflow_srv.create_or_update_workflow(
