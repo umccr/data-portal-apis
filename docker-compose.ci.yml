@@ -1,35 +1,34 @@
 # NOTE:
 # This is for CodeBuild CI/CD override. Need to specify explicitly like so:
 # Usage:
-#   aws ecr get-login-password | docker login --username AWS --password-stdin 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com
-#   docker-compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
 #
-# These image version should be the same in syncdkr.sh and this ci override is used during CodeBuild CI/CD
+# Made a copy there in quay due to dockerhub rate limit.
 
 version: '3.1'
 
 services:
 
   db:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/mysql:5.7
+    image: quay.io/victorskl/mysql:5.7
 
   localstack:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/localstack/localstack:0.12.9
+    image: quay.io/victorskl/localstack:0.12.9
 
   haproxy:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/haproxy:2.3
+    image: quay.io/victorskl/haproxy:2.3
 
   wes:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/stoplight/prism:4
+    image: quay.io/victorskl/prism:4
 
   tes:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/stoplight/prism:4
+    image: quay.io/victorskl/prism:4
 
   gds:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/stoplight/prism:4
+    image: quay.io/victorskl/prism:4
 
   ens:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/stoplight/prism:4
+    image: quay.io/victorskl/prism:4
 
   console:
-    image: 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com/stoplight/prism:4
+    image: quay.io/victorskl/prism:4

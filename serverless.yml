@@ -318,4 +318,3 @@ package:
     - '!requirements-test.txt'
     - '!haproxy.cfg'
     - '!loaddata.sh'
-    - '!syncdkr.sh'

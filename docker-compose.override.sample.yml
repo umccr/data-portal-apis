@@ -3,7 +3,7 @@
 #
 # Usage:
 #   cp docker-compose.override.sample.yml docker-compose.override.yml
-#   docker-compose up -d
+#   docker compose up -d
 #
 # This makes phpMyAdmin at: http://localhost:8181  (u/p: root) for MySQL
 
