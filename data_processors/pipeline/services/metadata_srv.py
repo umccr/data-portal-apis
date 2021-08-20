@@ -75,6 +75,20 @@ def get_subjects_from_runs(workflows: List[Workflow]) -> list:
     return list(subjects)
 
 
+def get_libraries_from_runs(workflows: List[Workflow]) -> list:
+    libraries = set()
+
+    for workflow in workflows:
+        try:
+            library_id = LabMetadata.objects.get(library_id=library_id).library_id
+        except LabMetadata.DoesNotExist:
+            logger.error(f"Couldn't confirm library {library_id} was in metadata ")
+            continue
+        libraries.add(get_library_id_from_workflow(workflow))
+
+    return list(libraries)
+
+
 def get_library_id_from_workflow(workflow: Workflow):
     # FIXME This may be gone for good. See https://github.com/umccr/data-portal-apis/issues/244
 
