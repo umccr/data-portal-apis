@@ -1,5 +1,6 @@
 import logging
 from typing import List
+import re
 
 from django.db import transaction
 from django.db.models import QuerySet
@@ -85,3 +86,20 @@ def get_library_id_from_workflow(workflow: Workflow):
     # otherwise assume legacy naming
     # remove the first part (Sample ID) from the sample_library_name to get the Library ID
     return '_'.join(workflow.sample_name.split('_')[1:])
+
+
+def strip_topup_rerun_from_library_id(library_id: str) -> str:
+    """
+    Use some fancy regex to remove _topup or _rerun from library id
+    ... well for now just some regex, pls don't try to understand it
+    https://regex101.com/r/Z8IG4T/1
+    :return:
+    """
+
+    library_id_regex = re.match(r"(L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?|_rerun\d?)?", library_id)
+
+    if library_id_regex is None:
+        logger.warning(f"Could not get library id from {library_id}, returning input")
+        return library_id
+
+    return library_id_regex.group(1)
