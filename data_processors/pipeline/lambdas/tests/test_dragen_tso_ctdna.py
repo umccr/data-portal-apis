@@ -9,6 +9,7 @@ from data_portal.models import Workflow, SequenceRun, BatchRun, Batch
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowHelper
 from data_processors.pipeline.lambdas import dragen_tso_ctdna
+from data_processors.pipeline.services import metadata_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libjson, libssm
 
@@ -20,6 +21,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_tso_ctdna.DragenTsoCtDnaTests.test_handler
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         workflow: dict = dragen_tso_ctdna.handler({
             "tso500_sample": {
@@ -74,6 +76,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_tso_ctdna.DragenTsoCtDnaTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         mock_wfr: libwes.WorkflowRun = libwes.WorkflowRun()
         mock_wfr.id = TestConstant.wfr_id.value
@@ -213,6 +216,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         """
 
         mock_sqr: SequenceRun = SequenceRunFactory()
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         mock_job = {
             "tso500_sample": {

@@ -5,12 +5,14 @@ Domain models related to Workflow Automation.
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
-from utils import libssm, libdt
-from pathlib import Path
+from utils import libdt, libssm
+
 
 class SampleSheetCSV(Enum):
     NAME = "SampleSheet"
@@ -55,30 +57,45 @@ class Helper(object):
     pass
 
 
-class EngineParametersHelper(Helper):
+class EngineParameter(ABC):
     """
-    Given a workflow type, provide methods for generating the full engine parameter values
+    Abstract EngineParameter that provide methods for generating _dynamic_ engine parameter values
+    instead of loading them as template from SSM Parameter Store.
     """
-    def __init__(self, type_: WorkflowType):
-        self.type = type_
 
-    # Get roots from ssm
+    @staticmethod
+    def _sanitize_gds_path_str(gds_path_str: str):
+        if not gds_path_str.startswith("gds://"):
+            raise ValueError("Must be gds:// URI scheme string")
+        return gds_path_str.rstrip("/")
+
+    @staticmethod
+    def _sanitize_subject_id(subject_id: str):
+        if subject_id is None:
+            raise ValueError("subject_id must not be none")
+        return subject_id
+
     @staticmethod
     def get_ssm_key_workdir_root():
-        # ssm outputs will be gds://production/temp
         return f"{ICA_WORKFLOW_PREFIX}/workdir_root"
 
     @staticmethod
     def get_ssm_key_output_root():
-        # ssm outputs will be gds://production/
         return f"{ICA_WORKFLOW_PREFIX}/output_root"
+
+    def get_workdir_root(self):
+        return libssm.get_ssm_param(self.get_ssm_key_workdir_root())
+
+    def get_output_root(self):
+        return libssm.get_ssm_param(self.get_ssm_key_output_root())
 
     def construct_workdir(self, subject_id, timestamp: datetime):
         """
         Construct a work directory given a subject ID and a timestamp
         :return:
         """
-        return self.get_ssm_key_workdir_root() + self.get_mid_path(subject_id, timestamp)
+        workdir_root = self._sanitize_gds_path_str(self.get_workdir_root())
+        return workdir_root + "/" + self.get_mid_path(subject_id, timestamp)
 
     def construct_outdir(self, subject_id, timestamp: datetime):
         """
@@ -87,32 +104,26 @@ class EngineParametersHelper(Helper):
         :param timestamp:
         :return:
         """
-        return self.get_ssm_key_output_root() + self.get_mid_path(subject_id, timestamp)
+        output_root = self._sanitize_gds_path_str(self.get_output_root())
+        return output_root + "/" + self.get_mid_path(subject_id, timestamp)
 
+    @abstractmethod
     def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
         """
         Implemented in subclasses
         """
         raise NotImplementedError
 
-    def get_engine_params_dict(self, subject_id: str, timestamp: datetime) -> dict:
+    def get_engine_parameters(self, subject_id: str, timestamp=datetime.utcnow()) -> dict:
         """
         Returns the dictionary of workflow engine parameters
         :return:
         """
+        subject_id = self._sanitize_subject_id(subject_id)
         return {
             "workDirectory": self.construct_workdir(subject_id, timestamp),
             "outputDirectory": self.construct_outdir(subject_id, timestamp)
         }
-
-
-class EngineParametersSecondaryAnalysisHelper(EngineParametersHelper):
-    """
-    Construct the engine parameters for secondary analysis
-    """
-
-    def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
-        return str(Path("analysis_data") / subject_id / str(self.type) / libdt.folder_friendly_timestamp(timestamp))
 
 
 class WorkflowHelper(Helper):
@@ -152,6 +163,27 @@ class WorkflowHelper(Helper):
             return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{utc_now_ts}"
         else:
             raise ValueError(f"Unsupported workflow type: {self.type.name}")
+
+
+class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
+    """
+    SecondaryAnalysisHelper with dynamically generating engine parameters
+
+    NOTE: Secondary Analysis workflow engine parameters are generated path from the root directory.
+    """
+
+    def __init__(self, type_: WorkflowType):
+        super().__init__(type_)
+
+    def get_ssm_key_engine_parameters(self):
+        raise ValueError(f"No template defined for engine parameters")
+
+    def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
+        basename = Path("analysis_data")
+        subject_id = self._sanitize_subject_id(subject_id)
+        wfl_type = str(self.type.value).upper()
+        ts = libdt.folder_friendly_timestamp(timestamp)
+        return str(basename / subject_id / wfl_type / ts)
 
 
 class WorkflowRule:

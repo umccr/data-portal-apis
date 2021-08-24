@@ -15,11 +15,9 @@ import copy
 import logging
 
 from data_portal.models import Workflow
-from data_processors.pipeline.services import sequence_srv, batch_srv, workflow_srv
-from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowHelper, EngineParametersSecondaryAnalysisHelper
+from data_processors.pipeline.services import sequence_srv, batch_srv, workflow_srv, metadata_srv
+from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
-from datetime import datetime
-from data_processors.pipeline.tools.liborca import get_subject_id_from_libary_id
 
 from utils import libjson, libssm, libdt
 
@@ -100,6 +98,7 @@ def handler(event, context) -> dict:
         "seq_run_id": "sequence run id",
         "seq_name": "sequence run name",
         "batch_run_id": "batch run id",
+        "library_id": "library id",
     }
 
     :param event:
@@ -116,7 +115,7 @@ def handler(event, context) -> dict:
     library_id = event['library_id']
 
     # Set workflow helper
-    wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_TSO_CTDNA)
+    wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
 
     # Read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
@@ -173,21 +172,15 @@ def handler(event, context) -> dict:
         sample_name=library_id
     )
 
-    # Get each of the engine parameters
-    subject_id = get_subject_id_from_libary_id(library_id)
-
-    # Get timestamp
-    timestamp = datetime.utcnow()
-
-    # Create engine params helper
-    engine_params_obj = EngineParametersSecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
+    subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(subject_id)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
         'workflow_version': workflow_version,
         'workflow_run_name': workflow_run_name,
         'workflow_input': workflow_input,
-        'workflow_engine_parameters': engine_params_obj.get_engine_params_dict(subject_id, timestamp)
+        'workflow_engine_parameters': workflow_engine_parameters
     }, context)
 
     workflow: Workflow = workflow_srv.create_or_update_workflow(

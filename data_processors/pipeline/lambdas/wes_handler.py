@@ -17,7 +17,6 @@ from libica.openapi import libwes
 
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowRunEventType
 from utils import libjson, ica
-from pathlib import Path
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
