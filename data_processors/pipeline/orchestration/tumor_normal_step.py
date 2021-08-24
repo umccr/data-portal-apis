@@ -5,7 +5,6 @@ See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
 import logging
-from collections import defaultdict
 from typing import List
 from itertools import product
 
@@ -144,7 +143,15 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
             # Set the normal library id and get the fastq list rows from it!
             normal_library_id = all_subject_normal_libraries_stripped[0]
             normal_fastq_list_rows = FastqListRow.objects.filter(rglb__exact=normal_library_id)
-            # TODO - remove rows before rerun
+            # FIXME - remove rows before rerun
+            # For now just skip if normal library id contains rerun
+            for fastq_list_row in normal_fastq_list_rows:
+                full_sample_library_id = fastq_list_row.id.rsplit(".", 1)[-1]
+                if metadata_srv.sample_library_id_has_rerun(full_sample_library_id):
+                    # Reset fastq list rows
+                    normal_fastq_list_rows = []
+                    logger.warning(f"We found a rerun for library id {normal_library_id} in {full_sample_library_id}. "
+                                   f"Please run this sample manually")
 
             # Make sure fastq list rows exist (might not have been demuxed yet?)
             if len(normal_fastq_list_rows) == 0:
@@ -157,7 +164,16 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
             if normal_in_run:
                 for tumor_library_id in all_subject_tumor_libraries_stripped:
                     tumor_fastq_list_rows = FastqListRow.objects.filter(rglb__exact=tumor_library_id)
-                    # TODO - remove rows before rerun
+                    # FIXME - remove rows before rerun
+                    # For now just skip if tumor library id contains rerun
+                    for fastq_list_row in tumor_fastq_list_rows:
+                        full_sample_library_id = fastq_list_row.id.rsplit(".", 1)[-1]
+                        if metadata_srv.sample_library_id_has_rerun(full_sample_library_id):
+                            # Reset fastq list rows - we don't know what to do with reruns
+                            tumor_fastq_list_rows = []
+                            logger.warning(f"We found a rerun for library id {tumor_library_id} in {full_sample_library_id}. "
+                                           f"Please run this sample manually")
+
                     if not len(tumor_fastq_list_rows) == 0:
                         subject_t_n_fastq_list_row_pairs.append((tumor_fastq_list_rows, normal_fastq_list_rows))
                     else:

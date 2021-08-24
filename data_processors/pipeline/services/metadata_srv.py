@@ -117,3 +117,21 @@ def strip_topup_rerun_from_library_id(library_id: str) -> str:
         return library_id
 
     return library_id_regex.group(1)
+
+
+def sample_library_id_has_rerun(library_id: str) -> bool:
+    """
+    Check if a library id is a rerun
+    :param library_id:
+    :return:
+    """
+    library_id_rerun_regex = re.match(r"(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+)(?:L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?)?(_rerun\d?)?", library_id)
+
+    if library_id_rerun_regex is None:
+        logger.warning(f"Could not determine if library id has rerun - or not {library_id}, returning False")
+        return False
+
+    if library_id_rerun_regex.group(1) is not None:
+        return True
+
+    return False
