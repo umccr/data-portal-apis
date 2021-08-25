@@ -5,10 +5,13 @@ Domain models related to Workflow Automation.
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
+from utils import libdt, libssm
 
 
 class SampleSheetCSV(Enum):
@@ -54,6 +57,66 @@ class Helper(object):
     pass
 
 
+class EngineParameter(ABC):
+    """
+    Abstract EngineParameter that provide methods for generating engine parameter values
+    """
+
+    @staticmethod
+    def _sanitize_gds_path_str(gds_path_str: str):
+        if not gds_path_str.startswith("gds://"):
+            raise ValueError("Must be gds:// URI scheme string")
+        return gds_path_str.rstrip("/")
+
+    @staticmethod
+    def _sanitize_target_id(target_id: str):
+        if target_id is None:
+            raise ValueError("target_id must not be none")
+        return target_id
+
+    @staticmethod
+    def get_ssm_key_workdir_root():
+        return f"{ICA_WORKFLOW_PREFIX}/workdir_root"
+
+    @staticmethod
+    def get_ssm_key_output_root():
+        return f"{ICA_WORKFLOW_PREFIX}/output_root"
+
+    def get_workdir_root(self):
+        return libssm.get_ssm_param(self.get_ssm_key_workdir_root())
+
+    def get_output_root(self):
+        return libssm.get_ssm_param(self.get_ssm_key_output_root())
+
+    def construct_workdir(self, target_id, timestamp: datetime):
+        """
+        Construct a work directory given target ID and a timestamp
+        """
+        workdir_root = self._sanitize_gds_path_str(self.get_workdir_root())
+        return workdir_root + "/" + self.get_mid_path(target_id, timestamp)
+
+    def construct_outdir(self, target_id, timestamp: datetime):
+        """
+        Construct an output directory given target ID and a timestamp
+        """
+        output_root = self._sanitize_gds_path_str(self.get_output_root())
+        return output_root + "/" + self.get_mid_path(target_id, timestamp)
+
+    @abstractmethod
+    def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
+        """
+        Subclasses must implement
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow()) -> dict:
+        """
+        Subclasses must implement
+        """
+        raise NotImplementedError
+
+
 class WorkflowHelper(Helper):
     prefix = "umccr__automated"
 
@@ -68,9 +131,6 @@ class WorkflowHelper(Helper):
 
     def get_ssm_key_input(self):
         return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input"
-
-    def get_ssm_key_engine_parameters(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/engine_parameters"
 
     def construct_workflow_name(self, **kwargs):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
@@ -91,6 +151,51 @@ class WorkflowHelper(Helper):
             return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{utc_now_ts}"
         else:
             raise ValueError(f"Unsupported workflow type: {self.type.name}")
+
+
+class PrimaryDataHelper(WorkflowHelper, EngineParameter):
+
+    def __init__(self, type_: WorkflowType):
+        super().__init__(type_)
+
+    def get_mid_path(self, target_id: str, timestamp: datetime) -> str:
+        basename = Path("primary_data")
+        target_id = self._sanitize_target_id(target_id)
+        return str(basename / target_id)
+
+    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow()) -> dict:
+        """
+        Returns the dictionary of workflow engine parameters
+        :return:
+        """
+        target_id = self._sanitize_target_id(target_id)
+        return {
+            "outputDirectory": self.construct_outdir(target_id, timestamp)
+        }
+
+
+class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
+
+    def __init__(self, type_: WorkflowType):
+        super().__init__(type_)
+
+    def get_mid_path(self, target_id: str, timestamp: datetime) -> str:
+        basename = Path("analysis_data")
+        target_id = self._sanitize_target_id(target_id)
+        wfl_type = str(self.type.value)
+        ts = libdt.folder_friendly_timestamp(timestamp)
+        return str(basename / target_id / wfl_type / ts)
+
+    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow()) -> dict:
+        """
+        Returns the dictionary of workflow engine parameters
+        :return:
+        """
+        target_id = self._sanitize_target_id(target_id)
+        return {
+            "workDirectory": self.construct_workdir(target_id, timestamp),
+            "outputDirectory": self.construct_outdir(target_id, timestamp)
+        }
 
 
 class WorkflowRule:

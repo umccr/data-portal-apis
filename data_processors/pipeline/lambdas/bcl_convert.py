@@ -18,8 +18,7 @@ from typing import List
 import pandas as pd
 from data_portal.models import Workflow, LabMetadata
 from data_processors.pipeline.services import notification_srv, sequence_srv, workflow_srv, metadata_srv
-from data_processors.pipeline.domain.config import ICA_GDS_FASTQ_VOL
-from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
 from utils import libjson, libssm, libdt
@@ -268,7 +267,7 @@ def handler(event, context) -> dict:
     run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
 
-    wfl_helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
+    wfl_helper = PrimaryDataHelper(WorkflowType.BCL_CONVERT)
 
     # read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
@@ -329,11 +328,7 @@ def handler(event, context) -> dict:
     # All good, add as input
     workflow_input['settings_by_samples'] = settings_by_samples
 
-    # prepare engine_parameters
-    gds_fastq_vol = libssm.get_ssm_param(ICA_GDS_FASTQ_VOL)
-    engine_params_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_engine_parameters())
-    workflow_engine_params: dict = copy.deepcopy(libjson.loads(engine_params_template))
-    workflow_engine_params['outputDirectory'] = f"gds://{gds_fastq_vol}/{seq_name}"
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=seq_name)
 
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
@@ -349,7 +344,7 @@ def handler(event, context) -> dict:
         'workflow_version': workflow_version,
         'workflow_run_name': workflow_run_name,
         'workflow_input': workflow_input,
-        'workflow_engine_parameters': workflow_engine_params
+        'workflow_engine_parameters': workflow_engine_parameters
     }, context)
 
     workflow: Workflow = workflow_srv.create_or_update_workflow(

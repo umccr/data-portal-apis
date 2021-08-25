@@ -135,3 +135,18 @@ def sample_library_id_has_rerun(library_id: str) -> bool:
         return True
 
     return False
+
+
+def get_subject_id_from_library_id(library_id):
+    """
+    Get subject from a library id through metadata objects list
+    :param library_id:
+    :return:
+    """
+    try:
+        subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
+    except LabMetadata.DoesNotExist:
+        subject_id = None
+        logger.error(f"No subject found for library {library_id}")
+
+    return subject_id
