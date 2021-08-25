@@ -4,10 +4,10 @@
   "license": "MIT",
   "version": "0.1.0",
   "devDependencies": {
-    "husky": "^7.0.1",
-    "serverless": "^2.52.1",
+    "husky": "^7.0.2",
+    "serverless": "^2.56.0",
     "serverless-associate-waf": "^1.2.1",
-    "serverless-domain-manager": "^5.1.4",
+    "serverless-domain-manager": "^5.1.5",
     "serverless-prune-plugin": "^1.5.1",
     "serverless-python-requirements": "^5.1.1",
     "serverless-wsgi": "^1.7.8"
@@ -15,5 +15,7 @@
   "scripts": {
     "prepare": "husky install"
   },
-  "resolutions": {}
+  "resolutions": {
+    "jszip": "^3.7.0"
+  }
 }
