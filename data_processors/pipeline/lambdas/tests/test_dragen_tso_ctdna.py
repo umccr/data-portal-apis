@@ -7,7 +7,7 @@ from mockito import when
 
 from data_portal.models import Workflow, SequenceRun, BatchRun, Batch
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchFactory
-from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import dragen_tso_ctdna
 from data_processors.pipeline.services import metadata_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
@@ -148,7 +148,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         )
         mock_batch_run.save()
 
-        wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_TSO_CTDNA)
+        wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
 
         mock_dragen_tso_ctdna = Workflow()
         mock_dragen_tso_ctdna.type_name = WorkflowType.DRAGEN_TSO_CTDNA.name

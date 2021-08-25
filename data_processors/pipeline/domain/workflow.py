@@ -59,8 +59,7 @@ class Helper(object):
 
 class EngineParameter(ABC):
     """
-    Abstract EngineParameter that provide methods for generating _dynamic_ engine parameter values
-    instead of loading them as template from SSM Parameter Store.
+    Abstract EngineParameter that provide methods for generating engine parameter values
     """
 
     @staticmethod
@@ -70,10 +69,10 @@ class EngineParameter(ABC):
         return gds_path_str.rstrip("/")
 
     @staticmethod
-    def _sanitize_subject_id(subject_id: str):
-        if subject_id is None:
-            raise ValueError("subject_id must not be none")
-        return subject_id
+    def _sanitize_target_id(target_id: str):
+        if target_id is None:
+            raise ValueError("target_id must not be none")
+        return target_id
 
     @staticmethod
     def get_ssm_key_workdir_root():
@@ -89,41 +88,33 @@ class EngineParameter(ABC):
     def get_output_root(self):
         return libssm.get_ssm_param(self.get_ssm_key_output_root())
 
-    def construct_workdir(self, subject_id, timestamp: datetime):
+    def construct_workdir(self, target_id, timestamp: datetime):
         """
-        Construct a work directory given a subject ID and a timestamp
-        :return:
+        Construct a work directory given target ID and a timestamp
         """
         workdir_root = self._sanitize_gds_path_str(self.get_workdir_root())
-        return workdir_root + "/" + self.get_mid_path(subject_id, timestamp)
+        return workdir_root + "/" + self.get_mid_path(target_id, timestamp)
 
-    def construct_outdir(self, subject_id, timestamp: datetime):
+    def construct_outdir(self, target_id, timestamp: datetime):
         """
-        Construct an output directory given a subject ID and a timestamp
-        :param subject_id:
-        :param timestamp:
-        :return:
+        Construct an output directory given target ID and a timestamp
         """
         output_root = self._sanitize_gds_path_str(self.get_output_root())
-        return output_root + "/" + self.get_mid_path(subject_id, timestamp)
+        return output_root + "/" + self.get_mid_path(target_id, timestamp)
 
     @abstractmethod
     def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
         """
-        Implemented in subclasses
+        Subclasses must implement
         """
         raise NotImplementedError
 
-    def get_engine_parameters(self, subject_id: str, timestamp=datetime.utcnow()) -> dict:
+    @abstractmethod
+    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow()) -> dict:
         """
-        Returns the dictionary of workflow engine parameters
-        :return:
+        Subclasses must implement
         """
-        subject_id = self._sanitize_subject_id(subject_id)
-        return {
-            "workDirectory": self.construct_workdir(subject_id, timestamp),
-            "outputDirectory": self.construct_outdir(subject_id, timestamp)
-        }
+        raise NotImplementedError
 
 
 class WorkflowHelper(Helper):
@@ -140,9 +131,6 @@ class WorkflowHelper(Helper):
 
     def get_ssm_key_input(self):
         return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input"
-
-    def get_ssm_key_engine_parameters(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/engine_parameters"
 
     def construct_workflow_name(self, **kwargs):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
@@ -165,25 +153,49 @@ class WorkflowHelper(Helper):
             raise ValueError(f"Unsupported workflow type: {self.type.name}")
 
 
-class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
-    """
-    SecondaryAnalysisHelper with dynamically generating engine parameters
-
-    NOTE: Secondary Analysis workflow engine parameters are generated path from the root directory.
-    """
+class PrimaryDataHelper(WorkflowHelper, EngineParameter):
 
     def __init__(self, type_: WorkflowType):
         super().__init__(type_)
 
-    def get_ssm_key_engine_parameters(self):
-        raise ValueError(f"No template defined for engine parameters")
+    def get_mid_path(self, target_id: str, timestamp: datetime) -> str:
+        basename = Path("primary_data")
+        target_id = self._sanitize_target_id(target_id)
+        return str(basename / target_id)
 
-    def get_mid_path(self, subject_id: str, timestamp: datetime) -> str:
+    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow()) -> dict:
+        """
+        Returns the dictionary of workflow engine parameters
+        :return:
+        """
+        target_id = self._sanitize_target_id(target_id)
+        return {
+            "outputDirectory": self.construct_outdir(target_id, timestamp)
+        }
+
+
+class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
+
+    def __init__(self, type_: WorkflowType):
+        super().__init__(type_)
+
+    def get_mid_path(self, target_id: str, timestamp: datetime) -> str:
         basename = Path("analysis_data")
-        subject_id = self._sanitize_subject_id(subject_id)
-        wfl_type = str(self.type.value).upper()
+        target_id = self._sanitize_target_id(target_id)
+        wfl_type = str(self.type.value)
         ts = libdt.folder_friendly_timestamp(timestamp)
-        return str(basename / subject_id / wfl_type / ts)
+        return str(basename / target_id / wfl_type / ts)
+
+    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow()) -> dict:
+        """
+        Returns the dictionary of workflow engine parameters
+        :return:
+        """
+        target_id = self._sanitize_target_id(target_id)
+        return {
+            "workDirectory": self.construct_workdir(target_id, timestamp),
+            "outputDirectory": self.construct_outdir(target_id, timestamp)
+        }
 
 
 class WorkflowRule:

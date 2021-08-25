@@ -6,7 +6,6 @@ Consider Enum, if there's a need for (name, value) and better protected tuple pa
 Or consider Helper class-ing where composite builder is needed.
 """
 
-ICA_GDS_FASTQ_VOL = "/iap/gds/fastq_vol"
 ICA_WORKFLOW_PREFIX = "/iap/workflow"
 
 SQS_TN_QUEUE_ARN = "/data_portal/backend/sqs_tumor_normal_queue_arn"

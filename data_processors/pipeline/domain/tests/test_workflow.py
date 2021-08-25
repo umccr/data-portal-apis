@@ -2,7 +2,8 @@ import json
 
 from data_portal.models import Workflow
 from data_portal.tests import factories
-from data_processors.pipeline.domain.workflow import WorkflowRule, WorkflowType, SecondaryAnalysisHelper
+from data_processors.pipeline.domain.workflow import WorkflowRule, WorkflowType, SecondaryAnalysisHelper, \
+    PrimaryDataHelper
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 
 
@@ -58,9 +59,15 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         self.assertIn("SBJ0001", eng_params['workDirectory'])
         self.assertIn("SBJ0001", eng_params['outputDirectory'])
 
-        try:
-            _ = helper.get_ssm_key_engine_parameters()
-        except ValueError as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-
-        self.assertRaises(ValueError)
+    def test_primary_data_helper(self):
+        """
+        python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_primary_data_helper
+        """
+        helper = PrimaryDataHelper(WorkflowType.DRAGEN_WGS_QC)
+        logger.info(helper.get_workdir_root())
+        logger.info(helper.get_output_root())
+        eng_params = helper.get_engine_parameters("200612_A01052_0017_BH5LYWDSXY")
+        logger.info(eng_params)
+        self.assertNotIn("workDirectory", eng_params.keys())
+        self.assertIn("outputDirectory", eng_params.keys())
+        self.assertIn("200612_A01052_0017_BH5LYWDSXY", eng_params['outputDirectory'])
