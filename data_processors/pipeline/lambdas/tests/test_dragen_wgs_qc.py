@@ -7,8 +7,9 @@ from mockito import when
 
 from data_portal.models import Workflow, SequenceRun, BatchRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchRunFactory
-from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowHelper
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import dragen_wgs_qc
+from data_processors.pipeline.services import metadata_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from utils import libjson, libssm
 
@@ -20,6 +21,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         workflow: dict = dragen_wgs_qc.handler({
             "library_id": "SAMPLE_NAME",
@@ -56,6 +58,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         mock_wfr: libwes.WorkflowRun = libwes.WorkflowRun()
         mock_wfr.id = TestConstant.wfr_id.value
@@ -102,7 +105,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         mock_sqr: SequenceRun = SequenceRunFactory()
         mock_batch_run: BatchRun = BatchRunFactory()
 
-        wfl_helper = WorkflowHelper(WorkflowType.DRAGEN_WGS_QC)
+        wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WGS_QC)
 
         mock_dragen_wgs_qc = Workflow()
         mock_dragen_wgs_qc.type_name = WorkflowType.DRAGEN_WGS_QC.name
@@ -152,6 +155,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         """
 
         mock_sqr: SequenceRun = SequenceRunFactory()
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         mock_job = {
             "library_id": "SAMPLE_NAME",

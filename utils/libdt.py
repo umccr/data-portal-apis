@@ -33,3 +33,12 @@ def serializable_datetime(dt) -> str:
     if isinstance(dt, datetime):
         _dt: datetime = dt
         return _dt.isoformat()
+
+
+def folder_friendly_timestamp(dt: datetime) -> str:
+    """
+    Get a folder friendly timestamp of the format
+    :param dt:
+    :return:
+    """
+    return dt.strftime("%Y-%m-%d__%H-%M-%S")

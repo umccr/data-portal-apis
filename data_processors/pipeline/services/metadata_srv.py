@@ -85,3 +85,18 @@ def get_library_id_from_workflow(workflow: Workflow):
     # otherwise assume legacy naming
     # remove the first part (Sample ID) from the sample_library_name to get the Library ID
     return '_'.join(workflow.sample_name.split('_')[1:])
+
+
+def get_subject_id_from_library_id(library_id):
+    """
+    Get subject from a library id through metadata objects list
+    :param library_id:
+    :return:
+    """
+    try:
+        subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
+    except LabMetadata.DoesNotExist:
+        subject_id = None
+        logger.error(f"No subject found for library {library_id}")
+
+    return subject_id
