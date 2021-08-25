@@ -189,7 +189,7 @@ class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     start = make_aware(datetime.now())
     end_status = WorkflowStatus.RUNNING.value
     notified = True
-    sample_name = TestConstant.sample_name_tumor.value
+    sample_name = TestConstant.library_id_tumor.value
 
     wfr_name = factory.LazyAttribute(
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"

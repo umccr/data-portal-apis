@@ -2,6 +2,7 @@ import logging
 from typing import List
 
 from django.db import transaction
+from django.db.models import QuerySet
 
 from data_portal.models import SequenceRun, FastqListRow
 
@@ -82,6 +83,16 @@ def get_fastq_list_row_by_rgid(rgid):
         return None
 
     return fastq_list_row
+
+
+@transaction.atomic
+def get_fastq_list_row_by_rglb(rglb) -> List[FastqListRow]:
+    fqlr_list = list()
+    qs: QuerySet = FastqListRow.objects.filter(rglb__exact=rglb)
+    if qs.exists():
+        for fqlr in qs.all():
+            fqlr_list.append(fqlr)
+    return fqlr_list
 
 
 def extract_sample_library_ids(fastq_list_rows: List[FastqListRow]):

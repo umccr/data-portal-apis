@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Get the libraries for this subject that were in this run
-PHENOTYPES = [LabMetadataPhenotype.TUMOR, LabMetadataPhenotype.NORMAL]
-TYPES = [LabMetadataType.WGS]
-WORKFLOWS = [LabMetadataWorkflow.CLINICAL, LabMetadataWorkflow.RESEARCH]
+PHENOTYPES = [LabMetadataPhenotype.TUMOR.value, LabMetadataPhenotype.NORMAL.value]
+TYPES = [LabMetadataType.WGS.value]
+WORKFLOWS = [LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value]
 
 
 def perform(this_workflow):
@@ -42,7 +42,7 @@ def perform(this_workflow):
     subjects = list()
     if len(running) == 0:
         logger.info("All QC workflows finished, proceeding to T/N preparation")
-        # determine which samples are available for T/N wokflow
+        # determine which samples are available for T/N workflow
         subjects = metadata_srv.get_subjects_from_runs(succeeded)
         libraries = metadata_srv.get_libraries_from_runs(succeeded)
         logger.info(f"Preparing T/N workflows for subjects {subjects}")
@@ -51,6 +51,8 @@ def perform(this_workflow):
             logger.info(F"Submitting {len(job_list)} T/N jobs.")
             queue_arn = libssm.get_ssm_param(SQS_TN_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
+        else:
+            logger.error(f"Calling to prepare_tumor_normal_jobs() return empty list, no job dispatch...")
     else:
         logger.debug(f"DRAGEN_WGS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
 
@@ -60,7 +62,8 @@ def perform(this_workflow):
 
 
 def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list:
-    jobs = list()
+    job_list = list()
+
     for subject in subjects:
         # Apply more stringent filtering to our libraries for this subject
         # Were they part of the "clinical" or "research" workflow type
@@ -68,12 +71,16 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
         # Are they of the phenotype 'tumor' or 'normal'?
         sub_lib_rows: List[LabMetadata] = []
 
-        for library_id, subject_id, phenotype, _type, workflow in product(libraries, subjects, PHENOTYPES, TYPES, WORKFLOWS):
-            sub_lib_rows.extend(LabMetadata.objects.filter(library_id__exact=library_id,
-                                                           subject_id__exact=subject_id,
-                                                           phenotype__exact=phenotype,
-                                                           type__exact=_type,
-                                                           workflow__exact=workflow))
+        for library_id, subject_id, phenotype, type_, meta_wfl in product(libraries, subjects, PHENOTYPES, TYPES, WORKFLOWS):
+            sub_lib_rows.extend(
+                metadata_srv.get_metadata_by_keywords(
+                    library_id=library_id,
+                    subject_id=subject_id,
+                    phenotype=phenotype,
+                    type_=type_,
+                    meta_wfl=meta_wfl
+                )
+            )
 
         # Get library rows
         libs_lab_df: pd.DataFrame = pd.DataFrame([{"library_id": lab_metadata.library_id,
@@ -101,8 +108,19 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
 
             # All libraries (includes 'topup' and 'rerun') suffix for this given subject, phenotype, type and workflow
             # (includes libraries on other runs)
-            all_subject_tumor_libraries: List[str] = LabMetadata.objects.filter(subject_id__exact=subject_id, phenotype="tumor", type="WGS", workflow=workflow)
-            all_subject_normal_libraries: List[str] = LabMetadata.objects.filter(subject_id__exact=subject_id, phenotype="normal", type="WGS", workflow=workflow)
+            all_subject_normal_libraries: List[str] = metadata_srv.get_all_libraries_by_keywords(
+                subject_id=subject_id,
+                phenotype=LabMetadataPhenotype.NORMAL.value,
+                type_=LabMetadataType.WGS.value,
+                meta_wfl=workflow
+            )
+
+            all_subject_tumor_libraries: List[str] = metadata_srv.get_all_libraries_by_keywords(
+                subject_id=subject_id,
+                phenotype=LabMetadataPhenotype.TUMOR.value,
+                type_=LabMetadataType.WGS.value,
+                meta_wfl=workflow
+            )
 
             # Strip topup / rerun normal from all of these libraries
             # if this run contains a topup or rerun, we will reprocess
@@ -142,11 +160,11 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
 
             # Set the normal library id and get the fastq list rows from it!
             normal_library_id = all_subject_normal_libraries_stripped[0]
-            normal_fastq_list_rows = FastqListRow.objects.filter(rglb__exact=normal_library_id)
+            normal_fastq_list_rows = fastq_srv.get_fastq_list_row_by_rglb(normal_library_id)
             # FIXME - remove rows before rerun
             # For now just skip if normal library id contains rerun
             for fastq_list_row in normal_fastq_list_rows:
-                full_sample_library_id = fastq_list_row.id.rsplit(".", 1)[-1]
+                full_sample_library_id = fastq_list_row.rgid.rsplit(".", 1)[-1]
                 if metadata_srv.sample_library_id_has_rerun(full_sample_library_id):
                     # Reset fastq list rows
                     normal_fastq_list_rows = []
@@ -163,11 +181,11 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
             # includes the ones in this run AND those in previous runs
             if normal_in_run:
                 for tumor_library_id in all_subject_tumor_libraries_stripped:
-                    tumor_fastq_list_rows = FastqListRow.objects.filter(rglb__exact=tumor_library_id)
+                    tumor_fastq_list_rows = fastq_srv.get_fastq_list_row_by_rglb(tumor_library_id)
                     # FIXME - remove rows before rerun
                     # For now just skip if tumor library id contains rerun
                     for fastq_list_row in tumor_fastq_list_rows:
-                        full_sample_library_id = fastq_list_row.id.rsplit(".", 1)[-1]
+                        full_sample_library_id = fastq_list_row.rgid.rsplit(".", 1)[-1]
                         if metadata_srv.sample_library_id_has_rerun(full_sample_library_id):
                             # Reset fastq list rows - we don't know what to do with reruns
                             tumor_fastq_list_rows = []
@@ -183,7 +201,7 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
                 # Just the tumor(s) in this run
                 # Pre-existing tumors will have been analysed
                 for tumor_library_id in libs_lab_df["library_id"].apply(metadata_srv.strip_topup_rerun_from_library_id).unique().tolist():
-                    tumor_fastq_list_rows = FastqListRow.objects.filter(rglb__exact=tumor_library_id)
+                    tumor_fastq_list_rows = fastq_srv.get_fastq_list_row_by_rglb(tumor_library_id)
                     if not len(tumor_fastq_list_rows) == 0:
                         subject_t_n_fastq_list_row_pairs.append((tumor_fastq_list_rows, normal_fastq_list_rows))
                     else:
@@ -191,9 +209,9 @@ def prepare_tumor_normal_jobs(subjects: List[str], libraries: List[str]) -> list
                                        f"could not find any fastq list rows for {tumor_library_id}")
 
         for (tumor_fastq_list_rows, normal_fastq_list_rows) in subject_t_n_fastq_list_row_pairs:
-            jobs.extend(create_tn_job(tumor_fastq_list_rows, normal_fastq_list_rows, subject_id=subject))
+            job_list.append(create_tn_job(tumor_fastq_list_rows, normal_fastq_list_rows, subject_id=subject))
 
-    return jobs
+    return job_list
 
 
 def create_tn_job(tumor_fastq_list_rows: List[FastqListRow], normal_fastq_list_rows: List[FastqListRow], subject_id):
@@ -201,13 +219,13 @@ def create_tn_job(tumor_fastq_list_rows: List[FastqListRow], normal_fastq_list_r
     tumor_sample_id = tumor_fastq_list_rows[0].rgsm
 
     # create T/N job definition
-    job_json = {
+    job_dict = {
         "subject_id": subject_id,
-        "fastq_list_rows": pd.DataFrame([fq_list_row.to_dict() for fq_list_row in normal_fastq_list_rows]).to_json(orient="records"),
-        "tumor_fastq_list_rows": pd.DataFrame([fq_list_row.to_dict() for fq_list_row in tumor_fastq_list_rows]).to_json(orient="records"),
+        "fastq_list_rows": pd.DataFrame([fq_list_row.to_dict() for fq_list_row in normal_fastq_list_rows]).to_dict(orient="records"),
+        "tumor_fastq_list_rows": pd.DataFrame([fq_list_row.to_dict() for fq_list_row in tumor_fastq_list_rows]).to_dict(orient="records"),
         "output_file_prefix": tumor_sample_id,
         "output_directory": subject_id,
         "sample_name": tumor_sample_id
     }
 
-    return job_json
+    return job_dict

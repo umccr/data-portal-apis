@@ -140,6 +140,7 @@ def sample_library_id_has_rerun(library_id: str) -> bool:
     return False
 
 
+@transaction.atomic
 def get_subject_id_from_library_id(library_id):
     """
     Get subject from a library id through metadata objects list
@@ -153,3 +154,55 @@ def get_subject_id_from_library_id(library_id):
         logger.error(f"No subject found for library {library_id}")
 
     return subject_id
+
+
+@transaction.atomic
+def get_metadata_by_keywords(**kwargs) -> List[LabMetadata]:
+    """
+    library_id, subject_id, phenotype, type_, meta_wfl
+
+    NOTE: type_ and meta_wfl are intentional
+
+    :param kwargs:
+    :return: List[LabMetadata]
+    """
+    meta_list = list()
+    if len(kwargs.keys()) == 0:
+        return meta_list
+
+    qs: QuerySet = LabMetadata.objects.get_queryset()
+
+    if "library_id" in kwargs:
+        qs = qs.filter(library_id__exact=kwargs['library_id'])
+
+    if "subject_id" in kwargs:
+        qs = qs.filter(subject_id__exact=kwargs['subject_id'])
+
+    if "phenotype" in kwargs:
+        qs = qs.filter(phenotype__exact=kwargs['phenotype'])
+
+    if "type_" in kwargs:
+        qs = qs.filter(type__exact=kwargs['type_'])
+
+    if "meta_wfl" in kwargs:
+        qs = qs.filter(workflow__exact=kwargs['meta_wfl'])
+
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
+    return meta_list
+
+
+@transaction.atomic
+def get_all_libraries_by_keywords(**kwargs) -> List[str]:
+    """
+    Query filter by keywords then collect library_id and return
+
+    :param kwargs: See get_metadata_by_keywords()
+    :return: List[str]
+    """
+    library_id_list = list()
+    meta_list = get_metadata_by_keywords(**kwargs)
+    for meta in meta_list:
+        library_id_list.append(meta.library_id)
+    return library_id_list
