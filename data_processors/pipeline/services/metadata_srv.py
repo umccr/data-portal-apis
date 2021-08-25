@@ -75,16 +75,19 @@ def get_subjects_from_runs(workflows: List[Workflow]) -> list:
     return list(subjects)
 
 
+@transaction.atomic
 def get_libraries_from_runs(workflows: List[Workflow]) -> list:
     libraries = set()
 
     for workflow in workflows:
+        library_id = get_library_id_from_workflow(workflow)
         try:
-            library_id = LabMetadata.objects.get(library_id=library_id).library_id
+            library_id_from_db = LabMetadata.objects.get(library_id=library_id).library_id
         except LabMetadata.DoesNotExist:
-            logger.error(f"Couldn't confirm library {library_id} was in metadata ")
+            logger.error(f"Library {library_id} not found in metadata, skipping")
             continue
-        libraries.add(get_library_id_from_workflow(workflow))
+        if library_id_from_db:
+            libraries.add(library_id_from_db)
 
     return list(libraries)
 
