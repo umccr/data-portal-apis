@@ -1,5 +1,6 @@
 import logging
 from typing import List
+import re
 
 from django.db import transaction
 from django.db.models import QuerySet
@@ -74,6 +75,23 @@ def get_subjects_from_runs(workflows: List[Workflow]) -> list:
     return list(subjects)
 
 
+@transaction.atomic
+def get_libraries_from_runs(workflows: List[Workflow]) -> list:
+    libraries = set()
+
+    for workflow in workflows:
+        library_id = get_library_id_from_workflow(workflow)
+        try:
+            library_id_from_db = LabMetadata.objects.get(library_id=library_id).library_id
+        except LabMetadata.DoesNotExist:
+            logger.error(f"Library {library_id} not found in metadata, skipping")
+            continue
+        if library_id_from_db:
+            libraries.add(library_id_from_db)
+
+    return list(libraries)
+
+
 def get_library_id_from_workflow(workflow: Workflow):
     # FIXME This may be gone for good. See https://github.com/umccr/data-portal-apis/issues/244
 
@@ -87,6 +105,42 @@ def get_library_id_from_workflow(workflow: Workflow):
     return '_'.join(workflow.sample_name.split('_')[1:])
 
 
+def strip_topup_rerun_from_library_id(library_id: str) -> str:
+    """
+    Use some fancy regex to remove _topup or _rerun from library id
+    ... well for now just some regex, pls don't try to understand it
+    https://regex101.com/r/Z8IG4T/1
+    :return:
+    """
+
+    library_id_regex = re.match(r"(L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?|_rerun\d?)?", library_id)
+
+    if library_id_regex is None:
+        logger.warning(f"Could not get library id from {library_id}, returning input")
+        return library_id
+
+    return library_id_regex.group(1)
+
+
+def sample_library_id_has_rerun(library_id: str) -> bool:
+    """
+    Check if a library id is a rerun
+    :param library_id:
+    :return:
+    """
+    library_id_rerun_regex = re.match(r"(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+)(?:L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?)?(_rerun\d?)?", library_id)
+
+    if library_id_rerun_regex is None:
+        logger.warning(f"Could not determine if library id has rerun - or not {library_id}, returning False")
+        return False
+
+    if library_id_rerun_regex.group(1) is not None:
+        return True
+
+    return False
+
+
+@transaction.atomic
 def get_subject_id_from_library_id(library_id):
     """
     Get subject from a library id through metadata objects list
@@ -100,3 +154,55 @@ def get_subject_id_from_library_id(library_id):
         logger.error(f"No subject found for library {library_id}")
 
     return subject_id
+
+
+@transaction.atomic
+def get_metadata_by_keywords(**kwargs) -> List[LabMetadata]:
+    """
+    library_id, subject_id, phenotype, type_, meta_wfl
+
+    NOTE: type_ and meta_wfl are intentional
+
+    :param kwargs:
+    :return: List[LabMetadata]
+    """
+    meta_list = list()
+    if len(kwargs.keys()) == 0:
+        return meta_list
+
+    qs: QuerySet = LabMetadata.objects.get_queryset()
+
+    if "library_id" in kwargs:
+        qs = qs.filter(library_id__exact=kwargs['library_id'])
+
+    if "subject_id" in kwargs:
+        qs = qs.filter(subject_id__exact=kwargs['subject_id'])
+
+    if "phenotype" in kwargs:
+        qs = qs.filter(phenotype__exact=kwargs['phenotype'])
+
+    if "type_" in kwargs:
+        qs = qs.filter(type__exact=kwargs['type_'])
+
+    if "meta_wfl" in kwargs:
+        qs = qs.filter(workflow__exact=kwargs['meta_wfl'])
+
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
+    return meta_list
+
+
+@transaction.atomic
+def get_all_libraries_by_keywords(**kwargs) -> List[str]:
+    """
+    Query filter by keywords then collect library_id and return
+
+    :param kwargs: See get_metadata_by_keywords()
+    :return: List[str]
+    """
+    library_id_list = list()
+    meta_list = get_metadata_by_keywords(**kwargs)
+    for meta in meta_list:
+        library_id_list.append(meta.library_id)
+    return library_id_list

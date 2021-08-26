@@ -1,13 +1,12 @@
 import json
-import uuid
 from datetime import datetime
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import LabMetadata, FastqListRow, LabMetadataPhenotype, \
-    LabMetadataType, Workflow
+from data_portal.models import LabMetadata, FastqListRow, Workflow, LabMetadataPhenotype, LabMetadataType, \
+    LabMetadataWorkflow
 from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
@@ -16,9 +15,8 @@ from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, Pip
 
 tn_mock_subject_id = "SBJ00001"
 tn_mock_normal_read_1 = "gds://volume/path/normal_read_1.fastq.gz"
-mock_library_id = "LPRJ200438"
-mock_sample_id = "PRJ200438"
-mock_sample_name = f"{mock_sample_id}_{mock_library_id}"
+normal_fastq_list_rows = []
+tumor_fastq_list_rows = []
 
 
 def build_tn_mock():
@@ -37,6 +35,7 @@ def build_tn_mock():
     mock_labmetadata_normal.library_id = TestConstant.library_id_normal.value
     mock_labmetadata_normal.phenotype = LabMetadataPhenotype.NORMAL.value
     mock_labmetadata_normal.type = LabMetadataType.WGS.value
+    mock_labmetadata_normal.workflow = LabMetadataWorkflow.CLINICAL.value
     mock_labmetadata_normal.save()
 
     mock_labmetadata_tumor = LabMetadata()
@@ -44,24 +43,27 @@ def build_tn_mock():
     mock_labmetadata_tumor.library_id = TestConstant.library_id_tumor.value
     mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
     mock_labmetadata_tumor.type = LabMetadataType.WGS.value
+    mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CLINICAL.value
     mock_labmetadata_tumor.save()
 
     mock_flr_normal = FastqListRow()
     mock_flr_normal.lane = 1
     mock_flr_normal.rglb = TestConstant.library_id_normal.value
     mock_flr_normal.rgsm = TestConstant.sample_id.value
-    mock_flr_normal.rgid = str(uuid.uuid4())
+    mock_flr_normal.rgid = f"AACTCACC.1.350702_A00130_0137_AH5KMHDSXY.{mock_flr_normal.rgsm}_{mock_flr_normal.rglb}"
     mock_flr_normal.read_1 = tn_mock_normal_read_1
     mock_flr_normal.save()
+    normal_fastq_list_rows.append(mock_flr_normal)
 
     mock_flr_tumor = FastqListRow()
     mock_flr_tumor.lane = 2
     mock_flr_tumor.rglb = TestConstant.library_id_tumor.value
     mock_flr_tumor.rgsm = TestConstant.sample_id.value
-    mock_flr_tumor.rgid = str(uuid.uuid4())
+    mock_flr_tumor.rgid = f"AACTCACC.2.350702_A00130_0137_AH5KMHDSXY.{mock_flr_tumor.rgsm}_{mock_flr_tumor.rglb}"
     mock_flr_tumor.read_1 = "gds://volume/path/tumor_read_1.fastq.gz"
     mock_flr_tumor.read_2 = "gds://volume/path/tumor_read_2.fastq.gz"
     mock_flr_tumor.save()
+    tumor_fastq_list_rows.append(mock_flr_tumor)
 
 
 class TumorNormalStepUnitTests(PipelineUnitTestCase):
@@ -91,7 +93,9 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
 
         logger.info("-" * 32)
         self.assertIsNotNone(result)
-        logger.info(f"Orchestrator lambda call output: \n{json.dumps(result)}")
+        logger.info(f"Orchestrator lambda call output: {json.dumps(result)}")
+        self.assertEqual(1, len(result))
+        self.assertEqual(tn_mock_subject_id, result[0]['subjects'][0])
 
     def test_create_tn_job(self):
         """
@@ -100,14 +104,17 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
 
         build_tn_mock()
 
-        job_dict_list = tumor_normal_step.create_tn_jobs(tn_mock_subject_id)
-        self.assertEqual(len(job_dict_list), 1)
+        job_dict = tumor_normal_step.create_tn_job(
+            tumor_fastq_list_rows,
+            normal_fastq_list_rows,
+            tn_mock_subject_id
+        )
 
-        job_dict = job_dict_list[0]
+        logger.info(f"Job JSON: {json.dumps(job_dict)}")
+
         self.assertEqual(job_dict['subject_id'], tn_mock_subject_id)
         self.assertEqual(job_dict['fastq_list_rows'][0]['rglb'], TestConstant.library_id_normal.value)
         self.assertEqual(job_dict['fastq_list_rows'][0]['read_1']['location'], tn_mock_normal_read_1)
-        logger.info(f"Job JSON: {json.dumps(job_dict)}")
 
 
 class TumorNormalStepIntegrationTests(PipelineIntegrationTestCase):
