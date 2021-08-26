@@ -192,10 +192,16 @@ class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
         :return:
         """
         target_id = self._sanitize_target_id(target_id)
-        return {
+        engine_params = {
             "workDirectory": self.construct_workdir(target_id, timestamp),
             "outputDirectory": self.construct_outdir(target_id, timestamp)
         }
+
+        if self.type == WorkflowType.DRAGEN_TSO_CTDNA:
+            # See https://github.com/umccr-illumina/cwl-iap/issues/200
+            engine_params.update(maxScatter=8)
+
+        return engine_params
 
 
 class WorkflowRule:

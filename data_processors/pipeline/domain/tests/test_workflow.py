@@ -54,10 +54,16 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         logger.info(helper.get_output_root())
         eng_params = helper.get_engine_parameters("SBJ0001")
         logger.info(eng_params)
-        self.assertIn("workDirectory", eng_params.keys())
-        self.assertIn("outputDirectory", eng_params.keys())
+        self.assertIn("workDirectory", eng_params)
+        self.assertIn("outputDirectory", eng_params)
         self.assertIn("SBJ0001", eng_params['workDirectory'])
         self.assertIn("SBJ0001", eng_params['outputDirectory'])
+
+        tso_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
+        tso_eng_params = tso_helper.get_engine_parameters("SBJ0002")
+        logger.info(tso_eng_params)
+        self.assertIn("maxScatter", tso_eng_params)
+        self.assertEqual(tso_eng_params['maxScatter'], 8)
 
     def test_primary_data_helper(self):
         """
@@ -68,6 +74,6 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         logger.info(helper.get_output_root())
         eng_params = helper.get_engine_parameters("200612_A01052_0017_BH5LYWDSXY")
         logger.info(eng_params)
-        self.assertNotIn("workDirectory", eng_params.keys())
-        self.assertIn("outputDirectory", eng_params.keys())
+        self.assertNotIn("workDirectory", eng_params)
+        self.assertIn("outputDirectory", eng_params)
         self.assertIn("200612_A01052_0017_BH5LYWDSXY", eng_params['outputDirectory'])
