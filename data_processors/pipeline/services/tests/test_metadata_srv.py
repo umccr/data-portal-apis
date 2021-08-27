@@ -45,24 +45,24 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         )
         self.assertEqual(meta.library_id, mock_meta.library_id)
 
-    def test_get_subjects_from_runs(self):
+    def test_get_tn_metadata_by_qc_runs(self):
         """
-        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_subjects_from_runs
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_tn_metadata_by_qc_runs
         """
         mock_meta: LabMetadata = factories.LabMetadataFactory()
         mock_workflow = Workflow(
             sample_name=TestConstant.library_id_normal.value,
             type_name=WorkflowType.DRAGEN_WGS_QC.name,
         )
-        subject_list = metadata_srv.get_subjects_from_runs([mock_workflow])
-        self.assertEqual(subject_list[0], mock_meta.subject_id)
+        meta_list = metadata_srv.get_tn_metadata_by_qc_runs([mock_workflow])
+        self.assertEqual(meta_list[0].subject_id, mock_meta.subject_id)
 
     def test_get_library_id_from_workflow(self):
         """
         python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_library_id_from_workflow
         """
 
-        lib_id = metadata_srv.get_library_id_from_workflow(
+        lib_id = metadata_srv._get_library_id_from_workflow(
             Workflow(
                 sample_name=TestConstant.library_id_normal.value,
                 type_name=WorkflowType.DRAGEN_WGS_QC.name,
@@ -71,7 +71,7 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         logger.info(lib_id)
         self.assertEqual(lib_id, TestConstant.library_id_normal.value)
 
-        lib_id = metadata_srv.get_library_id_from_workflow(
+        lib_id = metadata_srv._get_library_id_from_workflow(
             Workflow(
                 sample_name=TestConstant.library_id_normal.value,
                 type_name=WorkflowType.DRAGEN_TSO_CTDNA.name,
@@ -80,7 +80,7 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         logger.info(lib_id)
         self.assertEqual(lib_id, TestConstant.library_id_normal.value)
 
-        lib_id = metadata_srv.get_library_id_from_workflow(
+        lib_id = metadata_srv._get_library_id_from_workflow(
             Workflow(
                 sample_name=TestConstant.sample_name_normal.value,
             )

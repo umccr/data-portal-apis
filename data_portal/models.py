@@ -325,7 +325,7 @@ class LabMetadata(models.Model):
     objects = LabMetadataManager()
 
     def __str__(self):
-        return 'id=%s, illumina_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
+        return 'id=%s, library_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
 
 

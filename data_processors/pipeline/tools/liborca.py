@@ -7,11 +7,12 @@ A catchall module for pipeline Orchestration related functions impl that does no
 
 Oh yah, impls are like "killer whale" yosh!! 💪
 
-NOTE: Please retain function into their stateless as much as possible. i.e. in > Fn() > out
-Input and output arguments are typically their Primitive forms such as str, int, list, dict, etc..
+NOTE: Please retain function into their _stateless_ as much as possible. i.e. in > Fn() > out
+Input and output arguments are typically their _Primitive_ forms such as str, int, list, dict, etc..
 """
 import logging
 import os
+import re
 from contextlib import closing
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -99,6 +100,42 @@ def get_timestamp_from_run_name(run_name: str) -> str:
     date_part = run_name.split('_')[0]
     # convert to format YYYY-MM-DD
     return datetime.strptime(date_part, '%y%m%d').strftime('%Y-%m-%d')
+
+
+def strip_topup_rerun_from_library_id(library_id: str) -> str:
+    """
+    Use some fancy regex to remove _topup or _rerun from library id
+    ... well for now just some regex, pls don't try to understand it
+    https://regex101.com/r/Z8IG4T/1
+    :return:
+    """
+    # TODO refactor this into libregex
+    library_id_regex = re.match(r"(L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?|_rerun\d?)?", library_id)
+
+    if library_id_regex is None:
+        logger.warning(f"Could not get library id from {library_id}, returning as is")
+        return library_id
+
+    return library_id_regex.group(1)
+
+
+def sample_library_id_has_rerun(sample_library_id: str) -> bool:
+    """
+    Check if a library id has a rerun suffix
+
+    :param sample_library_id: as in SampleSheet v1 {sample_id}_{library_id}
+    :return:
+    """
+    # TODO refactor this into libregex
+    library_id_rerun_regex = re.match(r"(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+)_(?:L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?)?(_rerun\d?)?", sample_library_id)
+
+    if library_id_rerun_regex is None:
+        return False
+
+    if library_id_rerun_regex.group(1) is not None:
+        return True
+
+    return False
 
 
 def get_library_id_from_sample_name(sample_name: str):

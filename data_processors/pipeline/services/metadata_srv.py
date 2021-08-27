@@ -1,11 +1,21 @@
+# -*- coding: utf-8 -*-
+"""metadata_srv module
+
+This service module contains _stateful_ impls, backed by Portal's LabMetadata model as center of this module aggregate.
+It would be best, if this module self-contain (cohesive) to its root model, i.e. LabMetadata.
+However, sometime this is not the case. So it is ok to import in (cross talk) to other model either through their
+respective services and/or use them here, e.g. Workflow and/or workflow_srv.
+
+Rules-of-thumb: every module "import" is coupling dependencies, so less import is better.
+If impl is _stateless_ then they should better be in liborca module and follow guide in its module doc string.
+"""
 import logging
 from typing import List
-import re
 
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import Workflow, LabMetadata
+from data_portal.models import Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_processors.pipeline.domain.workflow import WorkflowType
 
 logger = logging.getLogger(__name__)
@@ -57,43 +67,37 @@ def get_metadata_by_sample_library_name_as_in_samplesheet(sample_library_name):
 
 
 @transaction.atomic
-def get_subjects_from_runs(workflows: List[Workflow]) -> list:
-    subjects = set()
-    for workflow in workflows:
-        # use workflow helper class to extract sample/library ID from workflow
-        library_id = get_library_id_from_workflow(workflow)
-        logger.info(f"Extracted libraryID {library_id} from workflow {workflow} with sample name: {workflow.sample_name}")
-        # use metadata helper class to get corresponding subject ID
-        try:
-            subject_id = LabMetadata.objects.get(library_id=library_id).subject_id
-        except LabMetadata.DoesNotExist:
-            subject_id = None
-            logger.error(f"No subject for library {library_id}")
-        if subject_id:
-            subjects.add(subject_id)
+def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> List[LabMetadata]:
+    """
+    Determine which samples are available for T/N workflow
 
-    return list(subjects)
+    :param qc_workflows: Succeeded QC workflows
+    :return: List[LabMetadata]
+    """
+    meta_list = list()
 
+    libraries = []
+    for qc_workflow in qc_workflows:
+        library_id = _get_library_id_from_workflow(qc_workflow)
+        libraries.append(library_id)
 
-@transaction.atomic
-def get_libraries_from_runs(workflows: List[Workflow]) -> list:
-    libraries = set()
+    qs: QuerySet = LabMetadata.objects.filter(
+        library_id__in=libraries,
+        phenotype__in=[LabMetadataPhenotype.TUMOR.value, LabMetadataPhenotype.NORMAL.value],
+        type__in=[LabMetadataType.WGS.value],
+        workflow__in=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+    )
 
-    for workflow in workflows:
-        library_id = get_library_id_from_workflow(workflow)
-        try:
-            library_id_from_db = LabMetadata.objects.get(library_id=library_id).library_id
-        except LabMetadata.DoesNotExist:
-            logger.error(f"Library {library_id} not found in metadata, skipping")
-            continue
-        if library_id_from_db:
-            libraries.add(library_id_from_db)
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
 
-    return list(libraries)
+    return meta_list
 
 
-def get_library_id_from_workflow(workflow: Workflow):
+def _get_library_id_from_workflow(workflow: Workflow):
     # FIXME This may be gone for good. See https://github.com/umccr/data-portal-apis/issues/244
+    #  hence, pls use it within this module
 
     # these workflows use library_id
     if workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() \
@@ -103,41 +107,6 @@ def get_library_id_from_workflow(workflow: Workflow):
     # otherwise assume legacy naming
     # remove the first part (Sample ID) from the sample_library_name to get the Library ID
     return '_'.join(workflow.sample_name.split('_')[1:])
-
-
-def strip_topup_rerun_from_library_id(library_id: str) -> str:
-    """
-    Use some fancy regex to remove _topup or _rerun from library id
-    ... well for now just some regex, pls don't try to understand it
-    https://regex101.com/r/Z8IG4T/1
-    :return:
-    """
-
-    library_id_regex = re.match(r"(L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?|_rerun\d?)?", library_id)
-
-    if library_id_regex is None:
-        logger.warning(f"Could not get library id from {library_id}, returning input")
-        return library_id
-
-    return library_id_regex.group(1)
-
-
-def sample_library_id_has_rerun(library_id: str) -> bool:
-    """
-    Check if a library id is a rerun
-    :param library_id:
-    :return:
-    """
-    library_id_rerun_regex = re.match(r"(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+)(?:L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?)?(_rerun\d?)?", library_id)
-
-    if library_id_rerun_regex is None:
-        logger.warning(f"Could not determine if library id has rerun - or not {library_id}, returning False")
-        return False
-
-    if library_id_rerun_regex.group(1) is not None:
-        return True
-
-    return False
 
 
 @transaction.atomic

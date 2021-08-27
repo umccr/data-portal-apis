@@ -126,6 +126,59 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         self.assertTrue(isinstance(result, dict))
         self.assertTrue("class" in result.keys())
 
+    def test_strip_topup_rerun_from_library_id(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_strip_topup_rerun_from_library_id
+        """
+        id_in = "L1234567"
+        id_out = liborca.strip_topup_rerun_from_library_id(id_in)
+        logger.info(f"From {id_in} strip to {id_out}")
+        self.assertEqual(id_in, id_out)
+
+        id_in = "L1234567_topup"
+        id_out = liborca.strip_topup_rerun_from_library_id(id_in)
+        logger.info(f"From {id_in} strip to {id_out}")
+        self.assertNotEqual(id_in, id_out)
+
+        id_in = "L1234567_topup2"
+        id_out = liborca.strip_topup_rerun_from_library_id(id_in)
+        logger.info(f"From {id_in} strip to {id_out}")
+        self.assertNotEqual(id_in, id_out)
+
+        id_in = "L1234567_rerun"
+        id_out = liborca.strip_topup_rerun_from_library_id(id_in)
+        logger.info(f"From {id_in} strip to {id_out}")
+        self.assertNotEqual(id_in, id_out)
+
+        id_in = "L1234567_rerun2"
+        id_out = liborca.strip_topup_rerun_from_library_id(id_in)
+        logger.info(f"From {id_in} strip to {id_out}")
+        self.assertNotEqual(id_in, id_out)
+
+    def test_sample_library_id_has_rerun(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_sample_library_id_has_rerun
+        """
+        id_in = "PRJ123456_L1234567"
+        has_rerun = liborca.sample_library_id_has_rerun(id_in)
+        logger.info(f"{id_in} has rerun {has_rerun}")
+        self.assertFalse(has_rerun)
+
+        id_in = "PRJ123456_LPRJ123456_topup"
+        has_rerun = liborca.sample_library_id_has_rerun(id_in)
+        logger.info(f"{id_in} has rerun {has_rerun}")
+        self.assertFalse(has_rerun)
+
+        id_in = "PRJ123456_LPRJ123456_rerun"
+        has_rerun = liborca.sample_library_id_has_rerun(id_in)
+        logger.info(f"{id_in} has rerun {has_rerun}")
+        self.assertTrue(has_rerun)
+
+        id_in = "PRJ123456_LPRJ123456_rerun2"
+        has_rerun = liborca.sample_library_id_has_rerun(id_in)
+        logger.info(f"{id_in} has rerun {has_rerun}")
+        self.assertTrue(has_rerun)
+
 
 class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip
