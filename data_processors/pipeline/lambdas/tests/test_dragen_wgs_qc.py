@@ -24,12 +24,12 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         workflow: dict = dragen_wgs_qc.handler({
-            "library_id": "SAMPLE_NAME",
+            "library_id": "L0000001",
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
                     "rgsm": "sample_name",
-                    "rglb": "sample_library",
+                    "rglb": "L0000001",
                     "lane": 1,
                     "read_1": {
                       "class": "File",

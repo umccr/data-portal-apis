@@ -115,6 +115,9 @@ def handler(event, context) -> dict:
     tumor_fastq_list_rows = event['tumor_fastq_list_rows']
     sample_name = event['sample_name']
 
+    normal_library_id = fastq_list_rows[0]['rglb']
+    tumor_library_id = tumor_fastq_list_rows[0]['rglb']
+
     # Set workflow helper
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.TUMOR_NORMAL)
 
@@ -171,7 +174,8 @@ def handler(event, context) -> dict:
 
     # If no running workflows were found, we proceed to preparing and kicking it off
     workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id)
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(subject_id)
+    mid_path = subject_id + "/" + tumor_library_id + "_" + normal_library_id
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(mid_path)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,

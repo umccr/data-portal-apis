@@ -18,7 +18,7 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
             "fastq_list_rows": [{
                 "rgid": "index1.index2.lane",
                 "rgsm": "sample_name",
-                "rglb": "UnknownLibrary",
+                "rglb": "L0000001",
                 "lane": 1,
                 "read_1": {
                     "class": "File",
@@ -32,7 +32,7 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
             "tumor_fastq_list_rows": [{
                 "rgid": "index1.index2.lane",
                 "rgsm": "sample_name",
-                "rglb": "UnknownLibrary",
+                "rglb": "L0000002",
                 "lane": 1,
                 "read_1": {
                     "class": "File",

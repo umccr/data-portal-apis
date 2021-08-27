@@ -25,7 +25,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
 
         workflow: dict = dragen_tso_ctdna.handler({
             "tso500_sample": {
-                "sample_id": "sample_id",
+                "sample_id": "PRJ000001_L0000001",
                 "sample_name": "sample_name",
                 "sample_type": "DNA",
                 "pair_id": "sample_name"

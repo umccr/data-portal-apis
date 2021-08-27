@@ -157,7 +157,8 @@ def handler(event, context) -> dict:
     )
 
     subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(subject_id)
+    mid_path = subject_id + "/" + library_id
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(mid_path)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
