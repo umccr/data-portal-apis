@@ -28,7 +28,7 @@ from typing import List
 from data_portal.models import Workflow
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
-    dragen_tso_ctdna_step, fastq_update_step
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from utils import libjson
@@ -54,6 +54,7 @@ def handler(event, context):
             "DRAGEN_WGS_QC_STEP",
             "DRAGEN_TSO_CTDNA_STEP",
             "TUMOR_NORMAL_STEP",
+            "DRAGEN_WTS_STEP"
         ]
     }
 
@@ -143,6 +144,12 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         else:
             logger.info("Performing DRAGEN_TSO_CTDNA_STEP")
             results.append(dragen_tso_ctdna_step.perform(this_workflow))
+
+        if "DRAGEN_WTS_STEP" in skip:
+            logger.info("Skip performing DRAGEN_WTS_STEP")
+        else:
+            logger.info("Performing DRAGEN_WTS_STEP")
+            results.append(dragen_wts_step.perform(this_workflow))
 
         return results
 
