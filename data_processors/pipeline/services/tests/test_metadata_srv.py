@@ -54,7 +54,7 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
             sample_name=TestConstant.library_id_normal.value,
             type_name=WorkflowType.DRAGEN_WGS_QC.name,
         )
-        meta_list = metadata_srv.get_tn_metadata_by_qc_runs([mock_workflow])
+        meta_list, _ = metadata_srv.get_tn_metadata_by_qc_runs([mock_workflow])
         self.assertEqual(meta_list[0].subject_id, mock_meta.subject_id)
 
     def test_get_library_id_from_workflow(self):

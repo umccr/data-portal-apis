@@ -116,7 +116,11 @@ def prepare_tumor_normal_jobs(succeeded_qc_workflows: List[Workflow]) -> (List, 
     submitting_subjects = list()
 
     # step 1 and 3
-    meta_list = metadata_srv.get_tn_metadata_by_qc_runs(succeeded_qc_workflows)
+    meta_list, run_libraries = metadata_srv.get_tn_metadata_by_qc_runs(succeeded_qc_workflows)
+    if not meta_list:
+        logger.warning(f"No T/N metadata found for given run libraries: {run_libraries}")
+        return [], [], []
+
     meta_list_df = _reduce_and_transform_to_df(meta_list)
 
     subjects = _extract_unique_subjects(meta_list_df)

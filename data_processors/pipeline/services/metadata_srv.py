@@ -67,12 +67,12 @@ def get_metadata_by_sample_library_name_as_in_samplesheet(sample_library_name):
 
 
 @transaction.atomic
-def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> List[LabMetadata]:
+def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadata], List[str]):
     """
     Determine which samples are available for T/N workflow
 
     :param qc_workflows: Succeeded QC workflows
-    :return: List[LabMetadata]
+    :return: (List[LabMetadata], List[str])
     """
     meta_list = list()
 
@@ -92,7 +92,7 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> List[LabMetadata
         for meta in qs.all():
             meta_list.append(meta)
 
-    return meta_list
+    return meta_list, libraries
 
 
 def _get_library_id_from_workflow(workflow: Workflow):
