@@ -4,7 +4,7 @@
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
-from typing import List
+from typing import List, Set
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata
 from data_processors import const
@@ -13,55 +13,52 @@ from utils import libssm, libgdrive
 
 
 def perform(workflow: Workflow):
-    # TODO: invoke async?
-    # Need to find all libraries (+ lane) that were part of this run
-    # need to use the "_topup" version of the libraries (or include the lane to the Google LIMS)
-    library_records = get_libs_from_run(workflow=workflow)
+    libraries = get_libs_from_run(workflow=workflow)
+    run_name = workflow.sequence_run.name
 
     lims_rows = list()
-    for lib_rec in library_records:
-        lims_row = create_lims_entry(lib_id=lib_rec['id'], seq_run_name=lib_rec['run_name'])
+    for library in libraries:
+        lims_row = create_lims_entry(lib_id=library, seq_run_name=run_name)
         lims_rows.append(lims_row)
 
     resp = update_google_lims_sheet(lims_rows)
     return resp
 
 
-def get_libs_from_run(workflow: Workflow) -> List[dict]:
+def get_libs_from_run(workflow: Workflow) -> List[str]:
     """
-    Example result structure is list of dicts like:
-    {
-        "id": "L2100001",
-        "lane": "2",
-        "run_id": "r.aiursfhpwugrpghur",
-        "run_name": "210101_A00130_0100_BH2N5WDMXX"
-    }
+    Return unique libraries from BCL Convert output
+
+    NOTE: BCL Convert output FastqListRow contains lane information
+    However, LIMS does not capture Lane information
+    So we just simply collect unique Library ID(s)
+
+    If Library ID use "_topup" and/or "_rerun", we collect as is e.g.
+    L0000001, L0000001_topup = L0000001, L0000001_topup
+
+    If Library use different Lane for topup then it will reduce to e.g. for (Library, Lane) tuple
+    (L0000001, 1), (L0000001, 2) = L0000001
+
     :param workflow: the Workflow object
     :return:
     """
-    run_name = workflow.sequence_run.name
-    run_id = workflow.sequence_run.run_id
-
     # get BCL Convert workflow output (which contains FastqListRow records)
     fastq_list_output = liborca.parse_bcl_convert_output(workflow.output)
 
-    lib_records: List[dict] = list()
+    libraries: Set[str] = set()
     for fqlr in fastq_list_output:
-        lane = fqlr['lane']
+        # lane = fqlr['lane']
         library_id = libregex.SAMPLE_REGEX_OBJS['unique_id'].fullmatch(fqlr['rgsm']).group(2)
-        lib_records.append({
-            "id": library_id,
-            "lane": lane,
-            "run_id": run_id,
-            "run_name": run_name
-        })
+        libraries.add(library_id)
 
-    return lib_records
+    return list(libraries)
 
 
 def create_lims_entry(lib_id: str, seq_run_name: str) -> LIMSRow:
-    # convert library ID + lane + run ID into a Google LIMS record
-    # TODO: deal with no/multiple return values
+    # this will return the first match if there exists multiple metadata records for given library id
+    # this may be okay as meta-info should remain the same for given library id
+    # if given library id metadata is not found by now then let the program crash it as this is
+    # way outlier at this point in pipeline and something bad had happened
     lab_meta: LabMetadata = LabMetadata.objects.get(library_id=lib_id)
 
     lims_row = LIMSRow(

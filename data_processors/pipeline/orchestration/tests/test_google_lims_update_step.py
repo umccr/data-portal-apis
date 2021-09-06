@@ -1,16 +1,18 @@
 import json
 from datetime import datetime, timedelta
+from unittest import skip
 
 from django.utils.timezone import make_aware
 
 from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
-from data_portal.tests.factories import SequenceRunFactory, TestConstant
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, WorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.orchestration import google_lims_update_step
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.tests import _rand
-from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase
+from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
 from data_processors.pipeline.tools import liborca
+from utils import wes
 
 lc_no = 29  # number of lims columns
 lc_idx_run_name = 0  # index of IlluminaID/RunName column
@@ -23,26 +25,6 @@ mock_library_id = "L2100021"
 mock_library_id_2 = "L2100021_topup"
 mock_rgms_1 = f"{mock_sample_id}_{mock_library_id}"
 mock_rgms_2 = f"{mock_sample_id}_{mock_library_id_2}"
-mock_workflow_output = {
-    "main/fastq_list_rows": [
-        {
-            "rgid": "ACTAAGAT.CCGCGGTT.1.foo",
-            "rglb": "UnknownLibrary",
-            "rgsm": mock_rgms_1,
-            "lane": 1,
-            "read_1": {},
-            "read_2": {}
-        },
-        {
-            "rgid": "GTCGGAGC.TTATAACC.1.bar",
-            "rglb": "UnknownLibrary",
-            "rgsm": mock_rgms_2,
-            "lane": 2,
-            "read_1": {},
-            "read_2": {}
-        }
-    ]
-}
 
 
 def create_mock_lims_row() -> LIMSRow:
@@ -66,11 +48,31 @@ def create_mock_lims_row() -> LIMSRow:
     )
 
 
-def create_mock_workflow(id: str) -> Workflow:
+def create_mock_workflow(id_: str, rgms_1=mock_rgms_1, rgms_2=mock_rgms_2) -> Workflow:
     mock_workflow = Workflow()
-    mock_workflow.wfr_id = id
+    mock_workflow.wfr_id = id_
     mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
     mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+    mock_workflow_output = {
+        "main/fastq_list_rows": [
+            {
+                "rgid": "ACTAAGAT.CCGCGGTT.1.foo",
+                "rglb": "UnknownLibrary",
+                "rgsm": rgms_1,
+                "lane": 1,
+                "read_1": {},
+                "read_2": {}
+            },
+            {
+                "rgid": "GTCGGAGC.TTATAACC.1.bar",
+                "rglb": "UnknownLibrary",
+                "rgsm": rgms_2,
+                "lane": 2,
+                "read_1": {},
+                "read_2": {}
+            }
+        ]
+    }
     mock_workflow.output = json.dumps(mock_workflow_output)
 
     return mock_workflow
@@ -103,9 +105,28 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         self.assertTrue(isinstance(res, list))
         self.assertEqual(len(res), 2)
         for rec in res:
-            self.assertTrue(rec['id'] in [mock_library_id, mock_library_id_2], f"Unexpected lib id: {rec['id']}")
-            self.assertTrue(rec['lane'] in [1, 2], f"Unexpected lane: {rec['lane']}")
-            self.assertEqual(rec['run_name'], mock_run_name, f"Unexpected run name: {rec['run_name']}")
+            logger.info(rec)
+            self.assertTrue(rec in [mock_library_id, mock_library_id_2], f"Unexpected lib id: {rec}")
+
+    def test_get_libs_from_run_alt(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_get_libs_from_run_alt
+        """
+        _rgms_1 = f"{mock_sample_id}_{mock_library_id}"
+        _rgms_2 = f"{mock_sample_id}_{mock_library_id}"  # _topup is in different lane and bear the same library id
+
+        mock_workflow = create_mock_workflow(f"wfr.{_rand(32)}", rgms_1=_rgms_1, rgms_2=_rgms_2)
+        mock_sqr: SequenceRun = SequenceRunFactory()
+        mock_sqr.name = mock_run_name
+        mock_workflow.sequence_run = mock_sqr
+
+        res = google_lims_update_step.get_libs_from_run(mock_workflow)
+
+        self.assertTrue(isinstance(res, list))
+        self.assertEqual(len(res), 1)
+        for rec in res:
+            logger.info(rec)
+            self.assertTrue(rec in [mock_library_id, mock_library_id_2], f"Unexpected lib id: {rec}")
 
     def test_create_lims_entry(self):
         """
@@ -191,4 +212,27 @@ class GoogleLimsUpdateStepIntegrationTests(PipelineIntegrationTestCase):
     # uncomment @skip and hit the each test case!
     # and keep decorated @skip after tested
 
-    pass
+    @skip
+    def test_get_libs_from_run(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepIntegrationTests.test_get_libs_from_run
+        """
+        mock_bcl_convert: Workflow = WorkflowFactory()
+
+        # SEQ-II validation bcl convert workflow run in DEV
+        bcl_convert_wfr_id = "wfr.c20a2d51f7524701b3c3beea7cab5ec5"
+
+        # Run 168 in PROD
+        # bcl_convert_wfr_id = "wfr.499f02f9cbee432eb5509f75c25168f0"
+
+        # Run 169 in PROD
+        # bcl_convert_wfr_id = "wfr.3ded7166fbc040f3a4b0f669c2825b09"
+
+        bcl_convert_run = wes.get_run(bcl_convert_wfr_id, to_dict=True)
+        mock_bcl_convert.input = json.dumps(bcl_convert_run['input'])
+        mock_bcl_convert.output = json.dumps(bcl_convert_run['output'])
+        mock_bcl_convert.save()
+
+        libraries = google_lims_update_step.get_libs_from_run(mock_bcl_convert)
+        logger.info(libraries)
+        self.assertIsNotNone(libraries)
