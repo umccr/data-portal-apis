@@ -270,9 +270,13 @@ class LabMetadataManager(models.Manager):
         if type_:
             qs = qs.filter(type__iexact=type_)
 
-        project = kwargs.get('project', None)
-        if project:
-            qs = qs.filter(project_name__iexact=project)
+        project_name = kwargs.get('project_name', None)
+        if project_name:
+            qs = qs.filter(project_name__iexact=project_name)
+
+        project_owner = kwargs.get('project_owner', None)
+        if project_owner:
+            qs = qs.filter(project_owner__iexact=project_owner)
 
         return qs
 

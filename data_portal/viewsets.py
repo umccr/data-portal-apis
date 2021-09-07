@@ -65,7 +65,8 @@ class LabMetadataViewSet(ReadOnlyModelViewSet):
         library = self.request.query_params.get('library', None)
         phenotype = self.request.query_params.get('phenotype', None)
         type_ = self.request.query_params.get('type', None)
-        project = self.request.query_params.get('project', None)
+        project_owner = self.request.query_params.get('project_owner', None)
+        project_name = self.request.query_params.get('project_name', None)
 
         return LabMetadata.objects.get_by_keyword(
             subject=subject,
@@ -73,7 +74,8 @@ class LabMetadataViewSet(ReadOnlyModelViewSet):
             library=library,
             phenotype=phenotype,
             type=type_,
-            project=project,
+            project_owner=project_owner,
+            project_name=project_name,
         )
 
 
