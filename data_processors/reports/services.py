@@ -121,8 +121,8 @@ def _extract_report_type(key: str):
     if "multiqc_data.json" in key:
         return ReportType.MULTIQC
 
-    if const.CTTSO500_REPORT in key: # XXX: Unclear if this is the right stable prefix, ask Yinan/Oliver
-        if ".msi.json.gz" in key:
+    if const.CTTSO500_REPORT in key:
+        if ".msi." in key:
             return ReportType.CTTSO500_MSI
         if ".tmb." in key:
             return ReportType.CTTSO500_TMB
