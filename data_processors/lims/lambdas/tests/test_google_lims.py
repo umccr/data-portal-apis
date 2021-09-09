@@ -8,7 +8,7 @@ from mockito import when
 
 from data_portal.models import LIMSRow
 from data_processors.lims.lambdas import google_lims
-from data_processors.lims.services import persist_lims_data
+from data_processors.lims.services import google_lims_srv
 from data_processors.lims.tests.case import LimsUnitTestCase, LimsIntegrationTestCase, logger
 
 # columns in LIMS CSV
@@ -62,7 +62,7 @@ class LimsUnitTests(LimsUnitTestCase):
 
     def test_scheduled_update_handler(self):
         """
-        python manage.py test data_processors.lims.tests.test_google_lims.LimsUnitTests.test_scheduled_update_handler
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_scheduled_update_handler
         """
 
         mock_lims_sheet = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)  # delete=False keep file in tmp dir
@@ -90,6 +90,9 @@ class LimsUnitTests(LimsUnitTestCase):
         mock_lims_sheet.close()
 
     def test_lims_rewrite(self) -> None:
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_rewrite
+        """
         subject_id = 'subject_id'
         sample_id = 'sample_id'
 
@@ -97,32 +100,40 @@ class LimsUnitTests(LimsUnitTestCase):
         row_1['SampleID'] = sample_id
         row_1['SubjectID'] = subject_id
 
-        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()), True)
+        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()), True)
 
         self.assertEqual(process_results['lims_row_new_count'], 1)
         self.assertEqual(LIMSRow.objects.get(illumina_id='IlluminaID1', sample_id=sample_id).results, row_1['Results'])
         self.assertEqual(process_results['lims_row_update_count'], 0)
 
     def test_lims_update(self) -> None:
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_update
+        """
         row_1 = _generate_lims_csv_row_dict('1')
-        persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
+        google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
 
         new_results = 'NewResults'
         row_1['Results'] = new_results
         row_2 = _generate_lims_csv_row_dict('2')
-        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_1, row_2]).encode()))
+        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1, row_2]).encode()))
 
         self.assertEqual(process_results['lims_row_new_count'], 1)
         self.assertEqual(process_results['lims_row_update_count'], 1)
         self.assertEqual(LIMSRow.objects.get(illumina_id='IlluminaID1', sample_id='SampleID1').results, new_results)
 
     def test_lims_row_duplicate(self) -> None:
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_row_duplicate
+        """
         row_duplicate = _generate_lims_csv_row_dict('3')
-        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_duplicate, row_duplicate]).encode()))
+        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_duplicate, row_duplicate]).encode()))
         self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
     def test_lims_non_nullable_columns(self) -> None:
         """
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_non_nullable_columns
+
         Test to process non-nullable columns and rollback if one row doesn't have the required values
         """
         row_1 = _generate_lims_csv_row_dict('1')
@@ -135,7 +146,7 @@ class LimsUnitTests(LimsUnitTestCase):
         row_1['SampleID'] = '-'
         row_1['LibraryID'] = '-'
 
-        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_1, row_2]).encode()))
+        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1, row_2]).encode()))
 
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -143,12 +154,14 @@ class LimsUnitTests(LimsUnitTestCase):
 
     def test_lims_empty_subject_id(self) -> None:
         """
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_empty_subject_id
+
         Test LIMS row with empty SubjectID
         """
         row_1 = _generate_lims_csv_row_dict('1')
 
         row_1['SubjectID'] = '-'
-        process_results = persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
+        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
 
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -161,7 +174,7 @@ class LimsIntegrationTests(LimsIntegrationTestCase):
     @skip
     def test_scheduled_update_handler(self):
         """
-        python manage.py test data_processors.lims.tests.test_google_lims.LimsIntegrationTests.test_scheduled_update_handler
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsIntegrationTests.test_scheduled_update_handler
         """
         result = google_lims.scheduled_update_handler({'event': "LimsIntegrationTests lims update event"}, None)
 

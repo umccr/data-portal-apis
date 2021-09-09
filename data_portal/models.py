@@ -3,7 +3,7 @@ import random
 import uuid
 from typing import Union
 
-from django.db import models
+from django.db import models, connection
 from django.db.models import Max, QuerySet, Q, Value
 from django.db.models.functions import Concat
 
@@ -307,8 +307,8 @@ class LabMetadata(models.Model):
     #  do we want to store clarity-generated lib id, and what do we want to call it?
     # external_library_id = models.CharField(max_length=255)
 
-    library_id = models.CharField(max_length=255, unique=True, blank=False)
-    sample_name = models.CharField(max_length=255, blank=False)
+    library_id = models.CharField(max_length=255, unique=True)
+    sample_name = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)
     subject_id = models.CharField(max_length=255, null=True, blank=True)
@@ -331,6 +331,15 @@ class LabMetadata(models.Model):
     def __str__(self):
         return 'id=%s, library_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
+
+    @classmethod
+    def get_table_name(cls):
+        return cls._meta.db_table
+
+    @classmethod
+    def truncate(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(f"TRUNCATE TABLE {cls.get_table_name()};")
 
 
 class S3LIMS(models.Model):
