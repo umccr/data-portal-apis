@@ -79,7 +79,8 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
     libraries = []
     for qc_workflow in qc_workflows:
         library_id = _get_library_id_from_workflow(qc_workflow)
-        libraries.append(library_id)
+        if library_id:
+            libraries.append(library_id)
 
     qs: QuerySet = LabMetadata.objects.filter(
         library_id__in=libraries,
@@ -126,11 +127,9 @@ def get_subject_id_from_library_id(library_id):
 
 
 @transaction.atomic
-def get_metadata_by_keywords(**kwargs) -> List[LabMetadata]:
+def get_metadata_by_keywords_in(**kwargs) -> List[LabMetadata]:
     """
-    library_id, subject_id, phenotype, type_, meta_wfl
-
-    NOTE: type_ and meta_wfl are intentional
+    Query filter by keywords IN then return list of LabMetadata object
 
     :param kwargs:
     :return: List[LabMetadata]
@@ -139,22 +138,27 @@ def get_metadata_by_keywords(**kwargs) -> List[LabMetadata]:
     if len(kwargs.keys()) == 0:
         return meta_list
 
-    qs: QuerySet = LabMetadata.objects.get_queryset()
+    qs: QuerySet = LabMetadata.objects.get_by_keyword_in(**kwargs)
 
-    if "library_id" in kwargs:
-        qs = qs.filter(library_id__exact=kwargs['library_id'])
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
+    return meta_list
 
-    if "subject_id" in kwargs:
-        qs = qs.filter(subject_id__exact=kwargs['subject_id'])
 
-    if "phenotype" in kwargs:
-        qs = qs.filter(phenotype__exact=kwargs['phenotype'])
+@transaction.atomic
+def get_metadata_by_keywords(**kwargs) -> List[LabMetadata]:
+    """
+    Query filter by keywords then return list of LabMetadata object
 
-    if "type_" in kwargs:
-        qs = qs.filter(type__exact=kwargs['type_'])
+    :param kwargs:
+    :return: List[LabMetadata]
+    """
+    meta_list = list()
+    if len(kwargs.keys()) == 0:
+        return meta_list
 
-    if "meta_wfl" in kwargs:
-        qs = qs.filter(workflow__exact=kwargs['meta_wfl'])
+    qs: QuerySet = LabMetadata.objects.get_by_keyword(**kwargs)
 
     if qs.exists():
         for meta in qs.all():

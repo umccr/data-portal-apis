@@ -590,6 +590,115 @@
         }
       ]
     },
+    "/pairing/": {
+      "get": {
+        "operationId": "pairing_list",
+        "description": "You have hit GET /pairing. This is placeholder only list endpoint. Nothing here yet.\nPlease use POST /pairing endpoint which is by_sequence_runs projection by default.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "post": {
+        "operationId": "pairing_create",
+        "description": "POST /pairing endpoint which is by_sequence_runs projection by default",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "parameters": []
+    },
+    "/pairing/by_libraries/": {
+      "post": {
+        "operationId": "pairing_by_libraries",
+        "description": "Experimental endpoint for exposing workflow T/N pairing",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "parameters": []
+    },
+    "/pairing/by_samples/": {
+      "post": {
+        "operationId": "pairing_by_samples",
+        "description": "Experimental endpoint for exposing workflow T/N pairing",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "parameters": []
+    },
+    "/pairing/by_sequence_runs/": {
+      "post": {
+        "operationId": "pairing_by_sequence_runs",
+        "description": "Experimental endpoint for exposing workflow T/N pairing",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "parameters": []
+    },
+    "/pairing/by_subjects/": {
+      "post": {
+        "operationId": "pairing_by_subjects",
+        "description": "Experimental endpoint for exposing workflow T/N pairing",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "parameters": []
+    },
+    "/pairing/by_workflows/": {
+      "post": {
+        "operationId": "pairing_by_workflows",
+        "description": "Experimental endpoint for exposing workflow T/N pairing",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pairing"
+        ]
+      },
+      "parameters": []
+    },
     "/presign/": {
       "get": {
         "operationId": "presign_list",
@@ -1636,6 +1745,12 @@
           "maxLength": 255,
           "x-nullable": true
         },
+        "override_cycles": {
+          "title": "Override cycles",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
         "phenotype": {
           "title": "Phenotype",
           "type": "string",
@@ -1662,6 +1777,12 @@
         },
         "secondary_analysis": {
           "title": "Secondary analysis",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "workflow": {
+          "title": "Workflow",
           "type": "string",
           "maxLength": 255,
           "x-nullable": true

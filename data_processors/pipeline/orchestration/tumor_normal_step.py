@@ -40,7 +40,11 @@ def perform(this_workflow):
     if len(running) == 0:
         logger.info("All QC workflows finished, proceeding to T/N preparation")
 
-        job_list, subjects, submitting_subjects = prepare_tumor_normal_jobs(succeeded)
+        meta_list, run_libraries = metadata_srv.get_tn_metadata_by_qc_runs(succeeded)
+        if not meta_list:
+            logger.warning(f"No T/N metadata found for given run libraries: {run_libraries}")
+
+        job_list, subjects, submitting_subjects = prepare_tumor_normal_jobs(meta_list)
 
         if job_list:
             logger.info(f"Submitting {len(job_list)} T/N jobs for {submitting_subjects}.")
@@ -73,6 +77,8 @@ def _reduce_and_transform_to_df(meta_list: List[LabMetadata]) -> pd.DataFrame:
 
 
 def _extract_unique_subjects(meta_list_df: pd.DataFrame) -> List[str]:
+    if meta_list_df.empty:
+        return []
     return meta_list_df["subject_id"].unique().tolist()
 
 
@@ -100,7 +106,7 @@ def _handle_rerun(fastq_list_rows: List[FastqListRow], library_id):
     return fastq_list_rows
 
 
-def prepare_tumor_normal_jobs(succeeded_qc_workflows: List[Workflow]) -> (List, List, List):
+def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
     """
     See https://github.com/umccr/data-portal-apis/pull/262 for T/N paring algorithm
     Here we note the step from above algorithm as we go through in comment
@@ -109,21 +115,19 @@ def prepare_tumor_normal_jobs(succeeded_qc_workflows: List[Workflow]) -> (List, 
 
     Oh, btw, you need "CCR Greatest Hits" playlist in the background, if you go through this! -victor
 
-    :param succeeded_qc_workflows:
+    :param meta_list:
     :return: job_list, subject_list
     """
     job_list = list()
     submitting_subjects = list()
 
     # step 1 and 3
-    meta_list, run_libraries = metadata_srv.get_tn_metadata_by_qc_runs(succeeded_qc_workflows)
     if not meta_list:
-        logger.warning(f"No T/N metadata found for given run libraries: {run_libraries}")
         return [], [], []
 
     meta_list_df = _reduce_and_transform_to_df(meta_list)
-
     subjects = _extract_unique_subjects(meta_list_df)
+
     logger.info(f"Preparing T/N workflows for subjects {subjects}")
 
     # step 2
@@ -140,8 +144,8 @@ def prepare_tumor_normal_jobs(succeeded_qc_workflows: List[Workflow]) -> (List, 
             subject_normal_libraries: List[str] = metadata_srv.get_all_libraries_by_keywords(
                 subject_id=subject,
                 phenotype=LabMetadataPhenotype.NORMAL.value,
-                type_=LabMetadataType.WGS.value,
-                meta_wfl=workflow
+                type=LabMetadataType.WGS.value,
+                workflow=workflow
             )
 
             # step 6a
@@ -152,8 +156,8 @@ def prepare_tumor_normal_jobs(succeeded_qc_workflows: List[Workflow]) -> (List, 
             subject_tumor_libraries: List[str] = metadata_srv.get_all_libraries_by_keywords(
                 subject_id=subject,
                 phenotype=LabMetadataPhenotype.TUMOR.value,
-                type_=LabMetadataType.WGS.value,
-                meta_wfl=workflow
+                type=LabMetadataType.WGS.value,
+                workflow=workflow
             )
 
             # step 6b

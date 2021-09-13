@@ -100,6 +100,16 @@ def get_workflow_by_ids(wfr_id, wfv_id):
 
 
 @transaction.atomic
+def get_workflows_by_wfr_ids(wfr_id_list: List[str]) -> List[Workflow]:
+    workflows = list()
+    qs: QuerySet = Workflow.objects.filter(wfr_id__in=wfr_id_list)
+    if qs.exists():
+        for w in qs.all():
+            workflows.append(w)
+    return workflows
+
+
+@transaction.atomic
 def search_matching_runs(**kwargs):
     """
     NOTE: for more edge cases, may need to check content of input such as using JSON diff
@@ -128,12 +138,17 @@ def get_running_by_sequence_run(sequence_run: SequenceRun, workflow_type: Workfl
 @transaction.atomic
 def get_succeeded_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType):
     """query for Succeeded Workflows associated with this SequenceRun"""
+    workflows = list()
+
     qs: QuerySet = Workflow.objects.get_succeeded_by_sequence_run(
         sequence_run=sequence_run,
         type_name=workflow_type.value.lower()
     )
-    # TODO: sort out duplicated WF records (e.g. due to workflow rerun/resubmission)
-    return qs.all()
+
+    if qs.exists():
+        for w in qs.all():
+            workflows.append(w)
+    return workflows
 
 
 @transaction.atomic

@@ -250,17 +250,17 @@ class LabMetadataManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        subject = kwargs.get('subject', None)
-        if subject:
-            qs = qs.filter(subject_id__iexact=subject)
+        subject_id = kwargs.get('subject_id', None)
+        if subject_id:
+            qs = qs.filter(subject_id__iexact=subject_id)
 
-        sample = kwargs.get('sample', None)
-        if sample:
-            qs = qs.filter(sample_id__iexact=sample)
+        sample_id = kwargs.get('sample_id', None)
+        if sample_id:
+            qs = qs.filter(sample_id__iexact=sample_id)
 
-        library = kwargs.get('library', None)
-        if library:
-            qs = qs.filter(library_id__iexact=library)
+        library_id = kwargs.get('library_id', None)
+        if library_id:
+            qs = qs.filter(library_id__iexact=library_id)
 
         phenotype = kwargs.get('phenotype', None)
         if phenotype:
@@ -270,6 +270,10 @@ class LabMetadataManager(models.Manager):
         if type_:
             qs = qs.filter(type__iexact=type_)
 
+        workflow = kwargs.get('workflow', None)
+        if workflow:
+            qs = qs.filter(workflow__iexact=workflow)
+
         project_name = kwargs.get('project_name', None)
         if project_name:
             qs = qs.filter(project_name__iexact=project_name)
@@ -277,6 +281,43 @@ class LabMetadataManager(models.Manager):
         project_owner = kwargs.get('project_owner', None)
         if project_owner:
             qs = qs.filter(project_owner__iexact=project_owner)
+
+        return qs
+
+    def get_by_keyword_in(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        subjects = kwargs.get('subjects', None)
+        if subjects:
+            qs = qs.filter(subject_id__in=subjects)
+
+        samples = kwargs.get('samples', None)
+        if samples:
+            qs = qs.filter(sample_id__in=samples)
+
+        libraries = kwargs.get('libraries', None)
+        if libraries:
+            qs = qs.filter(library_id__in=libraries)
+
+        phenotypes = kwargs.get('phenotypes', None)
+        if phenotypes:
+            qs = qs.filter(phenotype__in=phenotypes)
+
+        types = kwargs.get('types', None)
+        if types:
+            qs = qs.filter(type__in=types)
+
+        workflows = kwargs.get('workflows', None)
+        if workflows:
+            qs = qs.filter(workflow__in=workflows)
+
+        project_names = kwargs.get('project_names', None)
+        if project_names:
+            qs = qs.filter(project_name__in=project_names)
+
+        project_owners = kwargs.get('project_owners', None)
+        if project_owners:
+            qs = qs.filter(project_owner__in=project_owners)
 
         return qs
 
