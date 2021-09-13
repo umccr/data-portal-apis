@@ -62,12 +62,15 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
         """
         mock_workflow: Workflow = WorkflowFactory()
 
-        updated_workflow: dict = workflow_update.handler({
-            'wfr_id': f"wfr.{_rand(32)}",
-            'wfv_id': f"wfv.{_rand(32)}",
-        }, None)
+        try:
+            updated_workflow: dict = workflow_update.handler({
+                'wfr_id': f"wfr.{_rand(32)}",
+                'wfv_id': f"wfv.{_rand(32)}",
+            }, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
 
-        self.assertIsNone(updated_workflow)
         self.assertEqual(1, Workflow.objects.all().count())
 
     def test_notified_status(self):

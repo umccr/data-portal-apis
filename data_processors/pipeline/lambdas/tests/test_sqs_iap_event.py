@@ -767,12 +767,17 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_not_in_automation
 
         Scenario:
-        Testing wes.runs event's workflow is not in Portal workflow runs automation database. Therefore, skip.
+        Testing wes.runs event's workflow is not in Portal workflow runs automation database. Therefore, crash.
         That is, it might have been launched elsewhere.
         """
         wfr_id = f"wfr.{_rand(32)}"
         wfv_id = f"wfv.{_rand(32)}"
-        sqs_iap_event.handler(_sqs_wes_event_message(wfv_id=wfv_id, wfr_id=wfr_id), None)
+
+        try:
+            sqs_iap_event.handler(_sqs_wes_event_message(wfv_id=wfv_id, wfr_id=wfr_id), None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
 
         # assert 0 workflow runs in portal db
         workflow_runs = Workflow.objects.all()

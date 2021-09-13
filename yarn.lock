@@ -699,10 +699,10 @@ aws-sdk@^2.948.0:
     uuid "3.3.2"
     xml2js "0.4.19"
 
-aws-sdk@^2.975.0:
-  version "2.976.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.976.0.tgz#1e9d0d359698876eaa952c7c6223eac4c354ae2e"
-  integrity sha512-LWVh3nko6yGDfGcDW9nIClaukthkTueq7I/dXVNv4g9kuy2VOl5fVTPMACgTibWINAM29wZCM+gVQSSZu/Veow==
+aws-sdk@^2.979.0:
+  version "2.987.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.987.0.tgz#a6e952ae3d3adf352516402d88397fbe2b9e3480"
+  integrity sha512-XgMrHWHE3aKg11D4QSlpyLvsGw6mHHiUQuowbswd11k89Q6wEfA+jMbYMC7/jsx3LrH9EKti70qhfZyw/wQIfg==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -1883,10 +1883,10 @@ filenamify@^4.3.0:
     strip-outer "^1.0.1"
     trim-repeated "^1.0.0"
 
-filesize@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/filesize/-/filesize-7.0.0.tgz#9d4b3ce384ec7731a9e68c64ee29fb4934ad657d"
-  integrity sha512-Wsstw+O1lZ9gVmOI1thyeQvODsaoId2qw14lCqIzUhoHKXX7T2hVpB7BR6SvgodMBgWccrx/y2eyV8L7tDmY6A==
+filesize@^8.0.0:
+  version "8.0.2"
+  resolved "https://registry.yarnpkg.com/filesize/-/filesize-8.0.2.tgz#59be16fa41c8d249e89ecaaf1422acf04220db98"
+  integrity sha512-sm/y5NAhVbcJoqMdNdfqoR/Evi1sMpKDJvWu4fa0o5OHNvX7nSXXGsg/5Pcp5L8uuI/7Hbn82Kk2PTCJmCOemQ==
 
 fill-range@^7.0.1:
   version "7.0.1"
@@ -2571,7 +2571,7 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-jszip@^3.6.0, jszip@^3.7.0, jszip@^3.7.1:
+jszip@^3.6.0, jszip@^3.7.1:
   version "3.7.1"
   resolved "https://registry.yarnpkg.com/jszip/-/jszip-3.7.1.tgz#bd63401221c15625a1228c556ca8a68da6fda3d9"
   integrity sha512-ghL0tz1XG9ZEmRMcEN2vt7xabrDdqHHeykgARpmZ0BiIctWxM47Vt63ZO2dnp4QYt/xJVLLy5Zv1l/xRdh2byg==
@@ -3707,20 +3707,20 @@ serverless-python-requirements@^5.1.1:
     sha256-file "1.0.0"
     shell-quote "^1.7.2"
 
-serverless-wsgi@^1.7.8:
-  version "1.7.8"
-  resolved "https://registry.yarnpkg.com/serverless-wsgi/-/serverless-wsgi-1.7.8.tgz#3ee0c10122d6253ffb6b01e76fb2d22f8d79dd0a"
-  integrity sha512-3Hp6DgfKh+kR7rDIYbVYaB9RprT+DncAxGBWZG5jnL47/UsOMlsNAUX+DoZ4NKnWnf2XKPw6Kr6UY+SNwV4iMQ==
+serverless-wsgi@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/serverless-wsgi/-/serverless-wsgi-2.0.1.tgz#3d2858b414e9819d15ef6010637b67b37a227f10"
+  integrity sha512-nEBmY3qWrH7XLQTLKJR8SUNLYwLCWJP0IK7v7NLYM1fAtui8Mm0mtWvN/r4bcLlvo70DY0FdXR3JhJ4XLLM3aw==
   dependencies:
     bluebird "^3.7.2"
     fs-extra "^9.1.0"
     hasbin "^1.2.3"
     lodash "^4.17.21"
 
-serverless@^2.56.0:
-  version "2.56.0"
-  resolved "https://registry.yarnpkg.com/serverless/-/serverless-2.56.0.tgz#713cd03bc3e97a6293967152884e2a12b9c5b23b"
-  integrity sha512-/nmD1aLe+rXZpTmnxzHogCt5qGGBrE+wce7LcLV1yNne+aymyCcL8vcLj2Ib2ukTXweWpr8MxAgdXVtbwY4EGA==
+serverless@^2.57.0:
+  version "2.57.0"
+  resolved "https://registry.yarnpkg.com/serverless/-/serverless-2.57.0.tgz#74b5347f50969d81869762f53c92221d92e9999a"
+  integrity sha512-/gLzaqdisNlymMiQJMkFoACy7NXkOd7E67sbcOrENXuVb48QAS4PTT8VPkMNu6eQonlphGagbKhpqVmKzHJDmQ==
   dependencies:
     "@serverless/cli" "^1.5.2"
     "@serverless/components" "^3.16.0"
@@ -3730,7 +3730,7 @@ serverless@^2.56.0:
     ajv "^6.12.6"
     ajv-keywords "^3.5.2"
     archiver "^5.3.0"
-    aws-sdk "^2.975.0"
+    aws-sdk "^2.979.0"
     bluebird "^3.7.2"
     boxen "^5.0.1"
     cachedir "^2.3.0"
@@ -3746,7 +3746,7 @@ serverless@^2.56.0:
     essentials "^1.1.1"
     ext "^1.5.0"
     fastest-levenshtein "^1.0.12"
-    filesize "^7.0.0"
+    filesize "^8.0.0"
     fs-extra "^9.1.0"
     get-stdin "^8.0.0"
     globby "^11.0.4"
@@ -3771,7 +3771,7 @@ serverless@^2.56.0:
     semver "^7.3.5"
     signal-exit "^3.0.3"
     tabtab "^3.0.2"
-    tar "^6.1.10"
+    tar "^6.1.11"
     timers-ext "^0.1.7"
     type "^2.5.0"
     untildify "^4.0.0"
@@ -4153,10 +4153,10 @@ tar-stream@^2.2.0:
     inherits "^2.0.3"
     readable-stream "^3.1.1"
 
-tar@^6.1.10:
-  version "6.1.10"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-6.1.10.tgz#8a320a74475fba54398fa136cd9883aa8ad11175"
-  integrity sha512-kvvfiVvjGMxeUNB6MyYv5z7vhfFRwbwCXJAeL0/lnbrttBVqcMOnpHUf0X42LrPMR8mMpgapkJMchFH4FSHzNA==
+tar@^6.1.11:
+  version "6.1.11"
+  resolved "https://registry.yarnpkg.com/tar/-/tar-6.1.11.tgz#6760a38f003afa1b2ffd0ffe9e9abbd0eab3d621"
+  integrity sha512-an/KZQzQUkZCkuoAA64hM92X0Urb6VpRhAFllDzz44U2mcD5scmT3zBc4VgVpkugF580+DQn8eAFSyoQt0tznA==
   dependencies:
     chownr "^2.0.0"
     fs-minipass "^2.0.0"
