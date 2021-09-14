@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from collections import defaultdict
 
 from django.db import InternalError
 from django.utils.http import parse_http_date_safe
@@ -8,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
-from utils import libs3, libjson, ica
+from utils import libs3, libjson, ica, gds
 from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
@@ -29,12 +30,45 @@ METADATA_SEARCH_ORDER_FIELDS = [
 ]
 
 
-def _presign_response(bucket, key):
+def _error_response(message, status_code=400, err=None) -> Response:
+    data = {'error': message}
+    if err:
+        data['detail'] = err
+    return Response(
+        data=data,
+        status=status_code
+    )
+
+
+def _presign_response(bucket, key) -> Response:
     response = libs3.presign_s3_file(bucket, key)
     if response[0]:
         return Response({'signed_url': response[1]})
     else:
         return Response({'error': response[1]})
+
+
+def _presign_list_response(presigned_urls: list) -> Response:
+    if presigned_urls and len(presigned_urls) > 0:
+        return Response({'signed_urls': presigned_urls})
+    else:
+        return _error_response(message="No presigned URLs to return.")
+    pass
+
+
+def _gds_file_recs_to_presign_resps(gds_records: list) -> list:
+    resps = list()
+    for rec in gds_records:
+        resps.append(_gds_file_rec_to_presign_resp(rec))
+    return resps
+
+
+def _gds_file_rec_to_presign_resp(gds_file_response) -> dict:
+    return {
+        'volume': gds_file_response.volume_name,
+        'path': gds_file_response.path,
+        'presigned_url': gds_file_response.presigned_url
+    }
 
 
 class LIMSRowViewSet(ReadOnlyModelViewSet):
@@ -290,6 +324,41 @@ class ReportViewSet(ReadOnlyModelViewSet):
 
 
 class PresignedUrlViewSet(ViewSet):
+
+    def post(self, request):
+        # payload is expected to be simple list of gds://... urls
+        payload = request.data
+        # TODO: check payload and filter/report unrecognised/unsupported URLs
+
+        # parse file GDS urls into volume and path components
+        vol_path = defaultdict(list)
+        try:
+            for entry in payload:
+                volume, path = gds.parse_path(entry)
+                vol_path[volume].append(path)
+        except Exception as ex:
+            return _error_response(message="Could not parse GDS URL.", err=ex)
+
+        presign_list = list()
+        try:
+            for vol in vol_path.keys():
+                tmp_list = gds.get_files_list(volume_name=vol, paths=vol_path[vol])
+                if tmp_list:
+                    presign_list.extend(tmp_list)
+        except Exception as ex:
+            return _error_response(message="Could create presigned URL.", err=ex)
+
+        if len(presign_list) < 1:
+            return _error_response(message="No matching GDS records found.", status_code=404)
+
+        # Convert List of libgds.FileResponse objects into response objects
+        try:
+            resps = _gds_file_recs_to_presign_resps(presign_list)
+        except Exception as ex:
+            return _error_response(message="Could create presigned URL.", err=ex)
+
+        # wrap response objects in rest framework Response object
+        return _presign_list_response(presigned_urls=resps)
 
     def list(self, request):
         """
