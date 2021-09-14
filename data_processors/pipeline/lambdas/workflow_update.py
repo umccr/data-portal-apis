@@ -51,8 +51,14 @@ def handler(event, context):
     wfl_in_db: Workflow = workflow_srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
 
     if not wfl_in_db:
-        logger.info(f"Run ID '{wfr_id}' is not found in Portal workflow runs automation database. Skipping...")
-        return
+        msg = f"Workflow Run ID '{wfr_id}' is not yet recorded in Portal database."
+        logger.error(msg)
+        # Raising exception makes AWS Lambda execution crash; in which it in-turn will attempt retry with some backoff
+        # measure automatically. As a last resort, the event message will be DLQ in side channel for further checking.
+        # This could take care of WES / ENS timing issue observe in https://github.com/umccr/data-portal-apis/issues/287
+        # i.e. ENS deliver status change a tad earlier than WES could response in-lieu of. Note though that this is
+        # _total speculation by observation_. Unless we get hold of ICA _internal_ architecture on how they work!
+        raise ValueError(msg)
 
     wes_run_resp = wes_handler.get_workflow_run({
         'wfr_id': wfr_id,

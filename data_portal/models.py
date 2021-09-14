@@ -3,7 +3,7 @@ import random
 import uuid
 from typing import Union
 
-from django.db import models
+from django.db import models, connection
 from django.db.models import Max, QuerySet, Q, Value
 from django.db.models.functions import Concat
 
@@ -250,17 +250,17 @@ class LabMetadataManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        subject = kwargs.get('subject', None)
-        if subject:
-            qs = qs.filter(subject_id__iexact=subject)
+        subject_id = kwargs.get('subject_id', None)
+        if subject_id:
+            qs = qs.filter(subject_id__iexact=subject_id)
 
-        sample = kwargs.get('sample', None)
-        if sample:
-            qs = qs.filter(sample_id__iexact=sample)
+        sample_id = kwargs.get('sample_id', None)
+        if sample_id:
+            qs = qs.filter(sample_id__iexact=sample_id)
 
-        library = kwargs.get('library', None)
-        if library:
-            qs = qs.filter(library_id__iexact=library)
+        library_id = kwargs.get('library_id', None)
+        if library_id:
+            qs = qs.filter(library_id__iexact=library_id)
 
         phenotype = kwargs.get('phenotype', None)
         if phenotype:
@@ -270,9 +270,54 @@ class LabMetadataManager(models.Manager):
         if type_:
             qs = qs.filter(type__iexact=type_)
 
-        project = kwargs.get('project', None)
-        if project:
-            qs = qs.filter(project_name__iexact=project)
+        workflow = kwargs.get('workflow', None)
+        if workflow:
+            qs = qs.filter(workflow__iexact=workflow)
+
+        project_name = kwargs.get('project_name', None)
+        if project_name:
+            qs = qs.filter(project_name__iexact=project_name)
+
+        project_owner = kwargs.get('project_owner', None)
+        if project_owner:
+            qs = qs.filter(project_owner__iexact=project_owner)
+
+        return qs
+
+    def get_by_keyword_in(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        subjects = kwargs.get('subjects', None)
+        if subjects:
+            qs = qs.filter(subject_id__in=subjects)
+
+        samples = kwargs.get('samples', None)
+        if samples:
+            qs = qs.filter(sample_id__in=samples)
+
+        libraries = kwargs.get('libraries', None)
+        if libraries:
+            qs = qs.filter(library_id__in=libraries)
+
+        phenotypes = kwargs.get('phenotypes', None)
+        if phenotypes:
+            qs = qs.filter(phenotype__in=phenotypes)
+
+        types = kwargs.get('types', None)
+        if types:
+            qs = qs.filter(type__in=types)
+
+        workflows = kwargs.get('workflows', None)
+        if workflows:
+            qs = qs.filter(workflow__in=workflows)
+
+        project_names = kwargs.get('project_names', None)
+        if project_names:
+            qs = qs.filter(project_name__in=project_names)
+
+        project_owners = kwargs.get('project_owners', None)
+        if project_owners:
+            qs = qs.filter(project_owner__in=project_owners)
 
         return qs
 
@@ -303,8 +348,8 @@ class LabMetadata(models.Model):
     #  do we want to store clarity-generated lib id, and what do we want to call it?
     # external_library_id = models.CharField(max_length=255)
 
-    library_id = models.CharField(max_length=255, unique=True, blank=False)
-    sample_name = models.CharField(max_length=255, blank=False)
+    library_id = models.CharField(max_length=255, unique=True)
+    sample_name = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)
     subject_id = models.CharField(max_length=255, null=True, blank=True)
@@ -327,6 +372,15 @@ class LabMetadata(models.Model):
     def __str__(self):
         return 'id=%s, library_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
                % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
+
+    @classmethod
+    def get_table_name(cls):
+        return cls._meta.db_table
+
+    @classmethod
+    def truncate(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(f"TRUNCATE TABLE {cls.get_table_name()};")
 
 
 class S3LIMS(models.Model):

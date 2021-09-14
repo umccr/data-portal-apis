@@ -1,6 +1,8 @@
 import logging
+from typing import List
 
 from django.db import transaction
+from django.db.models import QuerySet
 
 from data_portal.models import SequenceRun
 
@@ -53,3 +55,16 @@ def get_sequence_run_by_run_id(run_id):
     except SequenceRun.DoesNotExist as e:
         logger.debug(e)  # silent unless debug
     return sequence_run
+
+
+@transaction.atomic
+def get_sequence_run_by_instrument_run_ids(ids: List[str]) -> List[SequenceRun]:
+    seq_run_list = list()
+
+    qs: QuerySet = SequenceRun.objects.filter(instrument_run_id__in=ids)
+
+    if qs.exists():
+        for seq_run in qs.all():
+            seq_run_list.append(seq_run)
+
+    return seq_run_list

@@ -228,3 +228,35 @@ _Get a Report record by Subject, Report Type:_
 ```
 curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject=SBJ00700&type=hrd_hrdetect" | jq
 ```
+
+### Pairing Endpoint
+
+_Create T/N Pairing by SequenceRuns:_
+```
+curl -s -X POST -d '["210903_A00130_0170_AHGKJ7DSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing" | jq
+```
+
+_POST payload JSON can also be in file as follows_:
+```
+curl -s -X POST -d "@pairing.json" -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_sequence_runs" | jq
+```
+
+_Create T/N Pairing by Subjects:_
+```
+curl -s -X POST -d '["SBJ00989", "SBJ00990", "SBJ00991", "SBJ00992"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_subjects" | jq
+```
+
+_Create T/N Pairing by Libraries:_
+```
+curl -s -X POST -d '["L2100989", "L2100990"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_libraries" | jq
+```
+
+_Create T/N Pairing by Samples:_
+```
+curl -s -X POST -d '["MDX210231", "MDX210232"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_samples" | jq
+```
+
+_Create T/N Pairing by Workflows (WGS QC wfr_id):_
+```
+curl -s -X POST -d '["wfr.499ca9001a834f4d8c682d9339cdda6a"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_workflows" | jq
+```

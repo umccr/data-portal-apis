@@ -8,7 +8,7 @@ from data_portal import views
 from .routers import OptionalSlashDefaultRouter
 from .viewsets import LIMSRowViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, \
     RunViewSet, PresignedUrlViewSet, GDSFileViewSet, ReportViewSet, LabMetadataViewSet, FastqListRowViewSet, \
-    SequenceRunViewSet, WorkflowViewSet
+    SequenceRunViewSet, WorkflowViewSet, PairingViewSet
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
@@ -25,6 +25,7 @@ router.register(r'presign', PresignedUrlViewSet, basename='presign')
 router.register(r'fastq', FastqListRowViewSet, basename='fastq')
 router.register(r'sequence', SequenceRunViewSet, basename='sequence')
 router.register(r'workflows', WorkflowViewSet, basename='workflows')
+router.register(r'pairing', PairingViewSet, basename='pairing')
 
 schema_view = get_schema_view(
    openapi.Info(

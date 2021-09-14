@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""views module (obsolete)
+
+NOTE:
+     This is a bit boilerplate plain vanilla Django view as REST API. Marking these for deprecation in some fine days.
+     See viewsets module for newer DRF based impls.
+"""
 from typing import Tuple, Optional
 import boto3
 from botocore.exceptions import ClientError

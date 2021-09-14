@@ -18,7 +18,7 @@ from typing import Dict
 from datetime import datetime
 
 from data_processors import const
-from data_processors.lims import services
+from data_processors.lims.services import google_lims_srv
 from utils import libjson, libgdrive, libssm
 
 logger = logging.getLogger()
@@ -52,4 +52,4 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
 
     bytes_data = libgdrive.download_sheet1_csv(account_info, lims_sheet_id)
 
-    return services.persist_lims_data(io.BytesIO(bytes_data))
+    return google_lims_srv.persist_lims_data(io.BytesIO(bytes_data))

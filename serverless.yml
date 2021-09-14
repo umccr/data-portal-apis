@@ -54,6 +54,7 @@ provider:
         audience:
           - ${ssm:/data_portal/client/cog_app_client_id_local}
           - ${ssm:/data_portal/client/cog_app_client_id_stage}
+          - ${ssm:/sscheck/client/cog_app_client_id_stage}
   vpc:
     securityGroupIds:
       "Fn::Split":
