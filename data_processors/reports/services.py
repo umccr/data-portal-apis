@@ -216,6 +216,9 @@ def persist_report(bucket: str, key: str, event_type):
     report_type = _extract_report_type(key)
     if report_type is None:
         return None
+    elif report_type == ReportType.CTTSO500:
+        if event_type == GDSUpdaterEventType.REPORT_CREATED:
+            return _persist_ctts_report(bucket, key, subject_id, sample_id, library_id)
 
     if event_type == libs3.S3EventType.EVENT_OBJECT_CREATED.value:
         return _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
