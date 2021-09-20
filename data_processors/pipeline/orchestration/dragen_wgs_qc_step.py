@@ -88,9 +88,9 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
             continue
 
         # skip negative control samples
-        if meta.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-            logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Negative-control.")
-            continue
+        # if meta.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
+        #     logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Negative-control.")
+        #     continue
 
         # Skip samples where metadata workflow is set to manual
         if meta.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
