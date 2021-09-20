@@ -334,7 +334,7 @@ class ReportViewSet(ReadOnlyModelViewSet):
 
 class PresignedUrlViewSet(ViewSet):
 
-    def post(self, request):
+    def create(self, request):
         # payload is expected to be simple list of gds://... urls
         payload = request.data
         # TODO: check payload and filter/report unrecognised/unsupported URLs
