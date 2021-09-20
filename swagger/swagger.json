@@ -713,6 +713,19 @@
           "presign"
         ]
       },
+      "post": {
+        "operationId": "presign_create",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "presign"
+        ]
+      },
       "parameters": []
     },
     "/reports/": {

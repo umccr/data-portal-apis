@@ -54,16 +54,20 @@ def check_path(volume_name: str, path: str) -> list:
     return files
 
 
-def get_file_list(volume_name, path="/*") -> list:
+def get_file_list(volume_name: str, path: str ="/*") -> list:
+    return get_files_list(volume_name=volume_name, paths=[path])
+
+
+def get_files_list(volume_name: str, paths: list =["/*"]) -> list:
     """Use cases
-    Get file listing for given volume_name and path.
-    If path is not specified, it will return listing of all files under given volume_name.
+    Get file listing for given volume_name and paths.
+    If patha are not specified, it will return listing of all files under given volume_name.
     Listing is recursive in nature for a volume or folder path.
     You can still specify an absolute path for a file.
     PreSignedUrl is always included.
 
     :param volume_name:
-    :param path: default list all
+    :param paths: default list all
     :return: List of libgds.FileResponse objects
     :rtype: list[FileResponse]
     """
@@ -77,7 +81,7 @@ def get_file_list(volume_name, path="/*") -> list:
             while True:
                 file_list: libgds.FileListResponse = files_api.list_files(
                     volume_name=[volume_name],
-                    path=[path],
+                    path=paths,
                     include="presignedUrl,totalItemCount",
                     page_size=1000,
                     page_token=page_token,
