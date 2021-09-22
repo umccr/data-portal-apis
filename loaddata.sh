@@ -91,6 +91,10 @@ load_localstack() {
   sqs_dragen_wgs_qc_queue_name=${sqs_dragen_wgs_qc_queue_arn##*:}
   eval "$aws_local_cmd sqs create-queue --queue-name $sqs_dragen_wgs_qc_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
 
+  sqs_dragen_wts_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_dragen_wts_queue_arn' --with-decryption | jq -r .Parameter.Value)
+  sqs_dragen_wts_queue_name=${sqs_dragen_wts_queue_arn##*:}
+  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_dragen_wts_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
+
   sqs_dragen_tso_ctdna_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_dragen_tso_ctdna_queue_arn' --with-decryption | jq -r .Parameter.Value)
   sqs_dragen_tso_ctdna_queue_name=${sqs_dragen_tso_ctdna_queue_arn##*:}
   eval "$aws_local_cmd sqs create-queue --queue-name $sqs_dragen_tso_ctdna_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"

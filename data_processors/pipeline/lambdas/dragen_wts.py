@@ -143,7 +143,7 @@ def handler(event, context) -> dict:
         results_dict = {
             'status': "SKIPPED",
             'reason': "Matching workflow runs found",
-            'event': libjson.dumps(event),
+            'event': event,
             'matched_runs': results
         }
         logger.info(libjson.dumps(results_dict))
