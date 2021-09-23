@@ -19,19 +19,6 @@ class SampleSheetCSV(Enum):
     FILENAME = "SampleSheet.csv"
 
 
-class ENSEventType(Enum):
-    """
-    REF:
-    https://iap-docs.readme.io/docs/ens_available-events
-    https://github.com/umccr-illumina/stratus/issues/22#issuecomment-628028147
-    https://github.com/umccr-illumina/stratus/issues/58
-    https://iap-docs.readme.io/docs/upload-instrument-runs#run-upload-event
-    """
-    GDS_FILES = "gds.files"
-    BSSH_RUNS = "bssh.runs"
-    WES_RUNS = "wes.runs"
-
-
 class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
     DRAGEN_WGS_QC = "dragen_wgs_qc"

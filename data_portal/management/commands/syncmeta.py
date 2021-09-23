@@ -10,7 +10,7 @@ Usage:
     python manage.py migrate
     python manage.py help syncmeta
     python manage.py syncmeta
-    python manage.py syncmeta --lab --sheet 2020
+    python manage.py syncmeta --lab
 """
 from django.core.management import BaseCommand, CommandParser
 
@@ -22,16 +22,13 @@ class Command(BaseCommand):
     def add_arguments(self, parser: CommandParser):
         parser.add_argument('--lims', help="Sync LIMS sheet only", action="store_true")
         parser.add_argument('--lab', help="Sync Lab Metadata sheet only", action="store_true")
-        parser.add_argument('--sheet', help="Lab Metadata sheet (Default to 2021)", default="2021")
 
     def handle(self, *args, **options):
         opt_lims = options['lims']
         opt_lab = options['lab']
-        opt_sheet = options['sheet']
 
         event = {
             'event': "Command event syncmeta",
-            'sheet': str(opt_sheet),
         }
 
         if opt_lab:

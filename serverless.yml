@@ -137,6 +137,15 @@ functions:
 #    environment:
 #      AWS_XRAY_SDK_ENABLED: true
 
+  sqs_gds_event_processor:
+    handler: data_processors.gds.lambdas.gds_event.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/ica_gds_event_sqs_arn}
+    timeout: 28
+
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
     layers:

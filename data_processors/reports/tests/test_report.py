@@ -5,12 +5,12 @@ from django.utils.timezone import make_aware
 from mockito import when, unstub
 
 from data_portal.models import S3Object, Report, ReportType
-from data_processors import const
+from data_processors.const import ReportHelper
 from data_processors.reports import services
 from data_processors.reports.lambdas import report_event
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 from data_processors.reports.tests.test_report_uk import KEY_EXPECTED
-from data_processors.s3 import helper
+from utils import libs3
 
 
 class ReportUnitTests(ReportUnitTestCase):
@@ -49,7 +49,7 @@ class ReportUnitTests(ReportUnitTestCase):
         when(services.libs3).get_s3_object_to_bytes(...).thenReturn(mock_s3_content_bytes)
 
         result = report_event.handler({
-            'event_type': helper.S3EventType.EVENT_OBJECT_CREATED.value,
+            'event_type': libs3.S3EventType.EVENT_OBJECT_CREATED.value,
             'event_time': "2021-04-16T05:53:42.841Z",
             's3_bucket_name': mock_s3_obj.bucket,
             's3_object_meta': {
@@ -85,7 +85,7 @@ class ReportUnitTests(ReportUnitTestCase):
             sample_id="PRJ000001",
             library_id="L0000001",
             type=ReportType.HRD_HRDETECT,
-            created_by=const.REPORT_KEYWORDS[0],
+            created_by=ReportHelper.REPORT_KEYWORDS[0],
             data={},
             s3_object_id=1,
         )
@@ -93,7 +93,7 @@ class ReportUnitTests(ReportUnitTestCase):
         logger.info(mock_report)
         self.assertEqual(1, Report.objects.count())
 
-        report = services.persist_report("bucket", KEY_EXPECTED, helper.S3EventType.EVENT_OBJECT_REMOVED.value)
+        report = services.persist_report("bucket", KEY_EXPECTED, libs3.S3EventType.EVENT_OBJECT_REMOVED.value)
         self.assertIsNotNone(report)
         self.assertEqual(0, Report.objects.count())
 

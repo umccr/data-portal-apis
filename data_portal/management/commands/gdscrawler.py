@@ -17,7 +17,7 @@ from datetime import datetime
 from django.core.management import BaseCommand, CommandParser
 from libica.openapi import libgds
 
-from data_processors.pipeline import services
+from data_processors.gds import services
 from utils import ica, libdt
 
 logger = logging.getLogger()

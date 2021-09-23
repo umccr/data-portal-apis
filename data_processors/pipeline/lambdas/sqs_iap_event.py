@@ -14,18 +14,16 @@ django.setup()
 import logging
 
 from data_portal.models import SequenceRun
-from data_processors.pipeline.services import gds_srv, sequence_srv, notification_srv
+from data_processors.pipeline.services import sequence_srv, notification_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
-from data_processors.pipeline.domain.workflow import ENSEventType
-from utils import libjson
+from utils import libjson, ica
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 IMPLEMENTED_ENS_TYPES = [
-    ENSEventType.BSSH_RUNS.value,
-    ENSEventType.GDS_FILES.value,
-    ENSEventType.WES_RUNS.value,
+    ica.ENSEventType.BSSH_RUNS.value,
+    ica.ENSEventType.WES_RUNS.value,
 ]
 
 
@@ -52,25 +50,15 @@ def handler(event, context):
         event_action = message['messageAttributes']['action']['stringValue']
         message_body = libjson.loads(message['body'])
 
-        if event_type == ENSEventType.GDS_FILES.value:
-            handle_gds_files_event(event_action, message_body)
-
-        if event_type == ENSEventType.BSSH_RUNS.value:
+        if event_type == ica.ENSEventType.BSSH_RUNS.value:
             handle_bssh_run_event(message, event_action, event_type, context)
 
-        if event_type == ENSEventType.WES_RUNS.value:
+        if event_type == ica.ENSEventType.WES_RUNS.value:
             handle_wes_runs_event(message_body, context)
 
     _msg = f"IAP ENS event processing complete"
     logger.info(_msg)
     return _msg
-
-
-def handle_gds_files_event(event_action, message_body):
-    if event_action == 'deleted':
-        gds_srv.delete_gds_file(message_body)
-    else:
-        gds_srv.create_or_update_gds_file(message_body)
 
 
 def handle_bssh_run_event(message, event_action, event_type, context):

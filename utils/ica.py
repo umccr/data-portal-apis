@@ -1,5 +1,6 @@
 import logging
 import os
+from enum import Enum
 
 from libica.openapi import libgds
 from libica.openapi.libgds import FileResponse
@@ -10,6 +11,40 @@ logger = logging.getLogger(__name__)
 
 ICA_BASE_URL = "https://aps2.platform.illumina.com"
 ICA_JWT_TOKEN = "/iap/jwt-token"
+
+
+class ENSEventType(Enum):
+    """
+    REF:
+    https://support-docs.illumina.com/SW/ICA/Content/SW/ICA/ENS_AvailableEvents.htm
+    """
+    GDS_FILES = "gds.files"
+    BSSH_RUNS = "bssh.runs"
+    WES_RUNS = "wes.runs"
+
+
+class GDSFilesEventType(Enum):
+    """
+    REF:
+    https://support-docs.illumina.com/SW/ICA/Content/SW/ICA/ENS_AvailableEvents.htm
+    """
+    UPLOADED = "uploaded"
+    DELETED = "deleted"
+    ARCHIVED = "archived"
+    UNARCHIVED = "unarchived"
+
+    @classmethod
+    def from_value(cls, value):
+        if value == cls.UPLOADED.value:
+            return cls.UPLOADED
+        elif value == cls.DELETED.value:
+            return cls.DELETED
+        elif value == cls.ARCHIVED.value:
+            return cls.ARCHIVED
+        elif value == cls.UNARCHIVED.value:
+            return cls.UNARCHIVED
+        else:
+            raise ValueError(f"No matching enum found for value: {value}")
 
 
 def configuration(lib):

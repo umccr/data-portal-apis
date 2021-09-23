@@ -21,12 +21,23 @@ What impl should include in this module:
 import gzip
 import logging
 from datetime import datetime
+from enum import Enum
 
 from botocore.exceptions import ClientError
 
 from utils import libaws
 
 logger = logging.getLogger(__name__)
+
+
+class S3EventType(Enum):
+    """
+    REF: Supported S3 Event Types
+    https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html
+    """
+    EVENT_OBJECT_CREATED = "ObjectCreated"
+    EVENT_OBJECT_REMOVED = "ObjectRemoved"
+    EVENT_UNSUPPORTED = "Unsupported"
 
 
 def get_matching_s3_objects(bucket, prefix="", suffix=""):

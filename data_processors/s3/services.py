@@ -17,10 +17,11 @@ from django.db import transaction
 from django.db.models import ExpressionWrapper, Value, CharField, Q, F
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS
-from data_processors.s3.helper import S3EventRecord, S3EventType
+from data_processors.const import S3EventRecord
 from utils import libs3
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
@@ -32,12 +33,12 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     results = defaultdict(int)
 
     for record in records:
-        if record.event_type == S3EventType.EVENT_OBJECT_REMOVED:
+        if record.event_type == libs3.S3EventType.EVENT_OBJECT_REMOVED:
             removed_count, s3_lims_removed_count = _sync_s3_event_record_removed(record)
             results['removed_count'] += removed_count
             results['s3_lims_removed_count'] += s3_lims_removed_count
 
-        elif record.event_type == S3EventType.EVENT_OBJECT_CREATED:
+        elif record.event_type == libs3.S3EventType.EVENT_OBJECT_CREATED:
             created_count, s3_lims_created_count = _sync_s3_event_record_created(record)
             results['created_count'] += created_count
             results['s3_lims_created_count'] += s3_lims_created_count

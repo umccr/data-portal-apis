@@ -19,7 +19,6 @@ from django.core.management import BaseCommand, CommandParser, execute_from_comm
 from django.utils.timezone import make_aware
 
 from data_processors.reports.lambdas import report_event
-from data_processors.s3.helper import S3EventType
 from utils import libs3
 
 
@@ -58,7 +57,7 @@ class Command(BaseCommand):
             # print(resp)
 
             report_event.handler({
-                "event_type": S3EventType.EVENT_OBJECT_CREATED.value,
+                "event_type": libs3.S3EventType.EVENT_OBJECT_CREATED.value,
                 "event_time": make_aware(datetime.now()),
                 "s3_bucket_name": bucket,
                 "s3_object_meta": {

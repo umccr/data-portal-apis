@@ -10,8 +10,7 @@ from django.db import transaction
 from django.db.models import QuerySet
 
 from data_portal.models import Report, ReportType, S3Object
-from data_processors import const
-from data_processors.s3 import helper
+from data_processors.const import ReportHelper
 from utils import libs3, libjson
 
 logger = logging.getLogger(__name__)
@@ -144,7 +143,7 @@ def parse_report_data(bucket, key):
     """
     # subsegment = xray_recorder.current_subsegment()
 
-    if helper.extract_report_format(key) is None:
+    if ReportHelper.extract_format(key) is None:
         logger.warning(f"Unsupported report format. Skip parsing report data: s3://{bucket}/{key}")
         return None
 
@@ -153,7 +152,7 @@ def parse_report_data(bucket, key):
     decompressed_report_size_in_bytes: int = sys.getsizeof(decompressed_report)
     logger.info(f"Decompressed report size in bytes: {decompressed_report_size_in_bytes}")
 
-    if decompressed_report_size_in_bytes > const.MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES:
+    if decompressed_report_size_in_bytes > ReportHelper.MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES:
         """NOTE: Here, report data is too large if > 150MB
         We will just capture its metadata only and skip ingesting json data.
         Based on offline debug study, it is known to require:
@@ -190,7 +189,7 @@ def persist_report(bucket: str, key: str, event_type):
     :param event_type:
     """
 
-    if not helper.is_report(key):
+    if not ReportHelper.is_report(key):
         logger.warning(f"Unrecognised report format or reporting source. Skip persisting report: s3://{bucket}/{key}")
         return None
 
@@ -202,9 +201,9 @@ def persist_report(bucket: str, key: str, event_type):
     if report_type is None:
         return None
 
-    if event_type == helper.S3EventType.EVENT_OBJECT_CREATED.value:
+    if event_type == libs3.S3EventType.EVENT_OBJECT_CREATED.value:
         return _sync_report_created(bucket, key, subject_id, sample_id, library_id, report_type)
-    elif event_type == helper.S3EventType.EVENT_OBJECT_REMOVED.value:
+    elif event_type == libs3.S3EventType.EVENT_OBJECT_REMOVED.value:
         return _sync_report_deleted(key, subject_id, sample_id, library_id, report_type)
 
 
@@ -220,7 +219,7 @@ def _sync_report_created(bucket: str, key: str, subject_id: str, sample_id: str,
         sample_id=sample_id,
         library_id=library_id,
         report_type=report_type,
-        created_by=helper.extract_report_source(key),
+        created_by=ReportHelper.extract_source(key),
         data=data,
         s3_object=qs.get() if qs.exists() else None
     )
