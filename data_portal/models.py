@@ -998,3 +998,20 @@ class Report(models.Model):
     def __str__(self):
         return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}, " \
                f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}"
+
+
+class LibraryRun(models.Model):
+    # class Meta:
+    #     unique_together = ['library', 'instrument_run_id', 'run_id', 'lane']
+    # TODO: NOTE: the addition of the run_id should not change anything, so we could drop it for simplicity
+
+    id = models.BigAutoField(primary_key=True)
+    library = models.ForeignKey(LabMetadata, on_delete=models.SET_NULL, null=True, blank=True)
+    instrument_run_id = models.CharField(max_length=255)    # Not directly linking as SequenceRun objects...
+    run_id = models.CharField(max_length=255)               # ...correspond to events rather than actual runs
+    override_cycles = models.CharField(max_length=255)
+    lane = models.IntegerField()  # same lib could be run on multiple lanes! ToDO: could also just allow multiple values here
+    converage_yield = models.CharField(max_length=255)  # yield achieved with this run (to be compared against desired coverage defined in metadata)
+    qc_pass = models.BooleanField(null=True, default=False)  # current overall QC status
+    qc_status = models.CharField(max_length=255)  # could be progressive status from QC workflow pass to QC metric eval
+    valid_for_analysis = models.BooleanField(null=True, default=True)  # could be used for manual exclusion
