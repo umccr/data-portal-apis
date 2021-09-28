@@ -238,6 +238,119 @@ class ReportFactory(factory.django.DjangoModelFactory):
     type = "unknown"
     data = None
     s3_object_id = None
+    gds_file_id = None
+
+
+class FusionCallerMetricsReportFactory(ReportFactory):
+    type = ReportType.FUSION_CALLER_METRICS
+    report_uri = "gds://development/analysis_data/SBJ00001/dragen_tso_ctdna/2021-08-26__05-39-57/Results/PRJ000001_L0000001/PRJ000001_L0000001.AlignCollapseFusionCaller_metrics.json.gz"
+
+    data = {
+        "MappingAligningPerRg": [
+            {
+                "name": "Total reads in RG",
+                "value": 1386181288.0,
+                "percent": 100.0
+            }
+        ],
+        "MappingAligningSummary": [
+            {
+                "name": "Total input reads",
+                "value": 1386181288.0,
+                "percent": 100.0
+            },
+            {
+                "name": "DRAGEN mapping rate [mil. reads/second]",
+                "value": 1.06
+            }
+        ],
+        "TrimmerStatistics": [
+            {
+                "name": "Total input reads",
+                "value": 210446120.0
+            },
+            {
+                "name": "Total input bases",
+                "value": 29260431093.0
+            }
+        ],
+        "CoverageSummary": [
+            {
+                "name": "Aligned bases",
+                "value": 28298345615.0
+            },
+            {
+                "name": "Aligned bases in genome",
+                "value": 28298345615.0,
+                "percent": 100.0
+            }
+        ],
+        "SvSummary": [
+            {
+                "name": "Number of deletions (PASS)",
+                "value": 1225.0
+            },
+            {
+                "name": "Number of insertions (PASS)",
+                "value": 0.0
+            },
+            {
+                "name": "Number of duplications (PASS)",
+                "value": 1270.0
+            },
+            {
+                "name": "Number of breakend pairs (PASS)",
+                "value": 91418.0
+            }
+        ],
+        "RunTime": [
+            {
+                "name": "Time loading reference",
+                "value": "00:01:28.736",
+                "percent": 88.74
+            },
+            {
+                "name": "Time aligning reads",
+                "value": "00:21:35.228",
+                "percent": 1295.23
+            },
+            {
+                "name": "Time UMI read collapsing and remapping",
+                "value": "01:28:10.404",
+                "percent": 5290.4
+            },
+            {
+                "name": "Time sorting",
+                "value": "00:01:22.266",
+                "percent": 82.27
+            },
+            {
+                "name": "Time saving map/align output",
+                "value": "00:01:48.219",
+                "percent": 108.22
+            },
+            {
+                "name": "Time partial reconfiguration",
+                "value": "00:00:01.669",
+                "percent": 1.67
+            },
+            {
+                "name": "Time partitioning",
+                "value": "01:49:44.656",
+                "percent": 6584.66
+            },
+            {
+                "name": "Time structural variant calling",
+                "value": "02:02:06.935",
+                "percent": 7326.94
+            },
+            {
+                "name": "Total runtime",
+                "value": "03:55:40.646",
+                "percent": 14140.65
+            }
+        ]
+    }
 
 
 class HRDChordReportFactory(ReportFactory):

@@ -1,10 +1,60 @@
 from django.core.exceptions import ObjectDoesNotExist
 
-from data_portal.models import GDSFile
+from data_portal.models import GDSFile, Report
+from data_portal.tests import factories
 from data_portal.tests.factories import GDSFileFactory
 from data_processors.gds.lambdas import gds_event
 from data_processors.gds.tests.case import logger, GDSEventUnitTestCase
 from utils import libjson
+
+
+def _make_mock_sqs_message():
+    gds_file: GDSFile = GDSFileFactory()
+    gds_file.path = "/analysis_data/SBJ00001/dragen_tso_ctdna/2021-08-26__05-39-57/Results/PRJ000001_L0000001/PRJ000001_L0000001.AlignCollapseFusionCaller_metrics.json.gz"
+
+    gds_file_message = {
+        "id": gds_file.file_id,
+        "name": gds_file.name,
+        "volumeId": gds_file.volume_id,
+        "volumeName": gds_file.volume_name,
+        "tenantId": gds_file.tenant_id,
+        "subTenantId": gds_file.sub_tenant_id,
+        "path": gds_file.path,
+        "timeCreated": gds_file.time_created,
+        "createdBy": gds_file.created_by,
+        "timeModified": gds_file.time_modified,
+        "modifiedBy": gds_file.modified_by,
+        "inheritedAcl": gds_file.inherited_acl,
+        "urn": gds_file.urn,
+        "sizeInBytes": gds_file.size_in_bytes,
+        "isUploaded": gds_file.is_uploaded,
+        "archiveStatus": gds_file.archive_status,
+        "storageTier": gds_file.storage_tier
+    }
+
+    ens_sqs_message_attributes = {
+        "actiondate": {
+            "stringValue": "2020-04-08T02:00:59.9745859Z",
+        },
+        "action": {
+            "stringValue": "uploaded",
+        },
+        "type": {
+            "stringValue": "gds.files",
+        },
+    }
+
+    sqs_event_message = {
+        "Records": [
+            {
+                "eventSource": "aws:sqs",
+                "body": libjson.dumps(gds_file_message),
+                "messageAttributes": ens_sqs_message_attributes
+            }
+        ]
+    }
+
+    return sqs_event_message
 
 
 class GDSEventUnitTests(GDSEventUnitTestCase):
@@ -208,13 +258,87 @@ class GDSEventUnitTests(GDSEventUnitTestCase):
         self.assertRaises(ObjectDoesNotExist)
 
     def test_handler_report_queue(self):
-        pass
+        """
+        python manage.py test data_processors.gds.tests.test_gds_event.GDSEventUnitTests.test_handler_report_queue
+        """
+        self.verify_local()
+        results = gds_event.handler(_make_mock_sqs_message(), None)
+        logger.info(libjson.dumps(results))
+        self.assertEqual(results['created_or_updated_count'], 1)
 
-    def test_delete_s3_object_linked_with_report(self):
-        pass
+    def test_delete_gds_file_linked_with_report(self):
+        """
+        python manage.py test data_processors.gds.tests.test_gds_event.GDSEventUnitTests.test_delete_gds_file_linked_with_report
+        """
 
-    def test_parse_raw_s3_event_records(self):
-        pass
+        gds_file: GDSFile = GDSFileFactory()
+        gds_file.path = "/analysis_data/SBJ00001/dragen_tso_ctdna/2021-08-26__05-39-57/Results/PRJ000001_L0000001/PRJ000001_L0000001.AlignCollapseFusionCaller_metrics.json.gz"
+        gds_file.save()
 
-    def test_parse_raw_s3_event_records_should_skip(self):
-        pass
+        mock_report: Report = factories.FusionCallerMetricsReportFactory()
+        mock_report.gds_file_id = gds_file.id
+        mock_report.save()
+
+        gds_file_message = {
+            "id": gds_file.file_id,
+            "name": gds_file.name,
+            "volumeId": gds_file.volume_id,
+            "volumeName": gds_file.volume_name,
+            "tenantId": gds_file.tenant_id,
+            "subTenantId": gds_file.sub_tenant_id,
+            "path": gds_file.path,
+            "timeCreated": gds_file.time_created,
+            "createdBy": gds_file.created_by,
+            "timeModified": gds_file.time_modified,
+            "modifiedBy": gds_file.modified_by,
+            "inheritedAcl": gds_file.inherited_acl,
+            "urn": gds_file.urn,
+            "sizeInBytes": gds_file.size_in_bytes,
+            "isUploaded": gds_file.is_uploaded,
+            "archiveStatus": gds_file.archive_status,
+            "storageTier": gds_file.storage_tier
+        }
+
+        ens_sqs_message_attributes = {
+            "actiondate": {
+                "stringValue": "2020-04-08T02:00:59.9745859Z",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "action": {
+                "stringValue": "deleted",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+            "type": {
+                "stringValue": "gds.files",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "String"
+            },
+        }
+
+        sqs_event_message = {
+            "Records": [
+                {
+                    "eventSource": "aws:sqs",
+                    "body": libjson.dumps(gds_file_message),
+                    "messageAttributes": ens_sqs_message_attributes
+                }
+            ]
+        }
+
+        gds_event.handler(sqs_event_message, None)
+
+        report_in_db = Report.objects.get(id__exact=mock_report.id)
+        self.assertIsNotNone(report_in_db.gds_file_id)
+
+    def test_parse_raw_gds_event_records(self):
+        """
+        python manage.py test data_processors.gds.tests.test_gds_event.GDSEventUnitTests.test_parse_raw_gds_event_records
+        """
+        event_records_dict = gds_event.parse_raw_gds_event_records(_make_mock_sqs_message()['Records'])
+        self.assertEqual(len(event_records_dict['gds_event_records']), 1)
+        self.assertEqual(len(event_records_dict['report_event_records']), 1)

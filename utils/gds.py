@@ -5,6 +5,7 @@ ImplNote:
 Consider implementation here should be reusable application specific routines for GDS common use cases.
 Consider not to re-do libgds SDK generality.
 """
+import gzip
 import logging
 from tempfile import NamedTemporaryFile
 from urllib.parse import urlparse
@@ -15,6 +16,31 @@ from libica.openapi import libgds
 from utils import ica
 
 logger = logging.getLogger()
+
+
+def get_gds_uri(gds_volume_name, gds_path):
+    return f"gds://{gds_volume_name}{gds_path}"  # note gds path start with /
+
+
+def get_gds_file_to_bytes(gds_volume_name: str, gds_path: str) -> bytes:
+    """
+    get_object_to_bytes API, with on-the-fly gzip detection and decompression
+
+    :param gds_volume_name:
+    :param gds_path:
+    :return bytes: bytes from the decompressed GDS File body
+    """
+    try:
+        ntf = download_gds_file(gds_volume_name, gds_path)
+        if gds_path.endswith(".gz"):
+            obj_bytes = gzip.decompress(ntf.read())
+        else:
+            obj_bytes = ntf.read()
+        ntf.close()
+        return obj_bytes
+    except Exception as e:
+        message = f"Failed on reading the specified GDS File ({get_gds_uri(gds_volume_name, gds_path)})"
+        raise FileNotFoundError(f"{message} Exception: {e}")
 
 
 def parse_path(gds_path):

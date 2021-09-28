@@ -3,7 +3,9 @@ import logging
 from django.test import TestCase
 from django.utils.timezone import now
 
+from data_portal.fields import HashFieldHelper
 from data_portal.models import S3Object
+from data_portal.tests.factories import S3ObjectFactory
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -13,7 +15,7 @@ class S3ObjectTests(TestCase):
 
     def test_unique_hash(self):
         """
-        Integration test for S3Object.unique_hash HashField data type
+        python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique_hash
         """
         bucket = 'unique-hash-bucket'
         key = 'start/umccrise/pcgr/pcgr.html'
@@ -29,3 +31,23 @@ class S3ObjectTests(TestCase):
         logger.info(f"DB save: (bucket={s3_object.bucket}, key={s3_object.key}, unique_hash={right})")
 
         self.assertEqual(left, right)
+
+    def test_get_by_unique_hash(self):
+        """
+        python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_get_by_unique_hash
+        """
+        mock_s3_object: S3Object = S3ObjectFactory()
+
+        logger.info(f"{mock_s3_object.bucket}, {mock_s3_object.key}, {mock_s3_object.unique_hash}")
+
+        h = HashFieldHelper()
+        h.add(mock_s3_object.bucket).add(mock_s3_object.key)
+        unique_hash = h.calculate_hash()
+
+        logger.info(f"unique_hash: {unique_hash}")
+
+        found = S3Object.objects.filter(unique_hash__exact=unique_hash).get()
+
+        self.assertIsNotNone(found)
+        self.assertEqual(found.key, mock_s3_object.key)
+        self.assertEqual(found.unique_hash, '4dbbc65280aa0cfb0f49bdd2f916cee72484a063b68366795aa96f822ab60e1e')

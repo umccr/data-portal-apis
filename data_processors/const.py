@@ -23,7 +23,7 @@ class ReportHelper(ABC):
     REPORT_KEYWORDS = [
         "cancer_report_tables",
         "multiqc_report_data",
-        "TSO500_ctDNA",
+        "dragen_tso_ctdna",
     ]
 
     # Operational limit for decompressed report json data size ~10MB

@@ -40,6 +40,10 @@ class S3EventType(Enum):
     EVENT_UNSUPPORTED = "Unsupported"
 
 
+def get_s3_uri(bucket, key):
+    return f"s3://{bucket}/{key}"
+
+
 def get_matching_s3_objects(bucket, prefix="", suffix=""):
     """
     Generate objects in an S3 bucket.

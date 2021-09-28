@@ -32,3 +32,16 @@ class HashField(models.CharField):
             value = getattr(instance, field)
             sha256.update(value.encode('utf-8'))
         setattr(instance, self.attname, sha256.hexdigest())
+
+
+class HashFieldHelper(object):
+
+    def __init__(self):
+        self.__sha256 = hashlib.sha256()
+
+    def add(self, value):
+        self.__sha256.update(value.encode('utf-8'))
+        return self
+
+    def calculate_hash(self):
+        return self.__sha256.hexdigest()

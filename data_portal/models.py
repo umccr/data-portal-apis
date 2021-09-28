@@ -8,7 +8,7 @@ from django.db.models import Max, QuerySet, Q, Value
 from django.db.models.functions import Concat
 
 from data_portal.exceptions import RandSamplesTooLarge
-from data_portal.fields import HashField
+from data_portal.fields import HashField, HashFieldHelper
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 
 
@@ -804,13 +804,13 @@ class Workflow(models.Model):
 
 
 class ReportType(models.TextChoices):
-    CTTSO500 = "cttso500"
-    CTTSO500_MSI = "cttso500_msi"
-    CTTSO500_TMB = "cttso500_tmb"
-    CTTSO500_FUSION_CALLER_METRICS = "cttso500_fusion_caller_metrics" 
-    CTTSO500_FAILED_EXON_COVERAGE_QC = "cttso500_failed_exon_coverage_qc"
-    CTTSO500_SAMPLE_ANALYSIS_RESULTS = "cttso500_sample_analysis_results"
-    CTTSO500_TARGET_REGION_COVERAGE = "cttso500_target_region_coverage"
+    MSI = "msi"
+    TMB = "tmb"
+    TMB_TRACE = "tmb_trace"
+    FUSION_CALLER_METRICS = "fusion_caller_metrics"
+    FAILED_EXON_COVERAGE_QC = "failed_exon_coverage_qc"
+    SAMPLE_ANALYSIS_RESULTS = "sample_analysis_results"
+    TARGET_REGION_COVERAGE = "target_region_coverage"
     QC_SUMMARY = "qc_summary"
     MULTIQC = "multiqc"
     REPORT_INPUTS = "report_inputs"
@@ -835,12 +835,38 @@ class ReportType(models.TextChoices):
 
 class ReportManager(models.Manager):
 
-    def create_or_update_report(self, subject_id, sample_id, library_id, report_type, created_by, data, s3_object):
-        qs: QuerySet = self.filter(
+    def get_by_unique_fields(
+            self,
+            subject_id: str,
+            sample_id: str,
+            library_id: str,
+            report_type: str,
+            report_uri: str,
+    ) -> QuerySet:
+
+        h = HashFieldHelper()
+        h.add(subject_id).add(sample_id).add(library_id).add(report_type).add(report_uri)
+
+        return self.filter(unique_hash__exact=h.calculate_hash())
+
+    def create_or_update_report(
+            self,
+            subject_id: str,
+            sample_id: str,
+            library_id: str,
+            report_type: str,
+            created_by: str,
+            data,
+            s3_object: S3Object,
+            gds_file: GDSFile,
+            report_uri: str,
+    ):
+        qs: QuerySet = self.get_by_unique_fields(
             subject_id=subject_id,
             sample_id=sample_id,
             library_id=library_id,
-            type=report_type
+            report_type=report_type,
+            report_uri=report_uri,
         )
 
         if qs.exists():
@@ -853,10 +879,12 @@ class ReportManager(models.Manager):
             report.sample_id = sample_id
             report.library_id = library_id
             report.type = report_type
+            report.report_uri = report_uri
 
         report.created_by = created_by
         report.data = data
         report.s3_object_id = None if s3_object is None else s3_object.id
+        report.gds_file_id = None if gds_file is None else gds_file.id
         report.save()
         return report
 
@@ -883,8 +911,6 @@ class ReportManager(models.Manager):
 
 
 class Report(models.Model):
-    class Meta:
-        unique_together = ['subject_id', 'sample_id', 'library_id', 'type']
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
@@ -895,6 +921,13 @@ class Report(models.Model):
     data = models.JSONField(null=True, blank=True)  # note max 1GB in size for a json document
 
     s3_object_id = models.BigIntegerField(null=True, blank=True)
+    gds_file_id = models.BigIntegerField(null=True, blank=True)
+
+    report_uri = models.TextField(default='None')
+
+    unique_hash = HashField(unique=True, base_fields=[
+        'subject_id', 'sample_id', 'library_id', 'type', 'report_uri'
+    ], null=True, default=None)
 
     objects = ReportManager()
 

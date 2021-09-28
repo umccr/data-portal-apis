@@ -14,9 +14,8 @@ django.setup()
 import uuid
 import logging
 
-from data_portal.models import Report
-from data_processors.reports import services
-from utils import libjson
+from data_processors.reports.services import s3_report_srv, gds_report_srv
+from utils import libjson, libs3, gds
 
 from aws_xray_sdk.core import xray_recorder
 
@@ -64,6 +63,10 @@ def sqs_handler(event, context):
 
 def handler(event, context) -> dict:
     """event payload dict
+
+    could be
+
+    S3 Object
     {
         "event_type": value of S3EventType,
         "event_time": "2021-04-16T02:54:45.984000+00:00",
@@ -77,6 +80,21 @@ def handler(event, context) -> dict:
         }
     }
 
+    or
+
+    GDS File
+    {
+        "event_type": value of GDSFilesEventType,
+        "event_time": "2021-04-16T02:54:45.984000+00:00",
+        "gds_volume_name": "development",
+        "gds_object_meta": {
+            "volumeName": "development",
+            "path": "/analysis_data/SBJ00476/dragen_tso_ctdna/2021-08-26__05-39-57/Results/PRJ200603_L2100345/PRJ200603_L2100345.TargetRegionCoverage.json.gz",
+            "eTag": "6375457e74ab46ac8f1f1f30b50fae44-1462"
+            "...": "..."
+        }
+    }
+
     :param event:
     :param context:
     :return: dict
@@ -87,19 +105,30 @@ def handler(event, context) -> dict:
     logger.info(libjson.dumps(event))
     subsegment.put_metadata('event', event, 'handler')
 
-    bucket = event['s3_bucket_name']
-    key = event['s3_object_meta']['key']
     event_type = event['event_type']
 
-    report = services.persist_report(bucket, key, event_type)
+    if "s3_bucket_name" in event:
+        bucket = event['s3_bucket_name']
+        key = event['s3_object_meta']['key']
+        report_uri = libs3.get_s3_uri(bucket, key)
+        report = s3_report_srv.persist_report(bucket, key, event_type)
+
+    elif "gds_volume_name" in event:
+        gds_volume_name = event['gds_volume_name']
+        gds_path = event['gds_object_meta']['path']
+        report_uri = gds.get_gds_uri(gds_volume_name, gds_path)
+        report = gds_report_srv.persist_report(gds_volume_name, gds_path, event_type)
+
+    else:
+        raise ValueError("Unknown report event")
 
     logger.info("Report event processing complete")
 
-    if report is not None and isinstance(report, Report):
+    if report is not None:
         return {
             str(report.id): str(report)
         }
     else:
         return {
-            f"WARN__{str(uuid.uuid4())}": f"Unable to ingest report of {event_type} for s3://{bucket}/{key}"
+            f"WARN__{str(uuid.uuid4())}": f"Unable to ingest report of {event_type} for {report_uri}"
         }

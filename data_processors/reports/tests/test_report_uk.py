@@ -1,5 +1,5 @@
 from data_portal.models import ReportType
-from data_processors.reports import services
+from data_processors.reports.services import s3_report_srv
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 
 KEY_EXPECTED = "Project-CUP/SBJ00001/WGS/2020-12-07/umccrised/SBJ00001__SBJ00001_PRJ000001_L0000001/cancer_report_tables/json/hrd/SBJ00001__SBJ00001_PRJ000001_L0000001-hrdetect.json.gz"
@@ -46,7 +46,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertEqual(subject_id, "SBJ00001")
         self.assertEqual(sample_id, "PRJ000001")
@@ -59,7 +59,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         NOTE:
             Alternate test to assert that file name does not matter
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_1)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_1)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertEqual(subject_id, "SBJ00001")
         self.assertEqual(sample_id, "PRJ000001")
@@ -72,7 +72,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         NOTE:
             Alternate test to assert that folder name does not matter
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_2)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_2)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertEqual(subject_id, "SBJ00001")
         self.assertEqual(sample_id, "PRJ000001")
@@ -85,7 +85,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         NOTE:
             Alternate test to assert that folder name does not matter
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_2)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_3)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertEqual(subject_id, "SBJ00001")
         self.assertEqual(sample_id, "PRJ000001")
@@ -98,7 +98,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         NOTE:
             Alternate test to assert that folder name does not matter
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_4)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_4)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertEqual(subject_id, "SBJ00001")
         self.assertEqual(sample_id, "PRJ000001")
@@ -108,7 +108,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key_alt_5
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_5)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_5)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertIn(subject_id, KEY_EXPECTED_ALT_5)
         self.assertIn(sample_id, KEY_EXPECTED_ALT_5)
@@ -119,7 +119,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key_alt_6
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_6)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_6)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertIn(subject_id, KEY_EXPECTED_ALT_6)
         self.assertIn(sample_id, KEY_EXPECTED_ALT_6)
@@ -130,7 +130,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key_alt_7
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_EXPECTED_ALT_7)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_EXPECTED_ALT_7)
         logger.info(f"SUBJECT_ID: {subject_id}, SAMPLE_ID: {sample_id}, LIBRARY_ID: {library_id}")
         self.assertIn(subject_id, KEY_EXPECTED_ALT_7)
         self.assertIn(sample_id, KEY_EXPECTED_ALT_7)
@@ -140,21 +140,21 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key_error_1
         """
-        subject_id, sample_id, library_id = services._extract_report_unique_key(KEY_ERROR_1)
+        subject_id, sample_id, library_id = s3_report_srv._extract_report_unique_key(KEY_ERROR_1)
         self.assertIsNone(subject_id)
 
     def test_extract_report_unique_key_error_2(self):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_unique_key_error_2
         """
-        subject_id, _, _ = services._extract_report_unique_key(KEY_ERROR_2)
+        subject_id, _, _ = s3_report_srv._extract_report_unique_key(KEY_ERROR_2)
         self.assertIsNone(subject_id)
 
     def test_extract_report_type(self):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_type
         """
-        type_ = services._extract_report_type(KEY_EXPECTED)
+        type_ = s3_report_srv._extract_report_type(KEY_EXPECTED)
         self.assertEqual(type_, ReportType.HRD_HRDETECT)
 
     def test_extract_report_type_check_all(self):
@@ -163,7 +163,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         chk = 0
         for k, t in KEY_EXPECTED_ALL:
-            type_ = services._extract_report_type(k)
+            type_ = s3_report_srv._extract_report_type(k)
             self.assertEqual(type_, t)
             chk += 1
         self.assertEqual(chk, len(KEY_EXPECTED_ALL))
@@ -172,7 +172,7 @@ class ReportUniqueKeyUnitTests(ReportUnitTestCase):
         """
         python manage.py test data_processors.reports.tests.test_report_uk.ReportUniqueKeyUnitTests.test_extract_report_type_unknown
         """
-        type_ = services._extract_report_type(KEY_ERROR_3)
+        type_ = s3_report_srv._extract_report_type(KEY_ERROR_3)
         self.assertIsNone(type_)
 
 
