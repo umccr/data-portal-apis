@@ -566,6 +566,15 @@ class SequenceRun(models.Model):
 
 class FastqListRowManager(models.Manager):
 
+    def create_fastq_list_row(self,rgid,rgsm,rglb,lane,read_1,read_2,sequence_run,lab_metadata):
+        flr = self.create(rgid=rgid,rgsm=rgsm,rglb=rglb,lane=lane,read_1=read_1,read_2=read_2,sequence_run=sequence_run)
+        lm = LabMetadata.objects.filter(library_id__iexact=rglb)
+
+        if len(lm) == 1:
+            flr.lab_metadata = lm[0]
+            flr.save()
+        return flr
+
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
@@ -597,10 +606,16 @@ class FastqListRowManager(models.Manager):
         if lane:
             qs = qs.filter(lane__exact=lane)
 
+        project_owner = kwargs.get('project_owner', None)
+        if project_owner:
+            qs = qs.filter(lab_metadata__project_owner__iexact=project_owner)
+
         return qs
 
 
-class FastqListRow(models.Model):
+    
+class FastqListRow(models.Model):   
+    
     class Meta:
         unique_together = ['rgid']
 
@@ -614,7 +629,7 @@ class FastqListRow(models.Model):
 
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
     lab_metadata = models.ForeignKey(LabMetadata, on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     objects = FastqListRowManager()
 
     def __str__(self):

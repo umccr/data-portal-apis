@@ -332,6 +332,8 @@ class FastqListRowViewSet(ReadOnlyModelViewSet):
         rgsm = self.request.query_params.get('rgsm', None)
         rglb = self.request.query_params.get('rglb', None)
         lane = self.request.query_params.get('lane', None)
+        project_owner = self.request.query_params.get('project_owner', None)
+        
         return FastqListRow.objects.get_by_keyword(
             sequence_run=sequence_run,
             sequence=sequence,
@@ -340,6 +342,7 @@ class FastqListRowViewSet(ReadOnlyModelViewSet):
             rgsm=rgsm,
             rglb=rglb,
             lane=lane,
+            project_owner=project_owner
         )
 
 

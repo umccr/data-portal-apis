@@ -99,7 +99,6 @@ class FastqSrvUnitTests(PipelineUnitTestCase):
             "read_2" : f"gds://umccr-fastq-data/{mock_sqr.name}/A/UMCCR/PRJ123456_L1234567_S1_L001_R2_001.fastq.gz"
         }
         mock_fqlr = fastq_srv.create_or_update_fastq_list_row(mock_fqlr_dict,mock_sqr)
-
         fqlr_list = fastq_srv.get_fastq_list_row_by_project_owner(self.mock_project_owner)
 
         logger.info(libjson.dumps(fqlr_list))

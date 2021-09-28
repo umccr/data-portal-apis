@@ -28,7 +28,6 @@ def create_or_update_fastq_list_row(fastq_list_row: dict, sequence_run: Sequence
     :param sequence_run:
     :return:
     """
-
     rgid: str = fastq_list_row['rgid']
     rgsm: str = fastq_list_row['rgsm']
     rglb: str = fastq_list_row['rglb']
