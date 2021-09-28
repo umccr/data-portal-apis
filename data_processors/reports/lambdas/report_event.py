@@ -62,9 +62,7 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """event payload dict
-
-    could be
+    """event payload dict could be S3 Object or GDS File as follows
 
     S3 Object
     {
@@ -79,8 +77,6 @@ def handler(event, context) -> dict:
             "sequencer": "006078FC7966A0E666"
         }
     }
-
-    or
 
     GDS File
     {
