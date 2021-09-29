@@ -3,6 +3,7 @@ from unittest import skip
 from libica.openapi import libgds
 from mockito import when
 
+from data_processors.lims.lambdas import labmetadata
 from data_processors.pipeline.lambdas import fastq
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
@@ -109,11 +110,30 @@ class FastQIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_fastq.FastQIntegrationTests.test_fastq_handler
         """
 
+        # populate test db with LabMetadata
+        stat = labmetadata.scheduled_update_handler({'event': "FastQIntegrationTests", 'truncate': False}, None)
+        logger.info(f"{stat}")
+
         event = {
             'locations': [
-                "gds://umccr-fastq-data-prod/201021_A01052_0025_BHF2WTDSXY",
-            ]
+                "gds://development/primary_data/200612_A01052_0017_BH5LYWDSXY",
+            ],
+            # 'project_owner': [
+            #     "UMCCR",
+            # ],
+            # 'flat': True,
         }
+
+        # event = {
+        #     'locations': [
+        #         "gds://production/primary_data/210923_A00130_0176_BHH5JFDSX2",
+        #     ],
+        #     'project_owner': [
+        #         "Scott",
+        #         "Hovens",
+        #     ],
+        #     # 'flat': True,
+        # }
 
         fastq_container: dict = fastq.handler(event, None)
 

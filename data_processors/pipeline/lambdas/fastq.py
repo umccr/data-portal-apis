@@ -18,19 +18,24 @@ from typing import List
 
 from libica.openapi import libgds
 
+from data_processors.pipeline.services import metadata_srv
 from utils import ica, libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def handler(event, context) -> dict:
+def handler(event, context):
     """event payload dict
     {
         'locations': [
             "gds://volume/run1/path/to/fastq",
             "gds://volume/run2/path/to/fastq",
-        ]
+        ],
+        'project_owner': [
+            "UMCCR",
+        ],
+        'flat': False,
     }
 
     Given locations, find FASTQ files in there recursively if needed.
@@ -44,7 +49,10 @@ def handler(event, context) -> dict:
     logger.info(libjson.dumps(event))
 
     locations: List[str] = event['locations']
+    project_owner_list: List[str] = event.get('project_owner', None)
+    flatten: bool = event.get('flat', False)
 
+    fastq_flatten_list = []
     fastq_list_csv_files = []
     fastq_files = []
     for location in locations:
@@ -57,7 +65,27 @@ def handler(event, context) -> dict:
         sample_name = extract_fastq_sample_name(file.name)
 
         if sample_name:
+            meta = metadata_srv.get_metadata_by_sample_library_name_as_in_samplesheet(sample_library_name=sample_name)
+            tags = []
+            if meta:
+
+                # filter out project_owner of interest
+                if project_owner_list and meta.project_owner not in project_owner_list:
+                    continue
+
+                tags = [
+                    {
+                        'subject_id': meta.subject_id,
+                        'project_owner': meta.project_owner,
+                        'project_name': meta.project_name,
+                    },
+                ]
+
             file_abs_path = f"gds://{file.volume_name}{file.path}"
+            if flatten:
+                fastq_flatten_list.append(file_abs_path)
+                continue
+
             fastq_directory = os.path.dirname(file_abs_path)
 
             selected_csv_file_abs_path = ""
@@ -76,16 +104,18 @@ def handler(event, context) -> dict:
                 fastq_map[sample_name]['fastq_list'] = [file_abs_path]
                 fastq_map[sample_name]['fastq_directories'] = [fastq_directory]
                 fastq_map[sample_name]['fastq_list_csv'] = [selected_csv_file_abs_path]
-                fastq_map[sample_name]['tags'] = []
+                fastq_map[sample_name]['tags'] = tags
         else:
             logger.info(f"Failed to extract sample name from file: {file.name}")
+
+    if flatten:
+        logger.info(libjson.dumps(fastq_flatten_list))
+        return fastq_flatten_list
 
     fastq_container = {}
     fastq_container.update(locations=event['locations'])
     fastq_container.update(fastq_map=fastq_map)
-
     logger.info(libjson.dumps(fastq_container))
-
     return fastq_container
 
 
