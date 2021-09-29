@@ -569,17 +569,9 @@ class FastqListRowManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        sequence_run = kwargs.get('sequence_run', None)
-        if sequence_run:
-            qs = qs.filter(sequence_run_id__exact=sequence_run)
-
-        sequence = kwargs.get('sequence', None)
-        if sequence:
-            qs = qs.filter(sequence_run__name__iexact=sequence)
-
         run = kwargs.get('run', None)
         if run:
-            qs = qs.filter(sequence_run__name__iexact=run)
+            qs = qs.filter(sequence_run__instrument_run_id__exact=run)
 
         rgid = kwargs.get('rgid', None)
         if rgid:
@@ -597,10 +589,16 @@ class FastqListRowManager(models.Manager):
         if lane:
             qs = qs.filter(lane__exact=lane)
 
+        project_owner = kwargs.get('project_owner', None)
+        if project_owner:
+            qs_meta = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
+
         return qs
 
 
-class FastqListRow(models.Model):
+class FastqListRow(models.Model):   
+    
     class Meta:
         unique_together = ['rgid']
 
@@ -640,7 +638,7 @@ class FastqListRow(models.Model):
             "rglb": self.rglb,
             "rgsm": self.rgsm,
             "lane": self.lane,
-            "read_1": self.read_1_to_dict(),
+            "read_1": self.read_1_to_dict()
         }
         if self.read_2:
             dict_obj["read_2"] = self.read_2_to_dict()
