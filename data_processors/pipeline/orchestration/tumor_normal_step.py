@@ -230,6 +230,8 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 # Just the tumor(s) in this run; pre-existing tumors will have been analysed
                 tumors = meta_list_df["library_id"].apply(liborca.strip_topup_rerun_from_library_id).unique().tolist()
                 for tumor_library_id in tumors:
+                    if tumor_library_id not in subject_tumor_libraries_stripped:
+                        continue
                     tumor_fastq_list_rows = fastq_srv.get_fastq_list_row_by_rglb(tumor_library_id)
                     if not len(tumor_fastq_list_rows) == 0:
                         subject_tn_fqlr_pairs.append((tumor_fastq_list_rows, normal_fastq_list_rows))
