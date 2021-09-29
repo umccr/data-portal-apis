@@ -566,29 +566,12 @@ class SequenceRun(models.Model):
 
 class FastqListRowManager(models.Manager):
 
-    def create_fastq_list_row(self,rgid,rgsm,rglb,lane,read_1,read_2,sequence_run,lab_metadata):
-        flr = self.create(rgid=rgid,rgsm=rgsm,rglb=rglb,lane=lane,read_1=read_1,read_2=read_2,sequence_run=sequence_run)
-        lm = LabMetadata.objects.filter(library_id__iexact=rglb)
-
-        if len(lm) == 1:
-            flr.lab_metadata = lm[0]
-            flr.save()
-        return flr
-
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        sequence_run = kwargs.get('sequence_run', None)
-        if sequence_run:
-            qs = qs.filter(sequence_run_id__exact=sequence_run)
-
-        sequence = kwargs.get('sequence', None)
-        if sequence:
-            qs = qs.filter(sequence_run__name__iexact=sequence)
-
         run = kwargs.get('run', None)
         if run:
-            qs = qs.filter(sequence_run__name__iexact=run)
+            qs = qs.filter(sequence_run__instrument_run_id__exact=run)
 
         rgid = kwargs.get('rgid', None)
         if rgid:
@@ -608,11 +591,10 @@ class FastqListRowManager(models.Manager):
 
         project_owner = kwargs.get('project_owner', None)
         if project_owner:
-            qs_project_owner_libids = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
-            qs = qs.filter(rglb__in=qs_project_owner_libids)
+            qs_meta = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
 
         return qs
-
 
 
 class FastqListRow(models.Model):   

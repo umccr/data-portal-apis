@@ -4,8 +4,7 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import SequenceRun, FastqListRow, LabMetadata
-
+from data_portal.models import SequenceRun, FastqListRow
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -48,7 +47,6 @@ def create_or_update_fastq_list_row(fastq_list_row: dict, sequence_run: Sequence
         flr.read_1 = read_1
         flr.read_2 = read_2
         flr.sequence_run = sequence_run
-
     else:
         # update to updatable attributes i.e.
         # Depends on business logic requirement, we may decide a particular attribute is "immutable" across different
@@ -76,17 +74,6 @@ def get_fastq_list_row_by_sequence_name(sequence_name):
 
 
 @transaction.atomic
-def get_fastq_list_row_by_project_owner(owner_name):
-    qs_project_owner_libids = LabMetadata.objects.filter(project_owner__iexact=owner_name).values("library_id")
-    qs = FastqListRow.objects.filter(rglb__in=qs_project_owner_libids)
-    if qs.exists():
-        fqlr_list = []
-        for fqlr in qs.all():
-            fqlr_list.append(fqlr.as_dict())
-        return fqlr_list
-    return None
-
-@transaction.atomic
 def get_fastq_list_row_by_rgid(rgid):
     try:
         fastq_list_row = FastqListRow.objects.get(rgid=rgid)
@@ -104,6 +91,7 @@ def get_fastq_list_row_by_rglb(rglb) -> List[FastqListRow]:
         for fqlr in qs.all():
             fqlr_list.append(fqlr)
     return fqlr_list
+
 
 def extract_sample_library_ids(fastq_list_rows: List[FastqListRow]):
     samples = set()
