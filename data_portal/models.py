@@ -608,12 +608,13 @@ class FastqListRowManager(models.Manager):
 
         project_owner = kwargs.get('project_owner', None)
         if project_owner:
-            qs = qs.filter(lab_metadata__project_owner__iexact=project_owner)
+            qs_project_owner_libids = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
+            qs = qs.filter(rglb__in=qs_project_owner_libids)
 
         return qs
 
 
-    
+
 class FastqListRow(models.Model):   
     
     class Meta:
@@ -628,7 +629,6 @@ class FastqListRow(models.Model):
     read_2 = models.TextField(null=True, blank=True)  # This is nullable. Search 'read_2' in fastq_list_row.handler()
 
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
-    lab_metadata = models.ForeignKey(LabMetadata, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = FastqListRowManager()
 
@@ -645,8 +645,6 @@ class FastqListRow(models.Model):
             "read_1": self.read_1,
             "read_2": self.read_2
         }
-        if self.lab_metadata:
-            d["project_owner"] = self.lab_metadata.project_owner
         return d
 
     def as_json(self):
@@ -662,8 +660,6 @@ class FastqListRow(models.Model):
         }
         if self.read_2:
             dict_obj["read_2"] = self.read_2_to_dict()
-        if self.lab_metadata:
-            dict_obj["project_owner"] = self.lab_metadata.project_owner
         return dict_obj
 
     def __json__(self):
