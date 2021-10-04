@@ -16,9 +16,10 @@ phases:
   build:
     commands:
       - which docker
+      - which docker-compose
       - which python3
       - which aws
-      - docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+      - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up -d
       - make load_localstack
       - python3 manage.py test
       - docker-compose -f docker-compose.yml -f docker-compose.ci.yml down
