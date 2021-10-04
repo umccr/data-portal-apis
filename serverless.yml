@@ -29,6 +29,12 @@ provider:
         - https://data.umccr.org
         - https://data.prod.umccr.org
         - https://data.dev.umccr.org
+        - https://status.data.umccr.org
+        - https://status.data.prod.umccr.org
+        - https://status.data.dev.umccr.org
+        - https://sscheck.umccr.org
+        - https://sscheck.prod.umccr.org
+        - https://sscheck.dev.umccr.org
       allowedHeaders:
         - Content-Type
         - Authorization
@@ -54,6 +60,7 @@ provider:
         audience:
           - ${ssm:/data_portal/client/cog_app_client_id_local}
           - ${ssm:/data_portal/client/cog_app_client_id_stage}
+          - ${ssm:/data_portal/status_page/cog_app_client_id_stage}
           - ${ssm:/sscheck/client/cog_app_client_id_stage}
   vpc:
     securityGroupIds:
