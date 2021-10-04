@@ -5,12 +5,12 @@
   "version": "0.1.0",
   "devDependencies": {
     "husky": "^7.0.2",
-    "serverless": "^2.57.0",
+    "serverless": "^2.60.3",
     "serverless-associate-waf": "^1.2.1",
     "serverless-domain-manager": "^5.1.5",
-    "serverless-prune-plugin": "^1.5.1",
+    "serverless-prune-plugin": "^1.6.0",
     "serverless-python-requirements": "^5.1.1",
-    "serverless-wsgi": "^2.0.1"
+    "serverless-wsgi": "^2.0.2"
   },
   "scripts": {
     "prepare": "husky install"

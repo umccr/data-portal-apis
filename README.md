@@ -9,19 +9,29 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 #### TL;DR
 
 - Required: 
-  - **Python 3.8**
+  - **Python 3.9**
   - Node.js with Yarn
   - See `buildspec.yml` for runtime versions requirement
-- Create virtual environment and activate it, i.e:
+- Create virtual environment; use either built-in `python -mvenv venv` or [conda](https://docs.conda.io/en/latest/).
 
 ```
-$ python -mvenv venv
+python -V
+Python 3.9.6
+
+node -v
+v14.17.3
+
+npm i -g yarn
+yarn -v
+1.22.10 
 ```
 
-then:
+then activate it:
 
 ```
 source venv/bin/activate
+(or)
+conda activate myenv
 
 (install Python and node.js development dependencies)
 make install
@@ -96,14 +106,10 @@ aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_proc
 
 - First, install `serverless` CLI and its plugins dependencies:
 ```
-node --version
-v12.22.1
-
-npm i -g yarn
 yarn install
 ```
 
-> NOTE: if you want to install serverless cli globally, make sure to install specific version defined in `package.json` for example `yarn global add serverless@2.44.0`. Otherwise, highly recommend to use local _locked version_ through `npx` as follows.
+> NOTE: if you want to install serverless cli globally, make sure to install specific version defined in `package.json` for example `yarn global add serverless@2.60.3`. Otherwise, highly recommend to use local _locked version_ through `npx` as follows.
 
 - You can `serverless` invoke or deploy from local. However, we favour [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
 - Serverless deployment targets only to AWS. AWS account specific variables will be loaded from SSM Parameter Store of respective login session:

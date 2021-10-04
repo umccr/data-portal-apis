@@ -8,19 +8,17 @@ env:
 phases:
   install:
     runtime-versions:
-        nodejs: 12
-        python: 3.8
+        nodejs: 14
+        python: 3.9
     commands:
       - pip install -r requirements-test.txt
       - yarn install
   build:
     commands:
       - which docker
-      - which docker-compose
       - which python3
       - which aws
-      - aws ecr get-login-password | docker login --username AWS --password-stdin 843407916570.dkr.ecr.ap-southeast-2.amazonaws.com
-      - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+      - docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
       - make load_localstack
       - python3 manage.py test
       - docker-compose -f docker-compose.yml -f docker-compose.ci.yml down
