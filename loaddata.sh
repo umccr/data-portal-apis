@@ -44,7 +44,7 @@ aws sts get-caller-identity >/dev/null 2>&1 || {
 
 echo "...Base project directory at $(pwd)"
 
-db_container=$(docker compose ps -q db)
+db_container="portal_db"
 
 sync_db_dump() {
   echo "...Syncing database dump from S3 bucket"

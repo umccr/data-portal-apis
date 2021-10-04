@@ -33,6 +33,9 @@ loaddata:
 
 load_data: loaddata
 
+reload:
+	@. ./loaddata.sh; copy_db_dump; load_db_dump
+
 load_localstack:
 	@. ./loaddata.sh; load_localstack
 
@@ -43,7 +46,13 @@ test: load_localstack
 	@python manage.py test
 
 fastest: # fist run test!
-	@python manage.py test data_processors.reports.tests.ReportsTests
+	@python manage.py test data_processors.reports
+
+sure:
+	@python manage.py test data_processors.pipeline
+
+mysql:
+	@docker exec -it portal_db mysql -h 0.0.0.0 -D data_portal -u root -proot
 
 migrate:
 	@echo $$DJANGO_SETTINGS_MODULE
