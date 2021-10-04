@@ -16,5 +16,6 @@
     "prepare": "husky install"
   },
   "resolutions": {
+    "ansi-regex": "^5.0.1"
   }
 }
