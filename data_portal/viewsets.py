@@ -17,12 +17,13 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, ica, gds
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
+    Workflow, LibraryRun
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
     SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer, \
-    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer
+    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, LibraryRunModelSerializer
 
 logger = logging.getLogger()
 
@@ -400,7 +401,7 @@ class FastqListRowViewSet(ReadOnlyModelViewSet):
         rglb = self.request.query_params.get('rglb', None)
         lane = self.request.query_params.get('lane', None)
         project_owner = self.request.query_params.get('project_owner', None)
-        
+
         return FastqListRow.objects.get_by_keyword(
             run=run,
             rgid=rgid,
@@ -521,3 +522,21 @@ class PairingViewSet(ViewSet):
             tn_pairing.add_sample(sample_id=sample_id)
         tn_pairing.by_samples()
         return Response(data=tn_pairing.job_list)
+
+
+class LibraryRunViewSet(ReadOnlyModelViewSet):
+    serializer_class = LibraryRunModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = METADATA_SEARCH_ORDER_FIELDS
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        library_id = self.request.query_params.get('library_id', None)
+
+        return LibraryRun.objects.get_by_keyword(
+            instrument_run_id=instrument_run_id,
+            library_id=library_id,
+        )

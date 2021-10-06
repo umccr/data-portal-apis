@@ -597,8 +597,7 @@ class FastqListRowManager(models.Manager):
         return qs
 
 
-class FastqListRow(models.Model):   
-    
+class FastqListRow(models.Model):
     class Meta:
         unique_together = ['rgid']
 
@@ -721,7 +720,8 @@ class WorkflowManager(models.Manager):
             sequence_run=sequence_run,
             batch_run=batch_run,
             end__isnull=True,
-            end_status__isnull=True,  # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
+            end_status__isnull=True,
+            # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
             start__isnull=False,
             input__isnull=False,
         )
@@ -909,7 +909,6 @@ class ReportManager(models.Manager):
 
 
 class Report(models.Model):
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
@@ -934,6 +933,22 @@ class Report(models.Model):
                f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}"
 
 
+class LibraryRunManager(models.Manager):
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        library_id = kwargs.get('library_id', None)
+        if library_id:
+            qs = qs.filter(subject_id__iexact=library_id)
+
+        instrument_run_id = kwargs.get('instrument_run_id', None)
+        if instrument_run_id:
+            qs = qs.filter(subject_id__iexact=instrument_run_id)
+
+        return qs
+
+
 class LibraryRun(models.Model):
     # class Meta:
     #     unique_together = ['library', 'instrument_run_id', 'run_id', 'lane']
@@ -941,11 +956,14 @@ class LibraryRun(models.Model):
 
     id = models.BigAutoField(primary_key=True)
     library = models.ForeignKey(LabMetadata, on_delete=models.SET_NULL, null=True, blank=True)
-    instrument_run_id = models.CharField(max_length=255)    # Not directly linking as SequenceRun objects...
-    run_id = models.CharField(max_length=255)               # ...correspond to events rather than actual runs
+    instrument_run_id = models.CharField(max_length=255)  # Not directly linking as SequenceRun objects...
+    run_id = models.CharField(max_length=255)  # ...correspond to events rather than actual runs
     override_cycles = models.CharField(max_length=255)
     lane = models.IntegerField()  # same lib could be run on multiple lanes! ToDO: could also just allow multiple values here
-    converage_yield = models.CharField(max_length=255)  # yield achieved with this run (to be compared against desired coverage defined in metadata)
+    converage_yield = models.CharField(
+        max_length=255)  # yield achieved with this run (to be compared against desired coverage defined in metadata)
     qc_pass = models.BooleanField(null=True, default=False)  # current overall QC status
     qc_status = models.CharField(max_length=255)  # could be progressive status from QC workflow pass to QC metric eval
     valid_for_analysis = models.BooleanField(null=True, default=True)  # could be used for manual exclusion
+
+    objects = LibraryRunManager()
