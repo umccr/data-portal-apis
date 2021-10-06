@@ -13,7 +13,7 @@ from typing import List
 from data_portal.models import Workflow
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.orchestration import tumor_normal_step
-from data_processors.pipeline.services import workflow_srv, sequence_srv, metadata_srv
+from data_processors.pipeline.services import workflow_srv, sequence_run_srv, metadata_srv
 
 
 class Pairing(ABC):
@@ -110,7 +110,7 @@ class TNPairing(Pairing, CollectionBasedFluentImpl):
         self._job_list = self._job_list + job_list
 
     def by_sequence_runs(self):
-        seq_run_list = sequence_srv.get_sequence_run_by_instrument_run_ids(self.sequence_runs)
+        seq_run_list = sequence_run_srv.get_sequence_run_by_instrument_run_ids(self.sequence_runs)
         for seq_run in seq_run_list:
             succeeded: List[Workflow] = workflow_srv.get_succeeded_by_sequence_run(
                 sequence_run=seq_run,

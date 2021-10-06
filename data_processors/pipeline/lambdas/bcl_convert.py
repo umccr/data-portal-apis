@@ -17,7 +17,7 @@ from typing import List
 
 import pandas as pd
 from data_portal.models import Workflow, LabMetadata
-from data_processors.pipeline.services import notification_srv, sequence_srv, workflow_srv, metadata_srv
+from data_processors.pipeline.services import notification_srv, sequence_run_srv, workflow_srv, metadata_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
@@ -334,7 +334,7 @@ def handler(event, context) -> dict:
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
-    sqr = sequence_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
+    sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
 
     # construct and format workflow run name convention
     workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name, seq_run_id=seq_run_id)

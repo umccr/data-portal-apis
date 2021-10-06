@@ -14,7 +14,7 @@ django.setup()
 import logging
 
 from data_portal.models import SequenceRun
-from data_processors.pipeline.services import sequence_srv, notification_srv
+from data_processors.pipeline.services import sequence_run_srv, notification_srv, sequence_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
 from utils import libjson, ica
 
@@ -68,11 +68,14 @@ def handle_bssh_run_event(message, event_action, event_type, context):
     payload.update(messageAttributesActionType=event_type)
     payload.update(messageAttributesActionDate=message['messageAttributes']['actiondate']['stringValue'])
     payload.update(messageAttributesProducedBy=message['messageAttributes']['producedby']['stringValue'])
-    sqr: SequenceRun = sequence_srv.create_or_update_sequence_run(payload)
+    sqr: SequenceRun = sequence_run_srv.create_or_update_sequence_run(payload)
     if sqr:
         ts = message['attributes']['ApproximateFirstReceiveTimestamp']
         aws_account = message['eventSourceARN'].split(':')[4]
         notification_srv.notify_sequence_run_status(sqr=sqr, sqs_record_timestamp=int(ts), aws_account=aws_account)
+
+        # Create or update Sequence record from BSSH Run event payload
+        seq = sequence_srv.create_or_update_sequence_from_bssh_event(payload)
 
         # Once Sequence Run status is good, launch bcl convert workflow
         # Using bssh.runs event status PendingAnalysis for now, See https://github.com/umccr-illumina/stratus/issues/95
