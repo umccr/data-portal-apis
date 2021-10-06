@@ -6,7 +6,7 @@ import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, \
-    Report, ReportType, LabMetadata, Sequence, SequenceStatus
+    Report, ReportType, LabMetadata, Sequence, SequenceStatus, LibraryRun
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -17,7 +17,10 @@ class TestConstant(Enum):
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
     version = "v1"
-    sqr_name = "200508_A01052_0001_BH5LY7ACGT"
+    instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
+    sqr_name = instrument_run_id
+    run_id = "r.ACGTlKjDgEy099ioQOeOWg"
+    override_cycles = "Y151;I8;I8;Y151"
     library_id_normal = "L2100001"
     library_id_tumor = "L2100002"
     sample_id = "PRJ210001"
@@ -43,7 +46,7 @@ class LabMetadataFactory(factory.django.DjangoModelFactory):
     experiment_id = "TSqN123456LL"
     type = "WGS"
     assay = "TsqNano"
-    override_cycles = "Y151;I8;I8;Y151"
+    override_cycles = TestConstant.override_cycles.value
     workflow = "clinical"
     coverage = "40.0"
     truseqindex = "A09"
@@ -128,6 +131,17 @@ class GDSFileFactory(factory.django.DjangoModelFactory):
     storage_tier = "Standard"
 
 
+class LibraryRunFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LibraryRun
+
+    library_id = TestConstant.library_id_normal.value
+    instrument_run_id = TestConstant.instrument_run_id.value
+    run_id = TestConstant.run_id.value
+    lane = 1
+    override_cycles = TestConstant.override_cycles.value
+
+
 class SequenceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Sequence
@@ -148,10 +162,10 @@ class SequenceRunFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SequenceRun
 
-    run_id = "r.ACGTlKjDgEy099ioQOeOWg"
+    run_id = TestConstant.run_id.value
     date_modified = make_aware(datetime.utcnow())
     status = "PendingAnalysis"
-    instrument_run_id = TestConstant.sqr_name.value
+    instrument_run_id = TestConstant.instrument_run_id.value
     gds_folder_path = f"/Runs/{instrument_run_id}_{run_id}"
     gds_volume_name = "bssh.acgtacgt498038ed99fa94fe79523959"
     reagent_barcode = "NV9999999-RGSBS"

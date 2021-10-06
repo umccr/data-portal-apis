@@ -1001,17 +1001,28 @@ class Report(models.Model):
 
 
 class LibraryRun(models.Model):
-    # class Meta:
-    #     unique_together = ['library', 'instrument_run_id', 'run_id', 'lane']
-    # TODO: NOTE: the addition of the run_id should not change anything, so we could drop it for simplicity
+    class Meta:
+        unique_together = ['library_id', 'instrument_run_id', 'run_id', 'lane']
 
     id = models.BigAutoField(primary_key=True)
-    library = models.ForeignKey(LabMetadata, on_delete=models.SET_NULL, null=True, blank=True)
-    instrument_run_id = models.CharField(max_length=255)    # Not directly linking as SequenceRun objects...
-    run_id = models.CharField(max_length=255)               # ...correspond to events rather than actual runs
+    library_id = models.CharField(max_length=255)
+    instrument_run_id = models.CharField(max_length=255)
+    run_id = models.CharField(max_length=255)
+    lane = models.IntegerField()
     override_cycles = models.CharField(max_length=255)
-    lane = models.IntegerField()  # same lib could be run on multiple lanes! ToDO: could also just allow multiple values here
-    converage_yield = models.CharField(max_length=255)  # yield achieved with this run (to be compared against desired coverage defined in metadata)
-    qc_pass = models.BooleanField(null=True, default=False)  # current overall QC status
-    qc_status = models.CharField(max_length=255)  # could be progressive status from QC workflow pass to QC metric eval
-    valid_for_analysis = models.BooleanField(null=True, default=True)  # could be used for manual exclusion
+
+    # yield achieved with this run (to be compared against desired coverage defined in metadata)
+    coverage_yield = models.CharField(max_length=255, null=True)
+
+    # current overall QC status
+    qc_pass = models.BooleanField(default=False, null=True)
+
+    # could be progressive status from QC workflow pass to QC metric eval
+    qc_status = models.CharField(max_length=255, null=True)
+
+    # could be used for manual exclusion
+    valid_for_analysis = models.BooleanField(default=True, null=True)
+
+    def __str__(self):
+        return f"ID: {self.id}, LIBRARY_ID: {self.library_id}, INSTRUMENT_RUN_ID: {self.instrument_run_id}, " \
+               f"RUN_ID: {self.run_id}, LANE: {self.lane}"

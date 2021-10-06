@@ -202,3 +202,32 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
 
         self.assertIsNotNone(sample_names)
         self.assertTrue("PTC_SsCRE200323LL_L2000172_topup" in sample_names)
+
+    @skip
+    def test_get_samplesheet_to_json(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_get_samplesheet_to_json
+        """
+
+        # SEQ-II validation dataset
+        gds_volume = "umccr-raw-sequence-data-dev"
+        samplesheet_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/SampleSheet.csv"
+
+        samplesheet_json = liborca.get_samplesheet_to_json(
+            gds_volume=gds_volume,
+            samplesheet_path=samplesheet_path
+        )
+
+        logger.info(samplesheet_json)
+
+        self.assertIsNotNone(samplesheet_json)
+        self.assertIsInstance(samplesheet_json, str)
+        self.assertNotIsInstance(samplesheet_json, dict)
+
+        logger.info("-" * 32)
+        samplesheet_dict = json.loads(samplesheet_json)
+        for data_row in samplesheet_dict['Data']:
+            if data_row['Sample_ID'] == "PTC_SsCRE200323LL_L2000172_topup":
+                logger.info(data_row)
+                self.assertEqual(int(data_row['Lane']), 1)
+                self.assertEqual(data_row['Sample_Name'], "L2000172_topup")

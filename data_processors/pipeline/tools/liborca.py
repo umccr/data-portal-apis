@@ -150,24 +150,32 @@ def get_library_id_from_sample_name(sample_name: str):
     return fragments[-1]
 
 
-def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) -> List[str]:
+def get_samplesheet(gds_volume: str, samplesheet_path: str) -> SampleSheet:
     if not samplesheet_path.startswith(os.path.sep):
         samplesheet_path = os.path.sep + samplesheet_path
-    logger.info(f"Extracting sample names from gds://{gds_volume}{samplesheet_path}")
 
     ntf: NamedTemporaryFile = gds.download_gds_file(gds_volume, samplesheet_path)
     if ntf is None:
-        reason = f"Abort extracting metadata process. " \
-                 f"Can not download sample sheet from GDS: gds://{gds_volume}{samplesheet_path}"
+        reason = f"Can not download sample sheet from GDS: gds://{gds_volume}{samplesheet_path}"
         logger.error(reason)
         raise ValueError(reason)
 
-    logger.info(f"Local sample sheet path: {ntf.name}")
-    sample_names = set()
+    logger.debug(f"Local sample sheet path: {ntf.name}")
+
     with closing(ntf) as f:
-        samplesheet = SampleSheet(f.name)
-        for sample in samplesheet:
-            sample_names.add(sample.Sample_ID)
+        return SampleSheet(f.name)
+
+
+def get_samplesheet_to_json(gds_volume: str, samplesheet_path: str) -> str:
+    return get_samplesheet(gds_volume, samplesheet_path).to_json()
+
+
+def get_sample_names_from_samplesheet(gds_volume: str, samplesheet_path: str) -> List[str]:
+    logger.info(f"Extracting sample names from gds://{gds_volume}{samplesheet_path}")
+    sample_names = set()
+    samplesheet = get_samplesheet(gds_volume, samplesheet_path)
+    for sample in samplesheet:
+        sample_names.add(sample.Sample_ID)
 
     logger.info(f"Extracted sample names: {sample_names}")
 

@@ -11,10 +11,11 @@ django.setup()
 
 # ---
 
+from typing import List
 import logging
 
-from data_portal.models import SequenceRun
-from data_processors.pipeline.services import sequence_run_srv, notification_srv, sequence_srv
+from data_portal.models import SequenceRun, SequenceStatus, LibraryRun
+from data_processors.pipeline.services import sequence_run_srv, notification_srv, sequence_srv, library_run_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
 from utils import libjson, ica
 
@@ -77,10 +78,17 @@ def handle_bssh_run_event(message, event_action, event_type, context):
         # Create or update Sequence record from BSSH Run event payload
         seq = sequence_srv.create_or_update_sequence_from_bssh_event(payload)
 
+        if seq.status == SequenceStatus.STARTED.value:
+            library_run_list: List[LibraryRun] = library_run_srv.create_library_run_from_sequence({
+                'instrument_run_id': seq.instrument_run_id,
+                'run_id': seq.run_id,
+                'gds_folder_path': seq.gds_folder_path,
+                'gds_volume_name': seq.gds_volume_name,
+                'sample_sheet_name': seq.sample_sheet_name,
+            })
+
         # Once Sequence Run status is good, launch bcl convert workflow
         # Using bssh.runs event status PendingAnalysis for now, See https://github.com/umccr-illumina/stratus/issues/95
-        # TODO improve handling of status PendingAnalysis and Complete by making use of the SequenceRun table e.g.
-        #  - skip if event is Complete and sqr.run_id and sqr.run_name are the same as existing PendingAnalysis record
         if sqr.status.lower() == "PendingAnalysis".lower():
             bcl_convert.handler({
                 'gds_volume_name': sqr.gds_volume_name,
