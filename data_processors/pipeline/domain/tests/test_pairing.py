@@ -3,7 +3,7 @@ from mockito import when
 from data_portal.models import Workflow
 from data_portal.tests.factories import DragenWgsQcWorkflowFactory, LabMetadataFactory
 from data_processors.pipeline.domain.pairing import Pairing, CollectionBasedFluentImpl, TNPairing
-from data_processors.pipeline.services import sequence_srv, workflow_srv, metadata_srv
+from data_processors.pipeline.services import sequence_run_srv, workflow_srv, metadata_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
 
 
@@ -48,7 +48,7 @@ class PairingUnitTests(PipelineUnitTestCase):
         when(workflow_srv).get_succeeded_by_sequence_run(...).thenReturn([mock_workflow])
 
         mock_seq_run = mock_workflow.sequence_run
-        when(sequence_srv).get_sequence_run_by_instrument_run_ids(...).thenReturn([mock_seq_run])
+        when(sequence_run_srv).get_sequence_run_by_instrument_run_ids(...).thenReturn([mock_seq_run])
 
         mock_meta = LabMetadataFactory()
         when(metadata_srv).get_tn_metadata_by_qc_runs(...).thenReturn(([mock_meta], []))

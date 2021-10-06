@@ -6,7 +6,7 @@ import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, \
-    Report, ReportType, LabMetadata
+    Report, ReportType, LabMetadata, Sequence, SequenceStatus
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -126,6 +126,22 @@ class GDSFileFactory(factory.django.DjangoModelFactory):
     is_uploaded = True
     archive_status = "None"
     storage_tier = "Standard"
+
+
+class SequenceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Sequence
+
+    instrument_run_id = TestConstant.sqr_name.value
+    run_id = "r.ACGTlKjDgEy099ioQOeOWg"
+    sample_sheet_name = "SampleSheet.csv"
+    gds_folder_path = f"/Runs/{instrument_run_id}_{run_id}"
+    gds_volume_name = "bssh.acgtacgt498038ed99fa94fe79523959"
+    reagent_barcode = "NV9999999-RGSBS"
+    flowcell_barcode = "BARCODEEE"
+    status = SequenceStatus.STARTED
+    start_time = make_aware(datetime.utcnow())
+    end_time = None
 
 
 class SequenceRunFactory(factory.django.DjangoModelFactory):
