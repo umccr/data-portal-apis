@@ -1005,7 +1005,6 @@ class LibraryRunManager(models.Manager):
         qs: QuerySet = self.all()
 
         keywords = kwargs.get('keywords', None)
-
         if bool(keywords):
             # Create a query
             query_string = None

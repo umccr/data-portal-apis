@@ -37,7 +37,7 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
 
-LIBRARY_RUN_SEARCH_FIELDS = ["id", "library_id", "instrument_run_id", "run_id" "lane", "override_cycles",
+LIBRARY_RUN_SEARCH_FIELDS = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
                              "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
 
 def _error_response(message, status_code=400, err=None) -> Response:
