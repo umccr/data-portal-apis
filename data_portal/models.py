@@ -1001,19 +1001,17 @@ class Report(models.Model):
 
 class LibraryRunManager(models.Manager):
 
-    def get_by_keyword(self, **kwargs) -> QuerySet:
+    def get_by_keyword(self, column_names, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
         keywords = kwargs.get('keywords', None)
-
-        column_name = ["id", "library_id", "instrument_run_id", "run_id" "lane", "override_cycles", "coverage_yield",
-                       "qc_pass", "qc_status", "valid_for_analysis"]
 
         if bool(keywords):
             # Create a query
             query_string = None
             for key, value in keywords.items():
-                if key not in column_name:
+                # Only search if key is a match with column names
+                if key not in column_names:
                     continue
                 each_query = Q(**{"%s__iexact" % key: value})
                 if query_string:
@@ -1021,7 +1019,8 @@ class LibraryRunManager(models.Manager):
                 else:
                     query_string = each_query
 
-            qs = qs.filter(query_string)
+            if query_string is not None:
+                qs = qs.filter(query_string)
 
         return qs
 
