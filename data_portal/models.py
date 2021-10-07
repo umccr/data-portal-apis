@@ -975,7 +975,6 @@ class ReportManager(models.Manager):
 
 
 class Report(models.Model):
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
@@ -1000,6 +999,33 @@ class Report(models.Model):
                f"LIBRARY_ID: {self.library_id}, TYPE: {self.type}"
 
 
+class LibraryRunManager(models.Manager):
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        keywords = kwargs.get('keywords', None)
+
+        column_name = ["id", "library_id", "instrument_run_id", "run_id" "lane", "override_cycles", "coverage_yield",
+                       "qc_pass", "qc_status", "valid_for_analysis"]
+
+        if bool(keywords):
+            # Create a query
+            query_string = None
+            for key, value in keywords.items():
+                if key not in column_name:
+                    continue
+                each_query = Q(**{"%s__iexact" % key: value})
+                if query_string:
+                    query_string = query_string & each_query  # or & for filtering
+                else:
+                    query_string = each_query
+
+            qs = qs.filter(query_string)
+
+        return qs
+
+
 class LibraryRun(models.Model):
     class Meta:
         unique_together = ['library_id', 'instrument_run_id', 'run_id', 'lane']
@@ -1022,6 +1048,8 @@ class LibraryRun(models.Model):
 
     # could be used for manual exclusion
     valid_for_analysis = models.BooleanField(default=True, null=True)
+
+    objects = LibraryRunManager()
 
     def __str__(self):
         return f"ID: {self.id}, LIBRARY_ID: {self.library_id}, INSTRUMENT_RUN_ID: {self.instrument_run_id}, " \
