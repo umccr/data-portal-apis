@@ -3,7 +3,8 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
+from data_portal.models import S3Object, LIMSRow, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow, \
+    Sequence
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 
@@ -241,4 +242,10 @@ class SequenceRunSerializer(serializers.ModelSerializer):
 class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
+        fields = '__all__'
+
+
+class SequenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sequence
         fields = '__all__'

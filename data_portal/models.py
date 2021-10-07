@@ -544,6 +544,36 @@ class SequenceStatus(models.TextChoices):
             raise ValueError(f"No matching SequenceStatus found for value: {value}")
 
 
+class SequenceManager(models.Manager):
+
+    def get_by_keyword(self, column_names, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        keywords = kwargs.get('keywords', None)
+        print("column_names", column_names)
+        print("keywords", keywords)
+
+        if bool(keywords):
+            # Create a query
+            query_string = None
+            for key, value in keywords.items():
+                # Only search if key is a match with column names
+                if key not in column_names:
+                    print("is it in column name?", key)
+                    continue
+                print("execute query")
+                each_query = Q(**{"%s__iexact" % key: value})
+                if query_string:
+                    query_string = query_string & each_query  # or & for filtering
+                else:
+                    query_string = each_query
+
+            if query_string is not None:
+                qs = qs.filter(query_string)
+        print("all g")
+        return qs
+
+
 class Sequence(models.Model):
     class Meta:
         unique_together = ['instrument_run_id', 'run_id']
@@ -562,6 +592,8 @@ class Sequence(models.Model):
 
     # run_config = models.JSONField(null=True, blank=True)  # TODO could be it's own model
     # sample_sheet_config = models.JSONField(null=True, blank=True)  # TODO could be it's own model
+
+    objects = SequenceManager()
 
     def __str__(self):
         return f"Run ID '{self.run_id}', " \

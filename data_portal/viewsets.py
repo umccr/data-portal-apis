@@ -17,12 +17,12 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, ica, gds
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow, Sequence
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
     SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer, \
-    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer
+    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, SequenceSerializer
 
 logger = logging.getLogger()
 
@@ -35,6 +35,9 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'library_id', 'sample_name', 'sample_id', 'external_sample_id', 'subject_id', 'external_subject_id', 'phenotype',
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
+
+SEQUENCE_SEARCH_FIELDS = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
+                          "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time", "end_time"]
 
 
 def _error_response(message, status_code=400, err=None) -> Response:
@@ -400,7 +403,7 @@ class FastqListRowViewSet(ReadOnlyModelViewSet):
         rglb = self.request.query_params.get('rglb', None)
         lane = self.request.query_params.get('lane', None)
         project_owner = self.request.query_params.get('project_owner', None)
-        
+
         return FastqListRow.objects.get_by_keyword(
             run=run,
             rgid=rgid,
@@ -521,3 +524,18 @@ class PairingViewSet(ViewSet):
             tn_pairing.add_sample(sample_id=sample_id)
         tn_pairing.by_samples()
         return Response(data=tn_pairing.job_list)
+
+
+class SequenceViewSet(ReadOnlyModelViewSet):
+    serializer_class = SequenceSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = SEQUENCE_SEARCH_FIELDS
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        return Sequence.objects.get_by_keyword(
+            column_names=SEQUENCE_SEARCH_FIELDS,
+            keywords=self.request.query_params
+        )
