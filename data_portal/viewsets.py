@@ -36,9 +36,6 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
 
-SEQUENCE_SEARCH_FIELDS = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
-                          "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time", "end_time"]
-
 
 def _error_response(message, status_code=400, err=None) -> Response:
     data = {'error': message}
@@ -530,12 +527,11 @@ class SequenceViewSet(ReadOnlyModelViewSet):
     serializer_class = SequenceSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = SEQUENCE_SEARCH_FIELDS
+    ordering_fields = '__all__'
     ordering = ['-id']
     search_fields = ordering_fields
 
     def get_queryset(self):
         return Sequence.objects.get_by_keyword(
-            column_names=SEQUENCE_SEARCH_FIELDS,
             keywords=self.request.query_params
         )

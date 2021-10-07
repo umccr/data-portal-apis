@@ -546,10 +546,13 @@ class SequenceStatus(models.TextChoices):
 
 class SequenceManager(models.Manager):
 
-    def get_by_keyword(self, column_names, **kwargs) -> QuerySet:
+    def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
         keywords = kwargs.get('keywords', None)
 
+        column_names = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
+                                  "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time",
+                                  "end_time"]
         if bool(keywords):
             # Create a query
             query_string = None
