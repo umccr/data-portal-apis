@@ -663,8 +663,7 @@ class FastqListRowManager(models.Manager):
         return qs
 
 
-class FastqListRow(models.Model):   
-    
+class FastqListRow(models.Model):
     class Meta:
         unique_together = ['rgid']
 
@@ -787,7 +786,8 @@ class WorkflowManager(models.Manager):
             sequence_run=sequence_run,
             batch_run=batch_run,
             end__isnull=True,
-            end_status__isnull=True,  # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
+            end_status__isnull=True,
+            # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
             start__isnull=False,
             input__isnull=False,
         )
