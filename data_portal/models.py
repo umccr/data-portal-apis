@@ -548,10 +548,7 @@ class SequenceManager(models.Manager):
 
     def get_by_keyword(self, column_names, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
-
         keywords = kwargs.get('keywords', None)
-        print("column_names", column_names)
-        print("keywords", keywords)
 
         if bool(keywords):
             # Create a query
@@ -559,9 +556,7 @@ class SequenceManager(models.Manager):
             for key, value in keywords.items():
                 # Only search if key is a match with column names
                 if key not in column_names:
-                    print("is it in column name?", key)
                     continue
-                print("execute query")
                 each_query = Q(**{"%s__iexact" % key: value})
                 if query_string:
                     query_string = query_string & each_query  # or & for filtering
@@ -570,7 +565,6 @@ class SequenceManager(models.Manager):
 
             if query_string is not None:
                 qs = qs.filter(query_string)
-        print("all g")
         return qs
 
 
