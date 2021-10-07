@@ -37,9 +37,6 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
 
-LIBRARY_RUN_SEARCH_FIELDS = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
-                             "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
-
 def _error_response(message, status_code=400, err=None) -> Response:
     data = {'error': message}
     if err:
@@ -530,13 +527,12 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     serializer_class = LibraryRunModelSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = LIBRARY_RUN_SEARCH_FIELDS
+    ordering_fields = '__all__'
     ordering = ['-id']
     search_fields = ordering_fields
 
     def get_queryset(self):
 
         return LibraryRun.objects.get_by_keyword(
-            column_names=LIBRARY_RUN_SEARCH_FIELDS,
             keywords=self.request.query_params
         )

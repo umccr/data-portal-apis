@@ -1001,8 +1001,12 @@ class Report(models.Model):
 
 class LibraryRunManager(models.Manager):
 
-    def get_by_keyword(self, column_names, **kwargs) -> QuerySet:
+    def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
+
+        # Declare which column the search based on
+        column_names = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
+                        "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
 
         keywords = kwargs.get('keywords', None)
         if bool(keywords):
