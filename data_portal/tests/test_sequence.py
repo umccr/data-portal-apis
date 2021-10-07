@@ -13,7 +13,7 @@ class SequenceTestCase(TestCase):
         logger.info('Create Object data')
         Sequence.objects.create(
             instrument_run_id="191213_A00000_00000_A000000000",
-            run_id="r.AAAAAAAAA",
+            run_id="r.AAAAAA",
             sample_sheet_name="SampleSheet.csv",
             gds_folder_path="/to/gds/folder/path",
             gds_volume_name="gds_name",
@@ -51,3 +51,8 @@ class SequenceTestCase(TestCase):
         logger.info('Check if API return result')
         result_response = response.data['results']
         self.assertGreater(len(result_response), 0, 'A result is expected')
+
+        logger.info('Check if unique data has a signle entry')
+        response = self.client.get('/sequence/?instrument_run_id=191213_A00000_00000_A000000000&run_id=r.AAAAAA')
+        results_response = response.data['results']
+        self.assertEqual(len(results_response), 1, 'Single result is expected for unique data')
