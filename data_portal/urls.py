@@ -23,7 +23,7 @@ router.register(r'presign', PresignedUrlViewSet, basename='presign')
 
 # ica pipeline workflow automation related endpoints
 router.register(r'fastq', FastqListRowViewSet, basename='fastq')
-router.register(r'sequence', SequenceRunViewSet, basename='sequence')
+router.register(r'sequencerun', SequenceRunViewSet, basename='sequence')
 router.register(r'workflows', WorkflowViewSet, basename='workflows')
 router.register(r'pairing', PairingViewSet, basename='pairing')
 
