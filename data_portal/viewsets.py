@@ -37,6 +37,11 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
 
+LIBRARY_RUN_SEARCH_FIELDS = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
+                        "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
+
+SEQUENCE_SEARCH_FIELDS = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
+                          "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time", "end_time"]
 
 def _error_response(message, status_code=400, err=None) -> Response:
     data = {'error': message}
@@ -530,7 +535,7 @@ class SequenceViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
     ordering = ['-id']
-    search_fields = ordering_fields
+    search_fields = SEQUENCE_SEARCH_FIELDS
 
     def get_queryset(self):
         instrument_run_id = self.request.query_params.get('instrument_run_id', None)
@@ -564,7 +569,7 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
     ordering = ['-id']
-    search_fields = ordering_fields
+    search_fields = LIBRARY_RUN_SEARCH_FIELDS
 
     def get_queryset(self):
         library_id = self.request.query_params.get('library_id', None)
