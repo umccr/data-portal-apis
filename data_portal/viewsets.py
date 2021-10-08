@@ -532,6 +532,27 @@ class SequenceViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
+
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        run_id = self.request.query_params.get('run_id', None)
+        sample_sheet_name = self.request.query_params.get('sample_sheet_name', None)
+        gds_folder_path = self.request.query_params.get('gds_folder_path', None)
+        gds_volume_name = self.request.query_params.get('gds_volume_name', None)
+        reagent_barcode = self.request.query_params.get('reagent_barcode', None)
+        flowcell_barcode = self.request.query_params.get('flowcell_barcode', None)
+        status = self.request.query_params.get('status', None)
+        start_time = self.request.query_params.get('start_time', None)
+        end_time = self.request.query_params.get('end_time', None)
+
         return Sequence.objects.get_by_keyword(
-            keywords=self.request.query_params
+            instrument_run_id=instrument_run_id,
+            run_id=run_id,
+            sample_sheet_name=sample_sheet_name,
+            gds_folder_path=gds_folder_path,
+            gds_volume_name=gds_volume_name,
+            reagent_barcode=reagent_barcode,
+            flowcell_barcode=flowcell_barcode,
+            status=status,
+            start_time=start_time,
+            end_time=end_time,
         )
