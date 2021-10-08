@@ -532,7 +532,25 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
+        library_id = self.request.query_params.get('library_id', None)
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        run_id = self.request.query_params.get('run_id', None)
+        lane = self.request.query_params.get('lane', None)
+        override_cycles = self.request.query_params.get('override_cycles', None)
+        coverage_yield = self.request.query_params.get('coverage_yield', None)
+        qc_pass = self.request.query_params.get('qc_pass', None)
+        qc_status = self.request.query_params.get('qc_status', None)
+        valid_for_analysis = self.request.query_params.get('valid_for_analysis', None)
 
         return LibraryRun.objects.get_by_keyword(
-            keywords=self.request.query_params
+            library_id=library_id,
+            instrument_run_id=instrument_run_id,
+            run_id=run_id,
+            lane=lane,
+            override_cycles=override_cycles,
+            coverage_yield=coverage_yield,
+            qc_pass=qc_pass,
+            qc_status=qc_status,
+            valid_for_analysis=valid_for_analysis,
         )
+

@@ -1004,26 +1004,41 @@ class LibraryRunManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        # Declare which column the search based on
-        column_names = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
-                        "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
+        library_id = kwargs.get('library_id', None)
+        if library_id:
+            qs = qs.filter(library_id__exact=library_id)
 
-        keywords = kwargs.get('keywords', None)
-        if bool(keywords):
-            # Create a query
-            query_string = None
-            for key, value in keywords.items():
-                # Only search if key is a match with column names
-                if key not in column_names:
-                    continue
-                each_query = Q(**{"%s__iexact" % key: value})
-                if query_string:
-                    query_string = query_string & each_query  # or & for filtering
-                else:
-                    query_string = each_query
+        instrument_run_id = kwargs.get('instrument_run_id', None)
+        if instrument_run_id:
+            qs = qs.filter(instrument_run_id__iexact=instrument_run_id)
 
-            if query_string is not None:
-                qs = qs.filter(query_string)
+        run_id = kwargs.get('run_id', None)
+        if run_id:
+            qs = qs.filter(run_id__iexact=run_id)
+
+        lane = kwargs.get('lane', None)
+        if lane:
+            qs = qs.filter(lane__iexact=lane)
+
+        override_cycles = kwargs.get('override_cycles', None)
+        if override_cycles:
+            qs = qs.filter(override_cycles__iexact=override_cycles)
+
+        coverage_yield = kwargs.get('coverage_yield', None)
+        if coverage_yield:
+            qs = qs.filter(coverage_yield__iexact=coverage_yield)
+
+        qc_pass = kwargs.get('qc_pass', None)
+        if qc_pass:
+            qs = qs.filter(qc_pass__iexact=qc_pass)
+
+        qc_status = kwargs.get('qc_status', None)
+        if qc_status:
+            qs = qs.filter(qc_status__iexact=qc_status)
+
+        valid_for_analysis = kwargs.get('valid_for_analysis', None)
+        if valid_for_analysis:
+            qs = qs.filter(valid_for_analysis__iexact=valid_for_analysis)
 
         return qs
 
