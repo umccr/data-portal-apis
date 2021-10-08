@@ -17,12 +17,13 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, ica, gds
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
+    Workflow, LibraryRun
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
     SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer, \
-    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer
+    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, LibraryRunModelSerializer
 
 logger = logging.getLogger()
 
@@ -35,7 +36,6 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'library_id', 'sample_name', 'sample_id', 'external_sample_id', 'subject_id', 'external_subject_id', 'phenotype',
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
-
 
 def _error_response(message, status_code=400, err=None) -> Response:
     data = {'error': message}
@@ -400,7 +400,7 @@ class FastqListRowViewSet(ReadOnlyModelViewSet):
         rglb = self.request.query_params.get('rglb', None)
         lane = self.request.query_params.get('lane', None)
         project_owner = self.request.query_params.get('project_owner', None)
-        
+
         return FastqListRow.objects.get_by_keyword(
             run=run,
             rgid=rgid,
@@ -521,3 +521,36 @@ class PairingViewSet(ViewSet):
             tn_pairing.add_sample(sample_id=sample_id)
         tn_pairing.by_samples()
         return Response(data=tn_pairing.job_list)
+
+
+class LibraryRunViewSet(ReadOnlyModelViewSet):
+    serializer_class = LibraryRunModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        library_id = self.request.query_params.get('library_id', None)
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        run_id = self.request.query_params.get('run_id', None)
+        lane = self.request.query_params.get('lane', None)
+        override_cycles = self.request.query_params.get('override_cycles', None)
+        coverage_yield = self.request.query_params.get('coverage_yield', None)
+        qc_pass = self.request.query_params.get('qc_pass', None)
+        qc_status = self.request.query_params.get('qc_status', None)
+        valid_for_analysis = self.request.query_params.get('valid_for_analysis', None)
+
+        return LibraryRun.objects.get_by_keyword(
+            library_id=library_id,
+            instrument_run_id=instrument_run_id,
+            run_id=run_id,
+            lane=lane,
+            override_cycles=override_cycles,
+            coverage_yield=coverage_yield,
+            qc_pass=qc_pass,
+            qc_status=qc_status,
+            valid_for_analysis=valid_for_analysis,
+        )
+

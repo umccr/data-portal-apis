@@ -3,7 +3,8 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow
+from data_portal.models import S3Object, LIMSRow, GDSFile, Report, LabMetadata, FastqListRow, \
+                                SequenceRun, Workflow, LibraryRun
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 
@@ -171,7 +172,6 @@ class S3ObjectModelSerializer(serializers.ModelSerializer):
         model = S3Object
         fields = '__all__'
 
-
 class SubjectIdSerializer(serializers.BaseSerializer):
     def to_representation(self, instance):
         return instance.subject_id
@@ -241,4 +241,10 @@ class SequenceRunSerializer(serializers.ModelSerializer):
 class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
+        fields = '__all__'
+
+
+class LibraryRunModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LibraryRun
         fields = '__all__'
