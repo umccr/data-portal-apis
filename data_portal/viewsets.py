@@ -17,12 +17,13 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, ica, gds
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, Workflow, Sequence
+from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
+    Workflow, LibraryRun, Sequence
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
     SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer, \
-    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, SequenceSerializer
+    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, LibraryRunModelSerializer, SequenceSerializer
 
 logger = logging.getLogger()
 
@@ -532,7 +533,6 @@ class SequenceViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
-
         instrument_run_id = self.request.query_params.get('instrument_run_id', None)
         run_id = self.request.query_params.get('run_id', None)
         sample_sheet_name = self.request.query_params.get('sample_sheet_name', None)
@@ -540,7 +540,7 @@ class SequenceViewSet(ReadOnlyModelViewSet):
         gds_volume_name = self.request.query_params.get('gds_volume_name', None)
         reagent_barcode = self.request.query_params.get('reagent_barcode', None)
         flowcell_barcode = self.request.query_params.get('flowcell_barcode', None)
-        status = self.request.query_params.get('status', None)
+        status_ = self.request.query_params.get('status', None)
         start_time = self.request.query_params.get('start_time', None)
         end_time = self.request.query_params.get('end_time', None)
 
@@ -552,7 +552,39 @@ class SequenceViewSet(ReadOnlyModelViewSet):
             gds_volume_name=gds_volume_name,
             reagent_barcode=reagent_barcode,
             flowcell_barcode=flowcell_barcode,
-            status=status,
+            status=status_,
             start_time=start_time,
             end_time=end_time,
+        )
+
+
+class LibraryRunViewSet(ReadOnlyModelViewSet):
+    serializer_class = LibraryRunModelSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        library_id = self.request.query_params.get('library_id', None)
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        run_id = self.request.query_params.get('run_id', None)
+        lane = self.request.query_params.get('lane', None)
+        override_cycles = self.request.query_params.get('override_cycles', None)
+        coverage_yield = self.request.query_params.get('coverage_yield', None)
+        qc_pass = self.request.query_params.get('qc_pass', None)
+        qc_status = self.request.query_params.get('qc_status', None)
+        valid_for_analysis = self.request.query_params.get('valid_for_analysis', None)
+
+        return LibraryRun.objects.get_by_keyword(
+            library_id=library_id,
+            instrument_run_id=instrument_run_id,
+            run_id=run_id,
+            lane=lane,
+            override_cycles=override_cycles,
+            coverage_yield=coverage_yield,
+            qc_pass=qc_pass,
+            qc_status=qc_status,
+            valid_for_analysis=valid_for_analysis,
         )
