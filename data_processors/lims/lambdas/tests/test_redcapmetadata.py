@@ -28,23 +28,16 @@ class RedcapUnitTests(TransactionTestCase):
         """
         python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler
         """
-        #when(Project.project).export_records(...).thenReturn(pd.read_csv(mock_sheet_1))
-        #when(redcapmetadata).Project(**kwargs).thenReturn(mock(Project))
-        #when(Project)("foo","bar")).thenReturn(None)
-
-        mockProject = mock()
-        when(redcapmetadata_srv).connect_redcap(ANY,ANY).thenReturn(mockProject)
-
         mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
         mock_csv.write(mock_sheet_1.lstrip().rstrip())
         mock_csv.seek(0)
         mock_csv.flush()
-        when(mockProject).export_records(...).thenReturn(pd.read_csv(mock_csv))
+        when(redcapmetadata_srv).download_redcap_project_data().thenReturn(pd.read_csv(mock_csv))
+
 
         #patch(Project.__new__, lambda: bytesIO_mock)
         result = redcapmetadata.handler({
-                'sample_ids': ["A","B"],
-                'truncate': False,
+                'subjectid_in': ["SBJ05001","B"],
         }, None)
        
  

@@ -34,8 +34,8 @@ def handler(event, context):
  
     """event payload dict
     {
-        'somekey': ["some", "values"],
-        'someboolean': True
+        'subjectid_in': ["subject1", "subject2"],
+        #TODO make it a dict: 'values_in':  { "keyname" : list('the','values') }
     }
     Handler for RedCap update 
 
@@ -51,15 +51,15 @@ def handler(event, context):
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Fetching data from RedCap at {requested_time}")
 
-    sample_names = event.get('sample_names')
+    subjectid_in = event.get('subjectid_in')
     
     # checks
-    if not isinstance(sample_names, list):
-        _halt(f"Payload error. Must be array of string for sample_names. Found: {type(sample_names)}")
+    if not isinstance(subjectid_in, list):
+        _halt(f"Payload error. Must be array of string for sample_names. Found: {type(subjectid_in)}")
 
     #frames = []
     #for year in years:
     #    logger.info(f"Downloading {year} sheet")
     #    frames.append(labmetadata_srv.download_metadata(year))
 
-    return redcapmetadata_srv.retrieve_metadata(sample_names)
+    return redcapmetadata_srv.retrieve_metadata(subjectid_in)
