@@ -544,6 +544,54 @@ class SequenceStatus(models.TextChoices):
             raise ValueError(f"No matching SequenceStatus found for value: {value}")
 
 
+class SequenceManager(models.Manager):
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = self.all()
+
+        instrument_run_id = kwargs.get('instrument_run_id', None)
+        if instrument_run_id:
+            qs = qs.filter(instrument_run_id__iexact=instrument_run_id)
+
+        run_id = kwargs.get('run_id', None)
+        if run_id:
+            qs = qs.filter(run_id__iexact=run_id)
+
+        sample_sheet_name = kwargs.get('sample_sheet_name', None)
+        if sample_sheet_name:
+            qs = qs.filter(sample_sheet_name__iexact=sample_sheet_name)
+
+        gds_folder_path = kwargs.get('gds_folder_path', None)
+        if gds_folder_path:
+            qs = qs.filter(gds_folder_path__iexact=gds_folder_path)
+
+        gds_volume_name = kwargs.get('gds_volume_name', None)
+        if gds_volume_name:
+            qs = qs.filter(gds_volume_name__iexact=gds_volume_name)
+
+        reagent_barcode = kwargs.get('reagent_barcode', None)
+        if reagent_barcode:
+            qs = qs.filter(reagent_barcode__iexact=reagent_barcode)
+
+        flowcell_barcode = kwargs.get('flowcell_barcode', None)
+        if flowcell_barcode:
+            qs = qs.filter(flowcell_barcode__iexact=flowcell_barcode)
+
+        status = kwargs.get('status', None)
+        if status:
+            qs = qs.filter(status__iexact=status)
+
+        start_time = kwargs.get('start_time', None)
+        if start_time:
+            qs = qs.filter(start_time__iexact=start_time)
+
+        end_time = kwargs.get('end_time', None)
+        if end_time:
+            qs = qs.filter(end_time__iexact=end_time)
+
+        return qs
+
+
 class Sequence(models.Model):
     class Meta:
         unique_together = ['instrument_run_id', 'run_id']
@@ -562,6 +610,8 @@ class Sequence(models.Model):
 
     # run_config = models.JSONField(null=True, blank=True)  # TODO could be it's own model
     # sample_sheet_config = models.JSONField(null=True, blank=True)  # TODO could be it's own model
+
+    objects = SequenceManager()
 
     def __str__(self):
         return f"Run ID '{self.run_id}', " \

@@ -18,12 +18,12 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, ica, gds
 from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
-    Workflow, LibraryRun
+    Workflow, LibraryRun, Sequence
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
     SubjectIdSerializer, RunIdSerializer, BucketIdSerializer, GDSFileModelSerializer, ReportSerializer, \
-    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, LibraryRunModelSerializer
+    FastqListRowSerializer, SequenceRunSerializer, WorkflowSerializer, LibraryRunModelSerializer, SequenceSerializer
 
 logger = logging.getLogger()
 
@@ -36,6 +36,7 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'library_id', 'sample_name', 'sample_id', 'external_sample_id', 'subject_id', 'external_subject_id', 'phenotype',
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
+
 
 def _error_response(message, status_code=400, err=None) -> Response:
     data = {'error': message}
@@ -523,6 +524,40 @@ class PairingViewSet(ViewSet):
         return Response(data=tn_pairing.job_list)
 
 
+class SequenceViewSet(ReadOnlyModelViewSet):
+    serializer_class = SequenceSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = '__all__'
+    ordering = ['-id']
+    search_fields = ordering_fields
+
+    def get_queryset(self):
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        run_id = self.request.query_params.get('run_id', None)
+        sample_sheet_name = self.request.query_params.get('sample_sheet_name', None)
+        gds_folder_path = self.request.query_params.get('gds_folder_path', None)
+        gds_volume_name = self.request.query_params.get('gds_volume_name', None)
+        reagent_barcode = self.request.query_params.get('reagent_barcode', None)
+        flowcell_barcode = self.request.query_params.get('flowcell_barcode', None)
+        status_ = self.request.query_params.get('status', None)
+        start_time = self.request.query_params.get('start_time', None)
+        end_time = self.request.query_params.get('end_time', None)
+
+        return Sequence.objects.get_by_keyword(
+            instrument_run_id=instrument_run_id,
+            run_id=run_id,
+            sample_sheet_name=sample_sheet_name,
+            gds_folder_path=gds_folder_path,
+            gds_volume_name=gds_volume_name,
+            reagent_barcode=reagent_barcode,
+            flowcell_barcode=flowcell_barcode,
+            status=status_,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
+
 class LibraryRunViewSet(ReadOnlyModelViewSet):
     serializer_class = LibraryRunModelSerializer
     pagination_class = StandardResultsSetPagination
@@ -553,4 +588,3 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
             qc_status=qc_status,
             valid_for_analysis=valid_for_analysis,
         )
-
