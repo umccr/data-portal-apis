@@ -23,6 +23,7 @@ class TestConstant(Enum):
     sample_id = "PRJ210001"
     sample_name_normal = f"{sample_id}_{library_id_normal}"
     sample_name_tumor = f"{sample_id}_{library_id_tumor}"
+    subject_id = "SBJ000001"
 
 
 class LabMetadataFactory(factory.django.DjangoModelFactory):

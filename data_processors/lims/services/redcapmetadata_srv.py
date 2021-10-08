@@ -26,10 +26,15 @@ def download_redcap_project_data(): #(subjectid_list: dict) -> pd.DataFrame:
 
 
 def retrieve_metadata(subjectid_in: list) -> pd.DataFrame:
-    """Download the full original metadata from which to extract the required information
+    """Download metadata from redcap database
 
-    :param year: the sheet in the metadata spreadsheet to load
+    :param subjectid_in: list of subjectids to query
     """
     df = download_redcap_project_data()
+    
+    # we want: date-accessioned, date-modified and date-created, specimen id / label and disease id / label
+    # TODO find out what columns match this
+    #df = df[["subjectid","enr_patient_enrol_date","createdate","req_request_date","report_date","req_diagnosis"]]
+    
     subjectdf = df.loc[df['subjectid'].isin(subjectid_in)]
     return subjectdf

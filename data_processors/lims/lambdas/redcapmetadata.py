@@ -37,11 +37,11 @@ def handler(event, context):
         'subjectid_in': ["subject1", "subject2"],
         #TODO make it a dict: 'values_in':  { "keyname" : list('the','values') }
     }
-    Handler for RedCap update 
+    Handler for RedCap fetching 
 
     :param event:
     :param context:
-    :return: requested redcap metadata
+    :return: dataframe requested redcap metadata
     """
 
 
@@ -56,10 +56,5 @@ def handler(event, context):
     # checks
     if not isinstance(subjectid_in, list):
         _halt(f"Payload error. Must be array of string for sample_names. Found: {type(subjectid_in)}")
-
-    #frames = []
-    #for year in years:
-    #    logger.info(f"Downloading {year} sheet")
-    #    frames.append(labmetadata_srv.download_metadata(year))
-
+        
     return redcapmetadata_srv.retrieve_metadata(subjectid_in)
