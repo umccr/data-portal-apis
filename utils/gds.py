@@ -172,3 +172,15 @@ def download_gds_file(volume_name: str, path: str) -> (NamedTemporaryFile, None)
         f.write(gds_req.content)
 
     return ntf
+
+
+def presign_gds_file(file_id: str, volume_name: str, path_: str) -> (bool, str):
+    with libgds.ApiClient(ica.configuration(libgds)) as gds_client:
+        files_api = libgds.FilesApi(gds_client)
+        try:
+            file_details: libgds.FileResponse = files_api.get_file(file_id=file_id)
+            return True, file_details.presigned_url
+        except libgds.ApiException as e:
+            message = f"Failed to sign the specified GDS file (gds://{volume_name}{path_}). Exception - {e}"
+            logger.error(message)
+            return False, message

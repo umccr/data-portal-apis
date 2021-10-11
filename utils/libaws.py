@@ -34,3 +34,7 @@ def sqs_client(**kwargs):
 
 def ssm_client(**kwargs):
     return client('ssm', **kwargs)
+
+
+def sm_client(**kwargs):
+    return client('secretsmanager', **kwargs)

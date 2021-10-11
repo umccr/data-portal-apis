@@ -5,8 +5,8 @@ NOTE:
      This is DRF based Portal API impls.
 """
 import logging
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
 
 from django.db import InternalError
 from django.utils.http import parse_http_date_safe
@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
-from utils import libs3, libjson, ica, gds
+from utils import libs3, libjson, gds
 from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
     Workflow, LibraryRun, Sequence
 from .pagination import StandardResultsSetPagination
@@ -27,21 +27,26 @@ from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3O
 
 logger = logging.getLogger()
 
+# TODO to be refactored
 LIMS_SEARCH_ORDER_FIELDS = [
     'subject_id', 'timestamp', 'type', 'run', 'sample_id', 'external_subject_id', 'results', 'phenotype',
     'library_id', 'external_sample_id', 'project_name', 'illumina_id',
 ]
 
+# TODO to be refactored
 METADATA_SEARCH_ORDER_FIELDS = [
     'library_id', 'sample_name', 'sample_id', 'external_sample_id', 'subject_id', 'external_subject_id', 'phenotype',
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
 
+# TODO to be refactored
 LIBRARY_RUN_SEARCH_FIELDS = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
                         "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
 
+# TODO to be refactored
 SEQUENCE_SEARCH_FIELDS = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
                           "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time", "end_time"]
+
 
 def _error_response(message, status_code=400, err=None) -> Response:
     data = {'error': message}
@@ -244,7 +249,7 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
     @action(detail=True)
     def presign(self, request, pk=None):
         obj: GDSFile = self.get_object()
-        response = ica.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
+        response = gds.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
         if response[0]:
             return Response({'signed_url': response[1]})
         else:

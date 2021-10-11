@@ -13,7 +13,7 @@ from mockito import when, mock
 from utils import gds
 from utils.tests.test_ica import IcaUnitTests, logger
 
-gds_path = "gds://umccr-fastq-data-dev/200612_A01052_0017_BH5LYWDSXY/TSO-DNA_TSODNA/UMCCR/PTC_TSO200609VD_L2000552_S1_L003_R1_001.fastq.gz"
+file_id, gds_path = ("fil.482c722485f0403f40c108d95dc270f4", "gds://development/primary_data/200612_A01052_0017_BH5LYWDSXY/WGS_TsqNano/PTC_TsqN200511_L2000432_S1_L003_R1_001.fastq.gz")
 
 
 class GdsUnitTests(IcaUnitTests):
@@ -25,7 +25,7 @@ class GdsUnitTests(IcaUnitTests):
         vol, path_ = gds.parse_path(gds_path)
         logger.info(vol)
         logger.info(path_)
-        self.assertEqual(vol, "umccr-fastq-data-dev")
+        self.assertEqual(vol, "development")
         self.assertTrue(path_.startswith("/"))
 
     def test_get_gds_file_list(self):
@@ -168,7 +168,7 @@ class GdsIntegrationTests(TestCase):
         """
         python manage.py test utils.tests.test_gds.GdsIntegrationTests.test_download_gds_file
         """
-        dl_path = "gds://umccr-fastq-data-dev/200612_A01052_0017_BH5LYWDSXY/SampleSheet.TSO-DNA_TSODNA.csv"
+        dl_path = "gds://development/primary_data/200612_A01052_0017_BH5LYWDSXY/samplesheets-by-assay-type/SampleSheet.TSO-DNA_TSODNA.csv"
 
         vol, path = gds.parse_path(dl_path)
         ntf: NamedTemporaryFile = gds.download_gds_file(vol, path)
@@ -192,3 +192,14 @@ class GdsIntegrationTests(TestCase):
 
         # ntf.close()  # Or close like this
         self.assertFalse(os.path.exists(tmp_path))
+
+    @skip
+    def test_presign_gds_file(self):
+        """
+        python manage.py test utils.tests.test_gds.GdsIntegrationTests.test_presign_gds_file
+        """
+        _, presigned_url = gds.presign_gds_file(file_id=file_id, volume_name=self.vol, path_=self.path)
+
+        self.assertIsNotNone(presigned_url)
+        self.assertIsInstance(presigned_url, str)
+        logger.info(presigned_url)
