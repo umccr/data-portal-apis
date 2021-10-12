@@ -50,21 +50,7 @@ def perform(this_workflow: Workflow):
 
 def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
     """
-    NOTE: as of DRAGEN_WGS_QC CWL workflow version 3.7.5--1.3.5, it uses fastq_list_rows format
-    See Example IAP Run > Inputs
-    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.5cc28c147e4e4dfa9e418523188aacec/3.7.5--1.3.5.md
-
-    DRAGEN_WGS_QC job preparation is at _pure_ Library level aggregate.
-    Here "Pure" Library ID means without having _topup(N) or _rerun(N) suffixes.
-    The fastq_list_row lambda already stripped these topup/rerun suffixes (i.e. what is in this_batch.context_data cache).
-    Therefore, it aggregates all fastq list at
-        - per sequence run by per library for
-            - all different lane(s)
-            - all topup(s)
-            - all rerun(s)
-    This constitute one DRAGEN_WGS_QC job (i.e. one DRAGEN_WGS_QC workflow run).
-
-    See test_prepare_dragen_wgs_qc_jobs() integration test for example job list of SEQ-II validation run.
+    See test_prepare_dragen_wgs_qc_jobs() integration test for example job list
 
     :param batcher:
     :return:
@@ -72,18 +58,21 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
     job_list = []
     fastq_list_rows: List[dict] = libjson.loads(batcher.batch.context_data)
 
-    # iterate through each sample group by rglb
-    for rglb, rglb_df in pd.DataFrame(fastq_list_rows).groupby("rglb"):
+    # iterate through each sample group by rglb and lane
+    for grouped_element, grouped_df in pd.DataFrame(fastq_list_rows).groupby(["rglb", "lane"]):
+
+        rglb, lane = grouped_element
+
         # Check rgsm is identical
         # .item() will raise error if there exists more than one sample name for a given library
-        rgsm = rglb_df['rgsm'].unique().item()
+        rgsm = grouped_df['rgsm'].unique().item()
 
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
         meta: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
         # make sure we have recognised sample (e.g. not undetermined)
         if meta is None:
-            logger.error(f"SKIP DRAGEN_WGS_QC workflow for {rgsm}_{rglb}. "
+            logger.error(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}' in lane {lane}. "
                          f"No metadata for {rglb}, this should not happen!")
             continue
 
@@ -95,21 +84,22 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
         # Skip samples where metadata workflow is set to manual
         if meta.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             # We do not pursue manual samples
-            logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
+            logger.info(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}' in lane {lane}. Workflow set to manual.")
             continue
 
         # skip DRAGEN_WGS_QC if assay type is not WGS
         if meta.type.lower() != LabMetadataType.WGS.value.lower():
-            logger.warning(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}'. 'WGS' != '{meta.type}'.")
+            logger.warning(f"SKIP DRAGEN_WGS_QC workflow for '{rgsm}_{rglb}' in lane {lane}. 'WGS' != '{meta.type}'.")
             continue
 
         # Update read 1 and read 2 strings to cwl file paths
-        rglb_df["read_1"] = rglb_df["read_1"].apply(liborca.cwl_file_path_as_string_to_dict)
-        rglb_df["read_2"] = rglb_df["read_2"].apply(liborca.cwl_file_path_as_string_to_dict)
+        grouped_df["read_1"] = grouped_df["read_1"].apply(liborca.cwl_file_path_as_string_to_dict)
+        grouped_df["read_2"] = grouped_df["read_2"].apply(liborca.cwl_file_path_as_string_to_dict)
 
         job = {
             "library_id": f"{rglb}",
-            "fastq_list_rows": rglb_df.to_dict(orient="records"),
+            "lane": int(lane),
+            "fastq_list_rows": grouped_df.to_dict(orient="records"),
             "seq_run_id": batcher.sqr.run_id if batcher.sqr else None,
             "seq_name": batcher.sqr.name if batcher.sqr else None,
             "batch_run_id": int(batcher.batch_run.id)

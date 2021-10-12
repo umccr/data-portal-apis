@@ -160,11 +160,11 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         """
 
         # --- pick one successful BCL Convert run in development project
+        # ica workflows runs list
+        # ica workflows runs get wfr.<ID>
 
-        # FIXME required to switch PROD `export AWS_PROFILE=prod` as no validation run data avail in DEV yet
-        #   use `ica workflows runs get wfr.xxx` to see run details
         bcl_convert_wfr_id = "wfr.18210c790f30452992c5fd723521f014"
-        total_jobs_to_eval = 8
+        total_jobs_to_eval = 12
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 
@@ -172,8 +172,7 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # - we need metadata!
         # - populate LabMetadata tables in test db
         from data_processors.lims.lambdas import labmetadata
-        labmetadata.scheduled_update_handler({'sheet': "2020"}, None)
-        labmetadata.scheduled_update_handler({'sheet': "2021"}, None)
+        labmetadata.scheduled_update_handler({'event': "test_prepare_dragen_wgs_qc_jobs"}, None)
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
 
         # second --

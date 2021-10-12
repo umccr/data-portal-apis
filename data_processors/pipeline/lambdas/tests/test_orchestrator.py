@@ -45,7 +45,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         ]
         """
         try:
-            orchestrator.next_step(mock_workflow, None)
+            orchestrator.next_step(mock_workflow, [], None)
         except Exception as e:
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(json.JSONDecodeError)

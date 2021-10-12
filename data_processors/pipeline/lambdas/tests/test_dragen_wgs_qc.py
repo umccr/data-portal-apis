@@ -25,6 +25,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
 
         workflow: dict = dragen_wgs_qc.handler({
             "library_id": "L0000001",
+            "lane": 1,
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -58,7 +59,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
-        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
         mock_wfr: libwes.WorkflowRun = libwes.WorkflowRun()
         mock_wfr.id = TestConstant.wfr_id.value
@@ -71,6 +72,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
 
         workflow: dict = dragen_wgs_qc.handler({
             "library_id": "SAMPLE_NAME",
+            "lane": 1,
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -120,6 +122,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
 
         result: dict = dragen_wgs_qc.handler({
             "library_id": "SAMPLE_NAME",
+            "lane": 1,
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -159,6 +162,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
 
         mock_job = {
             "library_id": "SAMPLE_NAME",
+            "lane": 1,
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",

@@ -63,6 +63,7 @@ def handler(event, context) -> dict:
     """event payload dict
     {
         "library_id": "library_id (usually rglb)",
+        "lane": int,
         "fastq_list_rows": [{
             "rgid": "index1.index2.lane",
             "rgsm": "sample_name",
@@ -92,6 +93,7 @@ def handler(event, context) -> dict:
 
     # Extract name of sample and the fastq list rows
     library_id = event['library_id']
+    lane = event['lane']
     fastq_list_rows = event['fastq_list_rows']
 
     # Set sequence run id
@@ -143,7 +145,7 @@ def handler(event, context) -> dict:
         results_dict = {
             'status': "SKIPPED",
             'reason': "Matching workflow runs found",
-            'event': libjson.dumps(event),
+            'event': event,
             'matched_runs': results
         }
         logger.info(libjson.dumps(results_dict))
@@ -153,11 +155,11 @@ def handler(event, context) -> dict:
     workflow_run_name = wfl_helper.construct_workflow_name(
         seq_name=seq_name,
         seq_run_id=seq_run_id,
-        sample_name=library_id
+        sample_name=f"{library_id}__{lane}"
     )
 
     subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
-    mid_path = subject_id + "/" + library_id
+    mid_path = f"{subject_id}/{library_id}/{lane}"
     workflow_engine_parameters = wfl_helper.get_engine_parameters(mid_path)
 
     wfl_run = wes_handler.launch({
@@ -180,7 +182,7 @@ def handler(event, context) -> dict:
             'start': wfl_run.get('time_started'),
             'end_status': wfl_run.get('status'),
             'sequence_run': sqr,
-            'sample_name': library_id,
+            'sample_name': library_id,  # TODO in tick next, see https://github.com/umccr/data-portal-apis/issues/325
             'batch_run': batch_run,
         }
     )
