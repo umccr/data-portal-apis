@@ -35,7 +35,7 @@ def handler(event, context):
     """event payload dict
     {
         'subjectid_in': ["subject1", "subject2"],
-        #TODO make it a dict: 'values_in':  { "keyname" : list('the','values') }
+        #TODO could make it a dict: 'values_in':  { "keyname" : list('the','values') } ??? 
     }
     Handler for RedCap fetching 
 
@@ -44,17 +44,21 @@ def handler(event, context):
     :return: dataframe requested redcap metadata
     """
 
-
-    logger.info("Start processing RedCap datqbaae request update event")
+    logger.info("Start processing RedCap database request update event")
     logger.info(libjson.dumps(event))
 
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Fetching data from RedCap at {requested_time}")
 
-    subjectid_in = event.get('subjectid_in')
-    
-    # checks
-    if not isinstance(subjectid_in, list):
-        _halt(f"Payload error. Must be array of string for sample_names. Found: {type(subjectid_in)}")
-        
-    return redcapmetadata_srv.retrieve_metadata(subjectid_in)
+    values_in = event.get('values_in')
+    if not isinstance(values_in, dict):
+        _halt(f"Payload error. Must be dict. Found: {type(values_in)}")
+    for k,v in values_in.items():
+        if not isinstance(k, str):
+            _halt(f"Payload error. Must be dict with str keys and list values. Key found: {type(k)}")
+        if not isinstance(v, list):
+            _halt(f"Payload error. Must be dict with str keys and list values. Value found: {type(v)}")
+    columns = event.get('columns')
+    if not columns:
+        columns = list()
+    return redcapmetadata_srv.retrieve_metadata(values_in,columns)

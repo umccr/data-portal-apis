@@ -15,26 +15,27 @@ logger.setLevel(logging.INFO)
 
 def download_redcap_project_data(): #(subjectid_list: dict) -> pd.DataFrame:
     #TODO set up Redcap API key and URL
-    #redcap_api_key = libssm.get_secret(const.REDCAP_API_KEY) 
-    #redcap_api_url = libssm.get_secret(const.REDCAP_API_URL)
-    redcap_api_key = "foo"
-    redcap_api_url = "bar"
+    redcap_api_key = libssm.get_secret(const.REDCAP_API_KEY) 
+    redcap_api_url = libssm.get_secret(const.REDCAP_API_URL)
+
     project = Project(redcap_api_url, redcap_api_key)
     data_frame = project.export_records(format='df')
 
     return data_frame
-
-
-def retrieve_metadata(subjectid_in: list) -> pd.DataFrame:
+ 
+def retrieve_metadata(values_in: dict, columns: list) -> pd.DataFrame:
     """Download metadata from redcap database
 
-    :param subjectid_in: list of subjectids to query
+    :param values_in: dict where key is columnnames and value is list of values to match on: will return entries where columnanme is in value list
+    :param columns: list of columns to return, or None/empty for all
     """
     df = download_redcap_project_data()
     
     # we want: date-accessioned, date-modified and date-created, specimen id / label and disease id / label
     # TODO find out what columns match this
-    #df = df[["subjectid","enr_patient_enrol_date","createdate","req_request_date","report_date","req_diagnosis"]]
-    
-    subjectdf = df.loc[df['subjectid'].isin(subjectid_in)]
-    return subjectdf
+    #
+    for colname,list_isin in values_in.items():
+        df = df.loc[df[colname].isin(list_isin)]
+    if columns:
+        df = df[columns]
+    return df
