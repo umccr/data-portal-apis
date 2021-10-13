@@ -33,9 +33,6 @@ def create_or_update_workflow(model: dict):
         workflow.wfr_name = model.get('wfr_name')
         workflow.version = model.get('version')
 
-        if model.get('sample_name'):
-            workflow.sample_name = model.get('sample_name')
-
         if model.get('sequence_run'):
             workflow.sequence_run = model.get('sequence_run')
 
@@ -110,22 +107,6 @@ def get_workflows_by_wfr_ids(wfr_id_list: List[str]) -> List[Workflow]:
 
 
 @transaction.atomic
-def search_matching_runs(**kwargs):
-    """
-    NOTE: for more edge cases, may need to check content of input such as using JSON diff
-
-    :param kwargs: parameters that define idempotency
-    :return: list of matching workflows
-    """
-    matching_workflows = []
-    qs = Workflow.objects.find_by_idempotent_matrix(**kwargs)
-    if qs.exists():
-        for workflow in qs.all():
-            matching_workflows.append(workflow)
-    return matching_workflows
-
-
-@transaction.atomic
 def get_running_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType):
     """query for Workflows associated with this SequenceRun"""
     qs: QuerySet = Workflow.objects.get_running_by_sequence_run(
@@ -182,3 +163,13 @@ def get_workflow_for_seq_run_name(seq_run_name: str) -> Workflow:
         if nest_wf.end > latest_wf.end:
             latest_wf = nest_wf
     return latest_wf
+
+
+@transaction.atomic
+def get_all_library_runs_by_workflow(workflow: Workflow):
+    library_run_list = list()
+    qs: QuerySet = workflow.libraryrun_set
+    if qs.exists():
+        for lib_run in qs.all():
+            library_run_list.append(lib_run)
+    return library_run_list

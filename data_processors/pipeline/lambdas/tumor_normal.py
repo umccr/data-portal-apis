@@ -15,7 +15,7 @@ import copy
 import logging
 
 from data_portal.models import Workflow
-from data_processors.pipeline.services import workflow_srv
+from data_processors.pipeline.services import workflow_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 
@@ -133,45 +133,6 @@ def handler(event, context) -> dict:
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
     workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
 
-    # check if a workflow is already running
-    # TODO: missing criteria to uniquely match workflows to metadata
-    # matched_runs = services.search_matching_runs(
-    #     type_name=WorkflowType.TUMOR_NORMAL.name,
-    #     wfl_id=workflow_id,
-    #     version=workflow_version
-    # )
-    # TODO: the above will block if even one T/N workflow is running. We want to check against the SAME workflow
-    matched_runs = list()
-
-    if len(matched_runs) > 0:
-        results = []
-        for workflow in matched_runs:
-            input_json = libjson.loads(workflow.input)
-
-            if not input_json['output_directory'].contains(subject_id):
-                # TODO: assuming the subject ID is part of the output directory. Need to find better way!
-                # skip workflows of other subjects
-                continue
-
-            result = {
-                'id': workflow.id,
-                'wfr_id': workflow.wfr_id,
-                'wfr_name': workflow.wfr_name,
-                'status': workflow.end_status,
-                'start': libdt.serializable_datetime(workflow.start),
-            }
-            results.append(result)
-
-        if len(results):
-            results_dict = {
-                'status': "SKIPPED",
-                'reason': "Matching workflow runs found",
-                'event': libjson.dumps(event),
-                'matched_runs': results
-            }
-            logger.info(libjson.dumps(results_dict))
-            return results_dict
-
     # If no running workflows were found, we proceed to preparing and kicking it off
     workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id)
     mid_path = subject_id + "/" + tumor_library_id + "_" + normal_library_id
@@ -196,15 +157,17 @@ def handler(event, context) -> dict:
             'input': workflow_input,
             'start': wfl_run.get('time_started'),
             'end_status': wfl_run.get('status'),
-            'sample_name': sample_name
         }
     )
+
+    # establish link between Workflow and LibraryRun
+    _ = library_run_srv.link_library_runs_with_x_seq_workflow([tumor_library_id, normal_library_id], workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
         'subject_id': subject_id,
-        'sample_name': workflow.sample_name,
+        'sample_name': sample_name,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,

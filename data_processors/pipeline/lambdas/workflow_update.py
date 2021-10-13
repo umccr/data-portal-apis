@@ -115,7 +115,6 @@ def handler(event, context):
         'wfl_id': updated_workflow.wfl_id,
         'end_status': updated_workflow.end_status,
         'type_name': updated_workflow.type_name,
-        'sample_name': updated_workflow.sample_name,
         'seq_run_id': updated_workflow.sequence_run.run_id if updated_workflow.sequence_run else None,
         'seq_name': updated_workflow.sequence_run.name if updated_workflow.sequence_run else None,
     }

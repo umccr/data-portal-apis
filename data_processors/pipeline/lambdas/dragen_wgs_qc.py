@@ -15,7 +15,7 @@ import copy
 import logging
 
 from data_portal.models import Workflow
-from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv
+from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 from utils import libjson, libssm, libdt
@@ -119,38 +119,6 @@ def handler(event, context) -> dict:
     sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
     batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
-    matched_runs = workflow_srv.search_matching_runs(
-        type_name=WorkflowType.DRAGEN_WGS_QC.name,
-        wfl_id=workflow_id,
-        version=workflow_version,
-        sample_name=library_id,
-        sequence_run=sqr,
-        batch_run=batch_run,
-    )
-
-    if len(matched_runs) > 0:
-        results = []
-        for workflow in matched_runs:
-            result = {
-                'library_id': workflow.sample_name,
-                'id': workflow.id,
-                'wfr_id': workflow.wfr_id,
-                'wfr_name': workflow.wfr_name,
-                'status': workflow.end_status,
-                'start': libdt.serializable_datetime(workflow.start),
-                'sequence_run_id': workflow.sequence_run.id if sqr else None,
-                'batch_run_id': workflow.batch_run.id if batch_run else None,
-            }
-            results.append(result)
-        results_dict = {
-            'status': "SKIPPED",
-            'reason': "Matching workflow runs found",
-            'event': event,
-            'matched_runs': results
-        }
-        logger.info(libjson.dumps(results_dict))
-        return results_dict
-
     # construct and format workflow run name convention
     workflow_run_name = wfl_helper.construct_workflow_name(
         seq_name=seq_name,
@@ -182,15 +150,18 @@ def handler(event, context) -> dict:
             'start': wfl_run.get('time_started'),
             'end_status': wfl_run.get('status'),
             'sequence_run': sqr,
-            'sample_name': library_id,  # TODO in tick next, see https://github.com/umccr/data-portal-apis/issues/325
             'batch_run': batch_run,
         }
     )
 
+    # establish link between Workflow and LibraryRun
+    _ = library_run_srv.link_library_run_with_workflow(library_id, lane, workflow)
+
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
-        'library_id': workflow.sample_name,
+        'library_id': library_id,
+        'lane': lane,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,

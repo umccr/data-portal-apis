@@ -26,6 +26,36 @@ class WorkflowType(Enum):
     DRAGEN_TSO_CTDNA = "dragen_tso_ctdna"
     DRAGEN_WTS = "dragen_wts"
 
+    @classmethod
+    def from_value(cls, value):
+        if value == cls.BCL_CONVERT.value:
+            return cls.BCL_CONVERT
+        elif value == cls.DRAGEN_WGS_QC.value:
+            return cls.DRAGEN_WGS_QC
+        elif value == cls.TUMOR_NORMAL.value:
+            return cls.TUMOR_NORMAL
+        elif value == cls.DRAGEN_TSO_CTDNA.value:
+            return cls.DRAGEN_TSO_CTDNA
+        elif value == cls.DRAGEN_WTS.value:
+            return cls.DRAGEN_WTS
+        else:
+            raise ValueError(f"No matching type found for {value}")
+
+    @classmethod
+    def from_name(cls, name):
+        if name == cls.BCL_CONVERT.name:
+            return cls.BCL_CONVERT
+        elif name == cls.DRAGEN_WGS_QC.name:
+            return cls.DRAGEN_WGS_QC
+        elif name == cls.TUMOR_NORMAL.name:
+            return cls.TUMOR_NORMAL
+        elif name == cls.DRAGEN_TSO_CTDNA.name:
+            return cls.DRAGEN_TSO_CTDNA
+        elif name == cls.DRAGEN_WTS.name:
+            return cls.DRAGEN_WTS
+        else:
+            raise ValueError(f"No matching type found for {name}")
+
 
 class WorkflowStatus(Enum):
     RUNNING = "Running"

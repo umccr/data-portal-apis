@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 import uuid
 from typing import Union
@@ -10,6 +11,8 @@ from django.db.models.functions import Concat
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField, HashFieldHelper
 from data_processors.pipeline.domain.workflow import WorkflowStatus
+
+logger = logging.getLogger(__name__)
 
 
 class S3ObjectManager(models.Manager):
@@ -816,33 +819,6 @@ class WorkflowManager(models.Manager):
         ).exclude(end_status__icontains=WorkflowStatus.RUNNING.value)
         return qs
 
-    def find_by_idempotent_matrix(self, **kwargs):
-        """
-        search workflow using: Workflow type_name, wfl_id, version, sample_name, sqr, batch_run_id
-        return any workflow matching: end=NULL && end_status=NULL && start=NOT_NULL && input=NOT_NULL
-        """
-        type_name = kwargs.get('type_name')
-        wfl_id = kwargs.get('wfl_id')
-        version = kwargs.get('version')
-        sample_name = kwargs.get('sample_name')
-        sequence_run = kwargs.get('sequence_run')
-        batch_run = kwargs.get('batch_run')
-
-        qs: QuerySet = self.filter(
-            type_name=type_name,
-            wfl_id=wfl_id,
-            version=version,
-            sample_name=sample_name,
-            sequence_run=sequence_run,
-            batch_run=batch_run,
-            end__isnull=True,
-            end_status__isnull=True,
-            # TODO: Why END_status? Is that ever true? Is a workflow not initially set to "Running"??
-            start__isnull=False,
-            input__isnull=False,
-        )
-        return qs
-
     def get_running_by_sequence_run(self, sequence_run: SequenceRun, type_name: str) -> QuerySet:
         qs: QuerySet = self.filter(
             sequence_run=sequence_run,
@@ -896,7 +872,7 @@ class Workflow(models.Model):
 
     id = models.BigAutoField(primary_key=True)
     wfr_name = models.TextField(null=True, blank=True)
-    sample_name = models.CharField(max_length=255, null=True, blank=True)
+    sample_name = models.CharField(max_length=255, null=True, blank=True)  # TODO deprecated, will be removed, see #244
     type_name = models.CharField(max_length=255)
     wfr_id = models.CharField(max_length=255)
     wfl_id = models.CharField(max_length=255)
@@ -1115,6 +1091,8 @@ class LibraryRun(models.Model):
 
     # could be used for manual exclusion
     valid_for_analysis = models.BooleanField(default=True, null=True)
+
+    workflows = models.ManyToManyField(Workflow)
 
     objects = LibraryRunManager()
 

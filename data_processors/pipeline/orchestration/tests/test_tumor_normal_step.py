@@ -6,11 +6,12 @@ from libica.openapi import libwes
 from mockito import when
 
 from data_portal.models import LabMetadata, FastqListRow, Workflow, LabMetadataPhenotype, LabMetadataType, \
-    LabMetadataWorkflow
-from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory
+    LabMetadataWorkflow, LibraryRun
+from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory, LibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import tumor_normal_step, google_lims_update_step
+from data_processors.pipeline.services import library_run_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 tn_mock_subject_id = "SBJ00001"
@@ -78,6 +79,12 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         self.verify_local()
 
         mock_dragen_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+        mock_normal_library_run: LibraryRun = LibraryRunFactory()
+        _ = library_run_srv.link_library_run_with_workflow(
+            library_id=mock_normal_library_run.library_id,
+            lane=mock_normal_library_run.lane,
+            workflow=mock_dragen_wgs_qc_workflow,
+        )
 
         build_tn_mock()
 

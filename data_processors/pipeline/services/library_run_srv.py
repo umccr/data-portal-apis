@@ -1,10 +1,12 @@
 import json
 import logging
 import os
+from typing import List
 
 from django.db import transaction
+from django.db.models import QuerySet
 
-from data_portal.models import LibraryRun
+from data_portal.models import LibraryRun, Workflow
 from data_processors.pipeline.services import metadata_srv
 from data_processors.pipeline.tools import liborca
 
@@ -74,3 +76,99 @@ def create_or_update_library_run(payload: dict):
     library_run.save()
 
     return library_run
+
+
+@transaction.atomic
+def get_all_workflows_by_library_run(library_run: LibraryRun):
+    workflow_list = list()
+    qs: QuerySet = library_run.workflows
+    for lib_run in qs.all():
+        workflow_list.append(lib_run)
+    return workflow_list
+
+
+@transaction.atomic
+def get_library_runs(**kwargs) -> List[LibraryRun]:
+    lib_runs = list()
+    qs: QuerySet = LibraryRun.objects.get_by_keyword(**kwargs)
+    if qs.exists():
+        for lib in qs.all():
+            lib_runs.append(lib)
+    return lib_runs
+
+
+@transaction.atomic
+def get_library_run(**kwargs):
+    qs: QuerySet = LibraryRun.objects.get_by_keyword(**kwargs)
+    if qs.exists():
+        return qs.get()
+    return None
+
+
+@transaction.atomic
+def link_library_run_with_workflow(library_id: str, lane: int, workflow: Workflow):
+    """
+    very deterministic stricter linking with library_id + lane i.e. this is the best case for exact match
+    workflow is still sequence-aware
+    """
+    seq_name = workflow.sequence_run.instrument_run_id
+    seq_run_id = workflow.sequence_run.run_id
+
+    library_run: LibraryRun = get_library_run(
+        library_id=library_id,
+        instrument_run_id=seq_name,
+        run_id=seq_run_id,
+        lane=lane,
+    )
+
+    if library_run:
+        library_run.workflows.add(workflow)
+        library_run.save()
+        return library_run
+    else:
+        logger.warning(f"LibraryRun not found for {library_id}, {lane}, {seq_name}")
+        return None
+
+
+@transaction.atomic
+def link_library_runs_with_workflow(library_id: str, workflow: Workflow):
+    """
+    typically library_id is in its _pure_form_ such as rglb from FastqListRow i.e. no suffixes
+    workflow is still sequence-aware
+    """
+    seq_name = workflow.sequence_run.instrument_run_id
+    seq_run_id = workflow.sequence_run.run_id
+
+    library_run_list: List[LibraryRun] = get_library_runs(
+        library_id=library_id,
+        instrument_run_id=seq_name,
+        run_id=seq_run_id,
+    )
+
+    for lib_run in library_run_list:
+        lib_run.workflows.add(workflow)
+        lib_run.save()
+
+    if library_run_list:
+        return library_run_list
+    else:
+        logger.warning(f"No LibraryRun records found for {library_id}, {seq_name}")
+        return None
+
+
+@transaction.atomic
+def link_library_runs_with_x_seq_workflow(library_id_list: List[str], workflow: Workflow):
+    """
+    workflow can be not sequence-aware i.e. workflow that need go across multiple sequence runs
+    """
+    library_run_list = list()
+    qs: QuerySet = LibraryRun.objects.filter(library_id__in=library_id_list)
+    if qs.exists():
+        for lib_run in qs.all():
+            lib_run.workflows.add(workflow)
+            lib_run.save()
+            library_run_list.append(lib_run)
+        return library_run_list
+    else:
+        logger.warning(f"No LibraryRun records found for {library_id_list}")
+        return None

@@ -15,8 +15,9 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
-from data_processors.pipeline.domain.workflow import WorkflowType
+from data_portal.models import Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow, \
+    LibraryRun
+from data_processors.pipeline.services import workflow_srv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -78,9 +79,8 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
 
     libraries = []
     for qc_workflow in qc_workflows:
-        library_id = _get_library_id_from_workflow(qc_workflow)
-        if library_id:
-            libraries.append(library_id)
+        for lib_run in workflow_srv.get_all_library_runs_by_workflow(qc_workflow):
+            libraries.append(lib_run.library_id)
 
     qs: QuerySet = LabMetadata.objects.filter(
         library_id__in=libraries,
@@ -94,20 +94,6 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
             meta_list.append(meta)
 
     return meta_list, libraries
-
-
-def _get_library_id_from_workflow(workflow: Workflow):
-    # FIXME This may be gone for good. See https://github.com/umccr/data-portal-apis/issues/244
-    #  hence, pls use it within this module
-
-    # these workflows use library_id
-    if workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() \
-            or workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower():
-        return workflow.sample_name  # << NOTE: this is library_id
-
-    # otherwise assume legacy naming
-    # remove the first part (Sample ID) from the sample_library_name to get the Library ID
-    return '_'.join(workflow.sample_name.split('_')[1:])
 
 
 @transaction.atomic
@@ -179,3 +165,11 @@ def get_all_libraries_by_keywords(**kwargs) -> List[str]:
     for meta in meta_list:
         library_id_list.append(meta.library_id)
     return library_id_list
+
+
+@transaction.atomic
+def get_metadata_for_library_runs(library_runs: List[LibraryRun]) -> List[LabMetadata]:
+    library_id_list = []
+    for lib_run in library_runs:
+        library_id_list.append(lib_run.library_id)
+    return get_metadata_by_keywords_in(libraries=library_id_list)

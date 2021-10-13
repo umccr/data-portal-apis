@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime, timezone
+from typing import List
 
 from django.db import transaction
 
-from data_portal.models import SequenceRun, Workflow
-from data_processors.pipeline.domain.workflow import WorkflowStatus
-from data_processors.pipeline.services import batch_srv
+from data_portal.models import SequenceRun, Workflow, LibraryRun, LabMetadata, LabMetadataPhenotype
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
+from data_processors.pipeline.services import batch_srv, workflow_srv, metadata_srv
 from data_processors.pipeline.tools import lookup
 from utils import libslack, libdt
 
@@ -107,6 +108,36 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
     return libslack.call_slack_webhook(sender, topic, attachments)
 
 
+def resolve_sample_display_name(workflow: Workflow):
+    workflow_type = WorkflowType.from_name(workflow.type_name)
+    all_library_runs: List[LibraryRun] = workflow_srv.get_all_library_runs_by_workflow(workflow)
+
+    if not all_library_runs:
+        return None
+
+    if workflow_type == WorkflowType.TUMOR_NORMAL:
+        # if it is tumor normal, we use TUMOR_SAMPLE_ID as display name
+        meta_list: List[LabMetadata] = metadata_srv.get_metadata_for_library_runs(all_library_runs)
+        for meta in meta_list:
+            if meta.phenotype == LabMetadataPhenotype.TUMOR.value:
+                return meta.sample_id
+
+    elif workflow_type == WorkflowType.DRAGEN_WGS_QC:
+        # if it is WGS QC, we use library_id + lane
+        display_names = []
+        for lib_run in all_library_runs:
+            display_names.append(str(lib_run.library_id))
+            display_names.append(str(lib_run.lane))
+        return "/".join(display_names)
+
+    else:
+        # else we use library_id
+        display_names = set()
+        for lib_run in all_library_runs:
+            display_names.add(str(lib_run.library_id))
+        return "".join(display_names) if len(display_names) == 1 else "/".join(display_names)
+
+
 @transaction.atomic
 def notify_workflow_status(workflow: Workflow):
     if not workflow.end_status:
@@ -134,6 +165,8 @@ def notify_workflow_status(workflow: Workflow):
             f"{workflow.type_name} '{workflow.wfr_id}' workflow unsupported status '{workflow.end_status}'. "
             f"Not reporting to Slack!")
         return
+
+    _display_name = resolve_sample_display_name(workflow)
 
     _topic = f"Run Name: {workflow.wfr_name}"
     _attachments = [
@@ -180,8 +213,8 @@ def notify_workflow_status(workflow: Workflow):
                     "short": True
                 },
                 {
-                    "title": "Sample Name",
-                    "value": workflow.sample_name if workflow.sample_name else "Not Applicable",
+                    "title": "Sample",
+                    "value": _display_name if _display_name else "Not Applicable",
                     "short": True
                 },
             ],
@@ -229,7 +262,8 @@ def notify_batch_run_status(batch_run_id):
     }
     _metrics = ""
     for wfl in workflows:
-        _metrics += f"{wfl.sample_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
+        display_name = resolve_sample_display_name(wfl)
+        _metrics += f"{display_name}: {str(wfl.end_status).upper()}, {wfl.wfr_id}\n"
         _total_cnt += 1
         _stats[wfl.end_status] += 1
 

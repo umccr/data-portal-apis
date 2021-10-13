@@ -5,13 +5,13 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Workflow, SequenceRun, BatchRun, Batch
-from data_portal.tests.factories import SequenceRunFactory, TestConstant, BatchFactory
-from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, SecondaryAnalysisHelper
+from data_portal.models import Workflow, SequenceRun, LibraryRun
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import dragen_tso_ctdna
-from data_processors.pipeline.services import metadata_srv
+from data_processors.pipeline.services import metadata_srv, workflow_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
-from utils import libjson, libssm
+from utils import libjson
 
 
 class DragenTsoCtDnaTests(PipelineUnitTestCase):
@@ -20,8 +20,9 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_tso_ctdna.DragenTsoCtDnaTests.test_handler
         """
+        mock_library_run: LibraryRun = LibraryRunFactory()
         mock_sqr: SequenceRun = SequenceRunFactory()
-        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
         workflow: dict = dragen_tso_ctdna.handler({
             "tso500_sample": {
@@ -34,7 +35,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
                 {
                     "rgid": "index1.index2.lane",
                     "rgsm": "sample_name",
-                    "rglb": "sample_library",
+                    "rglb": TestConstant.library_id_normal.value,
                     "lane": 1,
                     "read_1": {
                       "class": "File",
@@ -60,7 +61,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
             },
             "seq_run_id": mock_sqr.run_id,
             "seq_name": mock_sqr.name,
-            "library_id": "sample_library",
+            "library_id": TestConstant.library_id_normal.value,
         }, None)
 
         logger.info("-" * 32)
@@ -68,15 +69,23 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         logger.info(json.dumps(workflow))
 
         # assert DRAGEN_TSO_CTDNA_QC workflow launch success and save workflow run in db
-        workflows = Workflow.objects.all()
-        self.assertEqual(1, workflows.count())
+        qs = Workflow.objects.all()
+        self.assertEqual(1, qs.count())
+
+        # assert that we can query related LibraryRun from Workflow side
+        wfl = qs.get()
+        all_lib_runs = workflow_srv.get_all_library_runs_by_workflow(wfl)
+        self.assertEqual(1, len(all_lib_runs))
+        for lib_run in all_lib_runs:
+            logger.info(lib_run)
+            self.assertEqual(lib_run.library_id, TestConstant.library_id_normal.value)
 
     def test_handler_alt(self):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_tso_ctdna.DragenTsoCtDnaTests.test_handler_alt
         """
         mock_sqr: SequenceRun = SequenceRunFactory()
-        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
         mock_wfr: libwes.WorkflowRun = libwes.WorkflowRun()
         mock_wfr.id = TestConstant.wfr_id.value
@@ -131,82 +140,6 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         logger.info(json.dumps(workflow))
 
         # assert DRAGEN_TSO_CTDNA_QC workflow launch success and save workflow run in db
-        workflows = Workflow.objects.all()
-        self.assertEqual(1, workflows.count())
-
-    def test_handler_skipped(self):
-        """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_tso_ctdna.DragenTsoCtDnaTests.test_handler_skipped
-        """
-        mock_sqr: SequenceRun = SequenceRunFactory()
-        mock_batch: Batch = BatchFactory()
-        mock_batch_run: BatchRun = BatchRun(
-            batch=mock_batch,
-            step=WorkflowType.DRAGEN_TSO_CTDNA.name,
-            running=True,
-            notified=True
-        )
-        mock_batch_run.save()
-
-        wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
-
-        mock_dragen_tso_ctdna = Workflow()
-        mock_dragen_tso_ctdna.type_name = WorkflowType.DRAGEN_TSO_CTDNA.name
-        mock_dragen_tso_ctdna.wfl_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-        mock_dragen_tso_ctdna.version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
-        mock_dragen_tso_ctdna.sample_name = TestConstant.library_id_normal.value
-        mock_dragen_tso_ctdna.sequence_run = mock_sqr
-        mock_dragen_tso_ctdna.batch_run = mock_batch_run
-        mock_dragen_tso_ctdna.start = make_aware(datetime.utcnow())
-        mock_dragen_tso_ctdna.input = libjson.dumps({'mock': "MOCK_INPUT_JSON"})
-        mock_dragen_tso_ctdna.save()
-
-        result: dict = dragen_tso_ctdna.handler({
-            "tso500_sample": {
-                "sample_id": "sample_id",
-                "sample_name": "sample_name",
-                "sample_type": "DNA",
-                "pair_id": "sample_name"
-            },
-            "fastq_list_rows": [
-                {
-                    "rgid": "index1.index2.lane",
-                    "rgsm": "sample_name",
-                    "rglb": "sample_library",
-                    "lane": 1,
-                    "read_1": {
-                      "class": "File",
-                      "location": "gds://path/to/read_1.fastq.gz"
-                    },
-                    "read_2": {
-                      "class": "File",
-                      "location": "gds://path/to/read_2.fastq.gz"
-                    }
-                }
-            ],
-            "samplesheet": {
-                "class": "File",
-                "location": "gds://path/to/samplesheet"
-            },
-            "run_info_xml": {
-                "class": "File",
-                "location": "path/to/dir/RunInfo.xml"
-            },
-            "run_parameters_xml": {
-                "class": "File",
-                "location": "path/to/dir/RunParameters.xml"
-            },
-            "seq_run_id": mock_sqr.run_id,
-            "seq_name": mock_sqr.name,
-            "batch_run_id": mock_batch_run.id,
-            "library_id": TestConstant.library_id_normal.value,
-        }, None)
-
-        logger.info("-" * 32)
-        logger.info("Example dragen_tso_ctdna.handler lambda output:")
-        logger.info(json.dumps(result))
-        self.assertEqual('SKIPPED', result['status'])
-
         workflows = Workflow.objects.all()
         self.assertEqual(1, workflows.count())
 
