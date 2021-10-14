@@ -79,10 +79,10 @@ class RedcapUnitTests(TransactionTestCase):
         logger.info("Example output:")
         logger.info((result))
 
-    def test_handler_pieran_columns(self):
+    def test_handler_pierian_columns(self):
         """
         test with the columns needed by PierianDX
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_pieran_columns
+        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_pierian_columns
         """
         mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
         mock_csv.write(mock_sheet_1.lstrip().rstrip())
