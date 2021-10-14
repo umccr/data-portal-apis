@@ -7,6 +7,7 @@ from typing import Union
 from django.db import models, connection
 from django.db.models import Max, QuerySet, Q, Value
 from django.db.models.functions import Concat
+from django.core.exceptions import ObjectDoesNotExist
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField, HashFieldHelper
@@ -865,6 +866,27 @@ class WorkflowManager(models.Manager):
 
         return qs
 
+    def get_library(self, **kwargs):
+        qs: QuerySet = self.all()
+
+        type_name = kwargs.get('type_name', None)
+        if type_name:
+            qs = qs.filter(type_name__iexact=type_name)
+
+        status_list_string = kwargs.get('end_status', None)
+        if status_list_string:
+            status_list = status_list_string.split(',')
+            qs = qs.filter(end_status__in=status_list)
+
+        libraryrun_list = list()
+
+        for workflow in qs:
+            library_run_qs = workflow.libraryrun.all()
+            for lib_run in library_run_qs:
+                libraryrun_list.append(lib_run)
+
+        return libraryrun_list
+
 
 class Workflow(models.Model):
     class Meta:
@@ -1067,6 +1089,22 @@ class LibraryRunManager(models.Manager):
             qs = qs.filter(valid_for_analysis__iexact=valid_for_analysis)
 
         return qs
+
+    def get_all_workflow_by_library_id(self, **kwargs):
+
+        library_id = kwargs.get('library_id', None)
+
+        try:
+            library_run = self.get(library_id=library_id)
+
+        except ObjectDoesNotExist:
+            return []
+
+        workflow_list = list()
+        qs: QuerySet = library_run.workflows
+        for workflow in qs.all():
+            workflow_list.append(workflow)
+        return workflow_list
 
 
 class LibraryRun(models.Model):
