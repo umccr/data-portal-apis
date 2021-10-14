@@ -60,10 +60,9 @@ mock_sheet_2 = b""""Record ID","Event Name","Repeat Instrument","Repeat Instance
 5001,"Request Original","Biopsy Sample Type",1," - Stafford Fox",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"1st submission",Checked,Checked,Yes,Unchecked,Unchecked,Unchecked,Unchecked,Checked,Unchecked,Unchecked,Unchecked,Unchecked,,,,,2021-07-30,,"Left tonsil","Core biopsy",,2021-08-02,Unchecked,Unchecked,Checked,Unchecked,Unchecked,Unchecked,,"Comments for sample submission go here.",grant.lee,"2021-09-12 14:54:04",Complete,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"""
 
 class RedcapUnitTests(TransactionTestCase):
-    #@mock.patch('project.Project', autospec=True)
     def test_handler(self):
         """
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_complex
+        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler
         """
         mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
         mock_csv.write(mock_sheet_1.lstrip().rstrip())
@@ -80,22 +79,23 @@ class RedcapUnitTests(TransactionTestCase):
         logger.info("Example output:")
         logger.info((result))
 
-    def test_handler_connect(self):
+    def test_handler_pieran_columns(self):
         """
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_connect
+        test with the columns needed by PierianDX
+        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_pieran_columns
         """
         mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
         mock_csv.write(mock_sheet_1.lstrip().rstrip())
         mock_csv.seek(0)
         mock_csv.flush()
-        #when(redcapmetadata_srv).download_redcap_project_data().thenReturn(pd.read_csv(mock_csv))
+        when(redcapmetadata_srv).download_redcap_project_data().thenReturn(pd.read_csv(mock_csv))
 
-        result = redcapmetadata.handler({
-                'subjectid_in': ["SBJ05001","SBJ05006","NotReal"],
+
+        result = redcapmetadata.handler_pierian_metadata({
+                'values_in': { 'subjectid': ["SBJ05001","SBJ05006","NotReal"] }
         }, None)
        
  
-
         logger.info("-" * 32)
         logger.info("Example output:")
         logger.info((result))
