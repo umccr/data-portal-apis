@@ -866,26 +866,15 @@ class WorkflowManager(models.Manager):
 
         return qs
 
-    def get_library(self, **kwargs):
+    def get_workflow_by_library_id(self, **kwargs):
         qs: QuerySet = self.all()
 
-        type_name = kwargs.get('type_name', None)
-        if type_name:
-            qs = qs.filter(type_name__iexact=type_name)
+        library_id = kwargs.get('library_id', None)
+        if library_id:
+            qs = qs.filter(libraryrun__library_id__iexact=library_id)
 
-        status_list_string = kwargs.get('end_status', None)
-        if status_list_string:
-            status_list = status_list_string.split(',')
-            qs = qs.filter(end_status__in=status_list)
+        return qs
 
-        libraryrun_list = list()
-
-        for workflow in qs:
-            library_run_qs = workflow.libraryrun.all()
-            for lib_run in library_run_qs:
-                libraryrun_list.append(lib_run)
-
-        return libraryrun_list
 
 
 class Workflow(models.Model):
@@ -1090,21 +1079,19 @@ class LibraryRunManager(models.Manager):
 
         return qs
 
-    def get_all_workflow_by_library_id(self, **kwargs):
+    def get_library_by_workflow_keyword(self, **kwargs):
+        qs: QuerySet = self.all()
 
-        library_id = kwargs.get('library_id', None)
+        type_name = kwargs.get('type_name', None)
+        if type_name:
+            qs = qs.filter(workflows__type_name__iexact=type_name)
 
-        try:
-            library_run = self.get(library_id=library_id)
+        status_list_string = kwargs.get('end_status', None)
+        if status_list_string:
+            status_list = status_list_string.split(',')
+            qs = qs.filter(workflows__end_status__in=status_list).distinct()
 
-        except ObjectDoesNotExist:
-            return []
-
-        workflow_list = list()
-        qs: QuerySet = library_run.workflows
-        for workflow in qs.all():
-            workflow_list.append(workflow)
-        return workflow_list
+        return qs
 
 
 class LibraryRun(models.Model):

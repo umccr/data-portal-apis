@@ -470,21 +470,20 @@ class WorkflowViewSet(ReadOnlyModelViewSet):
         )
 
     @action(detail=False, methods=['get'])
-    def get_libraryrun(self, request):
-        type_name = self.request.query_params.get('type_name', None)
-        end_status = self.request.query_params.get('end_status', None)
+    def by_library_id(self, request):
 
-        libraryrun_list = Workflow.objects.get_library(
-            type_name=type_name,
-            end_status=end_status,
+        library_id = request.query_params.get('library_id', None)
+
+        workflow_qs = Workflow.objects.get_workflow_by_library_id(
+            library_id=library_id,
         )
-        qs = Workflow.objects.get_by_keyword()
 
         paginator = StandardResultsSetPagination()
 
-        page = paginator.paginate_queryset(queryset=libraryrun_list, request=request)
+        page = paginator.paginate_queryset(queryset=workflow_qs, request=request)
         serializer = WorkflowSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
 
 
 class PairingViewSet(ViewSet):
@@ -617,15 +616,19 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
         )
 
     @action(detail=False, methods=['get'])
-    def get_workflow(self, request):
-        library_id = request.query_params.get('library_id', None)
+    def by_workflow(self, request):
 
-        workflow_list = LibraryRun.objects.get_all_workflow_by_library_id(
-            library_id=library_id,
+        type_name = self.request.query_params.get('type_name', None)
+        end_status = self.request.query_params.get('end_status', None)
+
+        lib_run_qs = LibraryRun.objects.get_library_by_workflow_keyword(
+            type_name=type_name,
+            end_status=end_status,
         )
-
         paginator = StandardResultsSetPagination()
 
-        page = paginator.paginate_queryset(queryset=workflow_list, request=request)
+        page = paginator.paginate_queryset(queryset=lib_run_qs, request=request)
         serializer = WorkflowSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
