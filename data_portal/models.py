@@ -867,14 +867,12 @@ class WorkflowManager(models.Manager):
         return qs
 
     def get_workflow_by_library_id(self, **kwargs):
-        qs: QuerySet = self.all()
 
         library_id = kwargs.get('library_id', None)
-        if library_id:
-            qs = qs.filter(libraryrun__library_id__iexact=library_id)
+
+        qs: QuerySet = self.filter(libraryrun__library_id__iexact=library_id)
 
         return qs
-
 
 
 class Workflow(models.Model):
@@ -1080,16 +1078,16 @@ class LibraryRunManager(models.Manager):
         return qs
 
     def get_library_by_workflow_keyword(self, **kwargs):
-        qs: QuerySet = self.all()
+        qs: QuerySet = self.none()
 
         type_name = kwargs.get('type_name', None)
         if type_name:
-            qs = qs.filter(workflows__type_name__iexact=type_name)
+            qs = qs.union(self.filter(workflows__type_name__iexact=type_name))
 
         status_list_string = kwargs.get('end_status', None)
         if status_list_string:
             status_list = status_list_string.split(',')
-            qs = qs.filter(workflows__end_status__in=status_list).distinct()
+            qs = qs.union(self.filter(workflows__end_status__in=status_list).distinct())
 
         return qs
 

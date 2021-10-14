@@ -80,5 +80,5 @@ class SequenceTestCase(TestCase):
 
     def test_get_all_workflow_by_library_id(self):
         logger.info('Test get library from workflow keyword')
-        library = LibraryRun.objects.get_library_by_workflow_keyword(end_status='Succeeded')
-        self.assertGreaterEqual(len(library), 1, 'At least a /single workflow is expected')
+        library = LibraryRun.objects.get_library_by_workflow_keyword(end_status='Succeeded', type_name="TUMOR_NORMAL")
+        self.assertEqual(len(library), 1, 'At least a single workflow is expected')
