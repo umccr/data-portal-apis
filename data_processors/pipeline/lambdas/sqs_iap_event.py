@@ -78,7 +78,7 @@ def handle_bssh_run_event(message, event_action, event_type, context):
         # Create or update Sequence record from BSSH Run event payload
         seq = sequence_srv.create_or_update_sequence_from_bssh_event(payload)
 
-        if seq.status == SequenceStatus.STARTED.value:
+        if seq.status == SequenceStatus.STARTED.value or sqr.status.lower() == "PendingAnalysis".lower():
             library_run_list: List[LibraryRun] = library_run_srv.create_library_run_from_sequence({
                 'instrument_run_id': seq.instrument_run_id,
                 'run_id': seq.run_id,

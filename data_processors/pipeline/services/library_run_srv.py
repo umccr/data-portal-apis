@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 
 from data_portal.models import LibraryRun, Workflow
 from data_processors.pipeline.services import metadata_srv
-from data_processors.pipeline.tools import liborca
+from data_processors.pipeline.tools import liborca, libregex
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -16,6 +16,18 @@ logger.setLevel(logging.INFO)
 
 @transaction.atomic
 def create_library_run_from_sequence(payload: dict):
+    """
+    Note: Just like `data_processors.pipeline.lambdas.fastq_list_row.handler` ~ Line 115
+      we strip _topup and _rerun from Library ID from SampleSheet Sample_Name column and store it.
+
+      This is still ok as we have run info and lane along with. Hence, no lost of information.
+
+      This is important for linking between LibraryRun and Workflow model. Because
+      Workflow is working out from FastqListRow rglb that is already been stripped.
+
+    :param payload:
+    :return:
+    """
     instr_run_id = payload.get('instrument_run_id')
     run_id = payload.get('run_id')
     gds_folder_path = payload.get('gds_folder_path')
@@ -28,11 +40,23 @@ def create_library_run_from_sequence(payload: dict):
 
     library_run_list = []
     for data_row in samplesheet_dict['Data']:
+        library_id_as_in_samplesheet = data_row['Sample_Name']  # just working out from Sample_Name column
+
+        # Lab metadata lookup -- we need override cycles
+        meta = metadata_srv.get_metadata_by_library_id(library_id_as_in_samplesheet)
+
+        # Strip _topup
+        rglb = libregex.SAMPLE_REGEX_OBJS['topup'].split(library_id_as_in_samplesheet, 1)[0]
+
+        # Strip _rerun
+        rglb = libregex.SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
+
         library_run = create_or_update_library_run({
             'instrument_run_id': instr_run_id,
             'run_id': run_id,
-            'library_id': data_row['Sample_Name'],
+            'library_id': rglb,
             'lane': int(data_row['Lane']),
+            'override_cycles': meta.override_cycles
         })
         library_run_list.append(library_run)
 
@@ -45,6 +69,7 @@ def create_or_update_library_run(payload: dict):
     run_id = payload.get('run_id')
     library_id = payload.get('library_id')
     lane = payload.get('lane')
+    override_cycles = payload.get('override_cycles')
 
     qs = LibraryRun.objects.filter(library_id=library_id, instrument_run_id=instr_run_id, run_id=run_id, lane=lane)
 
@@ -57,9 +82,7 @@ def create_or_update_library_run(payload: dict):
         library_run.instrument_run_id = instr_run_id
         library_run.run_id = run_id
         library_run.lane = lane
-
-        meta = metadata_srv.get_metadata_by_library_id(library_id)
-        library_run.override_cycles = meta.override_cycles
+        library_run.override_cycles = override_cycles
 
     else:
         msg = f"Updating LibraryRun (instrument_run_id={instr_run_id}, library_id={library_id}, lane={lane})"
@@ -67,7 +90,11 @@ def create_or_update_library_run(payload: dict):
 
         library_run = qs.get()
 
-    # Set optional or updatable fields
+        # allow update override_cycles
+        if override_cycles and override_cycles != library_run.override_cycles:
+            library_run.override_cycles = override_cycles
+
+    # Set optional updatable fields
     library_run.coverage_yield = payload.get('coverage_yield', None)
     library_run.qc_pass = payload.get('qc_pass', False)
     library_run.qc_status = payload.get('qc_status', None)
@@ -108,6 +135,7 @@ def get_library_run(**kwargs):
 @transaction.atomic
 def link_library_run_with_workflow(library_id: str, lane: int, workflow: Workflow):
     """
+    typically library_id is in its _pure_form_ such as rglb from FastqListRow i.e. no suffixes
     very deterministic stricter linking with library_id + lane i.e. this is the best case for exact match
     workflow is still sequence-aware
     """
@@ -159,6 +187,7 @@ def link_library_runs_with_workflow(library_id: str, workflow: Workflow):
 @transaction.atomic
 def link_library_runs_with_x_seq_workflow(library_id_list: List[str], workflow: Workflow):
     """
+    typically library_id is in its _pure_form_ such as rglb from FastqListRow i.e. no suffixes
     workflow can be not sequence-aware i.e. workflow that need go across multiple sequence runs
     """
     library_run_list = list()

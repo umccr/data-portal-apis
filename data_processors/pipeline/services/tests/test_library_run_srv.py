@@ -25,6 +25,7 @@ class LibraryRunSrvUnitTests(PipelineUnitTestCase):
             'run_id': TestConstant.run_id.value,
             'library_id': TestConstant.library_id_normal.value,
             'lane': 1,
+            'override_cycles': TestConstant.override_cycles.value,
         })
 
         self.assertIsNotNone(library_run)
@@ -44,6 +45,7 @@ class LibraryRunSrvUnitTests(PipelineUnitTestCase):
             'run_id': TestConstant.run_id.value,
             'library_id': TestConstant.library_id_normal.value,
             'lane': 1,
+            'override_cycles': TestConstant.override_cycles.value,
             'qc_pass': True,
             'qc_status': "Pass",
             'coverage_yield': ">80%",
@@ -89,7 +91,9 @@ class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
         self.assertEqual(37, LibraryRun.objects.count())
 
         qs: QuerySet = LibraryRun.objects.filter(library_id="L2000172_topup")
-        self.assertTrue(qs.exists())
+        self.assertFalse(qs.exists())  # assert _topup is stripped
+
+        qs = LibraryRun.objects.filter(library_id="L2000172")
         lib_run: LibraryRun = qs.get()
 
         logger.info("-" * 32)
