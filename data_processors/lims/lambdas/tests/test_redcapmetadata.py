@@ -79,25 +79,6 @@ class RedcapUnitTests(TransactionTestCase):
         logger.info("Example output:")
         logger.info((result.to_string()))
 
-    def test_handler_simple(self):
-        ## TODO no use for simple case, delete?
-        """
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler
-        """
-        mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
-        mock_csv.write(mock_sheet_1.lstrip().rstrip())
-        mock_csv.seek(0)
-        mock_csv.flush()
-        when(redcapmetadata_srv).download_redcap_project_data().thenReturn(pd.read_csv(mock_csv))
-
-        result = redcapmetadata.handler_pierian_metadata({
-                'values_in': { 'subjectid': ["SBJ05001","SBJ05006","NotReal"] },
-                'columns': ["subjectid","enr_patient_enrol_date","createdate","req_request_date","report_date","req_diagnosis"]
-        }, None)
-
-        logger.info("-" * 32)
-        logger.info("Example output:")
-        logger.info((result))
 
 def make_mock_labmeta():
     
