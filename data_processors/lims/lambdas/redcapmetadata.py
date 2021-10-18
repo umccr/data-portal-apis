@@ -67,19 +67,24 @@ def handler_pierian_metadata_by_library_id(event, context):
         return pd.DataFrame({})
 
     values_in = { 'subjectid' : [d.subject_id for d in lms] }   # will search for these in redcap
-    df = pd.DataFrame( { 'subject_id' : [d.subject_id for d in lms] , 'library_id' : [d.library_id for d in lms] } )  # TODO check if iteration order always the same, ELSE transfer to preserved-order structure
+    df_lab = pd.DataFrame( { 'subject_id' : [d.subject_id for d in lms] , 'library_id' : [d.library_id for d in lms] } )  # TODO check if iteration order always the same, ELSE transfer to preserved-order structure
 
     # grab neccessary columns from redcap as a df, merge them in
 
     # dict with keys as redcap fields to retrieve, values as pieran fields to translate and output
+    # TODO we are still figuring these out - here we provide the neccessary cols
     col_redcap_pierian_mappings = {"sub_biopsy_date":  "Date collected", "subjectid": "Subject Id","enr_patient_enrol_date":"enr_patient_enrol_date","createdate":"createdate","req_request_date":"req_request_date","report_date":"report_date","req_diagnosis":"req_diagnosis" }
     df_redcap = redcapmetadata_srv.retrieve_metadata(values_in,col_redcap_pierian_mappings.keys()) 
-    df_redcap = df_redcap.rename(columns = { "subjectid": "subject_id" })
-    df = df.merge(df_redcap, on='subject_id', how='right')
 
-    # rename cols to Pieran DX sheet names TODO figure these out, also consolidate all the renames
-    df = df.rename(columns = col_redcap_pierian_mappings)   
-    df = df.rename(columns = { "library_id": "Library Id" , "subject_id": "Subject Id" })
+    # merge labmetadata and redcap frames
+    df_redcap = df_redcap.rename(columns = { "subjectid": "subject_id" })
+    df = df_lab.merge(df_redcap, on='subject_id', how='right')  
+
+    col_redcap_pierian_mappings["library_id"] =  "Library Id" 
+    col_redcap_pierian_mappings["subject_id"] =  "Subject Id" 
+    df = df.rename(columns = col_redcap_pierian_mappings)
+
+    #df = df.rename(columns = col_redcap_pierian_mappings)   
     
     # add default fields
     df['Sample Type'] = "Validation Sample"

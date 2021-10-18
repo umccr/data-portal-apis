@@ -68,7 +68,7 @@ class RedcapUnitTests(TransactionTestCase):
         mock_csv.write(mock_sheet_1.lstrip().rstrip())
         mock_csv.seek(0)
         mock_csv.flush()
-        when(redcapmetadata_srv).download_redcap_project_data().thenReturn(pd.read_csv(mock_csv))
+        when(redcapmetadata_srv).download_redcap_project_data(ANY).thenReturn(pd.read_csv(mock_csv))
         make_mock_labmeta()
 
         result = redcapmetadata.handler_pierian_metadata_by_library_id({
@@ -79,10 +79,26 @@ class RedcapUnitTests(TransactionTestCase):
         logger.info("Example output:")
         logger.info((result.to_string()))
 
+    def test_handler_nomock(self):
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_nomock
+        test without mocking: real response 
+        """
+        mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
+        mock_csv.write(mock_sheet_1.lstrip().rstrip())
+        mock_csv.seek(0)
+        mock_csv.flush()
+        make_mock_labmeta()
+
+        result = redcapmetadata.handler_pierian_metadata_by_library_id({
+                'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ]
+        }, None)
+
+        logger.info("-" * 32)
+        logger.info("Example output:")
+        logger.info((result.to_string()))
 
 def make_mock_labmeta():
-    
-        # make a duplicate to test update, its phenotype is normal but in sheet it is tumor
         lab_meta = LabMetadata(
             library_id="L2101080",
             sample_name="SAMIDA-EXTSAMA",
@@ -104,9 +120,7 @@ def make_mock_labmeta():
             truseqindex="H07"
         )
         lab_meta.save()
-
         
-        # make a duplicate to test update, its phenotype is normal but in sheet it is tumor
         lab_meta = LabMetadata(
             library_id="L2101081",
             sample_name="SAMIDB-EXTSAMB",
@@ -129,8 +143,6 @@ def make_mock_labmeta():
         )
         lab_meta.save()
 
-           
-        # make a duplicate to test update, its phenotype is normal but in sheet it is tumor
         lab_meta = LabMetadata(
             library_id="L2101081_topup",
             sample_name="SAMIDB-EXTSAMB",
