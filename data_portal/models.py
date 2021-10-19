@@ -7,6 +7,7 @@ from typing import Union
 from django.db import models, connection
 from django.db.models import Max, QuerySet, Q, Value
 from django.db.models.functions import Concat
+from django.core.exceptions import ObjectDoesNotExist
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField, HashFieldHelper
@@ -865,6 +866,14 @@ class WorkflowManager(models.Manager):
 
         return qs
 
+    def get_workflow_by_library_id(self, **kwargs):
+
+        library_id = kwargs.get('library_id', None)
+
+        qs: QuerySet = self.filter(libraryrun__library_id__iexact=library_id)
+
+        return qs
+
 
 class Workflow(models.Model):
     class Meta:
@@ -1065,6 +1074,19 @@ class LibraryRunManager(models.Manager):
         valid_for_analysis = kwargs.get('valid_for_analysis', None)
         if valid_for_analysis:
             qs = qs.filter(valid_for_analysis__iexact=valid_for_analysis)
+
+        return qs
+
+    def get_library_by_workflow_keyword(self, **kwargs):
+        qs: QuerySet = self.none()
+
+        type_name = kwargs.get('type_name', None)
+        if type_name:
+            qs = qs.union(self.filter(workflows__type_name__iexact=type_name))
+
+        end_status = kwargs.get('end_status', None)
+        if end_status:
+            qs = qs.union(self.filter(workflows__end_status__iexact=end_status).distinct())
 
         return qs
 
