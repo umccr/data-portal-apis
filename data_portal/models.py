@@ -1084,10 +1084,9 @@ class LibraryRunManager(models.Manager):
         if type_name:
             qs = qs.union(self.filter(workflows__type_name__iexact=type_name))
 
-        status_list_string = kwargs.get('end_status', None)
-        if status_list_string:
-            status_list = status_list_string.split(',')
-            qs = qs.union(self.filter(workflows__end_status__in=status_list).distinct())
+        end_status = kwargs.get('end_status', None)
+        if end_status:
+            qs = qs.union(self.filter(workflows__end_status__iexact=end_status).distinct())
 
         return qs
 
