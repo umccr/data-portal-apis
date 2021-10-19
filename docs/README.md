@@ -301,3 +301,10 @@ _Create T/N Pairing by Workflows (WGS QC wfr_id):_
 ```
 curl -s -X POST -d '["wfr.7e52b7b957a140be9b11988355ab6fd1"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_workflows" | jq
 ```
+
+### Presign Endpoint
+
+_POST [payload JSON file](files.json) that contain list of gds absolute path_:
+```
+curl -s -X POST -d "@files.json" -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/presign" | jq
+```
