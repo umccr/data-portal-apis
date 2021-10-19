@@ -153,20 +153,25 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Get a Fastq record:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq/35" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq/1388" | jq
 ```
 
 _Get Fastq record(s) by Sequence Run:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?run=200612_A01052_0017_BH5LYWDSXY" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?run=211014_A00130_0180_BHLGF7DSX2" | jq
+```
+
+_Get Fastq record(s) by Sequence Run & Project Owner:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?run=211014_A00130_0180_BHLGF7DSX2&project_owner=Bedoui" | jq
 ```
 
 _Get Fastq record(s) by `rglb`:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rglb=L2000176" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rglb=L2101106" | jq
 ```
 
-Similarly, you can filter request parameters on `rgid`, `rgsm`, `lane`.
+Similarly, you can filter request parameters on `rgid`, `rgsm`, `lane`. Additionally, `project_owner` from metadata.
 
 ### Sequence Endpoint
 
@@ -177,19 +182,36 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Get a Sequence record:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequence/217" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequence/2" | jq
 ```
 
-_Get Sequence record(s) by `name`:_
+_Get Sequence record(s) by `instrument_run_id`:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequence?name=200612_A01052_0017_BH5LYWDSXY" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequence?instrument_run_id=211014_A00130_0180_BHLGF7DSX2" | jq
 ```
 
-Similarly, you can filter request parameters on `run_id`, `instrument_run_id`, `status`.
+### SequenceRun Endpoint
+
+_SequenceRun provide BSSH events timeline and transitions_
+
+_List SequenceRun entries:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequencerun" | jq
+```
+
+_Get a SequenceRun record:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequencerun/570" | jq
+```
+
+_Get SequenceRun record(s) by `instrument_run_id`:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/sequencerun?instrument_run_id=211014_A00130_0180_BHLGF7DSX2" | jq
+```
+
+Similarly, you can filter request parameters on `run_id`, `status`.
 
 ### Workflows Endpoint
-
-_Workflow is more to say "WorkflowRun"_
 
 _List Workflow entries:_
 ```
@@ -203,10 +225,29 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Get Workflow record(s) by Sequence Run:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/workflows?run=200612_A01052_0017_BH5LYWDSXY" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/workflows?run=211014_A00130_0180_BHLGF7DSX2" | jq
 ```
 
-Similarly, you can filter request parameters on `sample_name`, `type_name`, `end_status`.
+Similarly, you can filter request parameters on `type_name`, `end_status`.
+
+### LibraryRun Endpoint
+
+_List LibraryRun entries:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/libraryrun" | jq
+```
+
+_Get a LibraryRun record:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/libraryrun/33" | jq
+```
+
+_Get LibraryRun record(s) by `instrument_run_id`:_
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/libraryrun?instrument_run_id=211014_A00130_0180_BHLGF7DSX2" | jq
+```
+
+Similarly, you can filter request parameters on `run_id`, `lane`.
 
 ## Experimental
 
@@ -233,7 +274,7 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Create T/N Pairing by SequenceRuns:_
 ```
-curl -s -X POST -d '["210903_A00130_0170_AHGKJ7DSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing" | jq
+curl -s -X POST -d '["211014_A00130_0179_AHLFYJDSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing" | jq
 ```
 
 _POST payload JSON can also be in file as follows_:
@@ -243,20 +284,20 @@ curl -s -X POST -d "@pairing.json" -H "Content-Type: application/json" -H "Autho
 
 _Create T/N Pairing by Subjects:_
 ```
-curl -s -X POST -d '["SBJ00989", "SBJ00990", "SBJ00991", "SBJ00992"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_subjects" | jq
+curl -s -X POST -d '["SBJ01031", "SBJ01032", "SBJ01033", "SBJ01034"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_subjects" | jq
 ```
 
 _Create T/N Pairing by Libraries:_
 ```
-curl -s -X POST -d '["L2100989", "L2100990"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_libraries" | jq
+curl -s -X POST -d '["L2101175", "L2101176"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_libraries" | jq
 ```
 
 _Create T/N Pairing by Samples:_
 ```
-curl -s -X POST -d '["MDX210231", "MDX210232"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_samples" | jq
+curl -s -X POST -d '["MDX210327", "MDX210328"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_samples" | jq
 ```
 
 _Create T/N Pairing by Workflows (WGS QC wfr_id):_
 ```
-curl -s -X POST -d '["wfr.499ca9001a834f4d8c682d9339cdda6a"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_workflows" | jq
+curl -s -X POST -d '["wfr.7e52b7b957a140be9b11988355ab6fd1"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_workflows" | jq
 ```

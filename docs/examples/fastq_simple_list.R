@@ -6,7 +6,7 @@
 # endpoint named "gds". This "gds" endpoint is the backing of Portal UI on browsable GDS tab.
 #
 # Pseudocode:
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?rowsPerPage=1000&run=210722_A01052_0056_AHGJT7DSX2&search=.fastq.gz$" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?rowsPerPage=1000&run=211014_A00130_0180_BHLGF7DSX2&search=.fastq.gz$" | jq
 #
 # Usage:
 #   export PORTAL_TOKEN=eyxxX<...>
@@ -30,7 +30,7 @@ H <- add_headers(Authorization = paste0("Bearer ", portal_token))
 
 # --
 
-run <- "210722_A01052_0056_AHGJT7DSX2"
+run <- "211014_A00130_0180_BHLGF7DSX2"
 
 resp <- GET(base_url, path = endpoint, query = list(rowsPerPage = 1000, run = run, search=".fastq.gz$"), H)
 # http_type(resp)

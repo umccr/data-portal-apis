@@ -14,9 +14,9 @@
 # 'sequence_run' is Portal internal unique identifier to this SequenceRun (can be used with /sequence/<ID> endpoint)
 #
 # Pseudocode:
-# Call each run
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rowsPerPage=1000&run=210702_A00130_0165_BH7KFWDSX2" | jq
+# Call each run, e.g.
 #   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rowsPerPage=1000&run=210708_A00130_0166_AH7KTJDSX2" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rowsPerPage=1000&run=211014_A00130_0180_BHLGF7DSX2" | jq
 # And append the response into the list.
 # Then iterate the response list, parse JSON body content, extract results into dataframe and combine them.
 #
@@ -43,11 +43,15 @@ H <- add_headers(Authorization = paste0("Bearer ", portal_token))
 # --
 
 runs <- list(
-  "210702_A00130_0165_BH7KFWDSX2",
-  "210708_A00130_0166_AH7KTJDSX2"
+  "210708_A00130_0166_AH7KTJDSX2",
+  "211014_A00130_0180_BHLGF7DSX2"
 )
 
-responses <- lapply(runs, function (run) GET(base_url, path = endpoint, query = list(rowsPerPage = 1000, run = run), H))
+responses <- lapply(runs, function (run) GET(base_url, path = endpoint, query = list(
+  rowsPerPage = 1000,
+  run = run,
+  project_owner = "Bedoui"  # optionally filter project_owner
+), H))
 # responses
 
 results_df <- data.frame()

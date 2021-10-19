@@ -18,7 +18,7 @@
 #
 # Pseudocode:
 # Call each run
-#   curl -s -X POST -d '["210903_A00130_0170_AHGKJ7DSX2", "210909_A00130_0171_BHGKN7DSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing"
+#   curl -s -X POST -d '["211014_A00130_0179_AHLFYJDSX2", "211014_A00130_0180_BHLGF7DSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing"
 #
 # Then we will parse response text into JSON into dataframe. FastqListRow is in nested dataframe.
 #
@@ -50,8 +50,8 @@ H <- add_headers(Authorization = paste0("Bearer ", portal_token))
 # --
 
 runs <- list(
-  "210903_A00130_0170_AHGKJ7DSX2",
-  "210909_A00130_0171_BHGKN7DSX2"
+  "211014_A00130_0179_AHLFYJDSX2",
+  "211014_A00130_0180_BHLGF7DSX2"
 )
 
 resp <- POST(base_url, path = endpoint, body = runs, encode = "json", H)
@@ -87,7 +87,11 @@ print_dash()
 # Please modify endpoint accordingly
 
 endpoint <- "pairing/by_subjects"
-subjects <- list("SBJ00989", "SBJ00990", "SBJ00991", "SBJ00992")
+cat("\n")
+cat(endpoint)
+cat("\n\n\n")
+
+subjects <- list("SBJ01031", "SBJ01032", "SBJ01033", "SBJ01034")
 resp <- POST(base_url, path = endpoint, body = subjects, encode = "json", H)
 resp_body <- content(resp, as = "text", encoding = "UTF-8")
 df <- fromJSON(resp_body)
