@@ -23,7 +23,7 @@ from data_portal.models import LabMetadata
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-#TODO we might want to rename this lambda e.g. not recapmetadata but pierianmetadata
+#TODO we might want to rename this lambda e.g. not recapmetadata but pierianmetadata or clinicalmetadata
 
 def _halt(msg):
     logger.error(msg)
@@ -74,7 +74,11 @@ def handler_pierian_metadata_by_library_id(event, context):
     # dict with keys as redcap fields to retrieve, values as pieran fields to translate and output
     # TODO we are still figuring these out - here we provide the neccessary cols
     col_redcap_pierian_mappings = {"sub_biopsy_date":  "Date collected", "subjectid": "Subject Id","enr_patient_enrol_date":"enr_patient_enrol_date","createdate":"createdate","req_request_date":"req_request_date","report_date":"report_date","req_diagnosis":"req_diagnosis" }
-    df_redcap = redcapmetadata_srv.retrieve_metadata(values_in,col_redcap_pierian_mappings.keys()) 
+
+    if event.get('source') and event.get('source') == 'googlesheet':
+        df_redcap = redcapmetadata_srv.retrieve_metadata_googlesheet(values_in,col_redcap_pierian_mappings.keys()) 
+    else:
+        df_redcap = redcapmetadata_srv.retrieve_metadata(values_in,col_redcap_pierian_mappings.keys()) 
 
     # merge labmetadata and redcap frames
     df_redcap = df_redcap.rename(columns = { "subjectid": "subject_id" })
@@ -83,8 +87,6 @@ def handler_pierian_metadata_by_library_id(event, context):
     col_redcap_pierian_mappings["library_id"] =  "Library Id" 
     col_redcap_pierian_mappings["subject_id"] =  "Subject Id" 
     df = df.rename(columns = col_redcap_pierian_mappings)
-
-    #df = df.rename(columns = col_redcap_pierian_mappings)   
     
     # add default fields
     df['Sample Type'] = "Validation Sample"
