@@ -1092,7 +1092,7 @@ class LibraryRunManager(models.Manager):
         if lane:
             qs = qs.filter(lane__iexact=lane)
 
-        run_id = kwargs.get('type_name', None)
+        run_id = kwargs.get('run_id', None)
         if run_id:
             qs = qs.filter(run_id__iexact=run_id)
 
