@@ -7,8 +7,8 @@ from libica.openapi import libwes
 from mockito import when, verify
 
 from data_portal.models import SequenceRun, Workflow, LabMetadata, LabMetadataType, LabMetadataAssay, \
-    LabMetadataWorkflow
-from data_portal.tests.factories import SequenceRunFactory, TestConstant
+    LabMetadataWorkflow, LibraryRun
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import bcl_convert
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
@@ -56,6 +56,36 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # assert bcl convert workflow launch success and save workflow run in db
         workflows = Workflow.objects.all()
         self.assertEqual(1, workflows.count())
+
+    def test_libraryrun_workflow_link(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_libraryrun_workflow_link
+        """
+        mock_sqr: SequenceRun = SequenceRunFactory()
+
+        mock_libraryrun: LibraryRun = LibraryRunFactory()
+
+        # Change library_id to match metadata
+        mock_libraryrun.library_id = "L2000001"
+        mock_libraryrun.save()
+        workflow: dict = bcl_convert.handler({
+            'gds_volume_name': mock_sqr.gds_volume_name,
+            'gds_folder_path': mock_sqr.gds_folder_path,
+            'seq_run_id': mock_sqr.run_id,
+            'seq_name': mock_sqr.name,
+        }, None)
+
+        logger.info("-" * 32)
+        logger.info("Example bcl_convert.handler lambda output:")
+        logger.info(json.dumps(workflow))
+
+        # assert bcl convert workflow launch success and save workflow run in db
+        workflows = Workflow.objects.get(pk=1)
+
+        # Grab library run for particular workflow
+        library_run_in_workflows = workflows.libraryrun_set.all()
+
+        self.assertEqual(1, library_run_in_workflows.count())
 
     def test_handler_alt(self):
         """
