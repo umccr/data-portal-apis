@@ -21,6 +21,7 @@ from typing import List
 
 from sample_sheet import SampleSheet
 
+from data_processors.pipeline.tools import libregex
 from utils import libjson, gds
 
 logger = logging.getLogger(__name__)
@@ -103,21 +104,23 @@ def get_timestamp_from_run_name(run_name: str) -> str:
     return datetime.strptime(date_part, '%y%m%d').strftime('%Y-%m-%d')
 
 
+def strip_topup_rerun_from_library_id_list(library_id_list: List[str]) -> List[str]:
+    rglb_id_set = set()
+    for library_id in library_id_list:
+
+        # Strip _topup
+        rglb = libregex.SAMPLE_REGEX_OBJS['topup'].split(library_id, 1)[0]
+
+        # Strip _rerun
+        rglb = libregex.SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
+
+        rglb_id_set.add(rglb)
+
+    return list(rglb_id_set)
+
+
 def strip_topup_rerun_from_library_id(library_id: str) -> str:
-    """
-    Use some fancy regex to remove _topup or _rerun from library id
-    ... well for now just some regex, pls don't try to understand it
-    https://regex101.com/r/Z8IG4T/1
-    :return:
-    """
-    # TODO refactor this into libregex
-    library_id_regex = re.match(r"(L\d{7}|L(?:(?:PRJ|CCR|MDX|TGX)\d{6}|(?:NTC|PTC)_\w+))(?:_topup\d?|_rerun\d?)?", library_id)
-
-    if library_id_regex is None:
-        logger.warning(f"Could not get library id from {library_id}, returning as is")
-        return library_id
-
-    return library_id_regex.group(1)
+    return strip_topup_rerun_from_library_id_list([library_id])[0]
 
 
 def sample_library_id_has_rerun(sample_library_id: str) -> bool:

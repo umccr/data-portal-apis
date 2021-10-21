@@ -17,7 +17,8 @@ from typing import List
 
 import pandas as pd
 from data_portal.models import Workflow, LabMetadata
-from data_processors.pipeline.services import notification_srv, sequence_run_srv, workflow_srv, metadata_srv
+from data_processors.pipeline.services import notification_srv, sequence_run_srv, workflow_srv, metadata_srv, \
+    library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
@@ -166,9 +167,9 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
         # See: https://kb.10xgenomics.com/hc/en-us/articles/360061619811-Why-are-different-index-plates-required-for-different-library-types-
         # We also wish to keep the indexes as reads
         settings = {
-          "create_fastq_for_index_reads": True,
-          "minimum_trimmed_read_length": 8,
-          "mask_short_reads": 8
+            "create_fastq_for_index_reads": True,
+            "minimum_trimmed_read_length": 8,
+            "mask_short_reads": 8
         }
         return settings
 
@@ -183,7 +184,7 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
                 "adapter_behavior": "trim",
                 "minimum_trimmed_read_length": 35,
                 "mask_short_reads": 35
-             }
+            }
         )
         return settings
 
@@ -235,7 +236,8 @@ def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
             'sample': sample_name,
             'type': meta.type,
             'assay': meta.assay,
-            'override_cycles': meta.override_cycles
+            'override_cycles': meta.override_cycles,
+            'library_id': meta.library_id
         }
 
         metadata_df = metadata_df.append(new_row, ignore_index=True)
@@ -361,6 +363,12 @@ def handler(event, context) -> dict:
             'sequence_run': sqr,
         }
     )
+
+    # Grab a list of library_id
+    library_id_list = metadata_df["library_id"].tolist()
+
+    # Link each library ID to this workflow
+    _ = library_run_srv.link_library_runs_with_x_seq_workflow(library_id_list, workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
