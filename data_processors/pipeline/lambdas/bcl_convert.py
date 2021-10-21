@@ -237,7 +237,7 @@ def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
             'type': meta.type,
             'assay': meta.assay,
             'override_cycles': meta.override_cycles,
-            'library_id':meta.library_id
+            'library_id': meta.library_id
         }
 
         metadata_df = metadata_df.append(new_row, ignore_index=True)

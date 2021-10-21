@@ -42,14 +42,10 @@ def create_library_run_from_sequence(payload: dict):
     for data_row in samplesheet_dict['Data']:
         library_id_as_in_samplesheet = data_row['Sample_Name']  # just working out from Sample_Name column
 
+        rglb = liborca.strip_topup_rerun_from_library_id(library_id_as_in_samplesheet)
+
         # Lab metadata lookup -- we need override cycles
         meta = metadata_srv.get_metadata_by_library_id(library_id_as_in_samplesheet)
-
-        # Strip _topup
-        rglb = libregex.SAMPLE_REGEX_OBJS['topup'].split(library_id_as_in_samplesheet, 1)[0]
-
-        # Strip _rerun
-        rglb = libregex.SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
 
         library_run = create_or_update_library_run({
             'instrument_run_id': instr_run_id,
@@ -142,8 +138,10 @@ def link_library_run_with_workflow(library_id: str, lane: int, workflow: Workflo
     seq_name = workflow.sequence_run.instrument_run_id
     seq_run_id = workflow.sequence_run.run_id
 
+    rglb = liborca.strip_topup_rerun_from_library_id(library_id)
+
     library_run: LibraryRun = get_library_run(
-        library_id=library_id,
+        library_id=rglb,
         instrument_run_id=seq_name,
         run_id=seq_run_id,
         lane=lane,
@@ -154,7 +152,7 @@ def link_library_run_with_workflow(library_id: str, lane: int, workflow: Workflo
         library_run.save()
         return library_run
     else:
-        logger.warning(f"LibraryRun not found for {library_id}, {lane}, {seq_name}")
+        logger.warning(f"LibraryRun not found for {rglb}, {lane}, {seq_name}")
         return None
 
 
@@ -167,8 +165,10 @@ def link_library_runs_with_workflow(library_id: str, workflow: Workflow):
     seq_name = workflow.sequence_run.instrument_run_id
     seq_run_id = workflow.sequence_run.run_id
 
+    rglb = liborca.strip_topup_rerun_from_library_id(library_id)
+
     library_run_list: List[LibraryRun] = get_library_runs(
-        library_id=library_id,
+        library_id=rglb,
         instrument_run_id=seq_name,
         run_id=seq_run_id,
     )
@@ -180,7 +180,7 @@ def link_library_runs_with_workflow(library_id: str, workflow: Workflow):
     if library_run_list:
         return library_run_list
     else:
-        logger.warning(f"No LibraryRun records found for {library_id}, {seq_name}")
+        logger.warning(f"No LibraryRun records found for {rglb}, {seq_name}")
         return None
 
 
@@ -191,7 +191,10 @@ def link_library_runs_with_x_seq_workflow(library_id_list: List[str], workflow: 
     workflow can be not sequence-aware i.e. workflow that need go across multiple sequence runs
     """
     library_run_list = list()
-    qs: QuerySet = LibraryRun.objects.filter(library_id__in=library_id_list)
+
+    rglb_list = liborca.strip_topup_rerun_from_library_id_list(library_id_list)
+
+    qs: QuerySet = LibraryRun.objects.filter(library_id__in=rglb_list)
     if qs.exists():
         for lib_run in qs.all():
             lib_run.workflows.add(workflow)
@@ -199,5 +202,5 @@ def link_library_runs_with_x_seq_workflow(library_id_list: List[str], workflow: 
             library_run_list.append(lib_run)
         return library_run_list
     else:
-        logger.warning(f"No LibraryRun records found for {library_id_list}")
+        logger.warning(f"No LibraryRun records found for {rglb_list}")
         return None
