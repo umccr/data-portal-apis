@@ -618,16 +618,27 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def by_workflow(self, request):
 
+        # From Library model
+        library_id = self.request.query_params.get('library_id', None)
+        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
+        run_id = self.request.query_params.get('run_id', None)
+        lane = self.request.query_params.get('lane', None)
+
+        # From Workflow model
         type_name = self.request.query_params.get('type_name', None)
         end_status = self.request.query_params.get('end_status', None)
 
         lib_run_qs = LibraryRun.objects.get_library_by_workflow_keyword(
+            library_id=library_id,
+            instrument_run_id=instrument_run_id,
+            run_id=run_id,
+            lane=lane,
             type_name=type_name,
             end_status=end_status,
         )
         paginator = StandardResultsSetPagination()
 
         page = paginator.paginate_queryset(queryset=lib_run_qs, request=request)
-        serializer = WorkflowSerializer(page, many=True)
+        serializer = LibraryRunModelSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
