@@ -71,7 +71,7 @@ class RedcapUnitTests(TransactionTestCase):
         when(redcapmetadata_srv).download_redcap_project_data(ANY).thenReturn(pd.read_csv(mock_csv))
         make_mock_labmeta()
 
-        result = redcapmetadata.handler_pierian_metadata_by_library_id({
+        result = redcapmetadata.handler({
                 'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ]
         }, None)
 
@@ -90,17 +90,19 @@ class RedcapUnitTests(TransactionTestCase):
         mock_csv.flush()
         make_mock_labmeta()
 
-        result = redcapmetadata.handler_pierian_metadata_by_library_id({
-                'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ]
+        result = redcapmetadata.handler({
+            'library_ids': [ "L2101081","L2101089" ],
+            #    'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ]
         }, None)
 
         logger.info("-" * 32)
         logger.info("Example output:")
         logger.info((result.to_string()))
+        print(result.to_csv())
 
     def test_handler_googlesheet(self):
         """
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.download_googlesheet_project_data
+        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_googlesheet
         test without mocking: real response 
         """
         mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
@@ -109,8 +111,8 @@ class RedcapUnitTests(TransactionTestCase):
         mock_csv.flush()
         make_mock_labmeta()
 
-        result = redcapmetadata.handler_pierian_metadata_by_library_id({
-                'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ],
+        result = redcapmetadata.handler({
+                'library_ids': [ "L2101081","L2101089" ],
                 'source': 'googlesheet'
         }, None)
 
@@ -206,3 +208,6 @@ def make_mock_labmeta():
             truseqindex="H07"
         )
         lab_meta.save()
+
+def get_mock_csv():
+    return mock_sheet_1
