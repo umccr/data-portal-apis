@@ -46,5 +46,5 @@ class SequenceTestCase(TestCase):
 
     def test_get_all_workflow_by_library_id(self):
         logger.info('Test get workflow by library id')
-        workflow = Workflow.objects.get_workflow_by_library_id(library_id='L2000003')
+        workflow = Workflow.objects.get_by_keyword(library_id='L2000003')
         self.assertGreaterEqual(len(workflow), 1, 'At least a single workflow is expected')

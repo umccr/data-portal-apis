@@ -8,7 +8,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class SequenceTestCase(TestCase):
+class LibraryRunTestCase(TestCase):
     def setUp(self):
         logger.info('Create Object data')
         library_run_1 = LibraryRun.objects.create(
@@ -57,6 +57,7 @@ class SequenceTestCase(TestCase):
             end_status='Succeeded'
         )
         library_run_3.workflows.add(workflow_3, workflow_2)
+        library_run_2.workflows.add(workflow_2)
 
     def test_get_sequence(self):
         logger.info("Test get success sequence table")
@@ -78,7 +79,6 @@ class SequenceTestCase(TestCase):
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for uniqueness')
 
-    def test_get_all_workflow_by_library_id(self):
-        logger.info('Test get library from workflow keyword')
-        library = LibraryRun.objects.get_library_by_workflow_keyword(end_status='Succeeded', type_name="TUMOR_NORMAL")
-        self.assertEqual(len(library), 1, 'At least a single workflow is expected')
+    def test_get_library_run_by_keyword(self):
+        result = LibraryRun.objects.get_by_keyword(library_id="L2000002", end_status="Failed")
+        self.assertEqual(len(result), 1, 'At least a single libraryrun is expected')

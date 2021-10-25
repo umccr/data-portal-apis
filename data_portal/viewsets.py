@@ -454,12 +454,17 @@ class WorkflowViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
+        # Workflow model keyword
         sequence_run = self.request.query_params.get('sequence_run', None)
         sequence = self.request.query_params.get('sequence', None)
         run = self.request.query_params.get('run', None)
         sample_name = self.request.query_params.get('sample_name', None)
         type_name = self.request.query_params.get('type_name', None)
         end_status = self.request.query_params.get('end_status', None)
+
+        # Libraryrun model keyword
+        library_id = request.query_params.get('library_id', None)
+
         return Workflow.objects.get_by_keyword(
             sequence_run=sequence_run,
             sequence=sequence,
@@ -467,23 +472,8 @@ class WorkflowViewSet(ReadOnlyModelViewSet):
             sample_name=sample_name,
             type_name=type_name,
             end_status=end_status,
-        )
-
-    @action(detail=False, methods=['get'])
-    def by_library_id(self, request):
-
-        library_id = request.query_params.get('library_id', None)
-
-        workflow_qs = Workflow.objects.get_workflow_by_library_id(
             library_id=library_id,
         )
-
-        paginator = StandardResultsSetPagination()
-
-        page = paginator.paginate_queryset(queryset=workflow_qs, request=request)
-        serializer = WorkflowSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
 
 
 class PairingViewSet(ViewSet):
@@ -593,6 +583,7 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     search_fields = LIBRARY_RUN_SEARCH_FIELDS
 
     def get_queryset(self):
+        # From Library model
         library_id = self.request.query_params.get('library_id', None)
         instrument_run_id = self.request.query_params.get('instrument_run_id', None)
         run_id = self.request.query_params.get('run_id', None)
@@ -602,6 +593,10 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
         qc_pass = self.request.query_params.get('qc_pass', None)
         qc_status = self.request.query_params.get('qc_status', None)
         valid_for_analysis = self.request.query_params.get('valid_for_analysis', None)
+
+        # From Workflow model
+        type_name = self.request.query_params.get('type_name', None)
+        end_status = self.request.query_params.get('end_status', None)
 
         return LibraryRun.objects.get_by_keyword(
             library_id=library_id,
@@ -613,21 +608,6 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
             qc_pass=qc_pass,
             qc_status=qc_status,
             valid_for_analysis=valid_for_analysis,
-        )
-
-    @action(detail=False, methods=['get'])
-    def by_workflow(self, request):
-
-        type_name = self.request.query_params.get('type_name', None)
-        end_status = self.request.query_params.get('end_status', None)
-
-        lib_run_qs = LibraryRun.objects.get_library_by_workflow_keyword(
             type_name=type_name,
             end_status=end_status,
         )
-        paginator = StandardResultsSetPagination()
-
-        page = paginator.paginate_queryset(queryset=lib_run_qs, request=request)
-        serializer = WorkflowSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
