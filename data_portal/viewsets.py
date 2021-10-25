@@ -593,6 +593,8 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     search_fields = LIBRARY_RUN_SEARCH_FIELDS
 
     def get_queryset(self):
+
+        # From Library model
         library_id = self.request.query_params.get('library_id', None)
         instrument_run_id = self.request.query_params.get('instrument_run_id', None)
         run_id = self.request.query_params.get('run_id', None)
@@ -602,6 +604,10 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
         qc_pass = self.request.query_params.get('qc_pass', None)
         qc_status = self.request.query_params.get('qc_status', None)
         valid_for_analysis = self.request.query_params.get('valid_for_analysis', None)
+
+        # From Workflow model
+        type_name = self.request.query_params.get('type_name', None)
+        end_status = self.request.query_params.get('end_status', None)
 
         return LibraryRun.objects.get_by_keyword(
             library_id=library_id,
@@ -613,32 +619,6 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
             qc_pass=qc_pass,
             qc_status=qc_status,
             valid_for_analysis=valid_for_analysis,
-        )
-
-    @action(detail=False, methods=['get'])
-    def by_workflow(self, request):
-
-        # From Library model
-        library_id = self.request.query_params.get('library_id', None)
-        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
-        run_id = self.request.query_params.get('run_id', None)
-        lane = self.request.query_params.get('lane', None)
-
-        # From Workflow model
-        type_name = self.request.query_params.get('type_name', None)
-        end_status = self.request.query_params.get('end_status', None)
-
-        lib_run_qs = LibraryRun.objects.get_library_by_workflow_keyword(
-            library_id=library_id,
-            instrument_run_id=instrument_run_id,
-            run_id=run_id,
-            lane=lane,
             type_name=type_name,
             end_status=end_status,
         )
-        paginator = StandardResultsSetPagination()
-
-        page = paginator.paginate_queryset(queryset=lib_run_qs, request=request)
-        serializer = LibraryRunModelSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-

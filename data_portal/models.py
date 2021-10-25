@@ -1075,27 +1075,6 @@ class LibraryRunManager(models.Manager):
         if valid_for_analysis:
             qs = qs.filter(valid_for_analysis__iexact=valid_for_analysis)
 
-        return qs
-
-    def get_library_by_workflow_keyword(self, **kwargs):
-        qs: QuerySet = self.all()
-
-        instrument_run_id = kwargs.get('instrument_run_id', None)
-        if instrument_run_id:
-            qs = qs.filter(instrument_run_id__iexact=instrument_run_id)
-
-        library_id = kwargs.get('library_id', None)
-        if library_id:
-            qs = qs.filter(library_id__iexact=library_id)
-
-        lane = kwargs.get('lane', None)
-        if lane:
-            qs = qs.filter(lane__iexact=lane)
-
-        run_id = kwargs.get('run_id', None)
-        if run_id:
-            qs = qs.filter(run_id__iexact=run_id)
-
         type_name = kwargs.get('type_name', None)
         if type_name:
             qs = qs.filter(workflows__type_name__iexact=type_name)

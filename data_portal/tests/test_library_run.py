@@ -58,6 +58,7 @@ class LibraryRunTestCase(TestCase):
         )
         library_run_3.workflows.add(workflow_3, workflow_2)
         library_run_2.workflows.add(workflow_2)
+
     def test_get_sequence(self):
         logger.info("Test get success sequence table")
         get_complete_sequence = LibraryRun.objects.get(library_id='L2000002')
@@ -78,8 +79,6 @@ class LibraryRunTestCase(TestCase):
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for uniqueness')
 
-
-    def test_get_library_run_workflow_link(self):
-
-        result = LibraryRun.objects.get_library_by_workflow_keyword(library_id="L2000002",end_status="Failed")
+    def test_get_library_run_by_keyword(self):
+        result = LibraryRun.objects.get_by_keyword(library_id="L2000002", end_status="Failed")
         self.assertEqual(len(result), 1, 'At least a single libraryrun is expected')
