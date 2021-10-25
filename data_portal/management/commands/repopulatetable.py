@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """sequence
 
-Meant to run as offline tool to repopulate tables from different.
+Meant to run to repopulate missing values in table.
 
 Options:
     sequence: Populate sequence table from sequencerun table
