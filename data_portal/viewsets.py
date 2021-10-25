@@ -463,7 +463,7 @@ class WorkflowViewSet(ReadOnlyModelViewSet):
         end_status = self.request.query_params.get('end_status', None)
 
         # Libraryrun model keyword
-        library_id = request.query_params.get('library_id', None)
+        library_id = self.request.query_params.get('library_id', None)
 
         return Workflow.objects.get_by_keyword(
             sequence_run=sequence_run,
