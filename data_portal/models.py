@@ -864,13 +864,10 @@ class WorkflowManager(models.Manager):
         if end_status:
             qs = qs.filter(end_status__iexact=end_status)
 
-        return qs
-
-    def get_workflow_by_library_id(self, **kwargs):
-
+        # keyword from libraryrun model
         library_id = kwargs.get('library_id', None)
-
-        qs: QuerySet = self.filter(libraryrun__library_id__iexact=library_id)
+        if library_id:
+            qs = qs.filter(libraryrun__library_id__iexact=library_id)
 
         return qs
 
