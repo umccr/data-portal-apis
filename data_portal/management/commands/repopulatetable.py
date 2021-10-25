@@ -33,7 +33,7 @@ TRUNCATE_SEQUENCE_TABLE_SQL = """
 TRUNCATE TABLE data_portal_sequence;
 """
 
-TAKE_LATEST_INTRUMENT_RUN_ID_DATA_SQL = """
+QUERY_LATEST_INTRUMENT_RUN_ID_DATA_SQL = """
 SELECT date_modified,
     flowcell_barcode,
     gds_folder_path,
@@ -53,7 +53,7 @@ FROM   data_portal.data_portal_sequencerun sequencerun
             AND sequencerun.date_modified = last_sequencerun.maxdate 
 """
 
-TAKE_INITIAL_INTRUMENT_RUN_ID_DATE_SQL = """
+QUERY_INITIAL_INTRUMENT_RUN_ID_DATE_SQL = """
 SELECT Min(date_modified) AS mindate
 FROM   data_portal.data_portal_sequencerun
 WHERE  instrument_run_id = %s
@@ -171,32 +171,37 @@ class Command(BaseCommand):
 
         if opt_table == "sequence":
             logger.info("Sequence table selected")
+
             with connection.cursor() as cursor:
+
+                # Reset existing data
                 logger.info("Truncate sequence table")
                 cursor.execute(TRUNCATE_SEQUENCE_TABLE_SQL)
 
+                # Fetch latest data of instrument_run_id
                 logger.info("Fetch latest data of instrument_run_id")
-                cursor.execute(TAKE_LATEST_INTRUMENT_RUN_ID_DATA_SQL)
+                cursor.execute(QUERY_LATEST_INTRUMENT_RUN_ID_DATA_SQL)
                 latest_data = cursor.fetchall()
 
                 logger.info("Iterate each latest data")
                 for row in latest_data:
-                    logger.info("Destructuring varibles for each row")
+                    # Destructuring varibles for each row
                     end_time, flowcell_barcode, gds_folder_path, \
                     gds_volume_name, instrument_run_id, reagent_barcode, \
                     run_id, sample_sheet_name, status = row
 
-                    logger.info(f"Fetch start_time for {instrument_run_id}")
-                    cursor.execute(TAKE_INITIAL_INTRUMENT_RUN_ID_DATE_SQL,
+                    # Fetch start_time of sequence
+                    cursor.execute(QUERY_INITIAL_INTRUMENT_RUN_ID_DATE_SQL,
                                    [instrument_run_id])
                     start_time = cursor.fetchone()[0]
 
+                    # Check if sequence has ended and end_time is eligibled to be recorded
                     status = SequenceStatus.from_seq_run_status(status)
                     if status not in [SequenceStatus.SUCCEEDED, SequenceStatus.FAILED]:
-                        logger.info("Sequence not finish setting end_time to None")
+                        logger.info(f"Sequence {instrument_run_id} not finish setting end_time to None")
                         end_time = None
 
-                    logger.info("Insert row to sequence table from data fetched")
+                    logger.info(f"Insert sequence {instrument_run_id} to sequence table from data fetched")
                     cursor.execute(INSERT_SEQUENCE_TABLE_SQL, [instrument_run_id,
                                                                run_id, sample_sheet_name, gds_folder_path,
                                                                gds_volume_name, reagent_barcode, flowcell_barcode,
