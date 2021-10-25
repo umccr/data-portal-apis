@@ -33,7 +33,8 @@ REDCAP_TO_PIERIAN_FIELDS = {"sub_biopsy_date":  "Date collected",
  "sub_biopsy_date": "Date Collected",
  "tdna_receivedate": "Date Received",
  "enr_patient_sex": "Gender",
- "enr_patient_ethnicity": "Ethnicity"
+ "enr_patient_ethnicity": "Ethnicity",
+ "cancer_type": "Indication"
 } 
 
 #TODO we might want to rename this lambda e.g. not recapmetadata but pierianmetadata or clinicalmetadata
@@ -84,26 +85,25 @@ def handler(event, context):
     values_in = { 'subjectid' : [d.subject_id for d in lms] }  # will search for these in redcap
     df_lab = pd.DataFrame( { 'subject_id' : [d.subject_id for d in lms] , 'library_id' : [d.library_id for d in lms] } )  # TODO check if iteration order always the same, ELSE transfer to preserved-order structure
 
-    # grab neccessary columns from redcap as a df, merge them in
-
     # dict with keys as redcap fields to retrieve, values as pieran fields to translate and output
-    # TODO we are still figuring these out - here we provide the neccessary cols
-    #TODO these should be passed
     col_redcap_pierian_mappings = REDCAP_TO_PIERIAN_FIELDS #,"enr_patient_enrol_date":"enr_patient_enrol_date","createdate":"createdate","req_request_date":"req_request_date","report_date":"report_date","req_diagnosis":"req_diagnosis" }
 
     #if event.get('source') and event.get('source') == 'googlesheet':
     #    df_redcap = redcapmetadata_srv.retrieve_metadata_googlesheet(values_in,col_redcap_pierian_mappings.keys()) 
     #else:
     #    df_redcap = redcapmetadata_srv.retrieve_metadata(values_in,col_redcap_pierian_mappings.keys()) 
-
-    df_redcap = redcapmetadata_srv.retrieve_metadata(values_in,col_redcap_pierian_mappings.keys()) 
+    cols = list(col_redcap_pierian_mappings.keys())
+    df_redcap = redcapmetadata_srv.retrieve_metadata(values_in,cols) 
+    if df_redcap.empty:
+        logger.warning("Empty dataframe came back from metadata retrieval")
+        return df_redcap
 
     # merge labmetadata and redcap frames
     df_redcap = df_redcap.rename(columns = { "subjectid": "subject_id" })
     df = df_lab.merge(df_redcap, on='subject_id', how='right')  
 
-    col_redcap_pierian_mappings["library_id"] =  "Library Id" 
-    col_redcap_pierian_mappings["subject_id"] =  "Subject Id" 
+    col_redcap_pierian_mappings["library_id"] =  "Library ID" 
+    col_redcap_pierian_mappings["subject_id"] =  "Participant ID" 
     df = df.rename(columns = col_redcap_pierian_mappings)
 
     # add default fields
@@ -112,6 +112,8 @@ def handler(event, context):
     df['Patient First Name'] = 'n/a'
     df['Patient Last Name'] = 'n/a'
     df['Patient Date Of Birth'] = 'n/a'
+    df['Requesting Physician First Name'] = 'n/a'
+    df['Requesting Physician Last Name'] = 'n/a'
     df['Race'] = 'n/a'
     df['Is Identified?'] = "False"
     df['Medical Record Numbers'] = 'n/a'
@@ -120,9 +122,12 @@ def handler(event, context):
     df['Tumor Mutational Burden (Mutations/Mb)'] = 'n/a'
     df['Percent Unstable Sites'] = 'n/a'
     df['Percent Tumor Cell Nuclei in the Selected Areas'] = 'n/a'
-    df['Participant ID'] = df["Subject Id"]
-    df['Accession Number'] = df["Subject Id"] + "_" + df["Library Id"]
-    df['External Specimen ID'] = df.apply (lambda row: lms.filter(library_id__iexact=row["Library Id"])[0].external_subject_id, axis=1)
+    df['Participant ID'] = df["Participant ID"]
+    df['Accession Number'] = df["Participant ID"] + "_" + df["Library ID"]
+    df['External Specimen ID'] = df.apply (lambda row: lms.filter(library_id__iexact=row["Library ID"])[0].external_subject_id, axis=1)
+    df['Indication'] = "CancerType"
+    df['Date Accessioned'] = 'n/a' #TODO this will have to be passed
+
 
     #TODO drop subject and librardy ID fields ?
     return df
