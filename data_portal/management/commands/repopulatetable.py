@@ -25,11 +25,14 @@ from data_portal.models import SequenceStatus
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-truncate_sequence_table_sql = """
+"""
+The Following is SQL statement for populating sequence.
+"""
+TRUNCATE_SEQUENCE_TABLE_SQL = """
 TRUNCATE TABLE data_portal_sequence;
 """
 
-take_latest_intrument_run_id_data_sql = """
+TAKE_LATEST_INTRUMENT_RUN_ID_DATA_SQL = """
 SELECT date_modified,
     flowcell_barcode,
     gds_folder_path,
@@ -49,14 +52,14 @@ FROM   data_portal.data_portal_sequencerun sequencerun
             AND sequencerun.date_modified = last_sequencerun.maxdate 
 """
 
-take_initial_intrument_run_id_date_sql = """
+TAKE_INITIAL_INTRUMENT_RUN_ID_DATE_SQL = """
 SELECT Min(date_modified) AS mindate
 FROM   data_portal.data_portal_sequencerun
 WHERE  instrument_run_id = %s
 GROUP  BY instrument_run_id 
 """
 
-insert_sequence_table_sql = """
+INSERT_SEQUENCE_TABLE_SQL = """
 INSERT INTO data_portal_sequence
     (
         instrument_run_id,
@@ -73,6 +76,12 @@ INSERT INTO data_portal_sequence
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 """
 
+
+"""
+The following are SQL statement for libraryRun
+"""
+
+
 class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser):
@@ -85,10 +94,10 @@ class Command(BaseCommand):
             logger.info("Sequence table selected")
             with connection.cursor() as cursor:
                 logger.info("Truncate sequence table")
-                cursor.execute(truncate_sequence_table_sql)
+                cursor.execute(TRUNCATE_SEQUENCE_TABLE_SQL)
 
                 logger.info("Fetch latest data of instrument_run_id")
-                cursor.execute(take_latest_intrument_run_id_data_sql)
+                cursor.execute(TAKE_LATEST_INTRUMENT_RUN_ID_DATA_SQL)
                 latest_data = cursor.fetchall()
 
                 logger.info("Iterate each latest data")
@@ -99,7 +108,7 @@ class Command(BaseCommand):
                     run_id, sample_sheet_name, status = row
 
                     logger.info(f"Fetch start_time for {instrument_run_id}")
-                    cursor.execute(take_initial_intrument_run_id_date_sql, \
+                    cursor.execute(TAKE_INITIAL_INTRUMENT_RUN_ID_DATE_SQL, \
                                 [instrument_run_id])
                     start_time = cursor.fetchone()[0]
                     
@@ -109,7 +118,7 @@ class Command(BaseCommand):
                         end_time=None
                     
                     logger.info("Insert row to sequence table from data fetched")
-                    cursor.execute(insert_sequence_table_sql, [instrument_run_id,
+                    cursor.execute(INSERT_SEQUENCE_TABLE_SQL, [instrument_run_id,
                         run_id, sample_sheet_name,gds_folder_path,
                         gds_volume_name, reagent_barcode, flowcell_barcode,
                         status, start_time, end_time])
@@ -117,4 +126,10 @@ class Command(BaseCommand):
                 logger.info("Repopulate sequence table complete")
 
         elif opt_table=="libraryrun":
-            print("libraryrun")
+            logger.info("LibraryRun table selected")
+
+            with connection.cursor() as cursor:
+
+
+
+
