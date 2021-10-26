@@ -1,8 +1,9 @@
 import logging
 
 from django.test import TestCase
+from django.core.exceptions import FieldError
 from data_portal.models.libraryrun import LibraryRun
-from data_portal.models.utils import filter_object_by_field_keyword
+from data_portal.models.utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -11,7 +12,7 @@ logger.setLevel(logging.INFO)
 class UtilsTestCase(TestCase):
     def setUp(self):
         logger.info('Create Object data')
-        library_run_1 = LibraryRun.objects.create(
+        _ = LibraryRun.objects.create(
             library_id="L2000001",
             instrument_run_id="191213_A00000_00000_A000000000",
             run_id="r.AAAAAAAAA",
@@ -23,12 +24,23 @@ class UtilsTestCase(TestCase):
             valid_for_analysis=True
         )
 
-    def test_get_and_filter_object_by_keyword(self):
+    def test_filter_object_by_parameter_keyword(self):
+
+        # Define full queryset as initial queryset
         qs = LibraryRun.objects.all()
 
-        field_list = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles", "coverage_yield",
-                      "qc_pass", "qc_status", "valid_for_analysis"]
-        result = filter_object_by_field_keyword(qs, field_list, {"library_id": "L2000001"})
-        print(result)
+        # Define a valid object
+        logger.info('Testing valid object')
+        keyword_object = {"library_id": "L2000001"}
+        filtered_qs = filter_object_by_parameter_keyword(qs, keyword_object)
+        self.assertEqual(len(filtered_qs), 1, "Expected a single value is returned.")
+        logger.info('Test Pass')
 
-        self.assertEqual(len(result), 1, "Expected a single value is returned.")
+        # Test with invalid query
+        logger.info('Testing with invalid object')
+        keyword_object = {"lib_id": "L2000001"}
+
+        # Field error is expected as no non matching field_name
+        with self.assertRaises(FieldError):
+            filtered_qs = filter_object_by_parameter_keyword(qs, keyword_object)
+        logger.info('Test Pass')
