@@ -1,8 +1,8 @@
 import logging
 
 from django.test import TestCase
-from data_portal.models import LibraryRun
-from data_portal.modeling.utils import filter_object_by_field_keyword
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.utils import filter_object_by_field_keyword
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

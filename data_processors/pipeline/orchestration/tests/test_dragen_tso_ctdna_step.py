@@ -6,8 +6,10 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Batch, BatchRun, Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType, \
-    LabMetadataAssay
+from data_portal.models.batch import Batch
+from data_portal.models.batchrun import BatchRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataAssay
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType

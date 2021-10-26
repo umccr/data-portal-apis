@@ -2,7 +2,8 @@ from unittest import skip
 
 from django.db.models import QuerySet
 
-from data_portal.models import LibraryRun, LabMetadata
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.labmetadata import LabMetadata
 from data_portal.tests.factories import TestConstant, LabMetadataFactory, LibraryRunFactory
 from data_processors.lims.lambdas import labmetadata
 from data_processors.pipeline.services import library_run_srv

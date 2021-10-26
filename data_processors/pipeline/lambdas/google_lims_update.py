@@ -11,7 +11,7 @@ django.setup()
 
 # ---
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import google_lims_update_step
 

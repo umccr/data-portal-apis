@@ -1,7 +1,7 @@
 import logging
 
 from django.test import TestCase
-from data_portal.models import Sequence
+from data_portal.models.sequence import Sequence
 from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger()

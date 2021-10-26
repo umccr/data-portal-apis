@@ -3,8 +3,16 @@ from typing import Dict, List
 from rest_framework import serializers
 from rest_framework.fields import empty
 
-from data_portal.models import S3Object, LIMSRow, GDSFile, Report, LabMetadata, FastqListRow, \
-    SequenceRun, Workflow, LibraryRun, Sequence
+from data_portal.models.s3object import S3Object
+from data_portal.models.limsrow import LIMSRow
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.report import Report
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.fastqlistrow import FastqListRow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequence import Sequence
 
 READ_ONLY_SERIALIZER = 'READ ONLY SERIALIZER'
 

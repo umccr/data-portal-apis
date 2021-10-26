@@ -4,7 +4,8 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import SequenceRun, FastqListRow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.fastqlistrow import FastqListRow
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

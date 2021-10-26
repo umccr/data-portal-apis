@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from django.db import transaction
 
-from data_portal.models import LabMetadata
+from data_portal.models.labmetadata import LabMetadata
 from data_processors import const
 from utils import libssm, libgdrive, libjson
 

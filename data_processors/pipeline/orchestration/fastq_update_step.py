@@ -1,6 +1,6 @@
 from typing import List
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.lambdas import fastq_list_row
 from data_processors.pipeline.services import fastq_srv
 from data_processors.pipeline.tools import liborca

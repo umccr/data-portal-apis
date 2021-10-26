@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 
-from data_portal.models import GDSFile
+from data_portal.models.gdsfile import GDSFile
 from data_processors.const import GDSEventRecord
 from utils import ica
 

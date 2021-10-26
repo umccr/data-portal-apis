@@ -9,7 +9,8 @@ from typing import List
 
 import pandas as pd
 
-from data_portal.models import LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, LabMetadataType, Workflow
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataWorkflow, LabMetadataType
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WTS_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType

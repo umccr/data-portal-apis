@@ -5,7 +5,7 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import workflow_update

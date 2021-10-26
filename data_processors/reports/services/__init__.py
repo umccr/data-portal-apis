@@ -3,7 +3,7 @@ import sys
 
 from django.core.exceptions import ObjectDoesNotExist
 
-from data_portal.models import Report
+from data_portal.models.report import Report
 from data_processors.const import ReportHelper
 from utils import libjson
 

@@ -4,8 +4,10 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when, verify
 
-from data_portal.models import SequenceRun, Workflow, BatchRun, LabMetadata, LabMetadataType, LabMetadataAssay, \
-    LabMetadataWorkflow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.batchrun import BatchRun
+from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMetadataAssay, LabMetadataWorkflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowRunEventType
 from data_processors.pipeline.lambdas import sqs_iap_event

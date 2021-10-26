@@ -6,7 +6,9 @@ See orchestration package __init__.py doc string.
 """
 from typing import List, Set
 
-from data_portal.models import Workflow, LIMSRow, LabMetadata
+from data_portal.models.workflow import Workflow
+from data_portal.models.limsrow import LIMSRow
+from data_portal.models.labmetadata import LabMetadata
 from data_processors import const
 from data_processors.pipeline.tools import liborca, libregex
 from utils import libssm, libgdrive

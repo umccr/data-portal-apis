@@ -1,4 +1,5 @@
-from data_portal.models import LabMetadata, LibraryRun
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests import factories
 from data_portal.tests.factories import TestConstant, LibraryRunFactory, DragenWgsQcWorkflowFactory
 from data_processors.pipeline.services import metadata_srv, library_run_srv

@@ -2,7 +2,7 @@ import logging
 
 from django.db import transaction
 
-from data_portal.models import GDSFile
+from data_portal.models.gdsfile import GDSFile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -1,6 +1,6 @@
 from mockito import when
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import DragenWgsQcWorkflowFactory, LabMetadataFactory
 from data_processors.pipeline.domain.pairing import Pairing, CollectionBasedFluentImpl, TNPairing
 from data_processors.pipeline.services import sequence_run_srv, workflow_srv, metadata_srv

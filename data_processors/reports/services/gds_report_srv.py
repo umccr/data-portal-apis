@@ -4,7 +4,8 @@ from typing import Tuple
 
 from django.db.models import QuerySet
 
-from data_portal.models import ReportType, GDSFile
+from data_portal.models.report import ReportType
+from data_portal.models.gdsfile import GDSFile
 from data_processors.const import ReportHelper
 from data_processors.reports.services import SUBJECT_ID_PATTERN, SAMPLE_ID_PATTERN, LIBRARY_ID_PATTERN, \
     sync_report_created, sync_report_deleted, load_report_json

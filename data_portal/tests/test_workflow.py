@@ -1,7 +1,8 @@
 import logging
 
 from django.test import TestCase
-from data_portal.models import LibraryRun, Workflow
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.workflow import Workflow
 from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger()

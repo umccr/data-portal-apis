@@ -14,7 +14,9 @@ django.setup()
 from typing import List
 import logging
 
-from data_portal.models import SequenceRun, SequenceStatus, LibraryRun
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.sequence import SequenceStatus
+from data_portal.models.libraryrun import LibraryRun
 from data_processors.pipeline.services import sequence_run_srv, notification_srv, sequence_srv, library_run_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
 from utils import libjson, ica
