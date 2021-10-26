@@ -17,8 +17,16 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, gds
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
-    Workflow, LibraryRun, Sequence
+from data_portal.models.limsrow import LIMSRow
+from data_portal.models.s3object import S3Object
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.report import Report
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.fastqlistrow import FastqListRow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequence import Sequence
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
