@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils.timezone import now
 
 from data_portal.fields import HashFieldHelper
-from data_portal.models import S3Object
+from data_portal.models.s3object import S3Object
 from data_portal.tests.factories import S3ObjectFactory
 
 logger = logging.getLogger()

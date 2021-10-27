@@ -6,7 +6,7 @@ from unittest import skip
 
 from mockito import when
 
-from data_portal.models import LIMSRow
+from data_portal.models.limsrow import LIMSRow
 from data_processors.lims.lambdas import google_lims
 from data_processors.lims.services import google_lims_srv
 from data_processors.lims.tests.case import LimsUnitTestCase, LimsIntegrationTestCase, logger

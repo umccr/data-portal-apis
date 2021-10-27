@@ -3,7 +3,7 @@ import logging
 from django.db import IntegrityError
 from django.test import TestCase
 
-from data_portal.models import GDSFile
+from data_portal.models.gdsfile import GDSFile
 from data_portal.tests.factories import GDSFileFactory
 
 logger = logging.getLogger()

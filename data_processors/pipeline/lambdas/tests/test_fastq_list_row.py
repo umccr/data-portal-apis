@@ -2,7 +2,7 @@ import json
 
 from mockito import when
 
-from data_portal.models import SequenceRun
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory
 from data_processors.pipeline.lambdas import fastq_list_row
 from data_processors.pipeline.services import fastq_srv

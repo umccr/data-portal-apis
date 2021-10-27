@@ -1,6 +1,7 @@
 import json
 
-from data_portal.models import Workflow, LibraryRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests.factories import TestConstant, LibraryRunFactory, TumorLibraryRunFactory
 from data_processors.pipeline.lambdas import tumor_normal
 from data_processors.pipeline.services import workflow_srv

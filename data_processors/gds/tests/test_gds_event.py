@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 
-from data_portal.models import GDSFile, Report
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.report import Report
 from data_portal.tests import factories
 from data_portal.tests.factories import GDSFileFactory
 from data_processors.gds.lambdas import gds_event

@@ -3,7 +3,10 @@ from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
 from mockito import verify
 
-from data_portal.models import BatchRun, Workflow, SequenceRun, LibraryRun
+from data_portal.models.batchrun import BatchRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests.factories import BatchRunFactory, WorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import notification

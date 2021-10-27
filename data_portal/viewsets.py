@@ -17,8 +17,16 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from data_processors.pipeline.domain.pairing import TNPairing
 from utils import libs3, libjson, gds
-from .models import LIMSRow, S3Object, GDSFile, Report, LabMetadata, FastqListRow, SequenceRun, \
-    Workflow, LibraryRun, Sequence
+from data_portal.models.limsrow import LIMSRow
+from data_portal.models.s3object import S3Object
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.report import Report
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.fastqlistrow import FastqListRow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequence import Sequence
 from .pagination import StandardResultsSetPagination
 from .renderers import content_renderers
 from .serializers import LIMSRowModelSerializer, LabMetadataModelSerializer, S3ObjectModelSerializer, \
@@ -549,28 +557,8 @@ class SequenceViewSet(ReadOnlyModelViewSet):
     search_fields = SEQUENCE_SEARCH_FIELDS
 
     def get_queryset(self):
-        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
-        run_id = self.request.query_params.get('run_id', None)
-        sample_sheet_name = self.request.query_params.get('sample_sheet_name', None)
-        gds_folder_path = self.request.query_params.get('gds_folder_path', None)
-        gds_volume_name = self.request.query_params.get('gds_volume_name', None)
-        reagent_barcode = self.request.query_params.get('reagent_barcode', None)
-        flowcell_barcode = self.request.query_params.get('flowcell_barcode', None)
-        status_ = self.request.query_params.get('status', None)
-        start_time = self.request.query_params.get('start_time', None)
-        end_time = self.request.query_params.get('end_time', None)
-
         return Sequence.objects.get_by_keyword(
-            instrument_run_id=instrument_run_id,
-            run_id=run_id,
-            sample_sheet_name=sample_sheet_name,
-            gds_folder_path=gds_folder_path,
-            gds_volume_name=gds_volume_name,
-            reagent_barcode=reagent_barcode,
-            flowcell_barcode=flowcell_barcode,
-            status=status_,
-            start_time=start_time,
-            end_time=end_time,
+            keywords=self.request.query_params
         )
 
 

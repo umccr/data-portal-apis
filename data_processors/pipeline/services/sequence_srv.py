@@ -3,7 +3,7 @@ import logging
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import Sequence, SequenceStatus
+from data_portal.models.sequence import Sequence, SequenceStatus
 
 # from data_processors.pipeline.tools import liborca
 

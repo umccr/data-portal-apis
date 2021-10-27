@@ -25,7 +25,7 @@ django.setup()
 import logging
 from typing import List
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
     dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step

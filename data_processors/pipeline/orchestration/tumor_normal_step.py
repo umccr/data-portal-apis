@@ -9,7 +9,9 @@ from typing import List
 
 import pandas as pd
 
-from data_portal.models import Workflow, LabMetadata, LabMetadataType, LabMetadataPhenotype, FastqListRow
+from data_portal.models.workflow import Workflow
+from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMetadataPhenotype
+from data_portal.models.fastqlistrow import FastqListRow
 from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv

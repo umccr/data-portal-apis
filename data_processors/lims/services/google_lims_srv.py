@@ -7,7 +7,7 @@ from typing import Dict
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from data_portal.models import LIMSRow
+from data_portal.models.limsrow import LIMSRow
 from utils import libdt
 
 logger = logging.getLogger(__name__)

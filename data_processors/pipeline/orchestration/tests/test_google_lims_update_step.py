@@ -4,7 +4,10 @@ from unittest import skip
 
 from django.utils.timezone import make_aware
 
-from data_portal.models import Workflow, LIMSRow, LabMetadata, SequenceRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.limsrow import LIMSRow
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, WorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.orchestration import google_lims_update_step

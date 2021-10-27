@@ -1,4 +1,5 @@
-from data_portal.models import LibraryRun, Workflow
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import TumorNormalWorkflowFactory, LibraryRunFactory, TumorLibraryRunFactory, \
     LabMetadataFactory, TumorLabMetadataFactory
 from data_processors.pipeline.services import notification_srv, library_run_srv

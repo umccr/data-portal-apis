@@ -8,7 +8,7 @@ import pandas as pd
 from django.test import TransactionTestCase
 from mockito import when
 
-from data_portal.models import LabMetadata
+from data_portal.models.labmetadata import LabMetadata
 from data_processors.lims.lambdas import labmetadata
 from data_processors.lims.services import labmetadata_srv
 from data_processors.lims.tests.case import LimsIntegrationTestCase, logger

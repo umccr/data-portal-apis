@@ -1,4 +1,4 @@
-from data_portal.models import Sequence, SequenceStatus
+from data_portal.models.sequence import Sequence, SequenceStatus
 from data_portal.tests.factories import SequenceFactory
 from data_processors.pipeline.services import sequence_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger

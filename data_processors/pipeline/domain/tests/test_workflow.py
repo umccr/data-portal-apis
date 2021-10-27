@@ -1,6 +1,6 @@
 import json
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_portal.tests import factories
 from data_processors.pipeline.domain.workflow import WorkflowRule, WorkflowType, SecondaryAnalysisHelper, \
     PrimaryDataHelper

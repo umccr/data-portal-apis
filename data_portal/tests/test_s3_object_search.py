@@ -12,7 +12,7 @@ from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from data_portal.models import S3ObjectManager
+from data_portal.models.s3object import S3ObjectManager
 from data_portal.tests.factories import S3ObjectFactory, LIMSRowFactory, S3LIMSFactory
 
 

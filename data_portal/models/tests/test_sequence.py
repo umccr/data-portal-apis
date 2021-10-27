@@ -1,7 +1,7 @@
 import logging
 
 from django.test import TestCase
-from data_portal.models import Sequence
+from data_portal.models.sequence import Sequence
 from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger()
@@ -56,3 +56,8 @@ class SequenceTestCase(TestCase):
         response = self.client.get('/sequence/?instrument_run_id=191213_A00000_00000_A000000000&run_id=r.AAAAAA')
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for unique data')
+
+        logger.info('Check if wrong parameter')
+        response = self.client.get('/sequence/?lib_id=LBR0001')
+        results_response = response.data['results']
+        self.assertEqual(len(results_response), 0, 'No result is expected for wrong parameter')

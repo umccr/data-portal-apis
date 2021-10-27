@@ -3,7 +3,7 @@ import logging
 from django.db import IntegrityError
 from django.test import TestCase
 
-from data_portal.models import SequenceRun
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory
 
 logger = logging.getLogger()

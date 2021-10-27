@@ -1,4 +1,4 @@
-from data_portal.models import ReportType
+from data_portal.models.report import ReportType
 from data_processors.reports.services import gds_report_srv
 from data_processors.reports.tests.case import ReportUnitTestCase, logger
 

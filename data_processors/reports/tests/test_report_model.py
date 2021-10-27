@@ -3,7 +3,8 @@ import logging
 from django.db.models import QuerySet
 from django.test import override_settings
 
-from data_portal.models import Report, ReportType, S3Object
+from data_portal.models.report import Report, ReportType
+from data_portal.models.s3object import S3Object
 from data_portal.tests import factories
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 

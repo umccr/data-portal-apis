@@ -14,7 +14,7 @@ django.setup()
 import copy
 import logging
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler

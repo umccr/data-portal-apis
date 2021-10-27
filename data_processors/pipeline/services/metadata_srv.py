@@ -15,8 +15,9 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow, \
-    LibraryRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
+from data_portal.models.libraryrun import LibraryRun
 from data_processors.pipeline.services import workflow_srv
 
 logger = logging.getLogger(__name__)

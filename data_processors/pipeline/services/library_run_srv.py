@@ -6,7 +6,8 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models import LibraryRun, Workflow
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import metadata_srv
 from data_processors.pipeline.tools import liborca, libregex
 

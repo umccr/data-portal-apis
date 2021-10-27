@@ -4,7 +4,10 @@ from unittest import skip
 
 from django.utils.timezone import make_aware
 
-from data_portal.models import Batch, BatchRun, Workflow, LabMetadata, LabMetadataPhenotype, LabMetadataType
+from data_portal.models.batch import Batch
+from data_portal.models.batchrun import BatchRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
 from data_portal.tests.factories import WorkflowFactory
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType

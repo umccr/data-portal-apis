@@ -10,7 +10,7 @@ See orchestration package __init__.py doc string.
 from abc import ABC, abstractmethod
 from typing import List
 
-from data_portal.models import Workflow
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.orchestration import tumor_normal_step
 from data_processors.pipeline.services import workflow_srv, sequence_run_srv, metadata_srv

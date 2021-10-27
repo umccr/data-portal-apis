@@ -5,8 +5,10 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import LabMetadata, FastqListRow, Workflow, LabMetadataPhenotype, LabMetadataType, \
-    LabMetadataWorkflow, LibraryRun
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
+from data_portal.models.fastqlistrow import FastqListRow
+from data_portal.models.workflow import Workflow
+from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory, LibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator

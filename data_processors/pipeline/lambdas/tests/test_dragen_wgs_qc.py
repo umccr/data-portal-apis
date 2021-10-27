@@ -5,7 +5,9 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from mockito import when
 
-from data_portal.models import Workflow, SequenceRun, LibraryRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import dragen_wgs_qc

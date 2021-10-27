@@ -4,7 +4,9 @@ from django.db.models import QuerySet
 from django.utils.timezone import make_aware
 from mockito import when, unstub
 
-from data_portal.models import S3Object, Report, ReportType, GDSFile
+from data_portal.models.s3object import S3Object
+from data_portal.models.report import Report, ReportType
+from data_portal.models.gdsfile import GDSFile
 from data_portal.tests.factories import GDSFileFactory
 from data_processors.const import ReportHelper
 from data_processors.reports.lambdas import report_event

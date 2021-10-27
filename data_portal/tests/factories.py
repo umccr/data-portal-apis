@@ -5,8 +5,20 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
-from data_portal.models import S3Object, LIMSRow, S3LIMS, GDSFile, SequenceRun, Workflow, Batch, BatchRun, \
-    Report, ReportType, LabMetadata, Sequence, SequenceStatus, LibraryRun, LabMetadataPhenotype
+from data_portal.models.s3object import S3Object
+from data_portal.models.limsrow import LIMSRow
+from data_portal.models.s3lims import S3LIMS
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
+from data_portal.models.batch import Batch
+from data_portal.models.batchrun import BatchRun
+from data_portal.models.report import Report, ReportType
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.sequence import Sequence, SequenceStatus
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.labmetadata import LabMetadataPhenotype
+
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
