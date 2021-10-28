@@ -4,11 +4,23 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
-from data_portal import views
 from .routers import OptionalSlashDefaultRouter
-from .viewsets import LIMSRowViewSet, S3ObjectViewSet, BucketViewSet, SubjectViewSet, \
-    RunViewSet, PresignedUrlViewSet, GDSFileViewSet, ReportViewSet, LabMetadataViewSet, FastqListRowViewSet, \
-    SequenceRunViewSet, WorkflowViewSet, PairingViewSet, LibraryRunViewSet, SequenceViewSet
+from data_portal import views
+from data_portal.viewsets.limsrow import LIMSRowViewSet
+from data_portal.viewsets.s3object import S3ObjectViewSet
+from data_portal.viewsets.bucket import BucketViewSet
+from data_portal.viewsets.subject import SubjectViewSet
+from data_portal.viewsets.run import RunViewSet
+from data_portal.viewsets.presignedurl import PresignedUrlViewSet
+from data_portal.viewsets.gdsfile import GDSFileViewSet
+from data_portal.viewsets.report import ReportViewSet
+from data_portal.viewsets.labmetadata import LabMetadataViewSet
+from data_portal.viewsets.fastqlistrow import FastqListRowViewSet
+from data_portal.viewsets.sequencerun import SequenceRunViewSet
+from data_portal.viewsets.workflow import WorkflowViewSet
+from data_portal.viewsets.pairing import PairingViewSet
+from data_portal.viewsets.libraryrun import LibraryRunViewSet
+from data_portal.viewsets.sequence import SequenceViewSet
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
