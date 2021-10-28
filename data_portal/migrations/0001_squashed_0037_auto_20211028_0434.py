@@ -10,10 +10,12 @@ import uuid
 # Move them and any dependencies into this file, then update the
 # RunPython operations to refer to the local versions:
 # data_portal.migrations.0012_auto_20200123_0655
+def process_unique_hash(apps, schema_editor):
+    S3Object = apps.get_model('data_portal', 'S3Object')
+    for s3 in S3Object.objects.all():
+        s3.save()
 
 class Migration(migrations.Migration):
-
-    replaces = [('data_portal', '0001_initial'), ('data_portal', '0002_auto_20190829_0112'), ('data_portal', '0003_limsrow_notes'), ('data_portal', '0004_auto_20190829_0117'), ('data_portal', '0005_auto_20190926_0254'), ('data_portal', '0006_auto_20191001_0625'), ('data_portal', '0007_auto_20191002_0603'), ('data_portal', '0008_auto_20191015_2337'), ('data_portal', '0009_auto_20191016_0050'), ('data_portal', '0010_auto_20200123_0644'), ('data_portal', '0011_auto_20200123_0649'), ('data_portal', '0012_auto_20200123_0655'), ('data_portal', '0013_auto_20200123_0705'), ('data_portal', '0014_gdsfile'), ('data_portal', '0015_auto_20200416_0528'), ('data_portal', '0016_sequencerun'), ('data_portal', '0017_workflow'), ('data_portal', '0018_auto_20201007_0602'), ('data_portal', '0019_batchrun_notified'), ('data_portal', '0020_report'), ('data_portal', '0021_auto_20210319_0057'), ('data_portal', '0020_fastqlistrow'), ('data_portal', '0022_merge_20210411_0614'), ('data_portal', '0023_auto_20210416_1254'), ('data_portal', '0024_auto_20210422_0634'), ('data_portal', '0025_auto_20210427_0649'), ('data_portal', '0026_auto_20210430_1053'), ('data_portal', '0023_labmetadata'), ('data_portal', '0027_merge_0023_labmetadata_0026_auto_20210430_1053'), ('data_portal', '0028_alter_labmetadata_id'), ('data_portal', '0029_alter_report_type'), ('data_portal', '0030_alter_report_type'), ('data_portal', '0031_alter_report_type'), ('data_portal', '0030_auto_20210621_0440'), ('data_portal', '0032_merge_0030_auto_20210621_0440_0031_alter_report_type'), ('data_portal', '0033_auto_20210928_0456'), ('data_portal', '0034_sequence'), ('data_portal', '0035_libraryrun'), ('data_portal', '0036_libraryrun_workflows'), ('data_portal', '0037_auto_20211028_0434')]
 
     initial = True
 
@@ -90,7 +92,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RunPython(
-            code=data_portal.migrations.0012_auto_20200123_0655.process_unique_hash,
+            code=process_unique_hash,
         ),
         migrations.AlterField(
             model_name='s3object',
