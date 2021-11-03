@@ -16,10 +16,8 @@ logger.setLevel(logging.INFO)
 #TODO RENAME CLINICALMETADAT SERVICE?
 
 def download_redcap_project_data(fields_of_interest: list): #(subjectid_list: dict) -> pd.DataFrame:
-    #redcap_api_key = libssm.get_secret(const.REDCAP_API_KEY) 
-    #redcap_api_url = libssm.get_secret(const.REDCAP_API_URL)   #'https://redcap.healthinformatics.unimelb.edu.au/api/'
-    redcap_api_key = 'PUTYOURSHERE' 
-    redcap_api_url = 'https://redcap.healthinformatics.unimelb.edu.au/api/'
+    redcap_api_key = libssm.get_secret(const.REDCAP_API_KEY_ANDREITEST)
+    redcap_api_url = libssm.get_secret(const.REDCAP_API_URL)
 
     project = Project(redcap_api_url, redcap_api_key)
     if(fields_of_interest):

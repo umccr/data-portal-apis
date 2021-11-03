@@ -10,7 +10,8 @@ from abc import ABC
 GDRIVE_SERVICE_ACCOUNT = "/umccr/google/drive/lims_service_account_json"
 TRACKING_SHEET_ID = "/umccr/google/drive/tracking_sheet_id"
 LIMS_SHEET_ID = "/umccr/google/drive/lims_sheet_id"
-
+REDCAP_API_KEY_ANDREITEST = "/umccr/redcap/api_key_andreitest"
+REDCAP_API_URL = "/umccr/redcap/api_url"
 
 class ReportHelper(ABC):
     """Abstract helper for Report pipeline"""

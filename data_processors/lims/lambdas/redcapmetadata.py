@@ -37,8 +37,6 @@ REDCAP_TO_PIERIAN_FIELDS = {"sub_biopsy_date":  "Date collected",
  "cancer_type": "Indication"
 } 
 
-#TODO we might want to rename this lambda e.g. not recapmetadata but pierianmetadata or clinicalmetadata
-
 def _halt(msg):
     logger.error(msg)
     return {
@@ -126,8 +124,12 @@ def handler(event, context):
     df['Accession Number'] = df["Participant ID"] + "_" + df["Library ID"]
     df['External Specimen ID'] = df.apply (lambda row: lms.filter(library_id__iexact=row["Library ID"])[0].external_subject_id, axis=1)
     df['Indication'] = "CancerType"
-    df['Date Accessioned'] = 'n/a' #TODO this will have to be passed
 
+    date_accessioned = event.get('date_accessioned')
+    if date_accessioned:
+        df['Date Accessioned'] = date_accessioned
+    else:
+        df['Date Accessioned'] = 'n/a'
 
-    #TODO drop subject and librardy ID fields ?
+    # drop subject and librardy ID fields ?
     return df
