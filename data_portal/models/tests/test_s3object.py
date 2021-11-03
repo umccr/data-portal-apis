@@ -15,7 +15,7 @@ class S3ObjectTests(TestCase):
 
     def test_unique_hash(self):
         """
-        python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique_hash
+        python manage.py test data_portal.models.tests.test_s3object.S3ObjectTests.test_unique_hash
         """
         bucket = 'unique-hash-bucket'
         key = 'start/umccrise/pcgr/pcgr.html'
@@ -34,7 +34,7 @@ class S3ObjectTests(TestCase):
 
     def test_get_by_unique_hash(self):
         """
-        python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_get_by_unique_hash
+        python manage.py test data_portal.models.tests.test_s3object.S3ObjectTests.test_get_by_unique_hash
         """
         mock_s3_object: S3Object = S3ObjectFactory()
 

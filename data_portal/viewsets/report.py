@@ -36,4 +36,3 @@ class ReportViewSet(ReadOnlyModelViewSet):
             library=library,
             type=type_,
         )
-

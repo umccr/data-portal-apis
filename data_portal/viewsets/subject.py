@@ -10,13 +10,14 @@ from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from utils import libs3
 from data_portal.models.limsrow import LIMSRow
 from data_portal.models.s3object import S3Object
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer
+from utils import libs3
 
 logger = logging.getLogger()
+
 
 class SubjectViewSet(ReadOnlyModelViewSet):
     queryset = LIMSRow.objects.values_list('subject_id', named=True).filter(subject_id__isnull=False).distinct()

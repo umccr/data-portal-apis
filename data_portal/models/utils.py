@@ -1,4 +1,4 @@
-from django.db.models import QuerySet, Q, Value
+from django.db.models import QuerySet, Q
 
 
 def filter_object_by_parameter_keyword(qs, keyword_object) -> QuerySet:

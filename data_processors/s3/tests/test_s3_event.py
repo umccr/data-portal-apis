@@ -2,13 +2,12 @@ import json
 import logging
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils.timezone import now
 from django.test import override_settings
+from django.utils.timezone import now
 
-from data_portal.models.limsrow import LIMSRow
-from data_portal.models.s3object import S3Object
-from data_portal.models.s3lims import S3LIMS
+from data_portal.models.limsrow import LIMSRow, S3LIMS
 from data_portal.models.report import Report
+from data_portal.models.s3object import S3Object
 from data_portal.tests import factories
 from data_processors.s3.lambdas import s3_event
 from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase, logger

@@ -10,18 +10,18 @@ from collections import defaultdict
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from data_portal.viewsets.utils import _error_response, _gds_file_recs_to_presign_resps, _presign_response,\
+from data_portal.viewsets.utils import _error_response, _gds_file_recs_to_presign_resps, _presign_response, \
     _presign_list_response
-
 from utils import gds
 
 logger = logging.getLogger()
+
 
 class PresignedUrlViewSet(ViewSet):
 
     def create(self, request):
         # payload is expected to be simple list of gds://... urls
-        payload = request.data
+        payload = self.request.data
         # TODO: check payload and filter/report unrecognised/unsupported URLs
 
         # parse file GDS urls into volume and path components

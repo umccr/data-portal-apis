@@ -1,12 +1,13 @@
 import logging
-from django.core.exceptions import FieldError
 
+from django.core.exceptions import FieldError
 from django.db import models
 from django.db.models import QuerySet
 
 from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
+
 
 class SequenceStatus(models.TextChoices):
     STARTED = "started"
@@ -57,7 +58,7 @@ class SequenceManager(models.Manager):
         keywords = kwargs.get('keywords', None)
         if keywords:
             try:
-                qs = filter_object_by_parameter_keyword(qs,keywords)
+                qs = filter_object_by_parameter_keyword(qs, keywords)
             except FieldError:
                 qs = self.none()
 

@@ -1,14 +1,14 @@
-
 import logging
 
 from django.db import models
-from django.db.models import  QuerySet
+from django.db.models import QuerySet
 
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.sequencerun import SequenceRun
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 
 logger = logging.getLogger(__name__)
+
 
 class WorkflowManager(models.Manager):
 

@@ -6,6 +6,7 @@ from data_portal.models.batch import Batch
 
 logger = logging.getLogger(__name__)
 
+
 class BatchRun(models.Model):
     id = models.BigAutoField(primary_key=True)
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)

@@ -1,10 +1,13 @@
 import logging
+from typing import Union
 
 from django.db import models
 from django.db.models import QuerySet
 
+from data_portal.models.s3object import S3Object
 
 logger = logging.getLogger(__name__)
+
 
 class LIMSRowManager(models.Manager):
 
@@ -69,3 +72,65 @@ class LIMSRow(models.Model):
     # In short, these attr values should be part of the S3 Object key.
     # This is the common logic used for both persisting s3 and lims.
     S3_LINK_ATTRS = ('subject_id', 'sample_id')
+
+
+class S3LIMS(models.Model):
+    """TODO mark to be deprecated, see https://github.com/umccr/data-portal-apis/issues/343
+    Models the association between a S3 object and a LIMS row
+    """
+
+    class Meta:
+        unique_together = ['s3_object', 'lims_row']
+
+    id = models.BigAutoField(primary_key=True)
+    s3_object = models.ForeignKey(S3Object, on_delete=models.CASCADE)
+    lims_row = models.ForeignKey(LIMSRow, on_delete=models.CASCADE)
+
+
+class Configuration(models.Model):
+    """TODO this might as well be deprecated, not using anywhere
+    Model that stores a configuration value
+    Currently not used; but could be used for cases when we want to record the state of some data - e.g. LIMS file.
+    """
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True)
+    value = models.TextField()
+
+    @staticmethod
+    def get(name: str) -> Union['Configuration', None]:
+        """
+        Get configuration object by name. None if not exists
+        """
+        query_set = Configuration.objects.filter(name=name)
+        if query_set.exists():
+            return query_set.get()
+        return None
+
+    @staticmethod
+    def set(name: str, val: str) -> None:
+        """
+        Set config value by name. Will create one if not exist.
+        """
+        config = Configuration.get(name)
+
+        if config:
+            config.value = val
+        else:
+            config = Configuration(name=name, value=val)
+
+        config.save()
+
+    @staticmethod
+    def same_or_update(name: str, val: str):
+        """
+        Compares val with current config value if exist.
+        Update if config not exist or the two values are not equal.
+        :return True if two values are same; False if they are different or current val does not exist.
+        """
+        config = Configuration.get(name)
+
+        if config is None or config.value != val:
+            Configuration.set(name, val)
+            return False
+
+        return True

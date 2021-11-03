@@ -1,4 +1,3 @@
-
 import logging
 import random
 
@@ -9,6 +8,7 @@ from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
 
 logger = logging.getLogger(__name__)
+
 
 class S3ObjectManager(models.Manager):
     """
@@ -100,4 +100,3 @@ class S3Object(models.Model):
     DEFAULT_SORT_COL = 'last_modified_date'
 
     objects = S3ObjectManager()
-

@@ -21,7 +21,7 @@ import logging
 from django.core.management import BaseCommand, CommandParser
 from django.db import connection
 
-from data_portal.models import SequenceStatus
+from data_portal.models.sequence import SequenceStatus
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

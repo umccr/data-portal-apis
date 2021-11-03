@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 
 logger = logging.getLogger(__name__)
 
+
 class SequenceRunManager(models.Manager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:

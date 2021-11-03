@@ -15,12 +15,12 @@ from data_portal.serializers import LIMSRowModelSerializer
 
 logger = logging.getLogger()
 
-
 # TODO to be refactored
 LIMS_SEARCH_ORDER_FIELDS = [
     'subject_id', 'timestamp', 'type', 'run', 'sample_id', 'external_subject_id', 'results', 'phenotype',
     'library_id', 'external_sample_id', 'project_name', 'illumina_id',
 ]
+
 
 class LIMSRowViewSet(ReadOnlyModelViewSet):
     serializer_class = LIMSRowModelSerializer

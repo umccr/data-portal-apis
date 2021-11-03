@@ -15,6 +15,7 @@ from data_portal.serializers import FastqListRowSerializer
 
 logger = logging.getLogger()
 
+
 class FastqListRowViewSet(ReadOnlyModelViewSet):
     serializer_class = FastqListRowSerializer
     pagination_class = StandardResultsSetPagination

@@ -16,6 +16,7 @@ from data_portal.serializers import SequenceSerializer
 SEQUENCE_SEARCH_FIELDS = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
                           "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time", "end_time"]
 
+
 class SequenceViewSet(ReadOnlyModelViewSet):
     serializer_class = SequenceSerializer
     pagination_class = StandardResultsSetPagination

@@ -6,6 +6,7 @@ from django.db.models.functions import Concat
 
 logger = logging.getLogger(__name__)
 
+
 class LabMetadataType(models.TextChoices):
     CT_DNA = "ctDNA"
     CT_TSO = "ctTSO"

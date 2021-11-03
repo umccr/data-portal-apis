@@ -5,9 +5,10 @@ from django.db import models
 from django.db.models import QuerySet
 
 from data_portal.models.labmetadata import LabMetadata
-from data_portal.models.sequencerun import SequenceRun 
+from data_portal.models.sequencerun import SequenceRun
 
 logger = logging.getLogger(__name__)
+
 
 class FastqListRowManager(models.Manager):
 

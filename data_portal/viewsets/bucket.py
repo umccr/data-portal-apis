@@ -15,6 +15,7 @@ from data_portal.serializers import BucketIdSerializer
 
 logger = logging.getLogger()
 
+
 class BucketViewSet(ReadOnlyModelViewSet):
     queryset = S3Object.objects.values_list('bucket', named=True).order_by('bucket').distinct()
     serializer_class = BucketIdSerializer

@@ -15,7 +15,7 @@ class FastqListRowTests(TestCase):
 
     def test_retrieve_by_project_owner(self):
         """
-        python manage.py test data_portal.tests.test_fastq_list_row.FastqListRowTests.test_retrieve_by_project_owner
+        python manage.py test data_portal.models.tests.test_fastqlistrow.FastqListRowTests.test_retrieve_by_project_owner
         """
 
         mock_lib_id = "L1234567"

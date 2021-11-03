@@ -4,6 +4,7 @@ from django.db import models
 
 logger = logging.getLogger(__name__)
 
+
 class Batch(models.Model):
     class Meta:
         unique_together = ['name', 'created_by']

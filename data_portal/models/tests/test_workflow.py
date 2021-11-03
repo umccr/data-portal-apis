@@ -1,15 +1,16 @@
 import logging
 
 from django.test import TestCase
+
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class SequenceTestCase(TestCase):
+class WorkflowTestCase(TestCase):
+
     def setUp(self):
         logger.info('Create Object data')
         workflow_1 = Workflow.objects.create(

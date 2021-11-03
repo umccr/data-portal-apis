@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """viewsets module
 
@@ -13,27 +12,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from utils import gds
-
 from data_portal.models.gdsfile import GDSFile
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import GDSFileModelSerializer
+from utils import gds
 
 logger = logging.getLogger()
 
-def _gds_file_recs_to_presign_resps(gds_records: list) -> list:
-    resps = list()
-    for rec in gds_records:
-        resps.append(_gds_file_rec_to_presign_resp(rec))
-    return resps
-
-
-def _gds_file_rec_to_presign_resp(gds_file_response) -> dict:
-    return {
-        'volume': gds_file_response.volume_name,
-        'path': gds_file_response.path,
-        'presigned_url': gds_file_response.presigned_url
-    }
 
 class GDSFileViewSet(ReadOnlyModelViewSet):
     serializer_class = GDSFileModelSerializer

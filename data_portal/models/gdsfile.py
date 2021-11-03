@@ -7,6 +7,7 @@ from data_portal.fields import HashField
 
 logger = logging.getLogger(__name__)
 
+
 class GDSFileManager(models.Manager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:

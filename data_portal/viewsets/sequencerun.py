@@ -12,6 +12,7 @@ from data_portal.models.sequencerun import SequenceRun
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import SequenceRunSerializer
 
+
 class SequenceRunViewSet(ReadOnlyModelViewSet):
     serializer_class = SequenceRunSerializer
     pagination_class = StandardResultsSetPagination

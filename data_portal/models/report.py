@@ -2,13 +2,14 @@ import logging
 import uuid
 
 from django.db import models
-from django.db.models import  QuerySet
+from django.db.models import QuerySet
 
-from data_portal.models.s3object import S3Object
-from data_portal.models.gdsfile import GDSFile
 from data_portal.fields import HashField, HashFieldHelper
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.s3object import S3Object
 
 logger = logging.getLogger(__name__)
+
 
 class ReportType(models.TextChoices):
     MSI = "msi"

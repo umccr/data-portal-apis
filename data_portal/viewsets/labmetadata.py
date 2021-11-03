@@ -21,6 +21,7 @@ METADATA_SEARCH_ORDER_FIELDS = [
     'quality', 'source', 'project_name', 'project_owner', 'experiment_id', 'type', 'assay', 'workflow',
 ]
 
+
 class LabMetadataViewSet(ReadOnlyModelViewSet):
     serializer_class = LabMetadataModelSerializer
     pagination_class = StandardResultsSetPagination

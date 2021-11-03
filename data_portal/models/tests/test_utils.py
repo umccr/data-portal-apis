@@ -1,7 +1,8 @@
 import logging
 
-from django.test import TestCase
 from django.core.exceptions import FieldError
+from django.test import TestCase
+
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.utils import filter_object_by_parameter_keyword
 
@@ -9,7 +10,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class UtilsTestCase(TestCase):
+class ModelUtilsTestCase(TestCase):
+
     def setUp(self):
         logger.info('Create Object data')
         _ = LibraryRun.objects.create(
@@ -25,7 +27,6 @@ class UtilsTestCase(TestCase):
         )
 
     def test_filter_object_by_parameter_keyword(self):
-
         # Define full queryset as initial queryset
         qs = LibraryRun.objects.all()
 

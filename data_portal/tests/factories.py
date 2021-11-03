@@ -6,8 +6,7 @@ import factory
 from django.utils.timezone import now, make_aware
 
 from data_portal.models.s3object import S3Object
-from data_portal.models.limsrow import LIMSRow
-from data_portal.models.s3lims import S3LIMS
+from data_portal.models.limsrow import LIMSRow, S3LIMS
 from data_portal.models.gdsfile import GDSFile
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow

@@ -8,10 +8,10 @@ NOTE:
 from rest_framework import filters
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-
 from data_portal.models.workflow import Workflow
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import WorkflowSerializer
+
 
 class WorkflowViewSet(ReadOnlyModelViewSet):
     serializer_class = WorkflowSerializer

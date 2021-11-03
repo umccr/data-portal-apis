@@ -9,7 +9,6 @@ from datetime import datetime
 
 from django.db import InternalError
 from django.utils.http import parse_http_date_safe
-
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,10 +19,10 @@ from data_portal.pagination import StandardResultsSetPagination
 from data_portal.renderers import content_renderers
 from data_portal.serializers import S3ObjectModelSerializer
 from data_portal.viewsets.utils import _presign_response
-
-from utils import libs3
+from utils import libs3, libjson
 
 logger = logging.getLogger()
+
 
 class S3ObjectViewSet(ReadOnlyModelViewSet):
     serializer_class = S3ObjectModelSerializer
