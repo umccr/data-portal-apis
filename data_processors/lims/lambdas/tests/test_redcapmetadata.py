@@ -79,47 +79,6 @@ class RedcapUnitTests(TransactionTestCase):
         logger.info("Example output:")
         logger.info((result.to_string()))
 
-    def test_handler_nomock(self):
-        """
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_nomock
-        test without mocking: real response 
-        """
-        mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
-        mock_csv.write(mock_sheet_1.lstrip().rstrip())
-        mock_csv.seek(0)
-        mock_csv.flush()
-        make_mock_labmeta()
-
-        result = redcapmetadata.handler({
-            'library_ids': [ "L2101081","L2101089" ],
-            #    'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ]
-        }, None)
-
-        logger.info("-" * 32)
-        logger.info("Example output:")
-        logger.info((result.to_string()))
-        print(result.to_csv())
-
-    def test_handler_googlesheet(self):
-        """
-        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedcapUnitTests.test_handler_googlesheet
-        test without mocking: real response 
-        """
-        mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
-        mock_csv.write(mock_sheet_1.lstrip().rstrip())
-        mock_csv.seek(0)
-        mock_csv.flush()
-        make_mock_labmeta()
-
-        result = redcapmetadata.handler({
-                'library_ids': [ "L2101081","L2101089" ],
-                'source': 'googlesheet'
-        }, None)
-
-        logger.info("-" * 32)
-        logger.info("Example output:")
-        logger.info((result.to_string()))
-
 
 def make_mock_labmeta():
         lab_meta = LabMetadata(
@@ -211,3 +170,33 @@ def make_mock_labmeta():
 
 def get_mock_csv():
     return mock_sheet_1
+
+
+
+class RedCapIntegrationTests(LimsIntegrationTestCase):
+    # some test case to hit actual API endpoint
+    # annotate @skip to make the test cast to run through manual mean
+
+    @skip
+    def test_handler(self):
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_redcapmetadata.RedCapIntegrationTests.test_handler  
+        """
+        mock_csv = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
+        mock_csv.write(mock_sheet_1.lstrip().rstrip())
+        mock_csv.seek(0)
+        mock_csv.flush()
+        make_mock_labmeta()
+
+        result = redcapmetadata.handler({
+            'library_ids': [ "L2101081","L2101089" ],
+            #    'library_ids': [ "L2101081","L2101080","L2101089","L2101081_topup" ]
+        }, None)
+
+        logger.info("-" * 32)
+        logger.info("Example output:")
+        logger.info((result.to_string()))
+        print(result.to_csv())
+
+
+         
