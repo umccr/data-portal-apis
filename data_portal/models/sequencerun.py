@@ -2,7 +2,9 @@ import logging
 
 from django.db import models
 from django.db.models import QuerySet
+from django.core.exceptions import FieldError
 
+from .utils import filter_object_by_parameter_keyword
 logger = logging.getLogger(__name__)
 
 
@@ -11,25 +13,12 @@ class SequenceRunManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        run_id = kwargs.get('run_id', None)
-        if run_id:
-            qs = qs.filter(run_id__iexact=run_id)
-
-        name = kwargs.get('name', None)
-        if name:
-            qs = qs.filter(name__iexact=name)
-
-        run = kwargs.get('run', None)
-        if run:
-            qs = qs.filter(name__iexact=run)
-
-        instrument_run_id = kwargs.get('instrument_run_id', None)
-        if instrument_run_id:
-            qs = qs.filter(instrument_run_id__iexact=instrument_run_id)
-
-        status = kwargs.get('status', None)
-        if status:
-            qs = qs.filter(status__iexact=status)
+        keywords = kwargs.get('keywords', None)
+        if keywords:
+            try:
+                qs = filter_object_by_parameter_keyword(qs,keywords)
+            except FieldError:
+                qs = self.none()
 
         return qs
 

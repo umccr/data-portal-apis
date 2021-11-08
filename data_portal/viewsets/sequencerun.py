@@ -22,15 +22,6 @@ class SequenceRunViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
-        run_id = self.request.query_params.get('run_id', None)
-        name = self.request.query_params.get('name', None)
-        run = self.request.query_params.get('run', None)
-        instrument_run_id = self.request.query_params.get('instrument_run_id', None)
-        status_ = self.request.query_params.get('status', None)
         return SequenceRun.objects.get_by_keyword(
-            run_id=run_id,
-            name=name,
-            run=run,
-            instrument_run_id=instrument_run_id,
-            status=status_,
+            keywords=self.request.query_params
         )
