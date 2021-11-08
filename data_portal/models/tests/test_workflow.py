@@ -10,7 +10,7 @@ logger.setLevel(logging.INFO)
 
 
 class WorkflowTestCase(TestCase):
-
+    """python manage.py test data_portal.models.tests.test_workflow.WorkflowTestCase.test_get_all_workflow_by_library_id"""
     def setUp(self):
         logger.info('Create Object data')
         workflow_1 = Workflow.objects.create(
@@ -48,5 +48,5 @@ class WorkflowTestCase(TestCase):
 
     def test_get_all_workflow_by_library_id(self):
         logger.info('Test get workflow by library id')
-        workflow = Workflow.objects.get_by_keyword(library_id='L2000003')
+        workflow = Workflow.objects.get_by_keyword(keywords={"library_id":'L2000003'})
         self.assertGreaterEqual(len(workflow), 1, 'At least a single workflow is expected')

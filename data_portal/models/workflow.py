@@ -6,6 +6,9 @@ from django.db.models import QuerySet
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.sequencerun import SequenceRun
 from data_processors.pipeline.domain.workflow import WorkflowStatus
+from django.core.exceptions import FieldError
+
+from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
@@ -52,32 +55,17 @@ class WorkflowManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        sequence_run = kwargs.get('sequence_run', None)
-        if sequence_run:
-            qs = qs.filter(sequence_run_id__exact=sequence_run)
+        WORKFLOW_FIELD = ["library_id"]
 
-        sequence = kwargs.get('sequence', None)
-        if sequence:
-            qs = qs.filter(sequence_run__name__iexact=sequence)
-
-        run = kwargs.get('run', None)
-        if run:
-            qs = qs.filter(sequence_run__name__iexact=run)
-
-        sample_name = kwargs.get('sample_name', None)
-        if sample_name:
-            qs = qs.filter(sample_name__iexact=sample_name)
-
-        type_name = kwargs.get('type_name', None)
-        if type_name:
-            qs = qs.filter(type_name__iexact=type_name)
-
-        end_status = kwargs.get('end_status', None)
-        if end_status:
-            qs = qs.filter(end_status__iexact=end_status)
+        keywords = kwargs.get('keywords', None)
+        if keywords:
+            try:
+                qs = filter_object_by_parameter_keyword(qs,keywords,WORKFLOW_FIELD)
+            except FieldError:
+                qs = self.none()
 
         # keyword from libraryrun model
-        library_id = kwargs.get('library_id', None)
+        library_id = keywords.get('library_id', None)
         if library_id:
             qs = qs.filter(libraryrun__library_id__iexact=library_id)
 
