@@ -19,6 +19,7 @@ logger.setLevel(logging.INFO)
 def create_or_update_workflow(model: dict):
     wfl_id = model.get('wfl_id')
     wfr_id = model.get('wfr_id')
+    portal_run_id = model.get('portal_run_id')
     wfv_id = model.get('wfv_id')
     wfl_type: WorkflowType = model.get('type')
 
@@ -29,6 +30,7 @@ def create_or_update_workflow(model: dict):
         workflow = Workflow()
         workflow.wfl_id = wfl_id
         workflow.wfr_id = wfr_id
+        workflow.portal_run_id = portal_run_id
         workflow.wfv_id = wfv_id
         workflow.type_name = wfl_type.name
         workflow.wfr_name = model.get('wfr_name')

@@ -23,6 +23,7 @@ from data_processors.pipeline.services import notification_srv, sequence_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
+from data_processors.pipeline.tools.liborca import get_tiny_uuid
 from utils import libjson, libssm, libdt
 
 logger = logging.getLogger()
@@ -331,7 +332,9 @@ def handler(event, context) -> dict:
     # All good, add as input
     workflow_input['settings_by_samples'] = settings_by_samples
 
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=seq_name)
+    portal_run_uuid = get_tiny_uuid()
+
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=seq_name, portal_run_uid=portal_run_uuid)
 
     # read workflow id and version from parameter store
     workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
@@ -340,7 +343,10 @@ def handler(event, context) -> dict:
     sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
 
     # construct and format workflow run name convention
-    workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name, seq_run_id=seq_run_id)
+    workflow_run_name = wfl_helper.construct_workflow_name(
+        seq_name=seq_name,
+        seq_run_id=seq_run_id,
+        portal_uuid=portal_run_uuid)
 
     wfl_run: dict = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -355,6 +361,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
+            'portal_run_id': portal_run_uuid,
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.BCL_CONVERT,
             'version': workflow_version,
