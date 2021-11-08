@@ -6,6 +6,9 @@ from django.db.models import QuerySet
 
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.sequencerun import SequenceRun
+from django.core.exceptions import FieldError
+
+from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
@@ -15,27 +18,16 @@ class FastqListRowManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        run = kwargs.get('run', None)
-        if run:
-            qs = qs.filter(sequence_run__instrument_run_id__exact=run)
+        SKIP_LIST = ["project_owner"]
 
-        rgid = kwargs.get('rgid', None)
-        if rgid:
-            qs = qs.filter(rgid__iexact=rgid)
+        keywords = kwargs.get('keywords', None)
+        if keywords:
+            try:
+                qs = filter_object_by_parameter_keyword(qs,keywords,SKIP_LIST )
+            except FieldError:
+                qs = self.none()
 
-        rgsm = kwargs.get('rgsm', None)
-        if rgsm:
-            qs = qs.filter(rgsm__iexact=rgsm)
-
-        rglb = kwargs.get('rglb', None)
-        if rglb:
-            qs = qs.filter(rglb__iexact=rglb)
-
-        lane = kwargs.get('lane', None)
-        if lane:
-            qs = qs.filter(lane__exact=lane)
-
-        project_owner = kwargs.get('project_owner', None)
+        project_owner = keywords.get('project_owner', None)
         if project_owner:
             qs_meta = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
             qs = qs.filter(rglb__in=qs_meta)
