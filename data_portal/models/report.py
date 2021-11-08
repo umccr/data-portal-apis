@@ -7,6 +7,9 @@ from django.db.models import QuerySet
 from data_portal.fields import HashField, HashFieldHelper
 from data_portal.models.gdsfile import GDSFile
 from data_portal.models.s3object import S3Object
+from django.core.exceptions import FieldError
+
+from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
@@ -99,21 +102,12 @@ class ReportManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        subject = kwargs.get('subject', None)
-        if subject:
-            qs = qs.filter(subject_id__iexact=subject)
-
-        sample = kwargs.get('sample', None)
-        if sample:
-            qs = qs.filter(sample_id__iexact=sample)
-
-        library = kwargs.get('library', None)
-        if library:
-            qs = qs.filter(library_id__iexact=library)
-
-        type_ = kwargs.get('type', None)
-        if type_:
-            qs = qs.filter(type__iexact=type_)
+        keywords = kwargs.get('keywords', None)
+        if keywords:
+            try:
+                qs = filter_object_by_parameter_keyword(qs,keywords)
+            except FieldError:
+                qs = self.none()
 
         return qs
 
