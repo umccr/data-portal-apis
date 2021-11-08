@@ -18,12 +18,12 @@ class FastqListRowManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        SKIP_LIST = ["project_owner"]
+        OBJECT_FIELD_NAMES = self.values()[0].keys()
 
         keywords = kwargs.get('keywords', None)
         if keywords:
             try:
-                qs = filter_object_by_parameter_keyword(qs,keywords,SKIP_LIST )
+                qs = filter_object_by_parameter_keyword(qs, keywords, OBJECT_FIELD_NAMES)
             except FieldError:
                 qs = self.none()
 

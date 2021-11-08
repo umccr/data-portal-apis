@@ -38,4 +38,4 @@ class SequenceViewSetTestCase(TestCase):
         _logger.info('Check if wrong parameter')
         response = self.client.get('/sequence/?lib_id=LBR0001')
         results_response = response.data['results']
-        self.assertEqual(len(results_response), 0, 'No result is expected for wrong parameter')
+        self.assertGreater(len(results_response), 0, 'Results are expected for unrecognized query.')

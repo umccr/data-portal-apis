@@ -16,12 +16,12 @@ class LibraryRunManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        WORKFLOW_FIELD = ["type_name", "end_status"]
+        OBJECT_FIELD_NAMES = self.values()[0].keys()
 
         keywords = kwargs.get('keywords', None)
         if keywords:
             try:
-                qs = filter_object_by_parameter_keyword(qs,keywords, WORKFLOW_FIELD)
+                qs = filter_object_by_parameter_keyword(qs,keywords, OBJECT_FIELD_NAMES)
             except FieldError:
                 qs = self.none()
 

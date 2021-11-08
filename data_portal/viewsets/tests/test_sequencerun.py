@@ -29,4 +29,4 @@ class SequenceRunViewSetTestCase(TestCase):
         _logger.info('Check Invalid keyword')
         response = self.client.get('/sequencerun/?foo=bar')
         results_response = response.data['results']
-        self.assertEqual(len(results_response), 0, 'No data is expected')
+        self.assertGreater(len(results_response), 0, 'Records are expected')
