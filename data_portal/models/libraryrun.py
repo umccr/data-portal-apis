@@ -4,6 +4,9 @@ from django.db import models
 from django.db.models import QuerySet
 
 from data_portal.models.workflow import Workflow
+from django.core.exceptions import FieldError
+
+from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
@@ -13,47 +16,20 @@ class LibraryRunManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        library_id = kwargs.get('library_id', None)
-        if library_id:
-            qs = qs.filter(library_id__exact=library_id)
+        WORKFLOW_FIELD = ["type_name", "end_status"]
 
-        instrument_run_id = kwargs.get('instrument_run_id', None)
-        if instrument_run_id:
-            qs = qs.filter(instrument_run_id__iexact=instrument_run_id)
+        keywords = kwargs.get('keywords', None)
+        if keywords:
+            try:
+                qs = filter_object_by_parameter_keyword(qs,keywords, WORKFLOW_FIELD)
+            except FieldError:
+                qs = self.none()
 
-        run_id = kwargs.get('run_id', None)
-        if run_id:
-            qs = qs.filter(run_id__iexact=run_id)
-
-        lane = kwargs.get('lane', None)
-        if lane:
-            qs = qs.filter(lane__iexact=lane)
-
-        override_cycles = kwargs.get('override_cycles', None)
-        if override_cycles:
-            qs = qs.filter(override_cycles__iexact=override_cycles)
-
-        coverage_yield = kwargs.get('coverage_yield', None)
-        if coverage_yield:
-            qs = qs.filter(coverage_yield__iexact=coverage_yield)
-
-        qc_pass = kwargs.get('qc_pass', None)
-        if qc_pass:
-            qs = qs.filter(qc_pass__iexact=qc_pass)
-
-        qc_status = kwargs.get('qc_status', None)
-        if qc_status:
-            qs = qs.filter(qc_status__iexact=qc_status)
-
-        valid_for_analysis = kwargs.get('valid_for_analysis', None)
-        if valid_for_analysis:
-            qs = qs.filter(valid_for_analysis__iexact=valid_for_analysis)
-
-        type_name = kwargs.get('type_name', None)
+        type_name = keywords.get('type_name', None)
         if type_name:
             qs = qs.filter(workflows__type_name__iexact=type_name)
 
-        end_status = kwargs.get('end_status', None)
+        end_status = keywords.get('end_status', None)
         if end_status:
             qs = qs.filter(workflows__end_status__iexact=end_status).distinct()
 

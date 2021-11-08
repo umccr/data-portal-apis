@@ -61,11 +61,11 @@ class LibraryRunTestCase(TestCase):
         library_run_3.workflows.add(workflow_3, workflow_2)
         library_run_2.workflows.add(workflow_2)
 
-    def test_get_sequence(self):
-        logger.info("Test get success sequence table")
-        get_complete_sequence = LibraryRun.objects.get(library_id='L2000002')
-        self.assertEqual(get_complete_sequence.library_id, 'L2000002', 'Correct Library ID fetch is expected')
+    def test_get_library_run(self):
+        logger.info("Test get success library run table")
+        get_library_run = LibraryRun.objects.get(library_id='L2000002')
+        self.assertEqual(get_library_run.library_id, 'L2000002', 'Correct Library ID fetch is expected')
 
     def test_get_library_run_by_keyword(self):
-        result = LibraryRun.objects.get_by_keyword(library_id="L2000002", end_status="Failed")
+        result = LibraryRun.objects.get_by_keyword(keywords={"library_id":"L2000002", "end_status":"Failed"})
         self.assertEqual(len(result), 1, 'At least a single libraryrun is expected')

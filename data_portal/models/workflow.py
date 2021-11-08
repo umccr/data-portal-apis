@@ -55,12 +55,12 @@ class WorkflowManager(models.Manager):
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
 
-        WORKFLOW_FIELD = ["library_id"]
+        LIBRARYRUN_FIELD = ["library_id"]
 
         keywords = kwargs.get('keywords', None)
         if keywords:
             try:
-                qs = filter_object_by_parameter_keyword(qs,keywords,WORKFLOW_FIELD)
+                qs = filter_object_by_parameter_keyword(qs,keywords,LIBRARYRUN_FIELD)
             except FieldError:
                 qs = self.none()
 
