@@ -127,7 +127,7 @@ def handler(event, context) -> dict:
         portal_uuid=portal_run_uuid
     )
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id,
-                                                                  secondary_target_id=library_id,
+                                                                  secondary_target_id=None,
                                                                   portal_run_uid=portal_run_uuid)
 
     wfl_run = wes_handler.launch({

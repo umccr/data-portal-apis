@@ -126,7 +126,7 @@ def handler(event, context) -> dict:
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
     workflow_input["output_file_prefix"] = f"{output_file_prefix}"
-    workflow_input["output_directory"] = f"{output_directory}"
+    workflow_input["output_directory"] = f"{output_directory}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
     workflow_input["tumor_fastq_list_rows"] = tumor_fastq_list_rows
 
@@ -140,7 +140,7 @@ def handler(event, context) -> dict:
                                                            sample_name=tumor_library_id,
                                                            portal_uuid=portal_run_uuid)
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id,
-                                                                  secondary_target_id=tumor_library_id + "_" + normal_library_id,
+                                                                  secondary_target_id=None,
                                                                   portal_run_uid=portal_run_uuid)
 
     wfl_run = wes_handler.launch({
