@@ -27,6 +27,10 @@ class FastqListRowManager(models.Manager):
             except FieldError:
                 qs = self.none()
 
+        run = keywords.get('run', None)
+        if run:
+            qs = qs.filter(sequence_run__instrument_run_id__exact=run)
+
         project_owner = keywords.get('project_owner', None)
         if project_owner:
             qs_meta = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
