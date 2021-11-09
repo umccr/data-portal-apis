@@ -21,10 +21,10 @@ class SampleSheetCSV(Enum):
 
 class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
-    DRAGEN_WGS_QC = "dragen_wgs_qc"
-    TUMOR_NORMAL = "tumor_normal"
-    DRAGEN_TSO_CTDNA = "dragen_tso_ctdna"
-    DRAGEN_WTS = "dragen_wts"
+    DRAGEN_WGS_QC = "wgs_alignment_qc"
+    TUMOR_NORMAL = "wgs_tumor_normal"
+    DRAGEN_TSO_CTDNA = "tso_ctdna_tumor_only"
+    DRAGEN_WTS = "wts_tumor_only"
 
     @classmethod
     def from_value(cls, value):
