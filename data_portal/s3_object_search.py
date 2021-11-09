@@ -17,6 +17,8 @@ class S3FilterTag(FilterTag):
     SUBJECT_ID = 'SUBJECT_ID'
     SAMPLE_ID = 'SAMPLE_ID'
     LINKED = 'LINKED'
+    SOURCE = 'SOURCE'
+    TYPE = 'TYPE'
 
 
 class S3FilterMethod(FilterMethod):
@@ -60,6 +62,8 @@ class S3FilterType(FilterType):
     LAST_MODIFIED_DATE = 'date'
     SUBJECT_ID = 'subjectid'
     SAMPLE_ID = 'sampleid'
+    SOURCE = 'source'
+    TYPE = 'type'
     LINKED_WITH_LIMS = 'linked'
 
 
@@ -104,6 +108,18 @@ class S3FilterTypeFactory(FilterTypeFactory):
             self.filter_tag_factory.get(S3FilterTag.SAMPLE_ID),
             self.filter_method_factory.get(S3FilterMethod.CONTAINS),
             'SampleID (in LIMS table) includes'
+        ))
+        self.register(FilterType(
+            S3FilterType.SOURCE,
+            self.filter_tag_factory.get(S3FilterTag.SOURCE),
+            self.filter_method_factory.get(S3FilterMethod.CONTAINS),
+            'Source (in LIMS table) includes, i.e: FFPE, tissue, blood...'
+        ))
+        self.register(FilterType(
+            S3FilterType.TYPE,
+            self.filter_tag_factory.get(S3FilterTag.TYPE),
+            self.filter_method_factory.get(S3FilterMethod.CONTAINS),
+            'Type (in LIMS table) includes, i.e: WGS, WTS...'
         ))
         self.register(FilterType(
             S3FilterType.LINKED_WITH_LIMS,
