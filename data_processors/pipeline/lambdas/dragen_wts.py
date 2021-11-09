@@ -103,11 +103,12 @@ def handler(event, context) -> dict:
 
     # Set workflow helper
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WTS)
+    sample_name = fastq_list_rows[0].rgsm
 
     # Read input template from parameter store
     input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input["output_file_prefix"] = f"{library_id}"
+    workflow_input["output_file_prefix"] = f"{sample_name}"
     workflow_input["output_directory"] = f"{library_id}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
 
