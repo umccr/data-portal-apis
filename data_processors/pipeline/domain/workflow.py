@@ -201,7 +201,7 @@ class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
         wfl_type = str(self.type.value)
         ts = libdt.folder_friendly_timestamp(timestamp)
         if secondary_target_id is None:
-            return str(basename / target_id / wfl_type / (ts + portal_run_uid))
+            return str(basename / target_id / wfl_type / (ts + "--" + portal_run_uid))
         else:
             return str(basename / target_id / wfl_type / secondary_target_id / (ts + portal_run_uid))
 
