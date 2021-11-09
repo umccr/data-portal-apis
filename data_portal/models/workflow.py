@@ -93,6 +93,7 @@ class Workflow(models.Model):
     sample_name = models.CharField(max_length=255, null=True, blank=True)  # TODO deprecated, will be removed, see #244
     type_name = models.CharField(max_length=255)
     wfr_id = models.CharField(max_length=255)
+    portal_run_id = models.CharField(max_length=255, null=True)
     wfl_id = models.CharField(max_length=255)
     wfv_id = models.CharField(max_length=255)
     version = models.CharField(max_length=255)
