@@ -27,7 +27,7 @@ def perform(this_workflow: Workflow):
 
     batcher = Batcher(
         workflow=this_workflow,
-        run_step=WorkflowType.DRAGEN_WTS.value.upper(),
+        run_step=WorkflowType.DRAGEN_WTS.value,
         batch_srv=batch_srv,
         fastq_srv=fastq_srv,
         logger=logger,

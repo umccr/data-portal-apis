@@ -370,7 +370,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         logger.info(f"-"*32)
         for wfl in Workflow.objects.all():
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
-            if wfl.type_name == WorkflowType.BCL_CONVERT.name:
+            if wfl.type_name == WorkflowType.BCL_CONVERT.value:
                 self.assertTrue(wfl.notified)
 
         # should call to slack webhook once for BCL Convert workflow

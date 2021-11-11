@@ -239,7 +239,7 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
-    type_name = WorkflowType.BCL_CONVERT.name
+    type_name = WorkflowType.BCL_CONVERT.value
     input = json.dumps({
         "mock": "must load template from ssm parameter store"
     })
@@ -261,7 +261,7 @@ class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
-    type_name = WorkflowType.DRAGEN_WGS_QC.name
+    type_name = WorkflowType.DRAGEN_WGS_QC.value
     input = json.dumps({
         "mock": "must load template from ssm parameter store"
     })
@@ -283,7 +283,7 @@ class TumorNormalWorkflowFactory(factory.django.DjangoModelFactory):
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
-    type_name = WorkflowType.TUMOR_NORMAL.name
+    type_name = WorkflowType.TUMOR_NORMAL.value
     input = json.dumps({
         "mock": "override me"
     })
@@ -310,7 +310,7 @@ class BatchRunFactory(factory.django.DjangoModelFactory):
         model = BatchRun
 
     batch = factory.SubFactory(BatchFactory)
-    step = WorkflowType.DRAGEN_WGS_QC.name
+    step = WorkflowType.DRAGEN_WGS_QC.value
     running = True
     notified = True
 

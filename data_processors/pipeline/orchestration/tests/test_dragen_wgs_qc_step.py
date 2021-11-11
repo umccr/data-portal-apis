@@ -116,7 +116,7 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
 
-        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.name]
+        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.value]
         self.assertTrue(wgs_qc_batch_runs[0].running)
 
     def test_dragen_wgs_qc_none(self):
@@ -200,7 +200,7 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # - we will use Batcher to create them, just like in dragen_wgs_qc_step.perform()
         batcher = Batcher(
             workflow=mock_bcl_convert,
-            run_step=WorkflowType.DRAGEN_WGS_QC.value.upper(),
+            run_step=WorkflowType.DRAGEN_WGS_QC.value,
             batch_srv=batch_srv,
             fastq_srv=fastq_srv,
             logger=logger

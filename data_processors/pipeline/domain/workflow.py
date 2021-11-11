@@ -6,12 +6,15 @@ See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from uuid import uuid4
+import copy
+
 
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
-from utils import libdt, libssm
+from utils import libssm, libjson
 
 
 class SampleSheetCSV(Enum):
@@ -41,21 +44,6 @@ class WorkflowType(Enum):
         else:
             raise ValueError(f"No matching type found for {value}")
 
-    @classmethod
-    def from_name(cls, name):
-        if name == cls.BCL_CONVERT.name:
-            return cls.BCL_CONVERT
-        elif name == cls.DRAGEN_WGS_QC.name:
-            return cls.DRAGEN_WGS_QC
-        elif name == cls.TUMOR_NORMAL.name:
-            return cls.TUMOR_NORMAL
-        elif name == cls.DRAGEN_TSO_CTDNA.name:
-            return cls.DRAGEN_TSO_CTDNA
-        elif name == cls.DRAGEN_WTS.name:
-            return cls.DRAGEN_WTS
-        else:
-            raise ValueError(f"No matching type found for {name}")
-
 
 class WorkflowStatus(Enum):
     RUNNING = "Running"
@@ -71,14 +59,20 @@ class WorkflowRunEventType(Enum):
     RUNABORTED = "RunAborted"
 
 
-class Helper(object):
-    pass
+class WorkflowHelper(ABC):
+    prefix = "umccr__automated"
+    workdir_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/workdir_root")
+    output_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/output_root")
 
-
-class EngineParameter(ABC):
-    """
-    Abstract EngineParameter that provide methods for generating engine parameter values
-    """
+    def __init__(self, type_: WorkflowType):
+        self.type = type_
+        self.date_time = datetime.utcnow()
+        self.portal_run_id = f"{self.date_time.strftime('%Y%m%d')}{str(uuid4())[:8]}"
+        print(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id")
+        self.workflow_id = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id")
+        self.workflow_version = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/version")
+        input_template = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input")
+        self.workflow_input = copy.deepcopy(libjson.loads(input_template))
 
     @staticmethod
     def _sanitize_gds_path_str(gds_path_str: str):
@@ -93,127 +87,111 @@ class EngineParameter(ABC):
         return target_id
 
     @staticmethod
-    def get_ssm_key_workdir_root():
-        return f"{ICA_WORKFLOW_PREFIX}/workdir_root"
+    def get_workdir_root():
+        return WorkflowHelper.workdir_root
 
     @staticmethod
-    def get_ssm_key_output_root():
-        return f"{ICA_WORKFLOW_PREFIX}/output_root"
+    def get_output_root():
+        return WorkflowHelper.output_root
 
-    def get_workdir_root(self):
-        return libssm.get_ssm_param(self.get_ssm_key_workdir_root())
+    def get_workflow_id(self) -> str:
+        return self.workflow_id
 
-    def get_output_root(self):
-        return libssm.get_ssm_param(self.get_ssm_key_output_root())
+    def get_workflow_version(self) -> str:
+        return self.workflow_version
 
-    def construct_workdir(self, target_id, timestamp: datetime, secondary_target_id:str = None, portal_run_uid: str=None):
+    def get_workflow_input(self) -> dict:
+        return self.workflow_input
+
+    def construct_workdir(self, target_id, secondary_target_id: str = None):
         """
         Construct a work directory given target ID and a timestamp
         """
         workdir_root = self._sanitize_gds_path_str(self.get_workdir_root())
-        return workdir_root + "/" + self.get_mid_path(target_id, timestamp, secondary_target_id=secondary_target_id, portal_run_uid=portal_run_uid)
+        return workdir_root + "/" + self.get_mid_path(target_id=target_id, secondary_target_id=secondary_target_id)
 
-    def construct_outdir(self, target_id, timestamp: datetime, secondary_target_id:str = None, portal_run_uid: str=None):
+    def construct_outdir(self, target_id, secondary_target_id: str = None):
         """
         Construct an output directory given target ID and a timestamp
         """
         output_root = self._sanitize_gds_path_str(self.get_output_root())
-        return output_root + "/" + self.get_mid_path(target_id, timestamp, secondary_target_id=secondary_target_id, portal_run_uid=portal_run_uid)
+        return output_root + "/" + self.get_mid_path(target_id=target_id, secondary_target_id=secondary_target_id)
 
     @abstractmethod
-    def get_mid_path(self, target_id: str, timestamp: datetime, secondary_target_id: str=None, portal_run_uid: str=None) -> str:
+    def get_mid_path(self, target_id: str, secondary_target_id: str = None) -> str:
         """
         Subclasses must implement
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow(), secondary_target_id: str=None, portal_run_uid: str=None) -> dict:
+    def get_engine_parameters(self, **kwargs) -> dict:
         """
         Subclasses must implement
         """
         raise NotImplementedError
 
-
-class WorkflowHelper(Helper):
-    prefix = "umccr__automated"
-
-    def __init__(self, type_: WorkflowType):
-        self.type = type_
-
-    def get_ssm_key_id(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id"
-
-    def get_ssm_key_version(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/version"
-
-    def get_ssm_key_input(self):
-        return f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input"
-
+    @abstractmethod
     def construct_workflow_name(self, **kwargs):
-        # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[UTC_TIMESTAMP]
-        utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-        portal_uuid = kwargs.get('portal_uuid', "")
-        # Primary analysis
-        if self.type == WorkflowType.BCL_CONVERT:
-            seq_name = kwargs['seq_name']
-            seq_run_id = kwargs['seq_run_id']
-            return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{seq_run_id}__{portal_uuid}__{utc_now_ts}"
-        # Secondary analysis
-        elif self.type in [ WorkflowType.DRAGEN_WGS_QC, WorkflowType.DRAGEN_TSO_CTDNA, WorkflowType.DRAGEN_WTS, WorkflowType.TUMOR_NORMAL ]:
-            sample_name = kwargs['sample_name']
-            subject_id = kwargs['subject_id']
-            return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{portal_uuid}__{utc_now_ts}"
-        else:
-            raise ValueError(f"Unsupported workflow type: {self.type.name}")
+        """
+        Subclasses must implement
+        """
+        raise NotImplementedError
 
 
-class PrimaryDataHelper(WorkflowHelper, EngineParameter):
+class PrimaryDataHelper(WorkflowHelper):
 
     def __init__(self, type_: WorkflowType):
+        if type_ != WorkflowType.BCL_CONVERT:
+            raise ValueError(f"Unsupported WorkflowType for Secondary analysis: {type_}")
         super().__init__(type_)
 
-    def get_mid_path(self, target_id: str, timestamp: datetime, secondary_target_id: str=None, portal_run_uid: str=None) -> str:
+    def get_mid_path(self, target_id: str, secondary_target_id: str = None) -> str:
         basename = Path("primary_data")
         target_id = self._sanitize_target_id(target_id)
-        ts = libdt.folder_friendly_timestamp(timestamp)
-        return str(basename / target_id / (ts + portal_run_uid))
+        return str(basename / target_id / self.portal_run_id)
 
-    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow(), secondary_target_id: str=None, portal_run_uid: str=None) -> dict:
+    def get_engine_parameters(self, target_id: str) -> dict:
         """
         Returns the dictionary of workflow engine parameters
         :return:
         """
         target_id = self._sanitize_target_id(target_id)
         return {
-            "outputDirectory": self.construct_outdir(target_id, timestamp, portal_run_uid=portal_run_uid)
+            "outputDirectory": self.construct_outdir(target_id=target_id)
         }
 
+    def construct_workflow_name(self, seq_name: str):
+        # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[PORTAL_RUN_ID]
+        return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{self.portal_run_id}"
 
-class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
+
+class SecondaryAnalysisHelper(WorkflowHelper):
 
     def __init__(self, type_: WorkflowType):
+        if type_ not in [WorkflowType.DRAGEN_WGS_QC, WorkflowType.DRAGEN_TSO_CTDNA,
+                         WorkflowType.DRAGEN_WTS, WorkflowType.TUMOR_NORMAL]:
+            raise ValueError(f"Unsupported WorkflowType for Secondary analysis: {type_}")
         super().__init__(type_)
 
-    def get_mid_path(self, target_id: str, timestamp: datetime, secondary_target_id: str=None, portal_run_uid: str=None) -> str:
+    def get_mid_path(self, target_id: str, secondary_target_id: str = None) -> str:
         basename = Path("analysis_data")
         target_id = self._sanitize_target_id(target_id)
         wfl_type = str(self.type.value)
-        ts = libdt.folder_friendly_timestamp(timestamp)
-        if secondary_target_id is None:
-            return str(basename / target_id / wfl_type / (ts + "--" + portal_run_uid))
+        if secondary_target_id:
+            return str(basename / target_id / wfl_type / secondary_target_id / self.portal_run_id)
         else:
-            return str(basename / target_id / wfl_type / secondary_target_id / (ts + portal_run_uid))
+            return str(basename / target_id / wfl_type / self.portal_run_id)
 
-    def get_engine_parameters(self, target_id: str, timestamp=datetime.utcnow(), secondary_target_id=None, portal_run_uid=None) -> dict:
+    def get_engine_parameters(self, target_id: str, secondary_target_id=None) -> dict:
         """
         Returns the dictionary of workflow engine parameters
         :return:
         """
         target_id = self._sanitize_target_id(target_id)
         engine_params = {
-            "workDirectory": self.construct_workdir(target_id, timestamp, secondary_target_id=secondary_target_id, portal_run_uid=portal_run_uid),
-            "outputDirectory": self.construct_outdir(target_id, timestamp, secondary_target_id=secondary_target_id, portal_run_uid=portal_run_uid)
+            "workDirectory": self.construct_workdir(target_id=target_id, secondary_target_id=secondary_target_id),
+            "outputDirectory": self.construct_outdir(target_id, secondary_target_id=secondary_target_id)
         }
 
         if self.type == WorkflowType.DRAGEN_TSO_CTDNA:
@@ -221,6 +199,10 @@ class SecondaryAnalysisHelper(WorkflowHelper, EngineParameter):
             engine_params.update(maxScatter=8)
 
         return engine_params
+
+    def construct_workflow_name(self, subject_id: str, sample_name: str):
+        # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[PORTAL_RUN_ID]
+        return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{self.portal_run_id}"
 
 
 class WorkflowRule:

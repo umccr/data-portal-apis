@@ -31,7 +31,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
             mock_workflow.sequence_run = self.mock_sqr
             mock_workflow.batch_run = self.mock_batch_run
 
-            mock_workflow.type_name = workflow_type.name
+            mock_workflow.type_name = workflow_type.value
             mock_workflow.version = "1.0.1-8e3c687"
             mock_workflow.wfr_id = f"wfr.{_rand(32)}"
 
@@ -66,7 +66,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
         # all DRAGEN_WGS_QC should be notified
-        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.name).all():
+        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.value).all():
             self.assertTrue(g.notified)
 
         # batch run running should be reset
@@ -82,7 +82,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         mock_bcl_workflow = WorkflowFactory()
         self.mock_sqr: SequenceRun = mock_bcl_workflow.sequence_run
         self.mock_batch_run: BatchRun = BatchRunFactory()
-        self.mock_batch_run.step = mock_workflow_type.name
+        self.mock_batch_run.step = mock_workflow_type.value
         self.mock_batch_run.save()
         self._gen(
             count=5,
@@ -117,7 +117,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         mock_bcl_workflow = WorkflowFactory()
         self.mock_sqr: SequenceRun = mock_bcl_workflow.sequence_run
         self.mock_batch_run: BatchRun = BatchRunFactory()
-        self.mock_batch_run.step = mock_workflow_type.name
+        self.mock_batch_run.step = mock_workflow_type.value
         self.mock_batch_run.save()
         self._gen(
             count=5,
@@ -136,7 +136,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
         # all DRAGEN_WGS_QC should be notified
-        for g in Workflow.objects.filter(type_name=mock_workflow_type.name).all():
+        for g in Workflow.objects.filter(type_name=mock_workflow_type.value).all():
             self.assertTrue(g.notified)
 
         # batch run running should be reset
@@ -164,7 +164,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
         # all DRAGEN_WGS_QC should be notified
-        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.name).all():
+        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.value).all():
             self.assertTrue(g.notified)
 
         # batch run should be running
@@ -183,7 +183,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         mock_succeeded_dragen_wgs_qc = Workflow()
         mock_succeeded_dragen_wgs_qc.sequence_run = self.mock_sqr
         mock_succeeded_dragen_wgs_qc.batch_run = self.mock_batch_run
-        mock_succeeded_dragen_wgs_qc.type_name = WorkflowType.DRAGEN_WGS_QC.name
+        mock_succeeded_dragen_wgs_qc.type_name = WorkflowType.DRAGEN_WGS_QC.value
         mock_succeeded_dragen_wgs_qc.version = "1.0.1-8e3c687"
         mock_succeeded_dragen_wgs_qc.wfr_id = f"wfr.{_rand(32)}"
         mock_succeeded_dragen_wgs_qc.start = make_aware(datetime.utcnow() - timedelta(hours=1))
@@ -199,11 +199,11 @@ class NotificationUnitTests(PipelineUnitTestCase):
 
         # 5 RUNNING, 1 SUCCEEDED
         self.assertEqual(1, Workflow.objects.filter(
-            type_name=WorkflowType.DRAGEN_WGS_QC.name,
+            type_name=WorkflowType.DRAGEN_WGS_QC.value,
             end_status=WorkflowStatus.SUCCEEDED.value
         ).count())
         self.assertEqual(5, Workflow.objects.filter(
-            type_name=WorkflowType.DRAGEN_WGS_QC.name,
+            type_name=WorkflowType.DRAGEN_WGS_QC.value,
             end_status=WorkflowStatus.RUNNING.value
         ).count())
 
@@ -211,7 +211,7 @@ class NotificationUnitTests(PipelineUnitTestCase):
         verify(libslack.http.client.HTTPSConnection, times=0).request(...)
 
         # all DRAGEN_WGS_QC should NOT be notified
-        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.name).all():
+        for g in Workflow.objects.filter(type_name=WorkflowType.DRAGEN_WGS_QC.value).all():
             self.assertFalse(g.notified)
 
         # batch run should be still running

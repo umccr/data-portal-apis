@@ -112,7 +112,7 @@ def notify_sequence_run_status(sqr: SequenceRun, sqs_record_timestamp: int, aws_
 
 
 def resolve_sample_display_name(workflow: Workflow):
-    workflow_type = WorkflowType.from_name(workflow.type_name)
+    workflow_type = WorkflowType.from_value(workflow.type_name)
     all_library_runs: List[LibraryRun] = workflow_srv.get_all_library_runs_by_workflow(workflow)
 
     if not all_library_runs:

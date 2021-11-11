@@ -52,7 +52,7 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WGS_QC)
         logger.info(helper.get_workdir_root())
         logger.info(helper.get_output_root())
-        eng_params = helper.get_engine_parameters("SBJ0001")
+        eng_params = helper.get_engine_parameters(target_id="SBJ0001")
         logger.info(eng_params)
         self.assertIn("workDirectory", eng_params)
         self.assertIn("outputDirectory", eng_params)
@@ -60,7 +60,7 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         self.assertIn("SBJ0001", eng_params['outputDirectory'])
 
         tso_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
-        tso_eng_params = tso_helper.get_engine_parameters("SBJ0002")
+        tso_eng_params = tso_helper.get_engine_parameters(target_id="SBJ0002")
         logger.info(tso_eng_params)
         self.assertIn("maxScatter", tso_eng_params)
         self.assertEqual(tso_eng_params['maxScatter'], 8)
@@ -69,11 +69,22 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_primary_data_helper
         """
-        helper = PrimaryDataHelper(WorkflowType.DRAGEN_WGS_QC)
+        helper = PrimaryDataHelper(WorkflowType.BCL_CONVERT)
         logger.info(helper.get_workdir_root())
         logger.info(helper.get_output_root())
-        eng_params = helper.get_engine_parameters("200612_A01052_0017_BH5LYWDSXY")
+        eng_params = helper.get_engine_parameters(target_id="200612_A01052_0017_BH5LYWDSXY")
         logger.info(eng_params)
         self.assertNotIn("workDirectory", eng_params)
         self.assertIn("outputDirectory", eng_params)
         self.assertIn("200612_A01052_0017_BH5LYWDSXY", eng_params['outputDirectory'])
+
+    def test_primary_data_helper_wrong_wf_type(self):
+        """
+        python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_primary_data_helper_wrong_wf_type
+        """
+        try:
+            _ = PrimaryDataHelper(WorkflowType.DRAGEN_WGS_QC)
+        except ValueError as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+
+        self.assertRaises(ValueError)
