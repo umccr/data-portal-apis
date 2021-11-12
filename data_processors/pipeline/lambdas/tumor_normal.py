@@ -11,16 +11,14 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import workflow_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
-from data_processors.pipeline.tools.liborca import get_tiny_uuid
 
-from utils import libjson, libssm, libdt
+from utils import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -133,7 +131,6 @@ def handler(event, context) -> dict:
     workflow_version = wfl_helper.get_workflow_version()
 
     # If no running workflows were found, we proceed to preparing and kicking it off
-    portal_run_uuid = get_tiny_uuid()
     workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id, sample_name=tumor_library_id)
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
@@ -150,7 +147,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
-            'portal_run_id': portal_run_uuid,
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.TUMOR_NORMAL,
             'version': workflow_version,

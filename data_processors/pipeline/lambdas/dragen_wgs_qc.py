@@ -11,15 +11,13 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
-from data_processors.pipeline.tools.liborca import get_tiny_uuid
-from utils import libjson, libssm, libdt
+from utils import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -122,7 +120,6 @@ def handler(event, context) -> dict:
 
     # construct and format workflow run name convention
     subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
-    portal_run_uuid = get_tiny_uuid()
     sn = f"{library_id}__{lane}"
     workflow_run_name = wfl_helper.construct_workflow_name(sample_name=sn, subject_id=subject_id)
 
@@ -141,7 +138,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
-            'portal_run_id': portal_run_uuid,
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.DRAGEN_WGS_QC,
             'version': workflow_version,

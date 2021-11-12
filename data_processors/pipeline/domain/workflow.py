@@ -103,6 +103,9 @@ class WorkflowHelper(ABC):
     def get_workflow_input(self) -> dict:
         return self.workflow_input
 
+    def get_portal_run_id(self) -> str:
+        return self.portal_run_id
+
     def construct_workdir(self, target_id, secondary_target_id: str = None):
         """
         Construct a work directory given target ID and a timestamp

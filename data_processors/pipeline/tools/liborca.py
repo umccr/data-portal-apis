@@ -238,11 +238,3 @@ def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> str:
     logger.info(f"Extracted run config: {run_config}")
 
     return json.dumps(run_config)
-
-def get_tiny_uuid() -> str:
-    """
-    Get a tiny uuid
-    # TODO - reference agianst db first
-    :return:
-    """
-    return str(uuid4())[:8]
