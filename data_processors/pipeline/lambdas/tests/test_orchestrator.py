@@ -34,7 +34,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         mock_workflow = Workflow()
         mock_workflow.wfr_id = f"wfr.{_rand(32)}"
-        mock_workflow.type_name = WorkflowType.BCL_CONVERT.name
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
         mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
         mock_workflow.sequence_run = mock_sqr
         mock_workflow.output = """

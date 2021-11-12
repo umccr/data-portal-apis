@@ -11,7 +11,6 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 from typing import List
 
@@ -23,7 +22,7 @@ from data_processors.pipeline.services import notification_srv, sequence_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
-from utils import libjson, libssm, libdt
+from utils import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -260,7 +259,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id and wfr_id in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.BCL_CONVERT.name} event")
+    logger.info(f"Start processing {WorkflowType.BCL_CONVERT.value} event")
     logger.info(libjson.dumps(event))
 
     gds_volume_name = event['gds_volume_name']
@@ -270,10 +269,6 @@ def handler(event, context) -> dict:
     run_folder = f"gds://{gds_volume_name}{gds_folder_path}"
     seq_run_id = event.get('seq_run_id', None)
 
-    wfl_helper = PrimaryDataHelper(WorkflowType.BCL_CONVERT)
-
-    # read input template from parameter store
-    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
     sample_sheet_gds_folder_path = f"{gds_folder_path}/{SampleSheetCSV.FILENAME.value}"
     sample_sheet_gds_full_path = f"{run_folder}/{SampleSheetCSV.FILENAME.value}"
 
@@ -282,7 +277,10 @@ def handler(event, context) -> dict:
     # Get instrument type from run id
     instrument = get_instrument_by_seq_name(seq_name)
 
-    workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
+    # Use WorkflowHelper to construct workflow inputs
+    wfl_helper = PrimaryDataHelper(WorkflowType.BCL_CONVERT)
+
+    workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input['samplesheet']['location'] = sample_sheet_gds_full_path
     workflow_input['bcl_input_directory']['location'] = run_folder
     workflow_input['runfolder_name'] = seq_name
@@ -334,13 +332,13 @@ def handler(event, context) -> dict:
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=seq_name)
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
+    workflow_id = wfl_helper.get_workflow_id()
+    workflow_version = wfl_helper.get_workflow_version()
 
     sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
 
     # construct and format workflow run name convention
-    workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name, seq_run_id=seq_run_id)
+    workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name)
 
     wfl_run: dict = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -355,6 +353,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.BCL_CONVERT,
             'version': workflow_version,

@@ -111,7 +111,7 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         return
 
     # depends on this_workflow state from db, we may kick off next workflow
-    if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
+    if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received successful BCL Convert workflow notification")
 
@@ -153,7 +153,7 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
 
         return results
 
-    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value:
         logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
         WorkflowRule(this_workflow).must_associate_sequence_run()

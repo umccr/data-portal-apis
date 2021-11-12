@@ -11,7 +11,6 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 
 from data_portal.models.workflow import Workflow
@@ -19,7 +18,7 @@ from data_processors.pipeline.services import sequence_run_srv, batch_srv, workf
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 
-from utils import libjson, libssm, libdt
+from utils import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -106,7 +105,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.DRAGEN_TSO_CTDNA.name} event")
+    logger.info(f"Start processing {WorkflowType.DRAGEN_TSO_CTDNA.value} event")
     logger.info(libjson.dumps(event))
 
     seq_run_id = event.get('seq_run_id', None)
@@ -118,8 +117,7 @@ def handler(event, context) -> dict:
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
 
     # Read input template from parameter store
-    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
-    workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
+    workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input['tso500_samples'] = [event['tso500_sample']]
     workflow_input['fastq_list_rows'] = event['fastq_list_rows']
     workflow_input['samplesheet'] = event['samplesheet']
@@ -127,23 +125,16 @@ def handler(event, context) -> dict:
     workflow_input['run_parameters_xml'] = event['run_parameters_xml']
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
+    workflow_id = wfl_helper.get_workflow_id()
+    workflow_version = wfl_helper.get_workflow_version()
 
     sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
     batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
     # construct and format workflow run name convention
-    workflow_run_name = wfl_helper.construct_workflow_name(
-        seq_name=seq_name,
-        seq_run_id=seq_run_id,
-        sample_name=library_id
-    )
-
     subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
-    # NOTE: event['tso500_sample']['sample_id'] is already in the form of sample_id + "_" + library_id
-    mid_path = subject_id + "/" + event['tso500_sample']['sample_id']
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(mid_path)
+    workflow_run_name = wfl_helper.construct_workflow_name(sample_name=library_id, subject_id=subject_id)
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=library_id)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -158,6 +149,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.DRAGEN_TSO_CTDNA,
             'version': workflow_version,

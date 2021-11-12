@@ -19,18 +19,20 @@ logger.setLevel(logging.INFO)
 def create_or_update_workflow(model: dict):
     wfl_id = model.get('wfl_id')
     wfr_id = model.get('wfr_id')
+    portal_run_id = model.get('portal_run_id')
     wfv_id = model.get('wfv_id')
     wfl_type: WorkflowType = model.get('type')
 
     qs = Workflow.objects.filter(wfl_id=wfl_id, wfr_id=wfr_id, wfv_id=wfv_id)
 
     if not qs.exists():
-        logger.info(f"Creating new {wfl_type.name} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
+        logger.info(f"Creating new {wfl_type.value} workflow (wfl_id={wfl_id}, wfr_id={wfr_id}, wfv_id={wfv_id})")
         workflow = Workflow()
         workflow.wfl_id = wfl_id
         workflow.wfr_id = wfr_id
+        workflow.portal_run_id = portal_run_id
         workflow.wfv_id = wfv_id
-        workflow.type_name = wfl_type.name
+        workflow.type_name = wfl_type.value
         workflow.wfr_name = model.get('wfr_name')
         workflow.version = model.get('version')
 

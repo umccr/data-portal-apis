@@ -84,7 +84,7 @@ def handler(event, context):
             'wfr_id': wfr_id,
             'wfv_id': wfv_id,
             'wfl_id': wfl_in_db.wfl_id,
-            'type': WorkflowType[wfl_in_db.type_name.upper()],
+            'type': WorkflowType.from_value(wfl_in_db.type_name),
             'end_status': _status,
             'output': _output,
             'end': _end,

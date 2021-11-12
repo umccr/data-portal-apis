@@ -55,7 +55,7 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
         # assert DRAGEN_WTS workflow launch success and save workflow run in db
         qs = Workflow.objects.all()
         self.assertEqual(1, qs.count())
-        self.assertEqual(WorkflowType.DRAGEN_WTS.name, qs.get().type_name)
+        self.assertEqual(WorkflowType.DRAGEN_WTS.value, qs.get().type_name)
 
         # assert that we can query related LibraryRun from Workflow side
         wfl = qs.get()
@@ -109,7 +109,7 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
         # assert DRAGEN_WTS workflow launch success and save workflow run in db
         qs = Workflow.objects.all()
         self.assertEqual(1, qs.count())
-        self.assertEqual(WorkflowType.DRAGEN_WTS.name, qs.get().type_name)
+        self.assertEqual(WorkflowType.DRAGEN_WTS.value, qs.get().type_name)
 
     def test_sqs_handler(self):
         """

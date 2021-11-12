@@ -121,7 +121,7 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
 
-        tso_ctdna_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_TSO_CTDNA.name]
+        tso_ctdna_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_TSO_CTDNA.value]
         self.assertTrue(tso_ctdna_batch_runs[0].running)
 
     def test_dragen_tso_ctdna_none(self):
@@ -233,7 +233,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
         # - we will use Batcher to create them, just like in dragen_wgs_qc_step.perform()
         batcher = Batcher(
             workflow=mock_bcl_convert,
-            run_step=WorkflowType.DRAGEN_TSO_CTDNA.value.upper(),
+            run_step=WorkflowType.DRAGEN_TSO_CTDNA.value,
             batch_srv=batch_srv,
             fastq_srv=fastq_srv,
             logger=logger

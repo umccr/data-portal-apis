@@ -102,7 +102,7 @@ class DragenWtsStepUnitTests(PipelineUnitTestCase):
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
 
-        wts_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WTS.name]
+        wts_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WTS.value]
         self.assertTrue(wts_batch_runs[0].running)
 
 
@@ -156,7 +156,7 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
         # - we will use Batcher to create them
         batcher = Batcher(
             workflow=mock_bcl_convert,
-            run_step=WorkflowType.DRAGEN_WTS.value.upper(),
+            run_step=WorkflowType.DRAGEN_WTS.value,
             batch_srv=batch_srv,
             fastq_srv=fastq_srv,
             logger=logger

@@ -11,14 +11,13 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
-from utils import libjson, libssm, libdt
+from utils import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -88,7 +87,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.DRAGEN_WGS_QC.name} event")
+    logger.info(f"Start processing {WorkflowType.DRAGEN_WGS_QC.value} event")
     logger.info(libjson.dumps(event))
 
     # Extract name of sample and the fastq list rows
@@ -102,33 +101,29 @@ def handler(event, context) -> dict:
     # Set batch run id
     batch_run_id = event.get('batch_run_id', None)
 
+    sample_name = fastq_list_rows[0]['rgsm']
+
     # Set workflow helper
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WGS_QC)
 
-    # Read input template from parameter store
-    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
-    workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
-    workflow_input["output_file_prefix"] = f"{library_id}"
-    workflow_input["output_directory"] = f"{library_id}_dragen"
+    workflow_input: dict = wfl_helper.get_workflow_input()
+    workflow_input["output_file_prefix"] = f"{sample_name}"
+    workflow_input["output_directory"] = f"{library_id}__{lane}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
+    workflow_id = wfl_helper.get_workflow_id()
+    workflow_version = wfl_helper.get_workflow_version()
 
     sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
     batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
     # construct and format workflow run name convention
-    workflow_run_name = wfl_helper.construct_workflow_name(
-        seq_name=seq_name,
-        seq_run_id=seq_run_id,
-        sample_name=f"{library_id}__{lane}"
-    )
-
     subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
-    mid_path = f"{subject_id}/{library_id}/{lane}"
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(mid_path)
+    sn = f"{library_id}__{lane}"
+    workflow_run_name = wfl_helper.construct_workflow_name(sample_name=sn, subject_id=subject_id)
+
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -143,6 +138,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.DRAGEN_WGS_QC,
             'version': workflow_version,

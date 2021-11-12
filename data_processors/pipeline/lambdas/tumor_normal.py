@@ -11,7 +11,6 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 
 from data_portal.models.workflow import Workflow
@@ -19,7 +18,7 @@ from data_processors.pipeline.services import workflow_srv, library_run_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 
-from utils import libjson, libssm, libdt
+from utils import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -104,7 +103,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.TUMOR_NORMAL.name} event")
+    logger.info(f"Start processing {WorkflowType.TUMOR_NORMAL.value} event")
     logger.info(libjson.dumps(event))
 
     # Extract name of sample and the fastq list rows
@@ -121,22 +120,19 @@ def handler(event, context) -> dict:
     # Set workflow helper
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.TUMOR_NORMAL)
 
-    # Read input template from parameter store and populate values
-    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
-    workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
+    workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input["output_file_prefix"] = f"{output_file_prefix}"
-    workflow_input["output_directory"] = f"{output_directory}"
+    workflow_input["output_directory"] = f"{output_directory}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
     workflow_input["tumor_fastq_list_rows"] = tumor_fastq_list_rows
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
+    workflow_id = wfl_helper.get_workflow_id()
+    workflow_version = wfl_helper.get_workflow_version()
 
     # If no running workflows were found, we proceed to preparing and kicking it off
-    workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id)
-    mid_path = subject_id + "/" + tumor_library_id + "_" + normal_library_id
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(mid_path)
+    workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id, sample_name=tumor_library_id)
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -151,6 +147,7 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.TUMOR_NORMAL,
             'version': workflow_version,

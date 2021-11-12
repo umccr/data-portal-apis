@@ -41,4 +41,4 @@ def folder_friendly_timestamp(dt: datetime) -> str:
     :param dt:
     :return:
     """
-    return dt.strftime("%Y-%m-%d__%H-%M-%S")
+    return dt.strftime("%Y-%m-%d")
