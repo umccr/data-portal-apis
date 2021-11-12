@@ -68,7 +68,6 @@ class WorkflowHelper(ABC):
         self.type = type_
         self.date_time = datetime.utcnow()
         self.portal_run_id = f"{self.date_time.strftime('%Y%m%d')}{str(uuid4())[:8]}"
-        print(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id")
         self.workflow_id = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id")
         self.workflow_version = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/version")
         input_template = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input")
@@ -182,7 +181,7 @@ class SecondaryAnalysisHelper(WorkflowHelper):
         target_id = self._sanitize_target_id(target_id)
         wfl_type = str(self.type.value)
         if secondary_target_id:
-            return str(basename / target_id / wfl_type / secondary_target_id / self.portal_run_id)
+            return str(basename / target_id / wfl_type / self.portal_run_id / secondary_target_id)
         else:
             return str(basename / target_id / wfl_type / self.portal_run_id)
 
