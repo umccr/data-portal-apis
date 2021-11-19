@@ -34,6 +34,46 @@ class LibraryRunSrvUnitTests(PipelineUnitTestCase):
         self.assertIsNone(library_run.coverage_yield)
         self.assertTrue(library_run.valid_for_analysis)
 
+    def test_create_or_update_library_run_no_lane(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvUnitTests.test_create_or_update_library_run_no_lane
+        """
+        mock_meta: LabMetadata = LabMetadataFactory()
+
+        library_run = library_run_srv.create_or_update_library_run({
+            'instrument_run_id': TestConstant.instrument_run_id.value,
+            'run_id': TestConstant.run_id.value,
+            'library_id': TestConstant.library_id_normal.value,
+            'lane': None,
+            'override_cycles': TestConstant.override_cycles.value,
+        })
+
+        self.assertIsNotNone(library_run)
+        self.assertEqual(LibraryRun.objects.count(), 1)
+        self.assertEqual(library_run.override_cycles, mock_meta.override_cycles)
+        self.assertIsNone(library_run.coverage_yield)
+        self.assertTrue(library_run.valid_for_analysis)
+
+        self.assertEqual(LibraryRun.objects.get().lane, None)
+
+    def test_get_library_run(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvUnitTests.test_get_library_run
+        """
+        mock_meta: LabMetadata = LabMetadataFactory()
+
+        library_run = library_run_srv.create_or_update_library_run({
+            'instrument_run_id': TestConstant.instrument_run_id.value,
+            'run_id': TestConstant.run_id.value,
+            'library_id': TestConstant.library_id_normal.value,
+            'lane': None,
+            'override_cycles': TestConstant.override_cycles.value,
+        })
+
+        result: LibraryRun = library_run_srv.get_library_run(library_id=TestConstant.library_id_normal.value)
+        self.assertEqual(result.library_id, TestConstant.library_id_normal.value)
+        self.assertEqual(result.lane, None)
+
     def test_update_library_run(self):
         """
         python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvUnitTests.test_update_library_run
