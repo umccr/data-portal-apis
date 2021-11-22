@@ -18,6 +18,7 @@ from contextlib import closing
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from typing import List
+import xml.etree.ElementTree as et
 
 from sample_sheet import SampleSheet
 
@@ -206,9 +207,8 @@ def get_samplesheet_json_from_file(gds_volume: str, samplesheet_path: str) -> st
     return samplesheet_config
 
 
-def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> str:
+def get_runinfo(gds_volume: str, runinfo_path: str) -> et.Element:
     # TODO: represent RunInfo better, perhaps as domain object?
-    import xml.etree.ElementTree as et
     if not runinfo_path.startswith(os.path.sep):
         runinfo_path = os.path.sep + runinfo_path
     logger.info(f"Extracting run config from gds://{gds_volume}{runinfo_path}")
@@ -222,7 +222,11 @@ def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> str:
 
     logger.info(f"Local sample sheet path: {ntf.name}")
     tree = et.ElementTree(file=ntf)
-    root = tree.getroot()
+    return tree.getroot()
+
+
+def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> str:
+    root = get_runinfo(gds_volume=gds_volume, runinfo_path=runinfo_path)
     cyc = {}
     for read in root.findall('Run/Reads/Read'):
         cyc[read.get('Number')] = read.get('NumCycles')
@@ -234,3 +238,11 @@ def get_run_config_from_runinfo(gds_volume: str, runinfo_path: str) -> str:
     logger.info(f"Extracted run config: {run_config}")
 
     return json.dumps(run_config)
+
+
+def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
+    root = get_runinfo(gds_volume=gds_volume, runinfo_path=runinfo_path)
+
+    fcl = root.find('Run/FlowcellLayout')
+    lane_cnt = fcl.get('LaneCount')
+    return int(lane_cnt)
