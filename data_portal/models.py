@@ -1077,7 +1077,7 @@ class LibraryRun(models.Model):
     library_id = models.CharField(max_length=255)
     instrument_run_id = models.CharField(max_length=255)
     run_id = models.CharField(max_length=255)
-    lane = models.IntegerField(null=True)
+    lane = models.IntegerField()
     override_cycles = models.CharField(max_length=255)
 
     # yield achieved with this run (to be compared against desired coverage defined in metadata)

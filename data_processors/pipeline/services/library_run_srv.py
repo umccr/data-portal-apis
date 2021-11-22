@@ -39,7 +39,15 @@ def create_library_run_from_sequence(payload: dict):
     samplesheet_dict = json.loads(samplesheet_json)
 
     library_run_list = []
-    for data_row in samplesheet_dict['Data']:
+    data_rows = samplesheet_dict['Data']
+
+    number_of_lanes = None
+    if 'Lane' not in data_rows[0].keys():
+        # extract number of lanes from RunInfo.xml
+        runinfo_path = gds_folder_path + os.path.sep + "RunInfo.xml"
+        number_of_lanes = liborca.get_number_of_lanes_from_runinfo(gds_volume=gds_volume_name, runinfo_path=runinfo_path)
+
+    for data_row in data_rows:
         library_id_as_in_samplesheet = data_row['Sample_Name']  # just working out from Sample_Name column
 
         # Lab metadata lookup -- we need override cycles
@@ -51,14 +59,26 @@ def create_library_run_from_sequence(payload: dict):
         # Strip _rerun
         rglb = libregex.SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
 
-        library_run = create_or_update_library_run({
-            'instrument_run_id': instr_run_id,
-            'run_id': run_id,
-            'library_id': rglb,
-            'lane': int(data_row['Lane']),
-            'override_cycles': meta.override_cycles
-        })
-        library_run_list.append(library_run)
+        if not data_row.get('Lane'):
+            # Create a entry for each lane (samples are distributed across all lanes)
+            for i in range(number_of_lanes):
+                library_run = create_or_update_library_run({
+                    'instrument_run_id': instr_run_id,
+                    'run_id': run_id,
+                    'library_id': rglb,
+                    'lane': i+1,  # convert from 0 to 1 based
+                    'override_cycles': meta.override_cycles
+                })
+                library_run_list.append(library_run)
+        else:
+            library_run = create_or_update_library_run({
+                'instrument_run_id': instr_run_id,
+                'run_id': run_id,
+                'library_id': rglb,
+                'lane': int(data_row['Lane']),
+                'override_cycles': meta.override_cycles
+            })
+            library_run_list.append(library_run)
 
     return library_run_list
 
