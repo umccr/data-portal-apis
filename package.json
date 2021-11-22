@@ -4,18 +4,19 @@
   "license": "MIT",
   "version": "0.1.0",
   "devDependencies": {
-    "husky": "^7.0.2",
-    "serverless": "^2.60.3",
+    "husky": "^7.0.4",
+    "serverless": "^2.66.2",
     "serverless-associate-waf": "^1.2.1",
-    "serverless-domain-manager": "^5.1.5",
-    "serverless-prune-plugin": "^1.6.0",
-    "serverless-python-requirements": "^5.1.1",
+    "serverless-domain-manager": "^5.2.0",
+    "serverless-prune-plugin": "^1.6.1",
+    "serverless-python-requirements": "^5.2.0",
     "serverless-wsgi": "^2.0.2"
   },
   "scripts": {
     "prepare": "husky install"
   },
   "resolutions": {
-    "ansi-regex": "^5.0.1"
+    "ansi-regex": "^5.0.1",
+    "json-schema": "^0.4.0"
   }
 }
