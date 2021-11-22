@@ -231,3 +231,20 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
                 logger.info(data_row)
                 self.assertEqual(int(data_row['Lane']), 1)
                 self.assertEqual(data_row['Sample_Name'], "L2000172_topup")
+
+    @skip
+    def test_get_number_of_lanes_from_runinfo(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_get_number_of_lanes_from_runinfo
+        """
+
+        # SEQ-II validation dataset
+        gds_volume = "umccr-raw-sequence-data-dev"
+        runinfo_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg/RunInfo.xml"
+
+        num_lanes = liborca.get_number_of_lanes_from_runinfo(
+            gds_volume=gds_volume,
+            runinfo_path=runinfo_path
+        )
+
+        self.assertEqual(num_lanes, 4)

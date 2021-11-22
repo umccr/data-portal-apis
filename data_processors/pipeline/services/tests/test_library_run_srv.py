@@ -102,3 +102,33 @@ class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
         logger.info(lib_run.override_cycles)
         self.assertEqual(1, lib_run.lane)
         self.assertEqual("Y151;I8N2;U10;Y151", lib_run.override_cycles)
+
+    @skip
+    def test_create_library_run_from_sequence_no_lane_number(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvIntegrationTests.test_create_library_run_from_sequence_no_lane_number
+        """
+
+        # populate test db with LabMetadata
+        stat = labmetadata.scheduled_update_handler({'event': "LibraryRunSrvIntegrationTests", 'truncate': False}, None)
+        logger.info(f"{stat}")
+
+        # SEQ-II validation dataset
+        gds_volume_name = "umccr-raw-sequence-data-dev"
+        gds_folder_path = "/200110_A00130_0128_AHMF7VDSXX"
+        sample_sheet_name = "SampleSheet-test.csv"
+
+        library_run_list = library_run_srv.create_library_run_from_sequence({
+            'instrument_run_id': "200110_A00130_0128_AHMF7VDSXX",
+            'run_id': "",
+            'gds_folder_path': gds_folder_path,
+            'gds_volume_name': gds_volume_name,
+            'sample_sheet_name': sample_sheet_name,
+        })
+
+        self.assertEqual(52, len(library_run_list))
+        self.assertEqual(52, LibraryRun.objects.count())
+
+        qs = LibraryRun.objects.filter(library_id="L2000001")
+        # we expect 4 entries (one per lane as defined by RunInfo.xml)
+        self.assertEqual(4, qs.count())
