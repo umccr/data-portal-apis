@@ -16,7 +16,7 @@ import logging
 
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.libraryrun import LibraryRun
-from data_processors.pipeline.services import sequence_run_srv, notification_srv, sequence_srv, library_run_srv
+from data_processors.pipeline.services import notification_srv, sequence_srv, sequencerun_srv, libraryrun_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
 from utils import libjson, ica
 
@@ -70,7 +70,7 @@ def handle_bssh_run_event(message, event_action, event_type, context):
     payload.update(messageAttributesActionType=event_type)
     payload.update(messageAttributesActionDate=message['messageAttributes']['actiondate']['stringValue'])
     payload.update(messageAttributesProducedBy=message['messageAttributes']['producedby']['stringValue'])
-    sqr: SequenceRun = sequence_run_srv.create_or_update_sequence_run(payload)
+    sqr: SequenceRun = sequencerun_srv.create_or_update_sequence_run(payload)
     if sqr:
         ts = message['attributes']['ApproximateFirstReceiveTimestamp']
         aws_account = message['eventSourceARN'].split(':')[4]
@@ -83,7 +83,7 @@ def handle_bssh_run_event(message, event_action, event_type, context):
         # See https://github.com/umccr-illumina/stratus/issues/95
         if sqr.status.lower() == "PendingAnalysis".lower():
             # populate LibraryRun records
-            library_run_list: List[LibraryRun] = library_run_srv.create_library_run_from_sequence({
+            library_run_list: List[LibraryRun] = libraryrun_srv.create_library_run_from_sequence({
                 'instrument_run_id': seq.instrument_run_id,
                 'run_id': seq.run_id,
                 'gds_folder_path': seq.gds_folder_path,

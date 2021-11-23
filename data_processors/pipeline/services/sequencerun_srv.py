@@ -45,15 +45,7 @@ def create_or_update_sequence_run(payload: dict):
 
 @transaction.atomic
 def get_sequence_run_by_run_id(run_id):
-    sequence_run = None
-    try:
-        sequence_runs = SequenceRun.objects.filter(run_id=run_id).all()
-        for sqr in sequence_runs:
-            if sqr.status.lower() == "PendingAnalysis".lower() or sqr.status.lower() == "Complete".lower():
-                return sqr
-    except SequenceRun.DoesNotExist as e:
-        logger.debug(e)  # silent unless debug
-    return sequence_run
+    return SequenceRun.objects.filter(run_id=run_id, status__iexact="PendingAnalysis").order_by("-id").first()
 
 
 @transaction.atomic

@@ -17,8 +17,8 @@ from typing import List
 import pandas as pd
 from data_portal.models.workflow import Workflow 
 from data_portal.models.labmetadata import LabMetadata
-from data_processors.pipeline.services import notification_srv, sequence_run_srv, workflow_srv, metadata_srv, \
-    library_run_srv
+from data_processors.pipeline.services import notification_srv, sequencerun_srv, workflow_srv, metadata_srv, \
+    libraryrun_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
@@ -335,7 +335,7 @@ def handler(event, context) -> dict:
     workflow_id = wfl_helper.get_workflow_id()
     workflow_version = wfl_helper.get_workflow_version()
 
-    sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
+    sqr = sequencerun_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
 
     # construct and format workflow run name convention
     workflow_run_name = wfl_helper.construct_workflow_name(seq_name=seq_name)
@@ -368,7 +368,7 @@ def handler(event, context) -> dict:
     library_id_list = metadata_df["library_id"].tolist()
 
     # Link each library ID to this workflow
-    _ = library_run_srv.link_library_runs_with_x_seq_workflow(library_id_list, workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow(library_id_list, workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 

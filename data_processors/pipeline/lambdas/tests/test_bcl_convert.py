@@ -13,7 +13,7 @@ from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory, WorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import bcl_convert
-from data_processors.pipeline.services import library_run_srv
+from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from data_processors.pipeline.tools import liborca
 from utils import libslack
@@ -370,7 +370,7 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
             # This probably mean need to fix data, look for corresponding Lab Metadata entry...
 
         library_id_list = metadata_df["library_id"].tolist()
-        library_run_list = library_run_srv.link_library_runs_with_x_seq_workflow(library_id_list, mock_bcl_workflow)
+        library_run_list = libraryrun_srv.link_library_runs_with_x_seq_workflow(library_id_list, mock_bcl_workflow)
         self.assertIsNotNone(library_run_list)
         self.assertEqual(1, len(library_run_list))
         self.assertEqual(mock_library_run.library_id, library_run_list[0].library_id)

@@ -11,7 +11,7 @@ from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMeta
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowRunEventType
 from data_processors.pipeline.lambdas import sqs_iap_event
-from data_processors.pipeline.services import library_run_srv
+from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 from data_processors.pipeline.tools import liborca
@@ -254,7 +254,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
         self.verify_local()
 
-        when(library_run_srv).create_library_run_from_sequence(...).thenReturn(list())  # skip LibraryRun creation
+        when(libraryrun_srv).create_library_run_from_sequence(...).thenReturn(list())  # skip LibraryRun creation
 
         mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
         mock_instrument_run_id = "200508_A01052_0001_AC5GT7ACGT"

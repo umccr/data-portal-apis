@@ -14,7 +14,7 @@ django.setup()
 import logging
 
 from data_portal.models.workflow import Workflow
-from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv, library_run_srv
+from data_processors.pipeline.services import sequencerun_srv, batch_srv, workflow_srv, metadata_srv, libraryrun_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 from utils import libjson, libdt
@@ -115,7 +115,7 @@ def handler(event, context) -> dict:
     workflow_id = wfl_helper.get_workflow_id()
     workflow_version = wfl_helper.get_workflow_version()
 
-    sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
+    sqr = sequencerun_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
     batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
 
     # construct and format workflow run name convention
@@ -151,7 +151,7 @@ def handler(event, context) -> dict:
     )
 
     # establish link between Workflow and LibraryRun
-    _ = library_run_srv.link_library_run_with_workflow(library_id, lane, workflow)
+    _ = libraryrun_srv.link_library_run_with_workflow(library_id, lane, workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 

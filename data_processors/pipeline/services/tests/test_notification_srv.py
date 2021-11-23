@@ -2,7 +2,7 @@ from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import TumorNormalWorkflowFactory, LibraryRunFactory, TumorLibraryRunFactory, \
     LabMetadataFactory, TumorLabMetadataFactory
-from data_processors.pipeline.services import notification_srv, library_run_srv
+from data_processors.pipeline.services import notification_srv, libraryrun_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase
 
 
@@ -29,7 +29,7 @@ class NotificationSrvUnitTests(PipelineUnitTestCase):
         mock_workflow.save()
 
         # link them
-        library_run_srv.link_library_runs_with_x_seq_workflow([
+        libraryrun_srv.link_library_runs_with_x_seq_workflow([
             mock_normal_library_run.library_id,
             mock_tumor_library_run.library_id,
         ], mock_workflow)

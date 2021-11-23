@@ -6,7 +6,7 @@ from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.tests.factories import TestConstant, LabMetadataFactory, LibraryRunFactory
 from data_processors.lims.lambdas import labmetadata
-from data_processors.pipeline.services import library_run_srv
+from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
 
 
@@ -17,11 +17,11 @@ class LibraryRunSrvUnitTests(PipelineUnitTestCase):
 
     def test_create_or_update_library_run(self):
         """
-        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvUnitTests.test_create_or_update_library_run
+        python manage.py test data_processors.pipeline.services.tests.test_libraryrun_srv.LibraryRunSrvUnitTests.test_create_or_update_library_run
         """
         mock_meta: LabMetadata = LabMetadataFactory()
 
-        library_run = library_run_srv.create_or_update_library_run({
+        library_run = libraryrun_srv.create_or_update_library_run({
             'instrument_run_id': TestConstant.instrument_run_id.value,
             'run_id': TestConstant.run_id.value,
             'library_id': TestConstant.library_id_normal.value,
@@ -37,11 +37,11 @@ class LibraryRunSrvUnitTests(PipelineUnitTestCase):
 
     def test_update_library_run(self):
         """
-        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvUnitTests.test_update_library_run
+        python manage.py test data_processors.pipeline.services.tests.test_libraryrun_srv.LibraryRunSrvUnitTests.test_update_library_run
         """
         mock_library_run: LibraryRun = LibraryRunFactory()
 
-        library_run = library_run_srv.create_or_update_library_run({
+        library_run = libraryrun_srv.create_or_update_library_run({
             'instrument_run_id': TestConstant.instrument_run_id.value,
             'run_id': TestConstant.run_id.value,
             'library_id': TestConstant.library_id_normal.value,
@@ -68,7 +68,7 @@ class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_create_library_run_from_sequence(self):
         """
-        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvIntegrationTests.test_create_library_run_from_sequence
+        python manage.py test data_processors.pipeline.services.tests.test_libraryrun_srv.LibraryRunSrvIntegrationTests.test_create_library_run_from_sequence
         """
 
         # populate test db with LabMetadata
@@ -80,7 +80,7 @@ class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
         gds_folder_path = "/200612_A01052_0017_BH5LYWDSXY_r.Uvlx2DEIME-KH0BRyF9XBg"
         sample_sheet_name = "SampleSheet.csv"
 
-        library_run_list = library_run_srv.create_library_run_from_sequence({
+        library_run_list = libraryrun_srv.create_library_run_from_sequence({
             'instrument_run_id': "200612_A01052_0017_BH5LYWDSXY",
             'run_id': "r.Uvlx2DEIME-KH0BRyF9XBg",
             'gds_folder_path': gds_folder_path,
@@ -106,7 +106,7 @@ class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_create_library_run_from_sequence_no_lane_number(self):
         """
-        python manage.py test data_processors.pipeline.services.tests.test_library_run_srv.LibraryRunSrvIntegrationTests.test_create_library_run_from_sequence_no_lane_number
+        python manage.py test data_processors.pipeline.services.tests.test_libraryrun_srv.LibraryRunSrvIntegrationTests.test_create_library_run_from_sequence_no_lane_number
         """
 
         # populate test db with LabMetadata
@@ -118,7 +118,7 @@ class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
         gds_folder_path = "/200110_A00130_0128_AHMF7VDSXX"
         sample_sheet_name = "SampleSheet-test.csv"
 
-        library_run_list = library_run_srv.create_library_run_from_sequence({
+        library_run_list = libraryrun_srv.create_library_run_from_sequence({
             'instrument_run_id': "200110_A00130_0128_AHMF7VDSXX",
             'run_id': "",
             'gds_folder_path': gds_folder_path,
