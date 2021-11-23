@@ -15,7 +15,6 @@ from typing import List
 import logging
 
 from data_portal.models.sequencerun import SequenceRun
-from data_portal.models.sequence import SequenceStatus
 from data_portal.models.libraryrun import LibraryRun
 from data_processors.pipeline.services import sequence_run_srv, notification_srv, sequence_srv, library_run_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
@@ -80,7 +79,10 @@ def handle_bssh_run_event(message, event_action, event_type, context):
         # Create or update Sequence record from BSSH Run event payload
         seq = sequence_srv.create_or_update_sequence_from_bssh_event(payload)
 
-        if seq.status == SequenceStatus.STARTED.value or sqr.status.lower() == "PendingAnalysis".lower():
+        # Using bssh.runs event status PendingAnalysis as trigger for next event
+        # See https://github.com/umccr-illumina/stratus/issues/95
+        if sqr.status.lower() == "PendingAnalysis".lower():
+            # populate LibraryRun records
             library_run_list: List[LibraryRun] = library_run_srv.create_library_run_from_sequence({
                 'instrument_run_id': seq.instrument_run_id,
                 'run_id': seq.run_id,
@@ -89,9 +91,7 @@ def handle_bssh_run_event(message, event_action, event_type, context):
                 'sample_sheet_name': seq.sample_sheet_name,
             })
 
-        # Once Sequence Run status is good, launch bcl convert workflow
-        # Using bssh.runs event status PendingAnalysis for now, See https://github.com/umccr-illumina/stratus/issues/95
-        if sqr.status.lower() == "PendingAnalysis".lower():
+            # launch bcl convert workflow
             bcl_convert.handler({
                 'gds_volume_name': sqr.gds_volume_name,
                 'gds_folder_path': sqr.gds_folder_path,
