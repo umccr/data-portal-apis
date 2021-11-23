@@ -285,6 +285,12 @@ functions:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
 
+  libraryrun:
+    handler: data_processors.pipeline.lambdas.libraryrun.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 60
+
 custom:
   enabled:
     dev: false

@@ -29,11 +29,12 @@ def create_library_run_from_sequence(payload: dict):
     :param payload:
     :return:
     """
-    instr_run_id = payload.get('instrument_run_id')
-    run_id = payload.get('run_id')
-    gds_folder_path = payload.get('gds_folder_path')
-    gds_volume_name = payload.get('gds_volume_name')
-    sample_sheet_name = payload.get('sample_sheet_name')
+    instr_run_id = payload['instrument_run_id']
+    run_id = payload['run_id']
+    gds_folder_path = payload['gds_folder_path']
+    gds_volume_name = payload['gds_volume_name']
+    sample_sheet_name = payload.get('sample_sheet_name', "SampleSheet.csv")
+    runinfo_name = payload.get('runinfo_name', "RunInfo.xml")
 
     samplesheet_path = gds_folder_path + os.path.sep + sample_sheet_name
     samplesheet_json = liborca.get_samplesheet_to_json(gds_volume=gds_volume_name, samplesheet_path=samplesheet_path)
@@ -42,11 +43,11 @@ def create_library_run_from_sequence(payload: dict):
     library_run_list = []
     data_rows = samplesheet_dict['Data']
 
-    number_of_lanes = None
+    no_of_lanes = None
     if 'Lane' not in data_rows[0].keys():
         # extract number of lanes from RunInfo.xml
-        runinfo_path = gds_folder_path + os.path.sep + "RunInfo.xml"
-        number_of_lanes = liborca.get_number_of_lanes_from_runinfo(gds_volume=gds_volume_name, runinfo_path=runinfo_path)
+        runinfo_path = gds_folder_path + os.path.sep + runinfo_name
+        no_of_lanes = liborca.get_number_of_lanes_from_runinfo(gds_volume=gds_volume_name, runinfo_path=runinfo_path)
 
     for data_row in data_rows:
         library_id_as_in_samplesheet = data_row['Sample_Name']  # just working out from Sample_Name column
@@ -64,7 +65,7 @@ def create_library_run_from_sequence(payload: dict):
 
         if not data_row.get('Lane'):
             # Create a entry for each lane (samples are distributed across all lanes)
-            for i in range(number_of_lanes):
+            for i in range(no_of_lanes):
                 library_run = create_or_update_library_run({
                     'instrument_run_id': instr_run_id,
                     'run_id': run_id,
