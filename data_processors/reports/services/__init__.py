@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 
@@ -5,7 +6,6 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from data_portal.models.report import Report
 from data_processors.const import ReportHelper
-from utils import libjson
 
 logger = logging.getLogger()
 
@@ -46,7 +46,16 @@ def load_report_json(decompressed_report, report_uri):
 
         data = None
     else:
-        data = libjson.loads(decompressed_report)
+        def strict_parser(arg):
+            raise ValueError(f"Not allowed Infinity or NaN. Found: {arg}")
+
+        try:
+            data = json.loads(decompressed_report, parse_constant=strict_parser)
+        except ValueError as e:
+            # See https://github.com/umccr/data-portal-apis/issues/347
+            logger.warning(f"Saving Report meta-info only. Malformed JSON value in Report data. "
+                           f"Exception: {e}")
+            data = None
 
     return data
 

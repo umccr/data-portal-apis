@@ -4,15 +4,15 @@ from django.db.models import QuerySet
 from django.utils.timezone import make_aware
 from mockito import when, unstub
 
-from data_portal.models.s3object import S3Object
-from data_portal.models.report import Report, ReportType
 from data_portal.models.gdsfile import GDSFile
+from data_portal.models.report import Report, ReportType
+from data_portal.models.s3object import S3Object
 from data_portal.tests.factories import GDSFileFactory
 from data_processors.const import ReportHelper
 from data_processors.reports.lambdas import report_event
 from data_processors.reports.services import s3_report_srv, gds_report_srv
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
-from data_processors.reports.tests.test_report_uk import KEY_EXPECTED
+from data_processors.reports.tests.test_report_uk import KEY_EXPECTED, KEY_EXPECTED_ALT_7
 from data_processors.reports.tests.test_report_uk_gds import PATH_EXPECTED
 from utils import libs3, gds, ica
 
@@ -171,6 +171,60 @@ class ReportUnitTests(ReportUnitTestCase):
         report = gds_report_srv.persist_report("volume", PATH_EXPECTED, ica.GDSFilesEventType.DELETED.value)
         self.assertIsNotNone(report)
         self.assertEqual(0, Report.objects.count())
+
+    def test_report_event_handler_multiqc_json_nan(self):
+        """export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+        python manage.py test data_processors.reports.tests.test_report.ReportUnitTests.test_report_event_handler_multiqc_json_nan
+
+        See https://github.com/umccr/data-portal-apis/issues/347
+
+        NOTE:
+        If you are seeing this error:
+            django.db.utils.NotSupportedError: contains lookup is not supported on this database backend.
+
+        Make sure to run against local setting i.e.
+            export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+
+        Reason: JSONField query do require MySQL database
+        """
+        mock_s3_obj = S3Object(
+            key=KEY_EXPECTED_ALT_7,
+            bucket="some-bucket",
+            size=170,
+            last_modified_date=make_aware(datetime.now()),
+            e_tag="1870ed1a461dad0af6fd8da246343948"
+        )
+        mock_s3_obj.save()
+
+        mock_s3_content_bytes = b'[{"sample":"SBJ00001_PRJ000001_L0000001","data":[0.034, NaN]}]\n'
+
+        when(libs3).get_s3_object_to_bytes(...).thenReturn(mock_s3_content_bytes)
+
+        result = report_event.handler({
+            'event_type': libs3.S3EventType.EVENT_OBJECT_CREATED.value,
+            'event_time': "2021-04-16T05:53:42.841Z",
+            's3_bucket_name': mock_s3_obj.bucket,
+            's3_object_meta': {
+                'versionId': "sGc6i4_SXKDncofB7fvEq9z7xsvW7GVl",
+                'size': 170,
+                'eTag': mock_s3_obj.e_tag,
+                'key': mock_s3_obj.key,
+                'sequencer': "006078FC7966A0E163"
+            }
+        }, None)
+
+        logger.info(result)
+
+        report = Report.objects.get(subject_id="SBJ00742", sample_id="PRJ210259", library_id="L2100263")
+        logger.info("-" * 32)
+        logger.info(f"Found report from db: {report}")
+        logger.info(f"Report report_uri: {report.report_uri}")
+        logger.info(f"Report s3_object_id: {report.s3_object_id}")
+        logger.info(f"Report data: {report.data}")
+        self.assertIsNone(report.data)
+
+        # assert report <1-to-1> s3_object has linked
+        self.assertEqual(report.s3_object_id, mock_s3_obj.id)
 
 
 class ReportIntegrationTests(ReportIntegrationTestCase):
