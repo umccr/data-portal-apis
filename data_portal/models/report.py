@@ -5,11 +5,9 @@ from django.db import models
 from django.db.models import QuerySet
 
 from data_portal.fields import HashField, HashFieldHelper
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 from data_portal.models.gdsfile import GDSFile
 from data_portal.models.s3object import S3Object
-from django.core.exceptions import FieldError
-
-from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +42,7 @@ class ReportType(models.TextChoices):
     SV_NOBND_MANYTRANSCRIPTS = "sv_nobnd_manytranscripts"
 
 
-class ReportManager(models.Manager):
+class ReportManager(PortalBaseManager):
 
     def get_by_unique_fields(
             self,
@@ -100,21 +98,11 @@ class ReportManager(models.Manager):
         return report
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
-
-        OBJECT_FIELD_NAMES = self.values()[0].keys()
-
-        keywords = kwargs.get('keywords', None)
-        if keywords:
-            try:
-                qs = filter_object_by_parameter_keyword(qs, keywords, OBJECT_FIELD_NAMES)
-            except FieldError:
-                qs = self.none()
-
-        return qs
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class Report(models.Model):
+class Report(PortalBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)

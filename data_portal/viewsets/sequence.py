@@ -12,10 +12,6 @@ from data_portal.models.sequence import Sequence
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import SequenceSerializer
 
-# TODO to be refactored
-SEQUENCE_SEARCH_FIELDS = ["id", "instrument_run_id", "run_id", "sample_sheet_name", "gds_folder_path",
-                          "gds_volume_name", "reagent_barcode", "flowcell_barcode", "status", "start_time", "end_time"]
-
 
 class SequenceViewSet(ReadOnlyModelViewSet):
     serializer_class = SequenceSerializer
@@ -23,9 +19,7 @@ class SequenceViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
     ordering = ['-id']
-    search_fields = SEQUENCE_SEARCH_FIELDS
+    search_fields = Sequence.get_base_fields()
 
     def get_queryset(self):
-        return Sequence.objects.get_by_keyword(
-            keywords=self.request.query_params
-        )
+        return Sequence.objects.get_by_keyword(**self.request.query_params)

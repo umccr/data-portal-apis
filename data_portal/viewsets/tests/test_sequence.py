@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils.timezone import now
 
 from data_portal.models.sequence import Sequence
 from data_portal.viewsets.tests import _logger
@@ -14,7 +15,7 @@ class SequenceViewSetTestCase(TestCase):
             gds_folder_path="/to/gds/folder/path",
             gds_volume_name="gds_name",
             status="Complete",
-            start_time="2020-01-01 11:59:13.698105"
+            start_time=now()
         )
 
     def test_get_api(self):
@@ -30,7 +31,7 @@ class SequenceViewSetTestCase(TestCase):
         result_response = response.data['results']
         self.assertGreater(len(result_response), 0, 'A result is expected')
 
-        _logger.info('Check if unique data has a signle entry')
+        _logger.info('Check if unique data has a single entry')
         response = self.client.get('/sequence/?instrument_run_id=191213_A00000_00000_A000000000&run_id=r.AAAAAA')
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for unique data')
@@ -38,4 +39,4 @@ class SequenceViewSetTestCase(TestCase):
         _logger.info('Check if wrong parameter')
         response = self.client.get('/sequence/?lib_id=LBR0001')
         results_response = response.data['results']
-        self.assertGreater(len(results_response), 0, 'Results are expected for unrecognized query.')
+        self.assertEqual(len(results_response), 0, 'No results are expected for unrecognized query parameter')

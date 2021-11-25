@@ -1,23 +1,29 @@
 from django.test import TestCase
 
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.workflow import Workflow
+from data_portal.tests.factories import DragenWgsQcWorkflowFactory, TestConstant
 from data_portal.viewsets.tests import _logger
 
 
 class LibraryRunViewSetTestCase(TestCase):
 
     def setUp(self):
-        _ = LibraryRun.objects.create(
-            library_id="L2000002",
-            instrument_run_id="191213_A00000_00000_A000000000",
-            run_id="r.AAAAAAAAA",
+        self.mock_qc_wfl: Workflow = DragenWgsQcWorkflowFactory()
+
+        self.mock_lib_run = LibraryRun.objects.create(
+            library_id=TestConstant.library_id_tumor.value,
+            instrument_run_id=TestConstant.instrument_run_id.value,
+            run_id=TestConstant.run_id.value,
             lane=2,
             override_cycles="",
             coverage_yield="",
             qc_pass=True,
             qc_status="poor",
-            valid_for_analysis=True
+            valid_for_analysis=True,
         )
+
+        self.mock_lib_run.workflows.add(self.mock_qc_wfl)
 
     def test_get_api(self):
         """
@@ -32,7 +38,25 @@ class LibraryRunViewSetTestCase(TestCase):
         results_response = response.data['results']
         self.assertGreater(len(results_response), 0, 'At least some result is expected')
 
-        _logger.info('Check if unique data has a signle entry')
-        response = self.client.get('/libraryrun/?instrument_run_id=191213_A00000_00000_A000000000&library_id=L2000002')
+        _logger.info('Check if unique data has a single entry')
+        q = f'/libraryrun/?instrument_run_id={TestConstant.instrument_run_id.value}&library_id={TestConstant.library_id_tumor.value}'
+        response = self.client.get(q)
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for uniqueness')
+
+        _logger.info('Check if wrong parameter')
+        response = self.client.get('/libraryrun/?lib_id=LBR0001')
+        results_response = response.data['results']
+        self.assertEqual(len(results_response), 0, 'No results are expected for unrecognized query parameter')
+
+        _logger.info('Check if related model field as request parameter')
+        response = self.client.get(f'/libraryrun/?type_name={self.mock_qc_wfl.type_name}')
+        results_response = response.data['results']
+        self.assertEqual(len(results_response), 1, 'Results are expected for query parameter by related model field')
+
+        _logger.info('Check if built-in REST request parameter')
+        q = f'/libraryrun/?search={TestConstant.library_id_tumor.value}&rowsPerPage=1000&page=1&ordering=-library_id'
+        response = self.client.get(q)
+        results_response = response.data['results']
+        _logger.info(response.data)
+        self.assertEqual(len(results_response), 1, 'Results are expected for built-in REST query parameter')

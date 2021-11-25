@@ -1,7 +1,8 @@
 from django.test import TestCase
 
-from data_portal.viewsets.tests import _logger
 from data_portal.tests.factories import SequenceRunFactory
+from data_portal.viewsets.tests import _logger
+
 
 class SequenceRunViewSetTestCase(TestCase):
 
@@ -21,7 +22,7 @@ class SequenceRunViewSetTestCase(TestCase):
         result_response = response.data['results']
         self.assertGreater(len(result_response), 0, 'A result is expected')
 
-        _logger.info('Check if unique data has a signle entry')
+        _logger.info('Check if unique data has a single entry')
         response = self.client.get('/sequencerun/?msg_attr_action=statuschanged')
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for unique data')
@@ -29,4 +30,4 @@ class SequenceRunViewSetTestCase(TestCase):
         _logger.info('Check Invalid keyword')
         response = self.client.get('/sequencerun/?foo=bar')
         results_response = response.data['results']
-        self.assertGreater(len(results_response), 0, 'Records are expected')
+        self.assertEqual(len(results_response), 0, 'No results are expected for unrecognized query parameter')

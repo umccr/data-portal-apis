@@ -3,40 +3,31 @@ import logging
 from django.db import models
 from django.db.models import QuerySet
 
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 from data_portal.models.workflow import Workflow
-from django.core.exceptions import FieldError
-
-from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
 
-class LibraryRunManager(models.Manager):
+class LibraryRunManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
+        qs: QuerySet = super().get_queryset()
 
-        OBJECT_FIELD_NAMES = self.values()[0].keys()
-
-        keywords = kwargs.get('keywords', None)
-        if keywords:
-            try:
-                qs = filter_object_by_parameter_keyword(qs,keywords, OBJECT_FIELD_NAMES)
-            except FieldError:
-                qs = self.none()
-
-        type_name = keywords.get('type_name', None)
+        type_name = kwargs.get('type_name', None)
         if type_name:
-            qs = qs.filter(workflows__type_name__iexact=type_name)
+            qs = qs.filter(self.reduce_multi_values_qor('workflows__type_name', type_name))
+            kwargs.pop('type_name')
 
-        end_status = keywords.get('end_status', None)
+        end_status = kwargs.get('end_status', None)
         if end_status:
-            qs = qs.filter(workflows__end_status__iexact=end_status).distinct()
+            qs = qs.filter(self.reduce_multi_values_qor('workflows__end_status', end_status)).distinct()
+            kwargs.pop('end_status')
 
-        return qs
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class LibraryRun(models.Model):
+class LibraryRun(PortalBaseModel):
     class Meta:
         unique_together = ['library_id', 'instrument_run_id', 'run_id', 'lane']
 

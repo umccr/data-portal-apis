@@ -15,10 +15,6 @@ from data_portal.serializers import LibraryRunModelSerializer
 
 logger = logging.getLogger()
 
-# TODO to be refactored
-LIBRARY_RUN_SEARCH_FIELDS = ["id", "library_id", "instrument_run_id", "run_id", "lane", "override_cycles",
-                             "coverage_yield", "qc_pass", "qc_status", "valid_for_analysis"]
-
 
 class LibraryRunViewSet(ReadOnlyModelViewSet):
     serializer_class = LibraryRunModelSerializer
@@ -26,9 +22,7 @@ class LibraryRunViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = '__all__'
     ordering = ['-id']
-    search_fields = LIBRARY_RUN_SEARCH_FIELDS
+    search_fields = LibraryRun.get_base_fields()
 
     def get_queryset(self):
-        return LibraryRun.objects.get_by_keyword(
-            keywords=self.request.query_params
-        )
+        return LibraryRun.objects.get_by_keyword(**self.request.query_params)

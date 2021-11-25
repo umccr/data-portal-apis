@@ -1,7 +1,8 @@
 from django.test import TestCase
 
-from data_portal.viewsets.tests import _logger
 from data_portal.tests.factories import ReportFactory
+from data_portal.viewsets.tests import _logger
+
 
 class ReportViewSetTestCase(TestCase):
 
@@ -21,7 +22,7 @@ class ReportViewSetTestCase(TestCase):
         result_response = response.data['results']
         self.assertGreater(len(result_response), 0, 'A result is expected')
 
-        _logger.info('Check if unique data has a signle entry')
+        _logger.info('Check if unique data has a single entry')
         response = self.client.get('/reports/?library_id=L0000001')
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Single result is expected for unique data')

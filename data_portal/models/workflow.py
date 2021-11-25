@@ -3,17 +3,15 @@ import logging
 from django.db import models
 from django.db.models import QuerySet
 
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.sequencerun import SequenceRun
 from data_processors.pipeline.domain.workflow import WorkflowStatus
-from django.core.exceptions import FieldError
-
-from .utils import filter_object_by_parameter_keyword
 
 logger = logging.getLogger(__name__)
 
 
-class WorkflowManager(models.Manager):
+class WorkflowManager(PortalBaseManager):
 
     def get_by_batch_run(self, batch_run: BatchRun) -> QuerySet:
         qs: QuerySet = self.filter(batch_run=batch_run)
@@ -53,26 +51,17 @@ class WorkflowManager(models.Manager):
         return qs
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
+        qs: QuerySet = super().get_queryset()
 
-        OBJECT_FIELD_NAMES = self.values()[0].keys()
-
-        keywords = kwargs.get('keywords', None)
-        if keywords:
-            try:
-                qs = filter_object_by_parameter_keyword(qs, keywords, OBJECT_FIELD_NAMES)
-            except FieldError:
-                qs = self.none()
-
-        # keyword from libraryrun model
-        library_id = keywords.get('library_id', None)
+        library_id = kwargs.get('library_id', None)
         if library_id:
-            qs = qs.filter(libraryrun__library_id__iexact=library_id)
+            qs = qs.filter(self.reduce_multi_values_qor('libraryrun__library_id', library_id))
+            kwargs.pop('library_id')
 
-        return qs
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class Workflow(models.Model):
+class Workflow(PortalBaseModel):
     class Meta:
         unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
 

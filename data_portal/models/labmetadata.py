@@ -3,9 +3,8 @@ import logging
 from django.db import models, connection
 from django.db.models import QuerySet, Value
 from django.db.models.functions import Concat
-from django.core.exceptions import FieldError
 
-from .utils import filter_object_by_parameter_keyword
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -86,21 +85,11 @@ class LabMetadataWorkflow(models.TextChoices):
     RESEARCH = "research"
 
 
-class LabMetadataManager(models.Manager):
+class LabMetadataManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
-
-        OBJECT_FIELD_NAMES = self.values()[0].keys()
-
-        keywords = kwargs.get('keywords', None)
-        if keywords:
-            try:
-                qs = filter_object_by_parameter_keyword(qs, keywords, OBJECT_FIELD_NAMES)
-            except FieldError:
-                qs = self.none()
-
-        return qs
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
 
     def get_by_keyword_in(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
@@ -152,7 +141,7 @@ class LabMetadataManager(models.Manager):
         return qs
 
 
-class LabMetadata(models.Model):
+class LabMetadata(PortalBaseModel):
     """
     Models a row in the lab tracking sheet data. Fields are the columns.
     """

@@ -2,30 +2,20 @@ import logging
 
 from django.db import models
 from django.db.models import QuerySet
-from django.core.exceptions import FieldError
 
-from .utils import filter_object_by_parameter_keyword
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
+
 logger = logging.getLogger(__name__)
 
 
-class SequenceRunManager(models.Manager):
+class SequenceRunManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
-
-        OBJECT_FIELD_NAMES = self.values()[0].keys()
-
-        keywords = kwargs.get('keywords', None)
-        if keywords:
-            try:
-                qs = filter_object_by_parameter_keyword(qs, keywords, OBJECT_FIELD_NAMES)
-            except FieldError:
-                qs = self.none()
-
-        return qs
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class SequenceRun(models.Model):
+class SequenceRun(PortalBaseModel):
     class Meta:
         unique_together = ['run_id', 'date_modified', 'status']
 

@@ -22,6 +22,4 @@ class SequenceRunViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
-        return SequenceRun.objects.get_by_keyword(
-            keywords=self.request.query_params
-        )
+        return SequenceRun.objects.get_by_keyword(**self.request.query_params)
