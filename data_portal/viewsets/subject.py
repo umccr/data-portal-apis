@@ -10,10 +10,12 @@ from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from data_portal.models.gdsfile import GDSFile
 from data_portal.models.limsrow import LIMSRow
 from data_portal.models.s3object import S3Object
 from data_portal.pagination import StandardResultsSetPagination
-from data_portal.serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer
+from data_portal.serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, \
+    GDSFileModelSerializer
 from utils import libs3
 
 logger = logging.getLogger()
@@ -34,6 +36,7 @@ class SubjectViewSet(ReadOnlyModelViewSet):
 
     def retrieve(self, request, pk=None, **kwargs):
         results = S3Object.objects.get_subject_results(pk).all()
+        results_gds = GDSFile.objects.get_subject_results(pk).all()
 
         features = []
         for obj in results:
@@ -48,4 +51,5 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
         data.update(features=features)
         data.update(results=S3ObjectModelSerializer(results, many=True).data)
+        data.update(results_gds=GDSFileModelSerializer(results_gds, many=True).data)
         return Response(data)
