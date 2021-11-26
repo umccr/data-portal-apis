@@ -15,5 +15,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(process_unique_hash),
+        migrations.RunPython(process_unique_hash, elidable=True),
     ]
