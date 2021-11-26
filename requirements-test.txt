@@ -1,4 +1,4 @@
 -r requirements.txt
-factory_boy==3.2.0
+factory_boy==3.2.1
 pytz==2021.3
 mockito==1.2.2
