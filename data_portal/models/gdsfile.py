@@ -1,7 +1,7 @@
 import logging
 
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 
 from data_portal.fields import HashField
 
@@ -25,6 +25,20 @@ class GDSFileManager(models.Manager):
         if run:
             qs = qs.filter(path__icontains=run)
 
+        return qs
+
+    def get_subject_results(self, subject_id: str, **kwargs):
+        qs: QuerySet = self.filter(path__icontains=subject_id)
+
+        tso_ctdna_bam = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.bam$')
+        tso_ctdna_vcf = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.vcf.gz$')
+
+        q_results: Q = tso_ctdna_bam | tso_ctdna_vcf
+        qs = qs.filter(q_results)
+
+        volume_name = kwargs.get('volume_name', None)
+        if volume_name:
+            qs = qs.filter(volume_name__iexact=volume_name)
         return qs
 
 
