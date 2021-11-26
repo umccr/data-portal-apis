@@ -16,10 +16,11 @@ import re
 from collections import defaultdict
 from typing import List
 
+from libica.app import configuration
 from libica.openapi import libgds
 
 from data_processors.pipeline.services import metadata_srv
-from utils import ica, libjson
+from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -122,7 +123,7 @@ def handler(event, context):
 def collect_gds_files(location: str, fastq_list_csv_files: List, fastq_files: List):
     volume_name, path_ = parse_gds_path(location)
 
-    with libgds.ApiClient(ica.configuration(libgds)) as api_client:
+    with libgds.ApiClient(configuration(libgds)) as api_client:
         files_api = libgds.FilesApi(api_client)
         try:
             page_token = None

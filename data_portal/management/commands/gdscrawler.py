@@ -15,10 +15,11 @@ import logging
 from datetime import datetime
 
 from django.core.management import BaseCommand, CommandParser
+from libica.app import configuration
 from libica.openapi import libgds
+from libumccr import libdt
 
 from data_processors.gds import services
-from utils import ica, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -44,7 +45,7 @@ class Command(BaseCommand):
 
         gds_volume = opt_volume
 
-        with libgds.ApiClient(ica.configuration(libgds)) as gds_client:
+        with libgds.ApiClient(configuration(libgds)) as gds_client:
             files_api = libgds.FilesApi(gds_client)
             try:
                 logger.info(f"Crawling files metadata from volume gds://{gds_volume}")

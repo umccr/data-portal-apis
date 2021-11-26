@@ -6,9 +6,9 @@ from typing import Dict
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from libumccr import libdt
 
 from data_portal.models.limsrow import LIMSRow
-from utils import libdt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

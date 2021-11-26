@@ -3,13 +3,13 @@ import re
 from typing import Tuple
 
 from django.db.models import QuerySet
+from libica.app import gds, GDSFilesEventType
 
-from data_portal.models.report import ReportType
 from data_portal.models.gdsfile import GDSFile
+from data_portal.models.report import ReportType
 from data_processors.const import ReportHelper
 from data_processors.reports.services import SUBJECT_ID_PATTERN, SAMPLE_ID_PATTERN, LIBRARY_ID_PATTERN, \
     sync_report_created, sync_report_deleted, load_report_json
-from utils import gds, ica
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -145,9 +145,9 @@ def persist_report(gds_volume_name, gds_path, event_type):
     }
 
     create_or_update_events = [
-        ica.GDSFilesEventType.UPLOADED.value,
-        ica.GDSFilesEventType.ARCHIVED.value,
-        ica.GDSFilesEventType.UNARCHIVED.value,
+        GDSFilesEventType.UPLOADED.value,
+        GDSFilesEventType.ARCHIVED.value,
+        GDSFilesEventType.UNARCHIVED.value,
     ]
 
     if event_type in create_or_update_events:
@@ -159,5 +159,5 @@ def persist_report(gds_volume_name, gds_path, event_type):
 
         return sync_report_created(payload)
 
-    elif event_type == ica.GDSFilesEventType.DELETED.value:
+    elif event_type == GDSFilesEventType.DELETED.value:
         return sync_report_deleted(payload)

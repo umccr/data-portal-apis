@@ -2,11 +2,11 @@ import logging
 from typing import List, Dict
 
 from django.db import transaction
+from libumccr import libjson
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.workflow import Workflow
-from utils import libjson
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

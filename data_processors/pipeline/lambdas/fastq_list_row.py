@@ -16,7 +16,8 @@ from typing import List
 import pandas as pd
 
 from data_processors.pipeline.tools import libregex
-from utils import libjson, gds
+from libumccr import libjson
+from libica.app import gds
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

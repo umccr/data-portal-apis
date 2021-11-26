@@ -13,8 +13,9 @@ django.setup()
 
 import logging
 from data_processors.pipeline.services import gds_srv
+from libica.app import configuration
 from libica.openapi import libgds
-from utils import libjson, ica
+from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -22,15 +23,15 @@ logger.setLevel(logging.INFO)
 
 def get_presigned_url(file_id: str):
     logger.debug(f"Retrieving pre-signed URL for file: {file_id}")
-    with libgds.ApiClient(ica.configuration(libgds)) as api_client:
+    with libgds.ApiClient(configuration(libgds)) as api_client:
         file_api = libgds.FilesApi(api_client)
     try:
         file_details: libgds.FileListResponse = file_api.get_file(file_id=file_id)
     except libgds.ApiException as e:
         logger.info("Exception when calling FilesApi: %s\n" % e)
 
-    print("FILE DETAILS")
-    print(file_details)
+    logger.info("FILE DETAILS")
+    logger.info(file_details)
 
     return file_details.presigned_url
 

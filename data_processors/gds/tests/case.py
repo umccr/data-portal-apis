@@ -3,9 +3,9 @@ import os
 import uuid
 
 from django.test import TestCase
+from libumccr import libslack, aws
+from libumccr.aws import libsqs
 from mockito import unstub, mock, when
-
-from utils import libslack, libaws
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -24,7 +24,7 @@ class GDSEventUnitTestCase(TestCase):
         when(libslack.http.client.HTTPSConnection).request(...).thenReturn('ok')
         when(libslack.http.client.HTTPSConnection).getresponse(...).thenReturn(mock_response)
 
-        mock_sqs = libaws.client(
+        mock_sqs = aws.client(
             'sqs',
             endpoint_url='http://localhost:4566',
             region_name='ap-southeast-2',
@@ -32,7 +32,8 @@ class GDSEventUnitTestCase(TestCase):
             aws_secret_access_key=str(uuid.uuid4()),
             aws_session_token=f"{uuid.uuid4()}_{uuid.uuid4()}"
         )
-        when(libaws).sqs_client(...).thenReturn(mock_sqs)
+        when(aws).sqs_client(...).thenReturn(mock_sqs)
+        when(libsqs).sqs_client(...).thenReturn(mock_sqs)
 
     def tearDown(self) -> None:
         del os.environ['SLACK_CHANNEL']
@@ -40,7 +41,7 @@ class GDSEventUnitTestCase(TestCase):
         unstub()
 
     def verify_local(self):
-        queue_urls = libaws.sqs_client().list_queues()['QueueUrls']
+        queue_urls = libsqs.sqs_client().list_queues()['QueueUrls']
         logger.info(f"SQS_QUEUE_URLS={queue_urls}")
         self.assertIn('4566', queue_urls[0])
         logger.info(f"-" * 32)

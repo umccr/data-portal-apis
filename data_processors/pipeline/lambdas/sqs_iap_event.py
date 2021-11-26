@@ -18,14 +18,15 @@ from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.libraryrun import LibraryRun
 from data_processors.pipeline.services import notification_srv, sequence_srv, sequencerun_srv, libraryrun_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
-from utils import libjson, ica
+from libumccr import libjson
+from libica.app import ENSEventType
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 IMPLEMENTED_ENS_TYPES = [
-    ica.ENSEventType.BSSH_RUNS.value,
-    ica.ENSEventType.WES_RUNS.value,
+    ENSEventType.BSSH_RUNS.value,
+    ENSEventType.WES_RUNS.value,
 ]
 
 
@@ -52,10 +53,10 @@ def handler(event, context):
         event_action = message['messageAttributes']['action']['stringValue']
         message_body = libjson.loads(message['body'])
 
-        if event_type == ica.ENSEventType.BSSH_RUNS.value:
+        if event_type == ENSEventType.BSSH_RUNS.value:
             handle_bssh_run_event(message, event_action, event_type, context)
 
-        if event_type == ica.ENSEventType.WES_RUNS.value:
+        if event_type == ENSEventType.WES_RUNS.value:
             handle_wes_runs_event(message_body, context)
 
     _msg = f"IAP ENS event processing complete"

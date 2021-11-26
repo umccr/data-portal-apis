@@ -5,16 +5,17 @@ Domain models related to Workflow Automation.
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
+import copy
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from uuid import uuid4
-import copy
 
+from libumccr import libjson
+from libumccr.aws import libssm
 
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
-from utils import libssm, libjson
 
 
 class SampleSheetCSV(Enum):

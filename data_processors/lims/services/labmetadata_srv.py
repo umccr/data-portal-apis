@@ -4,10 +4,11 @@ import re
 import numpy as np
 import pandas as pd
 from django.db import transaction
+from libumccr import libgdrive, libjson
+from libumccr.aws import libssm
 
 from data_portal.models.labmetadata import LabMetadata
 from data_processors import const
-from utils import libssm, libgdrive, libjson
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

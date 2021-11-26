@@ -15,7 +15,8 @@ import logging
 from typing import Union, Dict, List
 from dateutil.parser import parse
 
-from utils import libjson, libssm, libsqs, libs3
+from libumccr import libjson
+from libumccr.aws import libssm, libsqs, libs3
 from data_processors.s3 import services
 from data_processors.const import ReportHelper, S3EventRecord
 

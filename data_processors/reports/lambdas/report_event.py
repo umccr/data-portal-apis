@@ -15,7 +15,9 @@ import uuid
 import logging
 
 from data_processors.reports.services import s3_report_srv, gds_report_srv
-from utils import libjson, libs3, gds
+from libumccr import libjson
+from libumccr.aws import libs3
+from libica.app import gds
 
 from aws_xray_sdk.core import xray_recorder
 

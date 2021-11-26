@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from libumccr import libjson
 
 from data_portal.models.gdsfile import GDSFile
 from data_portal.models.report import Report
@@ -6,7 +7,6 @@ from data_portal.tests import factories
 from data_portal.tests.factories import GDSFileFactory
 from data_processors.gds.lambdas import gds_event
 from data_processors.gds.tests.case import logger, GDSEventUnitTestCase
-from utils import libjson
 
 
 def _make_mock_sqs_message():
@@ -271,6 +271,7 @@ class GDSEventUnitTests(GDSEventUnitTestCase):
         """
         python manage.py test data_processors.gds.tests.test_gds_event.GDSEventUnitTests.test_delete_gds_file_linked_with_report
         """
+        self.verify_local()
 
         gds_file: GDSFile = GDSFileFactory()
         gds_file.path = "/analysis_data/SBJ00001/dragen_tso_ctdna/2021-08-26__05-39-57/Results/PRJ000001_L0000001/PRJ000001_L0000001.AlignCollapseFusionCaller_metrics.json.gz"

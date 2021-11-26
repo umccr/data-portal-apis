@@ -6,13 +6,13 @@ from unittest import skip
 import numpy as np
 import pandas as pd
 from django.test import TransactionTestCase
+from libumccr import libgdrive
 from mockito import when
 
 from data_portal.models.labmetadata import LabMetadata
 from data_processors.lims.lambdas import labmetadata
 from data_processors.lims.services import labmetadata_srv
 from data_processors.lims.tests.case import LimsIntegrationTestCase, logger
-from utils import libgdrive
 
 labmetadata_csv_columns = [
     'LibraryID', 'SampleName', 'SampleID', 'ExternalSampleID', 'SubjectID', 'ExternalSubjectID', 'Phenotype', 'Quality',

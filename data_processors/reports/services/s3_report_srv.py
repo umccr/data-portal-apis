@@ -6,13 +6,13 @@ from typing import Tuple
 # from aws_xray_sdk.core import xray_recorder
 from django.db import transaction
 from django.db.models import QuerySet
+from libumccr.aws import libs3
 
 from data_portal.models.report import ReportType
 from data_portal.models.s3object import S3Object
 from data_processors.const import ReportHelper
 from data_processors.reports.services import SUBJECT_ID_PATTERN, SAMPLE_ID_PATTERN, LIBRARY_ID_PATTERN, \
     sync_report_created, sync_report_deleted, load_report_json
-from utils import libs3
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

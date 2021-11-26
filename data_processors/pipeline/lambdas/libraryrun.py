@@ -14,7 +14,7 @@ django.setup()
 import logging
 
 from data_processors.pipeline.services import libraryrun_srv
-from utils import libjson
+from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

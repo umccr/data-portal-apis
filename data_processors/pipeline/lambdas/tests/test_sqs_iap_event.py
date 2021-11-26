@@ -2,12 +2,13 @@ from datetime import datetime
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
+from libumccr import libslack, libjson
 from mockito import when, verify
 
-from data_portal.models.sequencerun import SequenceRun
-from data_portal.models.workflow import Workflow
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMetadataAssay, LabMetadataWorkflow
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowRunEventType
 from data_processors.pipeline.lambdas import sqs_iap_event
@@ -15,7 +16,6 @@ from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests import _rand, _uuid
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 from data_processors.pipeline.tools import liborca
-from utils import libslack, libjson
 
 
 def _mock_bcl_convert_output():
@@ -197,6 +197,8 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
     def setUp(self) -> None:
         super(SQSIAPEventUnitTests, self).setUp()
 
+        self.verify_local()
+
         mock_labmetadata_1 = LabMetadata()
         mock_labmetadata_1.library_id = "L2000001"
         mock_labmetadata_1.sample_id = "PTC_EXPn200908LL"
@@ -225,8 +227,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_unsupported_ens_event_type
         """
-        self.verify_local()
-
         ens_sqs_message_attributes = {
             "type": {
                 "stringValue": "tes.runs",
@@ -252,8 +252,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_sequence_run_event
         """
-        self.verify_local()
-
         when(libraryrun_srv).create_library_run_from_sequence(...).thenReturn(list())  # skip LibraryRun creation
 
         mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
@@ -344,9 +342,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_dragen_wgs_qc
         """
-
-        self.verify_local()
-
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
         mock_wfl_run = libwes.WorkflowRun()
@@ -380,9 +375,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_wes_runs_event_dragen_wgs_qc_alt
         """
-
-        self.verify_local()
-
         mock_bcl_workflow: Workflow = WorkflowFactory()
         mock_bcl_workflow.end_status = WorkflowStatus.SUCCEEDED.value
         mock_bcl_workflow.notified = True  # mock also consider scenario where bcl workflow has already notified before
@@ -426,8 +418,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         However, checking into WES Run API endpoint says workflow is still Running status.
         Should hit WES Run History Event and be able to update run Succeeded status without issue.
         """
-        self.verify_local()
-
         mock_bcl: Workflow = WorkflowFactory()
 
         mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
@@ -481,8 +471,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         However, checking into WES Run API endpoint says workflow is still Running status.
         Should hit WES Run History Event and be able to update run Failed status without issue.
         """
-        self.verify_local()
-
         mock_bcl_workflow: Workflow = WorkflowFactory()
 
         mock_workflow_run: libwes.WorkflowRun = libwes.WorkflowRun()
@@ -539,8 +527,6 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         But, both WES Run and Run History API event disagree (may be much more delay) with SQS message WES EventType!
         Last resort update status using WES EventType. Most possibly RunFailed situation.
         """
-        self.verify_local()
-
         mock_bcl_workflow: Workflow = WorkflowFactory()
         mock_bcl_workflow.notified = True  # mock also consider Running status has already notified
         mock_bcl_workflow.save()

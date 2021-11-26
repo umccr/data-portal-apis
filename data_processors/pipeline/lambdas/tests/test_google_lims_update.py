@@ -10,7 +10,7 @@ from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests.factories import SequenceRunFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import google_lims_update
-from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase
+from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
 
 lc_no = 29  # number of lims columns
 
@@ -132,7 +132,7 @@ class GoogleLimsUpdateIntegrationTests(PipelineIntegrationTestCase):
             "wfr_id": wfr_id
         }
         resp = google_lims_update.handler(event=event, context=None)
-        print(resp)
+        logger.info(resp)
         # we expect two rows to be added (according to the LabMetadata above (lm1, lm2)
         self.assertEqual(resp['updates']['updatedRows'], 2)
         # the Google sheet contains lc_no (29) populated columns

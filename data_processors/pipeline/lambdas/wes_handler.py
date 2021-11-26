@@ -13,10 +13,11 @@ django.setup()
 
 import logging
 
+from libica.app import configuration
 from libica.openapi import libwes
 
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowRunEventType
-from utils import libjson, ica
+from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -40,7 +41,7 @@ def launch(event, context) -> dict:
     logger.info(f"Start processing WES workflow launch event")
     logger.info(libjson.dumps(event))
 
-    with libwes.ApiClient(ica.configuration(libwes)) as api_client:
+    with libwes.ApiClient(configuration(libwes)) as api_client:
         version_api = libwes.WorkflowVersionsApi(api_client)
         workflow_id = event['workflow_id']
         workflow_version = event['workflow_version']
@@ -83,7 +84,7 @@ def get_workflow_run(event, context) -> dict:
     wfr_id = event['wfr_id']
     wfr_event = event.get('wfr_event')
 
-    with libwes.ApiClient(ica.configuration(libwes)) as api_client:
+    with libwes.ApiClient(configuration(libwes)) as api_client:
         run_api = libwes.WorkflowRunsApi(api_client)
 
         try:

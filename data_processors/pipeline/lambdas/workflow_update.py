@@ -18,7 +18,8 @@ from data_processors.pipeline.services import workflow_srv, notification_srv
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.domain.config import SQS_NOTIFICATION_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
-from utils import libjson, libssm, libsqs
+from libumccr import libjson
+from libumccr.aws import libssm, libsqs
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

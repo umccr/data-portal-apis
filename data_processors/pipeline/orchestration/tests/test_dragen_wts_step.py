@@ -3,18 +3,18 @@ from datetime import datetime
 from unittest import skip
 
 from django.utils.timezone import make_aware
+from libica.app import wes
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
-from data_portal.models.workflow import Workflow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.orchestration import fastq_update_step, dragen_wts_step
 from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
-from utils import wes
 
 tn_mock_subject_id = "SBJ00001"
 mock_library_id = "LPRJ200438"
@@ -162,16 +162,14 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
             logger=logger
         )
 
-        print('-'*32)
+        logger.info("-" * 32)
         logger.info("PREPARE DRAGEN_WTS JOBS:")
 
         job_list = dragen_wts_step.prepare_dragen_wts_jobs(batcher)
 
-        print('-'*32)
+        logger.info("-" * 32)
         logger.info("JOB LIST JSON:")
-        print()
-        print(json.dumps(job_list))
-        print()
+        logger.info(json.dumps(job_list))
         logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), total_jobs_to_eval)

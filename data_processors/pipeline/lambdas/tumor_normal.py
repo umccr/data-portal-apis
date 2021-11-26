@@ -18,7 +18,7 @@ from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 
-from utils import libjson, libdt
+from libumccr import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

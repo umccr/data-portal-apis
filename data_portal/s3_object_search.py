@@ -3,11 +3,12 @@ This file contains search query support for search views based on S3Object table
 This uses and extends the base search query functionality provided in `search_query`.
 """
 from typing import Dict, List
+
 from django.db.models import QuerySet
+from libumccr import libdt
 
 from data_portal.search_query import FilterType, FilterTag, FilterTypeFactory, FilterMethod, SearchQueryHelper, \
     Filter, FilterMethodFactory, FilterTagFactory
-from utils import libdt
 
 
 class S3FilterTag(FilterTag):

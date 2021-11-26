@@ -15,11 +15,11 @@ from typing import Tuple, List
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import ExpressionWrapper, Value, CharField, Q, F
+from libumccr.aws import libs3
 
 from data_portal.models.limsrow import LIMSRow, S3LIMS
 from data_portal.models.s3object import S3Object
 from data_processors.const import S3EventRecord
-from utils import libs3
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

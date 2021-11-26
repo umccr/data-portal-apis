@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'data_portal',
     'data_processors',
-    'utils',
     'aws_xray_sdk.ext.django',
     'drf_yasg',
 ]

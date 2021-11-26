@@ -5,11 +5,11 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 from django.utils.timezone import make_aware, is_aware
+from libumccr import libjson
 
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
-from utils import libjson
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

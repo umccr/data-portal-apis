@@ -4,19 +4,19 @@ from unittest import skip
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
+from libumccr import libslack
 from mockito import when, verify
 
-from data_portal.models.sequencerun import SequenceRun
-from data_portal.models.workflow import Workflow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMetadataAssay, LabMetadataWorkflow
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory, WorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import bcl_convert
 from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 from data_processors.pipeline.tools import liborca
-from utils import libslack
 
 
 class BCLConvertUnitTests(PipelineUnitTestCase):

@@ -17,7 +17,7 @@ from datetime import datetime
 import pandas as pd
 
 from data_processors.lims.services import labmetadata_srv
-from utils import libjson
+from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

@@ -22,7 +22,7 @@ from data_processors.pipeline.services import notification_srv, sequencerun_srv,
 from data_processors.pipeline.domain.workflow import WorkflowType, SampleSheetCSV, PrimaryDataHelper
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.tools import liborca
-from utils import libjson, libdt
+from libumccr import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

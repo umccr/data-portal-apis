@@ -18,9 +18,10 @@ from datetime import datetime
 
 from django.core.management import BaseCommand, CommandParser, execute_from_command_line
 from django.utils.timezone import make_aware
+from libica.app import GDSFilesEventType
+from libumccr.aws import libs3
 
 from data_processors.reports.lambdas import report_event
-from utils import libs3, ica
 
 
 def set_db_debug():
@@ -94,7 +95,7 @@ class Command(BaseCommand):
             exit(0)
 
         report_event.handler({
-            "event_type": ica.GDSFilesEventType.UPLOADED.value,
+            "event_type": GDSFilesEventType.UPLOADED.value,
             "event_time": make_aware(datetime.now()),
             "gds_volume_name": volume_name,
             "gds_object_meta": {

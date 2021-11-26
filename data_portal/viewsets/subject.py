@@ -6,6 +6,7 @@ NOTE:
 """
 import logging
 
+from libumccr.aws import libs3
 from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -16,7 +17,6 @@ from data_portal.models.s3object import S3Object
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import LIMSRowModelSerializer, S3ObjectModelSerializer, SubjectIdSerializer, \
     GDSFileModelSerializer
-from utils import libs3
 
 logger = logging.getLogger()
 

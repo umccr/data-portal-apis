@@ -16,9 +16,12 @@ from typing import List
 
 from dateutil.parser import parse
 
+from libumccr import libjson
+from libumccr.aws import libssm, libsqs
+from libica.app import GDSFilesEventType
+
 from data_processors.const import GDSEventRecord, ReportHelper
 from data_processors.gds import services
-from utils import libjson, ica, libssm, libsqs
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -63,7 +66,7 @@ def parse_raw_gds_event_records(messages: List[dict]):
         gds_object_meta = libjson.loads(message['body'])
         gds_volume_name = gds_object_meta['volumeName']
 
-        event_type = ica.GDSFilesEventType.from_value(event_action)
+        event_type = GDSFilesEventType.from_value(event_action)
 
         gds_event_records.append(GDSEventRecord(event_type, event_time, gds_volume_name, gds_object_meta))
 

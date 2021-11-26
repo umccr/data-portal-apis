@@ -31,7 +31,7 @@ from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_nor
     dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
-from utils import libjson
+from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

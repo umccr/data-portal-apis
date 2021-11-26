@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from libica.app import configuration
 from libica.openapi import libwes
 from mockito import when
 
@@ -12,6 +13,10 @@ from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 
 class WESHandlerUnitTests(PipelineUnitTestCase):
 
+    def setUp(self) -> None:
+        super(WESHandlerUnitTests, self).setUp()
+        self.verify_local()
+
     def test_openapi_type(self):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_wes_handler.WESHandlerUnitTests.test_openapi_type
@@ -19,16 +24,7 @@ class WESHandlerUnitTests(PipelineUnitTestCase):
         Monitor mock container if you like:  docker logs -f iap_mock_wes_1
             [HTTP SERVER] get /v1/workflows/runs/wfr.anything_work Request received
         """
-        config = libwes.Configuration(
-            host="http://localhost",
-            api_key={
-                'Authorization': "mock"
-            },
-            api_key_prefix={
-                'Authorization': "Bearer"
-            },
-        )
-        with libwes.ApiClient(config) as api_client:
+        with libwes.ApiClient(configuration(libwes)) as api_client:
             run_api = libwes.WorkflowRunsApi(api_client)
             wfl_run: libwes.WorkflowRun = run_api.get_workflow_run(run_id="wfr.anything_work")
             logger.info((wfl_run.output, type(wfl_run.output)))

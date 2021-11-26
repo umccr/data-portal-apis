@@ -7,6 +7,7 @@ NOTE:
 import logging
 
 from django.db import InternalError
+from libica.app import gds
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,7 +16,6 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from data_portal.models.gdsfile import GDSFile
 from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import GDSFileModelSerializer
-from utils import gds
 
 logger = logging.getLogger()
 

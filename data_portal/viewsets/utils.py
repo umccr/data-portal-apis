@@ -1,6 +1,5 @@
+from libumccr.aws import libs3
 from rest_framework.response import Response
-
-from utils import libs3
 
 
 def _error_response(message, status_code=400, err=None) -> Response:

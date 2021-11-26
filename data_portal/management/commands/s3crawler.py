@@ -18,9 +18,9 @@ import logging
 from datetime import datetime
 
 from django.core.management import BaseCommand, CommandParser
+from libumccr.aws import libs3
 
 from data_processors.s3 import services
-from utils import libs3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

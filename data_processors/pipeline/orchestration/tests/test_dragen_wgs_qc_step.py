@@ -3,13 +3,14 @@ from datetime import datetime
 from unittest import skip
 
 from django.utils.timezone import make_aware
+from libica.app import wes
 from libica.openapi import libwes
 from mockito import when
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
-from data_portal.models.workflow import Workflow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
@@ -17,7 +18,6 @@ from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, fastq_update_step
 from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
-from utils import wes
 
 tn_mock_subject_id = "SBJ00001"
 mock_library_id = "LPRJ200438"
@@ -175,7 +175,10 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # - we need metadata!
         # - populate LabMetadata tables in test db
         from data_processors.lims.lambdas import labmetadata
-        labmetadata.scheduled_update_handler({'event': "test_prepare_dragen_wgs_qc_jobs"}, None)
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2020", "2021"],
+            'truncate': False
+        }, None)
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
 
         # second --
@@ -206,16 +209,14 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
             logger=logger
         )
 
-        print('-'*32)
+        logger.info("-" * 32)
         logger.info("PREPARE DRAGEN_WGS_QC JOBS:")
 
         job_list = dragen_wgs_qc_step.prepare_dragen_wgs_qc_jobs(batcher)
 
-        print('-'*32)
+        logger.info("-" * 32)
         logger.info("JOB LIST JSON:")
-        print()
-        print(json.dumps(job_list))
-        print()
+        logger.info(json.dumps(job_list))
         logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), total_jobs_to_eval)

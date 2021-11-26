@@ -1,11 +1,12 @@
 from typing import List
 
+from libumccr import libjson
+
 from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests import factories
 from data_processors.pipeline.services import fastq_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
-from utils import libjson
 
 
 class FastqSrvUnitTests(PipelineUnitTestCase):

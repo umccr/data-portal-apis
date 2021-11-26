@@ -5,8 +5,8 @@ Usage:
 - export DJANGO_SETTINGS_MODULE=data_portal.settings.aws
 """
 from environ import Env
+from libumccr.aws import libssm
 
-from utils import libssm
 from .base import *  # noqa
 
 SECRET_KEY = libssm.get_secret('/data_portal/backend/django_secret_key')

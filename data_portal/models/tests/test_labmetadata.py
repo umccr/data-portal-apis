@@ -9,6 +9,7 @@ from data_portal.tests.factories import LabMetadataFactory
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
 class LabMetadataTestCase(TestCase):
 
     def setUp(self):

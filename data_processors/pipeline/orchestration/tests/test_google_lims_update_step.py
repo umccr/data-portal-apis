@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 from unittest import skip
 
 from django.utils.timezone import make_aware
+from libica.app import wes
 
-from data_portal.models.workflow import Workflow
-from data_portal.models.limsrow import LIMSRow
 from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.limsrow import LIMSRow
 from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, WorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.orchestration import google_lims_update_step
@@ -15,7 +16,6 @@ from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
 from data_processors.pipeline.tools import liborca
-from utils import wes
 
 lc_no = 29  # number of lims columns
 lc_idx_run_name = 0  # index of IlluminaID/RunName column

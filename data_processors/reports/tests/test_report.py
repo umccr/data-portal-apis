@@ -2,6 +2,8 @@ from datetime import datetime
 
 from django.db.models import QuerySet
 from django.utils.timezone import make_aware
+from libica.app import gds, GDSFilesEventType
+from libumccr.aws import libs3
 from mockito import when, unstub
 
 from data_portal.models.gdsfile import GDSFile
@@ -14,7 +16,6 @@ from data_processors.reports.services import s3_report_srv, gds_report_srv
 from data_processors.reports.tests.case import ReportUnitTestCase, ReportIntegrationTestCase, logger
 from data_processors.reports.tests.test_report_uk import KEY_EXPECTED, KEY_EXPECTED_ALT_7
 from data_processors.reports.tests.test_report_uk_gds import PATH_EXPECTED
-from utils import libs3, gds, ica
 
 
 class ReportUnitTests(ReportUnitTestCase):
@@ -125,7 +126,7 @@ class ReportUnitTests(ReportUnitTestCase):
         when(gds).get_gds_file_to_bytes(...).thenReturn(mock_gds_content_bytes)
 
         result = report_event.handler({
-            'event_type': ica.GDSFilesEventType.UPLOADED.value,
+            'event_type': GDSFilesEventType.UPLOADED.value,
             'event_time': "2021-04-16T05:53:42.841Z",
             'gds_volume_name': mock_gds_file.volume_name,
             'gds_object_meta': {
@@ -168,7 +169,7 @@ class ReportUnitTests(ReportUnitTestCase):
         logger.info(mock_report)
         self.assertEqual(1, Report.objects.count())
 
-        report = gds_report_srv.persist_report("volume", PATH_EXPECTED, ica.GDSFilesEventType.DELETED.value)
+        report = gds_report_srv.persist_report("volume", PATH_EXPECTED, GDSFilesEventType.DELETED.value)
         self.assertIsNotNone(report)
         self.assertEqual(0, Report.objects.count())
 

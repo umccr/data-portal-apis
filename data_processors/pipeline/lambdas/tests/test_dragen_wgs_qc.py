@@ -3,18 +3,18 @@ from datetime import datetime
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
+from libumccr import libjson
 from mockito import when
 
-from data_portal.models.workflow import Workflow
-from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
 from data_processors.pipeline.domain.workflow import SecondaryAnalysisHelper
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import dragen_wgs_qc
 from data_processors.pipeline.services import metadata_srv, workflow_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
-from utils import libjson
 
 
 class DragenWgsQcUnitTests(PipelineUnitTestCase):

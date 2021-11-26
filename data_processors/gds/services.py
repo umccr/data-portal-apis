@@ -6,10 +6,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
+from libica.app import GDSFilesEventType
 
 from data_portal.models.gdsfile import GDSFile
 from data_processors.const import GDSEventRecord
-from utils import ica
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,7 +19,7 @@ def sync_gds_event_records(records: List[GDSEventRecord]):
     results = defaultdict(int)
 
     for record in records:
-        if record.event_type == ica.GDSFilesEventType.DELETED:
+        if record.event_type == GDSFilesEventType.DELETED:
             removed_count = delete_gds_file(record.gds_object_meta)
             results['removed_count'] += removed_count
         else:

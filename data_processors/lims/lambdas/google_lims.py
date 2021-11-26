@@ -19,7 +19,8 @@ from datetime import datetime
 
 from data_processors import const
 from data_processors.lims.services import google_lims_srv
-from utils import libjson, libgdrive, libssm
+from libumccr import libjson, libgdrive
+from libumccr.aws import libssm
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
