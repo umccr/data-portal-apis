@@ -1,6 +1,7 @@
 import logging
 
 from django.test import TestCase
+from django.utils.timezone import now
 
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
@@ -12,23 +13,24 @@ logger.setLevel(logging.INFO)
 class WorkflowTestCase(TestCase):
 
     def setUp(self):
-        logger.info('Create Object data')
         workflow_1 = Workflow.objects.create(
             type_name="DRAGEN_WGS_QC",
             wfr_id="wfr.1234fd1111111111111111111111",
-            start="2020-01-01 11:59:13.698105",
+            start=now(),
             end_status='Succeeded'
         )
+
         workflow_2 = Workflow.objects.create(
             type_name="TUMOR_NORMAL",
             wfr_id="wfr.1234fd2222222222222222222222",
-            start="2020-01-01 11:59:13.698105",
+            start=now(),
             end_status='Succeeded'
         )
+
         workflow_3 = Workflow.objects.create(
             type_name="TUMOR_NORMAL",
             wfr_id="wfr.1234fd3333333333333333333333",
-            start="2020-01-01 11:59:13.698105",
+            start=now(),
             end_status='Succeeded'
         )
 
@@ -47,6 +49,9 @@ class WorkflowTestCase(TestCase):
         library_run.workflows.add(workflow_2, workflow_3)
 
     def test_get_all_workflow_by_library_id(self):
-        logger.info('Test get workflow by library id')
-        workflow = Workflow.objects.get_by_keyword(library_id='L2000003')
-        self.assertGreaterEqual(len(workflow), 1, 'At least a single workflow is expected')
+        """
+        python manage.py test data_portal.models.tests.test_workflow.WorkflowTestCase.test_get_all_workflow_by_library_id
+        """
+        workflow = Workflow.objects.get_by_keyword(library_id="L2000003")
+        logger.info(workflow)
+        self.assertGreaterEqual(len(workflow), 1, "At least a single workflow is expected")

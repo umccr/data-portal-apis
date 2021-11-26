@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import QuerySet
 
 from data_portal.fields import HashField, HashFieldHelper
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 from data_portal.models.gdsfile import GDSFile
 from data_portal.models.s3object import S3Object
 
@@ -41,7 +42,7 @@ class ReportType(models.TextChoices):
     SV_NOBND_MANYTRANSCRIPTS = "sv_nobnd_manytranscripts"
 
 
-class ReportManager(models.Manager):
+class ReportManager(PortalBaseManager):
 
     def get_by_unique_fields(
             self,
@@ -97,28 +98,11 @@ class ReportManager(models.Manager):
         return report
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
-
-        subject = kwargs.get('subject', None)
-        if subject:
-            qs = qs.filter(subject_id__iexact=subject)
-
-        sample = kwargs.get('sample', None)
-        if sample:
-            qs = qs.filter(sample_id__iexact=sample)
-
-        library = kwargs.get('library', None)
-        if library:
-            qs = qs.filter(library_id__iexact=library)
-
-        type_ = kwargs.get('type', None)
-        if type_:
-            qs = qs.filter(type__iexact=type_)
-
-        return qs
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class Report(models.Model):
+class Report(PortalBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)

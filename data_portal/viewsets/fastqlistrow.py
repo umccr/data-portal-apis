@@ -25,18 +25,4 @@ class FastqListRowViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
-        run = self.request.query_params.get('run', None)
-        rgid = self.request.query_params.get('rgid', None)
-        rgsm = self.request.query_params.get('rgsm', None)
-        rglb = self.request.query_params.get('rglb', None)
-        lane = self.request.query_params.get('lane', None)
-        project_owner = self.request.query_params.get('project_owner', None)
-
-        return FastqListRow.objects.get_by_keyword(
-            run=run,
-            rgid=rgid,
-            rgsm=rgsm,
-            rglb=rglb,
-            lane=lane,
-            project_owner=project_owner
-        )
+        return FastqListRow.objects.get_by_keyword(**self.request.query_params)

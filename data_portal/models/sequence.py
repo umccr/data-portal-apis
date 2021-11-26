@@ -1,10 +1,9 @@
 import logging
 
-from django.core.exceptions import FieldError
 from django.db import models
 from django.db.models import QuerySet
 
-from .utils import filter_object_by_parameter_keyword
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -50,22 +49,14 @@ class SequenceStatus(models.TextChoices):
             raise ValueError(f"No matching SequenceStatus found for value: {value}")
 
 
-class SequenceManager(models.Manager):
+class SequenceManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
-
-        keywords = kwargs.get('keywords', None)
-        if keywords:
-            try:
-                qs = filter_object_by_parameter_keyword(qs, keywords)
-            except FieldError:
-                qs = self.none()
-
-        return qs
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class Sequence(models.Model):
+class Sequence(PortalBaseModel):
     class Meta:
         unique_together = ['instrument_run_id', 'run_id']
 

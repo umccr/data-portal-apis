@@ -4,6 +4,8 @@ from django.db import models, connection
 from django.db.models import QuerySet, Value
 from django.db.models.functions import Concat
 
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -83,44 +85,11 @@ class LabMetadataWorkflow(models.TextChoices):
     RESEARCH = "research"
 
 
-class LabMetadataManager(models.Manager):
+class LabMetadataManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
-
-        subject_id = kwargs.get('subject_id', None)
-        if subject_id:
-            qs = qs.filter(subject_id__iexact=subject_id)
-
-        sample_id = kwargs.get('sample_id', None)
-        if sample_id:
-            qs = qs.filter(sample_id__iexact=sample_id)
-
-        library_id = kwargs.get('library_id', None)
-        if library_id:
-            qs = qs.filter(library_id__iexact=library_id)
-
-        phenotype = kwargs.get('phenotype', None)
-        if phenotype:
-            qs = qs.filter(phenotype__iexact=phenotype)
-
-        type_ = kwargs.get('type', None)
-        if type_:
-            qs = qs.filter(type__iexact=type_)
-
-        workflow = kwargs.get('workflow', None)
-        if workflow:
-            qs = qs.filter(workflow__iexact=workflow)
-
-        project_name = kwargs.get('project_name', None)
-        if project_name:
-            qs = qs.filter(project_name__iexact=project_name)
-
-        project_owner = kwargs.get('project_owner', None)
-        if project_owner:
-            qs = qs.filter(project_owner__iexact=project_owner)
-
-        return qs
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
 
     def get_by_keyword_in(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
@@ -172,7 +141,7 @@ class LabMetadataManager(models.Manager):
         return qs
 
 
-class LabMetadata(models.Model):
+class LabMetadata(PortalBaseModel):
     """
     Models a row in the lab tracking sheet data. Fields are the columns.
     """

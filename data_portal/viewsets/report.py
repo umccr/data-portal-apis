@@ -25,14 +25,4 @@ class ReportViewSet(ReadOnlyModelViewSet):
     search_fields = ordering_fields
 
     def get_queryset(self):
-        subject = self.request.query_params.get('subject', None)
-        sample = self.request.query_params.get('sample', None)
-        library = self.request.query_params.get('library', None)
-        type_ = self.request.query_params.get('type', None)
-
-        return Report.objects.get_by_keyword(
-            subject=subject,
-            sample=sample,
-            library=library,
-            type=type_,
-        )
+        return Report.objects.get_by_keyword(**self.request.query_params)

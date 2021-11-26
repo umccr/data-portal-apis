@@ -4,46 +4,34 @@ import logging
 from django.db import models
 from django.db.models import QuerySet
 
+from data_portal.models.base import PortalBaseManager, PortalBaseModel
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.sequencerun import SequenceRun
 
 logger = logging.getLogger(__name__)
 
 
-class FastqListRowManager(models.Manager):
+class FastqListRowManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
+        qs: QuerySet = super().get_queryset()
 
         run = kwargs.get('run', None)
         if run:
-            qs = qs.filter(sequence_run__instrument_run_id__exact=run)
-
-        rgid = kwargs.get('rgid', None)
-        if rgid:
-            qs = qs.filter(rgid__iexact=rgid)
-
-        rgsm = kwargs.get('rgsm', None)
-        if rgsm:
-            qs = qs.filter(rgsm__iexact=rgsm)
-
-        rglb = kwargs.get('rglb', None)
-        if rglb:
-            qs = qs.filter(rglb__iexact=rglb)
-
-        lane = kwargs.get('lane', None)
-        if lane:
-            qs = qs.filter(lane__exact=lane)
+            qs = qs.filter(self.reduce_multi_values_qor('sequence_run__instrument_run_id', run))
+            kwargs.pop('run')
 
         project_owner = kwargs.get('project_owner', None)
         if project_owner:
-            qs_meta = LabMetadata.objects.filter(project_owner__iexact=project_owner).values("library_id")
+            q = self.reduce_multi_values_qor('project_owner', project_owner)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
             qs = qs.filter(rglb__in=qs_meta)
+            kwargs.pop('project_owner')
 
-        return qs
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class FastqListRow(models.Model):
+class FastqListRow(PortalBaseModel):
     class Meta:
         unique_together = ['rgid']
 

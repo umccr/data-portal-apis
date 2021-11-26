@@ -3,6 +3,7 @@ import logging
 from django.db import models
 from django.db.models import QuerySet
 
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.sequencerun import SequenceRun
 from data_processors.pipeline.domain.workflow import WorkflowStatus
@@ -10,7 +11,7 @@ from data_processors.pipeline.domain.workflow import WorkflowStatus
 logger = logging.getLogger(__name__)
 
 
-class WorkflowManager(models.Manager):
+class WorkflowManager(PortalBaseManager):
 
     def get_by_batch_run(self, batch_run: BatchRun) -> QuerySet:
         qs: QuerySet = self.filter(batch_run=batch_run)
@@ -50,41 +51,17 @@ class WorkflowManager(models.Manager):
         return qs
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
+        qs: QuerySet = super().get_queryset()
 
-        sequence_run = kwargs.get('sequence_run', None)
-        if sequence_run:
-            qs = qs.filter(sequence_run_id__exact=sequence_run)
-
-        sequence = kwargs.get('sequence', None)
-        if sequence:
-            qs = qs.filter(sequence_run__name__iexact=sequence)
-
-        run = kwargs.get('run', None)
-        if run:
-            qs = qs.filter(sequence_run__name__iexact=run)
-
-        sample_name = kwargs.get('sample_name', None)
-        if sample_name:
-            qs = qs.filter(sample_name__iexact=sample_name)
-
-        type_name = kwargs.get('type_name', None)
-        if type_name:
-            qs = qs.filter(type_name__iexact=type_name)
-
-        end_status = kwargs.get('end_status', None)
-        if end_status:
-            qs = qs.filter(end_status__iexact=end_status)
-
-        # keyword from libraryrun model
         library_id = kwargs.get('library_id', None)
         if library_id:
-            qs = qs.filter(libraryrun__library_id__iexact=library_id)
+            qs = qs.filter(self.reduce_multi_values_qor('libraryrun__library_id', library_id))
+            kwargs.pop('library_id')
 
-        return qs
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class Workflow(models.Model):
+class Workflow(PortalBaseModel):
     class Meta:
         unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
 

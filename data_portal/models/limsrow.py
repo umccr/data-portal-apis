@@ -4,28 +4,31 @@ from typing import Union
 from django.db import models
 from django.db.models import QuerySet
 
+from data_portal.models.base import PortalBaseManager, PortalBaseModel
 from data_portal.models.s3object import S3Object
 
 logger = logging.getLogger(__name__)
 
 
-class LIMSRowManager(models.Manager):
+class LIMSRowManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
-        qs: QuerySet = self.all()
+        qs: QuerySet = super().get_queryset()
 
         subject = kwargs.get('subject', None)
         if subject:
-            qs = qs.filter(subject_id__iexact=subject)
+            qs = qs.filter(self.reduce_multi_values_qor('subject_id', subject))
+            kwargs.pop('subject')
 
         run = kwargs.get('run', None)
         if run:
-            qs = qs.filter(illumina_id__iexact=run)
+            qs = qs.filter(self.reduce_multi_values_qor('illumina_id', run))
+            kwargs.pop('run')
 
-        return qs
+        return self.get_model_fields_query(qs, **kwargs)
 
 
-class LIMSRow(models.Model):
+class LIMSRow(PortalBaseModel):
     """
     Models a row in the LIMS data. Fields are the columns.
     """
