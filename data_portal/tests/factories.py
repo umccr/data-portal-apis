@@ -278,7 +278,6 @@ class TumorNormalWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
-    sequence_run = factory.SubFactory(SequenceRunFactory)
     wfr_id = TestConstant.wfr_id.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -292,7 +291,7 @@ class TumorNormalWorkflowFactory(factory.django.DjangoModelFactory):
     notified = True
 
     wfr_name = factory.LazyAttribute(
-        lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
     )
 
 

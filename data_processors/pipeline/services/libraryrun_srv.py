@@ -70,7 +70,7 @@ def create_library_run_from_sequence(payload: dict):
                     'instrument_run_id': instr_run_id,
                     'run_id': run_id,
                     'library_id': rglb,
-                    'lane': i+1,  # convert from 0 to 1 based
+                    'lane': i + 1,  # convert from 0 to 1 based
                     'override_cycles': meta.override_cycles
                 })
                 library_run_list.append(library_run)
@@ -216,18 +216,27 @@ def link_library_runs_with_workflow(library_id: str, workflow: Workflow):
 def link_library_runs_with_x_seq_workflow(library_id_list: List[str], workflow: Workflow):
     """
     typically library_id is in its _pure_form_ such as rglb from FastqListRow i.e. no suffixes
-    workflow can be not sequence-aware i.e. workflow that need go across multiple sequence runs
+    workflow may be not sequence-aware i.e. workflow that need go across multiple sequence runs
     """
     library_run_list = list()
+
+    sqr = workflow.sequence_run
 
     rglb_list = liborca.strip_topup_rerun_from_library_id_list(library_id_list)
 
     qs: QuerySet = LibraryRun.objects.filter(library_id__in=rglb_list)
     if qs.exists():
         for lib_run in qs.all():
-            lib_run.workflows.add(workflow)
-            lib_run.save()
-            library_run_list.append(lib_run)
+            if sqr:
+                lbr: LibraryRun = lib_run
+                if sqr.instrument_run_id == lbr.instrument_run_id and sqr.run_id == lbr.run_id:
+                    lbr.workflows.add(workflow)
+                    lbr.save()
+                    library_run_list.append(lbr)
+            else:
+                lib_run.workflows.add(workflow)
+                lib_run.save()
+                library_run_list.append(lib_run)
         return library_run_list
     else:
         logger.warning(f"No LibraryRun records found for {rglb_list}")

@@ -4,7 +4,8 @@ from django.db.models import QuerySet
 
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.labmetadata import LabMetadata
-from data_portal.tests.factories import TestConstant, LabMetadataFactory, LibraryRunFactory
+from data_portal.tests.factories import TestConstant, LabMetadataFactory, LibraryRunFactory, TumorLabMetadataFactory, \
+    TumorLibraryRunFactory, TumorNormalWorkflowFactory, WorkflowFactory
 from data_processors.lims.lambdas import labmetadata
 from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
@@ -58,6 +59,44 @@ class LibraryRunSrvUnitTests(PipelineUnitTestCase):
         self.assertEqual(library_run.coverage_yield, ">80%")
         self.assertTrue(library_run.qc_pass)
         self.assertEqual(library_run.qc_status, "Pass")
+
+    def test_link_library_runs_with_x_seq_workflow(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_libraryrun_srv.LibraryRunSrvUnitTests.test_link_library_runs_with_x_seq_workflow
+        """
+        mock_meta = TumorLabMetadataFactory()
+        mock_library_run = TumorLibraryRunFactory()
+        mock_workflow = TumorNormalWorkflowFactory()
+
+        # So T/N is sequence-less workflow and to establish linking with LibraryRun
+
+        mock_library_id = TestConstant.library_id_tumor.value
+
+        library_run_list = libraryrun_srv.link_library_runs_with_x_seq_workflow([mock_library_id], mock_workflow)
+
+        logger.info(library_run_list)
+
+        self.assertTrue(len(library_run_list) > 0)
+        self.assertIsNone(mock_workflow.sequence_run)
+
+    def test_link_library_runs_with_x_seq_workflow_bcl_convert(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_libraryrun_srv.LibraryRunSrvUnitTests.test_link_library_runs_with_x_seq_workflow_bcl_convert
+        """
+        mock_meta = LabMetadataFactory()
+        mock_library_run = LibraryRunFactory()
+        mock_workflow = WorkflowFactory()
+
+        # So BCL_Convert is sequence-aware workflow and to establish linking with LibraryRun
+
+        mock_library_id = TestConstant.library_id_normal.value
+
+        library_run_list = libraryrun_srv.link_library_runs_with_x_seq_workflow([mock_library_id], mock_workflow)
+
+        logger.info(library_run_list)
+
+        self.assertTrue(len(library_run_list) > 0)
+        self.assertIsNotNone(mock_workflow.sequence_run)
 
 
 class LibraryRunSrvIntegrationTests(PipelineIntegrationTestCase):
