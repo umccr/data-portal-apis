@@ -118,7 +118,10 @@ def resolve_sample_display_name(workflow: Workflow):
     if not all_library_runs:
         return None
 
-    if workflow_type == WorkflowType.TUMOR_NORMAL:
+    elif workflow_type == WorkflowType.BCL_CONVERT:
+        return None
+
+    elif workflow_type == WorkflowType.TUMOR_NORMAL:
         # if it is tumor normal, we use TUMOR_SAMPLE_ID as display name
         meta_list: List[LabMetadata] = metadata_srv.get_metadata_for_library_runs(all_library_runs)
         for meta in meta_list:
