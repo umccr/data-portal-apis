@@ -8,10 +8,8 @@
 #   export PORTAL_TOKEN=<your_token>
 #   Rscript portal_decode.R
 
-if (!require("openssl")) install.packages("openssl", repos = "https://cran.ms.unimelb.edu.au")
-if (!require("jose")) install.packages("jose", repos = "https://cran.ms.unimelb.edu.au")
-if (!require("jsonlite")) install.packages("jsonlite", repos = "https://cran.ms.unimelb.edu.au")
-if (!require("anytime")) install.packages("anytime", repos = "https://cran.ms.unimelb.edu.au")
+depedencies <- list("openssl", "jose", "jsonlite", "anytime")
+invisible(lapply(depedencies, function (d) if (!require(d, character.only = TRUE)) install.packages(d, repos = "https://cran.ms.unimelb.edu.au")))
 
 library(openssl)
 library(jose)

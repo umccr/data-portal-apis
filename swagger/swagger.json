@@ -465,79 +465,6 @@
       },
       "parameters": []
     },
-    "/libraryrun/by_workflow/": {
-      "get": {
-        "operationId": "libraryrun_by_workflow",
-        "description": "",
-        "parameters": [
-          {
-            "name": "ordering",
-            "in": "query",
-            "description": "Which field to use when ordering the results.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "description": "A search term.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "A page number within the paginated result set.",
-            "required": false,
-            "type": "integer"
-          },
-          {
-            "name": "rowsPerPage",
-            "in": "query",
-            "description": "Number of results to return per page.",
-            "required": false,
-            "type": "integer"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "required": [
-                "count",
-                "results"
-              ],
-              "type": "object",
-              "properties": {
-                "count": {
-                  "type": "integer"
-                },
-                "next": {
-                  "type": "string",
-                  "format": "uri",
-                  "x-nullable": true
-                },
-                "previous": {
-                  "type": "string",
-                  "format": "uri",
-                  "x-nullable": true
-                },
-                "results": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/LibraryRunModel"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "libraryrun"
-        ]
-      },
-      "parameters": []
-    },
     "/libraryrun/{id}/": {
       "get": {
         "operationId": "libraryrun_read",
@@ -1703,79 +1630,6 @@
       },
       "parameters": []
     },
-    "/workflows/by_library_id/": {
-      "get": {
-        "operationId": "workflows_by_library_id",
-        "description": "",
-        "parameters": [
-          {
-            "name": "ordering",
-            "in": "query",
-            "description": "Which field to use when ordering the results.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "description": "A search term.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "A page number within the paginated result set.",
-            "required": false,
-            "type": "integer"
-          },
-          {
-            "name": "rowsPerPage",
-            "in": "query",
-            "description": "Number of results to return per page.",
-            "required": false,
-            "type": "integer"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "required": [
-                "count",
-                "results"
-              ],
-              "type": "object",
-              "properties": {
-                "count": {
-                  "type": "integer"
-                },
-                "next": {
-                  "type": "string",
-                  "format": "uri",
-                  "x-nullable": true
-                },
-                "previous": {
-                  "type": "string",
-                  "format": "uri",
-                  "x-nullable": true
-                },
-                "results": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Workflow"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "workflows"
-        ]
-      },
-      "parameters": []
-    },
     "/workflows/{id}/": {
       "get": {
         "operationId": "workflows_read",
@@ -2861,6 +2715,13 @@
           "type": "string",
           "maxLength": 255,
           "minLength": 1
+        },
+        "portal_run_id": {
+          "title": "Portal run id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1,
+          "x-nullable": true
         },
         "wfl_id": {
           "title": "Wfl id",

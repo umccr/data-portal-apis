@@ -11,7 +11,7 @@
 # 'lane' is lane number
 # 'read_1' is an absolute path to FASTQ location on GDS
 # 'read_2' is an absolute path to FASTQ location on GDS
-# 'sequence_run' is Portal internal unique identifier to this SequenceRun (can be used with /sequence/<ID> endpoint)
+# 'sequence_run' is Portal internal unique identifier to this SequenceRun (can be used with /sequencerun/<ID> endpoint)
 #
 # Pseudocode:
 # Call each run, e.g.

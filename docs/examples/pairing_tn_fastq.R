@@ -18,7 +18,7 @@
 #
 # Pseudocode:
 # Call each run
-#   curl -s -X POST -d '["211014_A00130_0179_AHLFYJDSX2", "211014_A00130_0180_BHLGF7DSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing"
+#   curl -s -X POST -d '["211206_A00130_0191_AHWKNJDSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing"
 #
 # Then we will parse response text into JSON into dataframe. FastqListRow is in nested dataframe.
 #
@@ -50,8 +50,7 @@ H <- add_headers(Authorization = paste0("Bearer ", portal_token))
 # --
 
 runs <- list(
-  "211014_A00130_0179_AHLFYJDSX2",
-  "211014_A00130_0180_BHLGF7DSX2"
+  "211206_A00130_0191_AHWKNJDSX2"
 )
 
 resp <- POST(base_url, path = endpoint, body = runs, encode = "json", H)
@@ -63,9 +62,14 @@ resp_body <- content(resp, as = "text", encoding = "UTF-8")
 df <- fromJSON(resp_body)
 df
 
-print_dash()
 
+# --
+# Next:
 # let pick the first vector
+print_dash()
+cat("\n")
+cat("let pick the first vector")
+cat("\n\n\n")
 idx <- 1
 
 subjects <- df$subject_id
@@ -80,19 +84,20 @@ normal_fqlr_df[[idx]]
 tumor_fqlr_df <- df$tumor_fastq_list_rows
 tumor_fqlr_df[[idx]]
 
-print_dash()
 
+# --
 # Next:
 # Similarly, instead of by_sequnce_runs, you can also use by_subjects, by_libraries, by_samples
-# Please modify endpoint accordingly
+# Please modify endpoint accordingly. Uncomment to observe.
 
-endpoint <- "pairing/by_subjects"
-cat("\n")
-cat(endpoint)
-cat("\n\n\n")
-
-subjects <- list("SBJ01031", "SBJ01032", "SBJ01033", "SBJ01034")
-resp <- POST(base_url, path = endpoint, body = subjects, encode = "json", H)
-resp_body <- content(resp, as = "text", encoding = "UTF-8")
-df <- fromJSON(resp_body)
-df
+# print_dash()
+# endpoint <- "pairing/by_subjects"
+# cat("\n")
+# cat(endpoint)
+# cat("\n\n\n")
+#
+# subjects <- list("SBJ01031", "SBJ01032", "SBJ01033", "SBJ01034")
+# resp <- POST(base_url, path = endpoint, body = subjects, encode = "json", H)
+# resp_body <- content(resp, as = "text", encoding = "UTF-8")
+# df <- fromJSON(resp_body)
+# df

@@ -41,7 +41,7 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Get LIMS record(s) by Subject:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/lims?subject=SBJ00700" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/lims?subject_id=SBJ00700" | jq
 ```
 
 _Get LIMS record(s) by Sequence Run:_
@@ -70,12 +70,12 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Get Metadata record(s) by Subject:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/metadata?subject=SBJ00700" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/metadata?subject_id=SBJ00700" | jq
 ```
 
 _Get Metadata record(s) by Subject, Assay Type, Phenotype:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/metadata?phenotype=tumor&type=wgs&subject=SBJ00700" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/metadata?phenotype=tumor&type=wgs&subject_id=SBJ00700" | jq
 ```
 
 ### Subjects Endpoint
@@ -136,12 +136,12 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _List GDS file entries belongs to Sequence Run:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?run=200612_A01052_0017_BH5LYWDSXY" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?run=211125_A00130_0185_AHWC2HDSX2" | jq
 ```
 
 _Search Fastq GDS files entries by Sequence Run:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?run=200612_A01052_0017_BH5LYWDSXY&search=.fastq.gz$" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?run=211125_A00130_0185_AHWC2HDSX2&search=.fastq.gz$" | jq
 ```
 
 ### Fastq Endpoint
@@ -223,9 +223,9 @@ _Get a Workflow record:_
 curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/workflows/800" | jq
 ```
 
-_Get Workflow record(s) by Sequence Run:_
+_Get Workflow by Sequence Run e.g. **BCL_CONVERT** workflow for a Run:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/workflows?run=211014_A00130_0180_BHLGF7DSX2" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/workflows?type_name=bcl_convert&sequence_run__instrument_run_id=211129_A00130_0188_BHWCY3DSX2" | jq
 ```
 
 Similarly, you can filter request parameters on `type_name`, `end_status`.
@@ -262,12 +262,12 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Get a Report record by Subject:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject=SBJ00700" | jq > reports_SBJ00700.json
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject_id=SBJ01146" | jq > reports_SBJ01146.json
 ```
 
 _Get a Report record by Subject, Report Type:_
 ```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject=SBJ00700&type=hrd_hrdetect" | jq
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject_id=SBJ01146&type=hrd_hrdetect" | jq > reports_SBJ01146_hrd_hrdetect.json
 ```
 
 ### Pairing Endpoint
