@@ -207,8 +207,8 @@ def filter_succeeded_runs(job_list: List[dict]) -> List[dict]:
             library_id=library_id,
             run_id=run_id,
             instrument_run_id=instrument_run_id,
-            type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
-            end_status=WorkflowStatus.SUCCEEDED.value,
+            workflows__type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
+            workflows__end_status=WorkflowStatus.SUCCEEDED.value,
         )
 
         if not succeeded_library_runs:

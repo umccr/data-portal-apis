@@ -13,17 +13,6 @@ class LibraryRunManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = super().get_queryset()
-
-        type_name = kwargs.get('type_name', None)
-        if type_name:
-            qs = qs.filter(self.reduce_multi_values_qor('workflows__type_name', type_name))
-            kwargs.pop('type_name')
-
-        end_status = kwargs.get('end_status', None)
-        if end_status:
-            qs = qs.filter(self.reduce_multi_values_qor('workflows__end_status', end_status)).distinct()
-            kwargs.pop('end_status')
-
         return self.get_model_fields_query(qs, **kwargs)
 
 
