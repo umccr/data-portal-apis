@@ -50,7 +50,7 @@ class LibraryRunViewSetTestCase(TestCase):
         self.assertEqual(len(results_response), 0, 'No results are expected for unrecognized query parameter')
 
         _logger.info('Check if related model field as request parameter')
-        response = self.client.get(f'/libraryrun/?type_name={self.mock_qc_wfl.type_name}')
+        response = self.client.get(f'/libraryrun/?workflows__type_name={self.mock_qc_wfl.type_name}')
         results_response = response.data['results']
         self.assertEqual(len(results_response), 1, 'Results are expected for query parameter by related model field')
 

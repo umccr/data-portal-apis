@@ -73,6 +73,6 @@ class LibraryRunTestCase(TestCase):
         """
         python manage.py test data_portal.models.tests.test_libraryrun.LibraryRunTestCase.test_get_library_run_by_keyword
         """
-        result = LibraryRun.objects.get_by_keyword(library_id="L2000002", end_status="Failed")
+        result = LibraryRun.objects.get_by_keyword(library_id="L2000002", workflows__end_status="Failed")
         logger.info(result)
         self.assertEqual(len(result), 1, "At least a single libraryrun is expected")
