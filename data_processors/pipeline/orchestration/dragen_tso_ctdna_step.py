@@ -19,8 +19,8 @@ from data_portal.models.labmetadata import LabMetadata, LabMetadataWorkflow, Lab
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.config import SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import WorkflowType
-from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
+from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv, libraryrun_srv
 from data_processors.pipeline.tools import liborca
 
 # GLOBALS
@@ -144,7 +144,7 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
 
         job_list.append(job)
 
-    return job_list
+    return filter_succeeded_runs(job_list)
 
 
 def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
@@ -188,3 +188,33 @@ def get_run_xml_files_from_bcl_convert_workflow(bcl_convert_input):
     bcl_input_dir = bcl_convert_input['bcl_input_directory']['location']
 
     return f"{bcl_input_dir}/RunInfo.xml", f"{bcl_input_dir}/RunParameters.xml"
+
+
+def filter_succeeded_runs(job_list: List[dict]) -> List[dict]:
+    """
+    Filter out library_id that has been successfully run before
+    :param job_list:
+    :return:
+    """
+
+    filtered_job_list = []
+    for job in job_list:
+        library_id = job['library_id']
+        run_id = job['seq_run_id']
+        instrument_run_id = job['seq_name']
+
+        succeeded_library_runs = libraryrun_srv.get_library_runs(
+            library_id=library_id,
+            run_id=run_id,
+            instrument_run_id=instrument_run_id,
+            type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
+            end_status=WorkflowStatus.SUCCEEDED.value,
+        )
+
+        if not succeeded_library_runs:
+            filtered_job_list.append(job)
+        else:
+            logger.info(f"SKIP library_id {library_id} for {instrument_run_id} has {WorkflowStatus.SUCCEEDED.value} "
+                        f"{WorkflowType.DRAGEN_TSO_CTDNA.value} workflow run")
+
+    return filtered_job_list
