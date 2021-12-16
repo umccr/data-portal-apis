@@ -117,7 +117,10 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
             logger.info(f"BATCH_RUN: {br}")
 
         wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.value]
-        self.assertTrue(wgs_qc_batch_runs[0].running)
+
+        # FIXME holiday patch
+        # self.assertTrue(wgs_qc_batch_runs[0].running)
+        self.assertEqual(0, len(wgs_qc_batch_runs))  # assert that qc workflow don't trigger!
 
     def test_dragen_wgs_qc_none(self):
         """

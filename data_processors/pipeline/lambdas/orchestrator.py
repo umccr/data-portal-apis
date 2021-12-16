@@ -110,6 +110,15 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         logger.warning(f"Skip next step as null workflow received")
         return
 
+    # FIXME holiday patch
+    #  just temporary bypass qc, wts, t/n for rerun purpose
+    if not skip:
+        skip = [
+            "DRAGEN_WGS_QC_STEP",
+            "DRAGEN_WTS_STEP",
+            "TUMOR_NORMAL_STEP",
+        ]
+
     # depends on this_workflow state from db, we may kick off next workflow
     if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
