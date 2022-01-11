@@ -363,10 +363,8 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
         wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.value]
 
-        # FIXME holiday patch
-        # self.assertTrue(BatchRun.objects.count() > 1)
-        # self.assertTrue(wgs_qc_batch_runs[0].running)
-        self.assertEqual(0, len(wgs_qc_batch_runs))  # assert that qc workflow don't trigger!
+        self.assertTrue(BatchRun.objects.count() > 1)
+        self.assertTrue(wgs_qc_batch_runs[0].running)
 
         logger.info(f"-"*32)
         for wfl in Workflow.objects.all():
