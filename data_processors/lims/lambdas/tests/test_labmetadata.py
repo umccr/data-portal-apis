@@ -127,8 +127,11 @@ class LabMetadataUnitTests(TransactionTestCase):
         mock_labmetadata_sheet.close()
 
     def test_labmetadata_truncate(self) -> None:
-        """
+        """export DJANGO_SETTINGS_MODULE=data_portal.settings.local
         python manage.py test data_processors.lims.lambdas.tests.test_labmetadata.LabMetadataUnitTests.test_labmetadata_truncate
+
+        NOTE: You may receive "Error truncating ... Exception: near "TRUNCATE": syntax error"
+            Truncate only work for MySQL. Not SQLite which is the default db if you do not set DJANGO_SETTINGS_MODULE.
         """
         mock_labmetadata_sheet = tempfile.NamedTemporaryFile(suffix='.csv', delete=True)
         mock_labmetadata_sheet.write(_mock_labmetadata_sheet_content.lstrip().rstrip())
@@ -281,7 +284,7 @@ class LabMetadataIntegrationTests(LimsIntegrationTestCase):
 
     @skip
     def test_scheduled_update_handler(self):
-        """
+        """export DJANGO_SETTINGS_MODULE=data_portal.settings.local
         python manage.py test data_processors.lims.lambdas.tests.test_labmetadata.LabMetadataIntegrationTests.test_scheduled_update_handler
         """
         result = labmetadata.scheduled_update_handler({'event': "LabMetadataIntegrationTests lims update event"}, None)
@@ -291,4 +294,4 @@ class LabMetadataIntegrationTests(LimsIntegrationTestCase):
         logger.info(json.dumps(result))
         self.assertGreater(result['labmetadata_row_new_count'], 1)
 
-        logger.info(f"Total ingested rows into test db: {LabMetadata.objects.count()}")  # 1290 + 1174 = 2464
+        logger.info(f"Total ingested rows into test db: {LabMetadata.objects.count()}")
