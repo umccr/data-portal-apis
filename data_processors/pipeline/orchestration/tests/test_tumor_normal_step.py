@@ -104,10 +104,8 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(result)
         logger.info(f"Orchestrator lambda call output: {json.dumps(result)}")
 
-        # FIXME holiday patch
-        # self.assertEqual(1, len(result))
-        # self.assertEqual(tn_mock_subject_id, result[0]['subjects'][0])
-        self.assertEqual(0, len(result))
+        self.assertEqual(1, len(result))
+        self.assertEqual(tn_mock_subject_id, result[0]['subjects'][0])
 
     def test_create_tn_job(self):
         """
