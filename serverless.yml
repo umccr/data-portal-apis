@@ -21,6 +21,8 @@ provider:
   iam:
     role: ${ssm:/data_portal/backend/lambda_iam_role_arn}
   endpointType: regional
+  logs:
+    httpApi: true
   httpApi:
     disableDefaultEndpoint: true
     payload: '2.0'
@@ -89,6 +91,17 @@ functions:
           path: /{proxy+}
           method: POST
           authorizer: cognitoJwtAuthorizer
+      # we mirror the API onto /iam/* and allow IAM access
+      - httpApi:
+          path: /iam/{proxy+}
+          method: GET
+          authorizer:
+            type: aws_iam
+      - httpApi:
+          path: /iam/{proxy+}
+          method: POST
+          authorizer:
+            type: aws_iam
     timeout: 28
 
   migrate:
@@ -300,6 +313,8 @@ custom:
     app: data_portal.wsgi.application
     packRequirements: false
   pythonRequirements:
+    # lambci don't seem to be updating their images so there is currently no python 3.9 without using custom
+    dockerImage: mlupin/docker-lambda:python3.9-build
     dockerizePip: non-linux
     layer: true
     zip: false
