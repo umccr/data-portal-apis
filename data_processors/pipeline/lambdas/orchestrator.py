@@ -28,7 +28,7 @@ from typing import List
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
-    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from libumccr import libjson
@@ -165,5 +165,20 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         else:
             logger.info("Performing TUMOR_NORMAL_STEP")
             results.append(tumor_normal_step.perform(this_workflow))
+
+        return results
+
+    elif this_workflow.type_name.lower() == WorkflowType.TUMOR_NORMAL.value.lower():
+        logger.info("Received TUMOR_NORMAL workflow notification")
+
+        WorkflowRule(this_workflow).must_have_output()
+
+        results = list()
+
+        if "UMCCRISE_STEP" in skip:
+            logger.info("Skip performing UMCCRISE_STEP")
+        else:
+            logger.info("Performing UMCCRISE_STEP")
+            results.append(umccrise_step.perform(this_workflow))
 
         return results

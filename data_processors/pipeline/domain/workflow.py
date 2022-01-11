@@ -29,6 +29,7 @@ class WorkflowType(Enum):
     TUMOR_NORMAL = "wgs_tumor_normal"
     DRAGEN_TSO_CTDNA = "tso_ctdna_tumor_only"
     DRAGEN_WTS = "wts_tumor_only"
+    UMCCRISE = "umccrise"
 
     @classmethod
     def from_value(cls, value):
@@ -42,6 +43,8 @@ class WorkflowType(Enum):
             return cls.DRAGEN_TSO_CTDNA
         elif value == cls.DRAGEN_WTS.value:
             return cls.DRAGEN_WTS
+        elif value == cls.UMCCRISE.value:
+            return cls.UMCCRISE
         else:
             raise ValueError(f"No matching type found for {value}")
 

@@ -33,6 +33,7 @@ logger.setLevel(logging.INFO)
 def parse_bcl_convert_output(output_json: str, lookup_keys=None) -> list:
     """
     Parse BCL Convert workflow run output and get fastq_list_rows
+    # FIXME - why not rename to parse_ica_workflow_output?
 
     :param lookup_keys: List of string to lookup a key from BCL Convert output
     :param output_json: workflow run output in json format
@@ -66,6 +67,18 @@ def parse_bcl_convert_output_split_sheets(output_json: str) -> list:
     """
 
     lookup_keys = ['main/split_sheets', 'split_sheets']  # lookup in order, return on first found
+
+    return parse_bcl_convert_output(output_json, lookup_keys)
+
+
+def parse_somatic_output_workflow_directory(output_json: str) -> Dict:
+    """
+    Parse the somatic workflow run output and get the output directory of the somatic workflow
+    :param output_json:
+    :return:
+    """
+
+    lookup_keys = ["main/dragen_somatic_output_directory", 'dragen_somatic_output_directory']
 
     return parse_bcl_convert_output(output_json, lookup_keys)
 

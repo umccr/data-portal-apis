@@ -8,8 +8,10 @@ Or consider Helper class-ing where composite builder is needed.
 
 ICA_WORKFLOW_PREFIX = "/iap/workflow"
 
+SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"
+
 SQS_TN_QUEUE_ARN = "/data_portal/backend/sqs_tumor_normal_queue_arn"
 SQS_DRAGEN_WGS_QC_QUEUE_ARN = "/data_portal/backend/sqs_dragen_wgs_qc_queue_arn"
 SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN = "/data_portal/backend/sqs_dragen_tso_ctdna_queue_arn"
-SQS_NOTIFICATION_QUEUE_ARN = "/data_portal/backend/sqs_notification_queue_arn"
+SQS_UMCCRISE_QUEUE_ARN = "/data_portal/backend/sqs_umccrise_queue_arn"
 SQS_DRAGEN_WTS_QUEUE_ARN = "/data_portal/backend/sqs_dragen_wts_queue_arn"
