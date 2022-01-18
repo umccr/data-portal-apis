@@ -2,7 +2,7 @@
 """orchestrator module
 
 Orchestrator (lambda) module is the key actor (controller) of Portal Workflow Automation.
-Typically this module has 3 simple interfaces:
+Typically, this module has 3 simple interfaces:
     1. handler()        -- for SQS event
     2. update_step()    -- update some workflow
     3. next_step()      -- determine next workflow, if any
@@ -54,7 +54,8 @@ def handler(event, context):
             "DRAGEN_WGS_QC_STEP",
             "DRAGEN_TSO_CTDNA_STEP",
             "TUMOR_NORMAL_STEP",
-            "DRAGEN_WTS_STEP"
+            "DRAGEN_WTS_STEP",
+            "UMCCRISE_STEP"
         ]
     }
 
@@ -111,7 +112,7 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         return
 
     # depends on this_workflow state from db, we may kick off next workflow
-    if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value and \
+    if this_workflow.type_name.lower() == WorkflowType.BCL_CONVERT.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received successful BCL Convert workflow notification")
 
@@ -153,7 +154,7 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
 
         return results
 
-    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value:
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
         logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
         WorkflowRule(this_workflow).must_associate_sequence_run()
@@ -168,7 +169,8 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
 
         return results
 
-    elif this_workflow.type_name.lower() == WorkflowType.TUMOR_NORMAL.value.lower():
+    elif this_workflow.type_name.lower() == WorkflowType.TUMOR_NORMAL.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info("Received TUMOR_NORMAL workflow notification")
 
         WorkflowRule(this_workflow).must_have_output()

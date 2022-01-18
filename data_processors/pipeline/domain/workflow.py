@@ -175,8 +175,14 @@ class PrimaryDataHelper(WorkflowHelper):
 class SecondaryAnalysisHelper(WorkflowHelper):
 
     def __init__(self, type_: WorkflowType):
-        if type_ not in [WorkflowType.DRAGEN_WGS_QC, WorkflowType.DRAGEN_TSO_CTDNA,
-                         WorkflowType.DRAGEN_WTS, WorkflowType.TUMOR_NORMAL]:
+        allowed_workflow_types = [
+            WorkflowType.DRAGEN_WGS_QC,
+            WorkflowType.DRAGEN_TSO_CTDNA,
+            WorkflowType.DRAGEN_WTS,
+            WorkflowType.TUMOR_NORMAL,
+            WorkflowType.UMCCRISE,
+        ]
+        if type_ not in allowed_workflow_types:
             raise ValueError(f"Unsupported WorkflowType for Secondary analysis: {type_}")
         super().__init__(type_)
 

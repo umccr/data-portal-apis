@@ -1,12 +1,72 @@
 import json
 from unittest import skip
 
+from libica.app import wes
+
 from data_portal.tests.factories import TestConstant
 from data_processors.pipeline.tools import liborca
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
 
 class LibOrcaUnitTests(PipelineUnitTestCase):
+
+    def test_parse_workflow_output(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_workflow_output
+        """
+        output: dict = liborca.parse_workflow_output(json.dumps({
+            'my_key': {'nested': "Object"}
+        }), ['my_key'])
+
+        logger.info("-" * 32)
+        logger.info(f"parse_workflow_output: {json.dumps(output)}")
+
+        self.assertIn('nested', output.keys())
+
+    def test_parse_workflow_output_error(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_workflow_output_error
+        """
+        try:
+            _ = liborca.parse_workflow_output("does not matter", [])
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(KeyError)
+
+    def test_parse_somatic_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_somatic_workflow_output_directory
+        """
+        mock_tn_output = json.dumps({
+            "dragen_somatic_output_directory": {
+                "basename": "L0000001_L0000002_dragen",
+                "class": "Directory",
+                "location": "gds://vol/analysis_data/SBJ00001/wgs_tumor_normal/20211208aa4f9099/L0000001_L0000002_dragen",
+                "nameext": "",
+                "nameroot": "",
+                "size": None
+            },
+        })
+        result: dict = liborca.parse_somatic_workflow_output_directory(mock_tn_output)
+
+        logger.info("-" * 32)
+        logger.info(f"parse_somatic_workflow_output_directory: {json.dumps(result)}")
+
+        self.assertEqual(result['basename'], "L0000001_L0000002_dragen")
+        self.assertEqual(result['class'], "Directory")
+
+    def test_parse_somatic_workflow_output_directory_none(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_somatic_workflow_output_directory_none
+        """
+
+        try:
+            _ = liborca.parse_somatic_workflow_output_directory(json.dumps({
+                "dragen_somatic_output_directory": None
+            }))
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
 
     def test_parse_bcl_convert_output(self):
         """
@@ -22,6 +82,19 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         logger.info(f"parse_bcl_convert_output: {json.dumps(result)}")
 
         self.assertEqual(result[0]['rgid'], "main/fastq_list_rows")
+
+    def test_parse_bcl_convert_output_fqlr_none(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_bcl_convert_output_fqlr_none
+        """
+
+        try:
+            _ = liborca.parse_bcl_convert_output(json.dumps({
+                "fastq_list_rows": None
+            }))
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
 
     def test_parse_bcl_convert_output_alt(self):
         """
@@ -73,7 +146,7 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         }))
 
         logger.info("-" * 32)
-        logger.info(f"parse_bcl_convert_output: {json.dumps(result)}")
+        logger.info(f"parse_bcl_convert_output_split_sheets: {json.dumps(result)}")
 
         self.assertEqual(result[0]['location'], "gds://umccr-fastq-data/ABCD/SampleSheet.WGS_TsqNano.csv")
 
@@ -248,3 +321,39 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
         )
 
         self.assertEqual(num_lanes, 4)
+
+    @skip
+    def test_parse_bcl_convert_output(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_bcl_convert_output
+        """
+
+        # SEQ-II bcl conversion in DEV
+        wfr_id = "wfr.7e9b649ea780411fb5c87f0e1b0c1923"
+
+        wfl_run = wes.get_run(wfr_id)
+
+        fqlr_from_output = liborca.parse_bcl_convert_output(json.dumps(wfl_run.output))
+
+        logger.info(f"\n{fqlr_from_output}")
+
+        first_one = fqlr_from_output[0]
+        self.assertIn("rgid", first_one.keys())
+
+    @skip
+    def test_parse_somatic_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_somatic_workflow_output_directory
+        """
+
+        # Don't have a good T/N run in DEV yet. So, getting one T/N run from PROD
+        wfr_id = "wfr.f472a00d6f45421bb8637e87531e2c66"
+
+        wfl_run = wes.get_run(wfr_id)
+
+        dragen_somatic_output_directory = liborca.parse_somatic_workflow_output_directory(json.dumps(wfl_run.output))
+
+        logger.info(f"\n{dragen_somatic_output_directory}")
+
+        self.assertIn("class", dragen_somatic_output_directory.keys())
+        self.assertEqual(dragen_somatic_output_directory['class'], "Directory")

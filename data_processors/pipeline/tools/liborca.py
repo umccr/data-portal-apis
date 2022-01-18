@@ -18,7 +18,7 @@ import xml.etree.ElementTree as et
 from contextlib import closing
 from datetime import datetime
 from tempfile import NamedTemporaryFile
-from typing import List
+from typing import List, Dict, Any
 
 from libica.app import gds
 from libumccr import libjson
@@ -30,21 +30,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def parse_bcl_convert_output(output_json: str, lookup_keys=None) -> list:
+def parse_workflow_output(output_json: str, lookup_keys: List[str]) -> Any:
     """
-    Parse BCL Convert workflow run output and get fastq_list_rows
-    # FIXME - why not rename to parse_ica_workflow_output?
+    Parse workflow run output and return the element for lookup key
 
-    :param lookup_keys: List of string to lookup a key from BCL Convert output
+    :param lookup_keys: List of string to look up a key from workflow output
     :param output_json: workflow run output in json format
     :return fastq_list_rows: list of fastq list rows in fastq list format
     """
+
+    if not lookup_keys:
+        raise ValueError(f"Workflow output lookup_keys is empty: {lookup_keys}")
+
     output: dict = libjson.loads(output_json)
-
-    default_lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']  # lookup in order, return on first found
-
-    if lookup_keys is None:
-        lookup_keys = default_lookup_keys
 
     look_up_key = None
     for k in lookup_keys:
@@ -53,34 +51,66 @@ def parse_bcl_convert_output(output_json: str, lookup_keys=None) -> list:
             break
 
     if look_up_key is None:
-        raise KeyError(f"Unexpected BCL Convert output format. Expecting one of {lookup_keys}. Found {output.keys()}")
+        raise KeyError(f"Unexpected workflow output format. Expecting one of {lookup_keys}. Found {output.keys()}")
 
     return output[look_up_key]
 
 
-def parse_bcl_convert_output_split_sheets(output_json: str) -> list:
+def parse_bcl_convert_output(output_json: str, deep_check: bool = True) -> list:
+    """
+    Parse BCL Convert workflow run output and get fastq_list_rows
+
+    :param output_json: workflow run output in json format
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return fastq_list_rows: list of fastq list rows in fastq list format
+    """
+
+    # output section of interest, lookup in order, return on first found
+    lookup_keys = ['main/fastq_list_rows', 'fastq_list_rows']
+
+    fqlr_output = parse_workflow_output(output_json, lookup_keys)
+
+    if deep_check and fqlr_output is None:
+        raise ValueError(f"Unexpected bcl_convert output. The fastq_list_rows is {fqlr_output}")
+
+    return fqlr_output
+
+
+def parse_bcl_convert_output_split_sheets(output_json: str, deep_check: bool = True) -> list:
     """
     Parse BCL Convert workflow run output and get split_sheets
 
     :param output_json: workflow run output in json format
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
     :return split_sheets: list of split_sheets
     """
 
     lookup_keys = ['main/split_sheets', 'split_sheets']  # lookup in order, return on first found
 
-    return parse_bcl_convert_output(output_json, lookup_keys)
+    split_sheets = parse_workflow_output(output_json, lookup_keys)
+
+    if deep_check and split_sheets is None:
+        raise ValueError(f"Unexpected bcl_convert output. The split_sheets is {split_sheets}")
+
+    return split_sheets
 
 
-def parse_somatic_output_workflow_directory(output_json: str) -> Dict:
+def parse_somatic_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:
     """
     Parse the somatic workflow run output and get the output directory of the somatic workflow
     :param output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
     :return:
     """
 
-    lookup_keys = ["main/dragen_somatic_output_directory", 'dragen_somatic_output_directory']
+    lookup_keys = ['main/dragen_somatic_output_directory', 'dragen_somatic_output_directory']
 
-    return parse_bcl_convert_output(output_json, lookup_keys)
+    dragen_somatic_output_directory = parse_workflow_output(output_json, lookup_keys)
+
+    if deep_check and dragen_somatic_output_directory is None:
+        raise ValueError("Could not find a dragen somatic output directory from the somatic workflow")
+
+    return dragen_somatic_output_directory
 
 
 def cwl_file_path_as_string_to_dict(file_path):

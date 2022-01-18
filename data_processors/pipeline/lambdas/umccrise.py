@@ -11,16 +11,14 @@ django.setup()
 
 # ---
 
-import copy
 import logging
 
 from data_portal.models.workflow import Workflow
-from data_processors.pipeline.services import sequence_run_srv, batch_srv, workflow_srv, metadata_srv, library_run_srv
+from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
-from data_processors.pipeline.tools.liborca import get_tiny_uuid
 
-from utils import libjson, libssm, libdt
+from libumccr import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -83,12 +81,12 @@ def handler(event, context) -> dict:
             }
         }],
         "output_directory_germline": "PRJ1234567",
-        "output_directory_umccrise": "L2100123_L2200124",
-        "output_file_prefix_germline": "PRJ1234567"
-        "seq_run_id": "sequence run id",
-        "seq_name": "sequence run name",
-        "batch_run_id": "batch run id",
-        "library_id": "library id",
+        "output_directory_umccrise": "TumorRglb__NormalRglb",
+        "output_file_prefix_germline": "PRJ1234567",
+        "subject_identifier_umccrise": "SBJ01234",
+        "sample_name": "TUMOR_SAMPLE_ID",
+        "tumor_library_id": "tumor_rglb",
+        "normal_library_id": "normal_rglb"
     }
 
     :param event:
@@ -99,38 +97,30 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.UMCCRISE.name} event")
     logger.info(libjson.dumps(event))
 
-    seq_run_id = event.get('seq_run_id', None)
-    seq_name = event.get('seq_name', None)
-    batch_run_id = event.get('batch_run_id', None)
-    library_id = event['library_id']
+    subject_id = event['subject_identifier_umccrise']
+    sample_name = event['sample_name']  # TUMOR_SAMPLE_ID
+    tumor_library_id = event['tumor_library_id']
+    normal_library_id = event['normal_library_id']
 
     # Set workflow helper
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.UMCCRISE)
 
     # Read input template from parameter store
-    input_template = libssm.get_ssm_param(wfl_helper.get_ssm_key_input())
-    workflow_input: dict = copy.deepcopy(libjson.loads(input_template))
+    workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input['dragen_somatic_directory'] = event['dragen_somatic_directory']
     workflow_input['fastq_list_rows_germline'] = event['fastq_list_rows_germline']
+    workflow_input['output_directory_germline'] = event['output_directory_germline']
+    workflow_input['output_directory_umccrise'] = event['output_directory_umccrise']
+    workflow_input['output_file_prefix_germline'] = event['output_file_prefix_germline']
+    workflow_input['subject_identifier_umccrise'] = subject_id
 
     # read workflow id and version from parameter store
-    workflow_id = libssm.get_ssm_param(wfl_helper.get_ssm_key_id())
-    workflow_version = libssm.get_ssm_param(wfl_helper.get_ssm_key_version())
-
-    sqr = sequence_run_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
-    batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
+    workflow_id = wfl_helper.get_workflow_id()
+    workflow_version = wfl_helper.get_workflow_version()
 
     # construct and format workflow run name convention
-    subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
-    portal_run_uuid = get_tiny_uuid()
-    workflow_run_name = wfl_helper.construct_workflow_name(
-        sample_name=library_id,
-        subject_id=subject_id,
-        portal_uuid=portal_run_uuid
-    )
-    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id,
-                                                                  secondary_target_id=library_id,
-                                                                  portal_run_uid=portal_run_uuid)
+    workflow_run_name = wfl_helper.construct_workflow_name(subject_id=subject_id, sample_name=tumor_library_id)
+    workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -145,31 +135,29 @@ def handler(event, context) -> dict:
             'wfr_name': workflow_run_name,
             'wfl_id': workflow_id,
             'wfr_id': wfl_run['id'],
-            'portal_run_id': portal_run_uuid,
+            'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
             'type': WorkflowType.UMCCRISE,
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),
             'end_status': wfl_run.get('status'),
-            'sequence_run': sqr,
-            'batch_run': batch_run,
         }
     )
 
     # establish link between Workflow and LibraryRun
-    _ = library_run_srv.link_library_runs_with_workflow(library_id, workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_library_id, normal_library_id], workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
-        'library_id': library_id,
+        'subject_id': subject_id,
+        'sample_name': sample_name,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
         'start': libdt.serializable_datetime(workflow.start),
-        'batch_run_id': workflow.batch_run.id if batch_run else None,
     }
 
     logger.info(libjson.dumps(result))
