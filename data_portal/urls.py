@@ -61,6 +61,9 @@ urlpatterns = [
     path('files', views.search_file, name='file-search'),
     path('file-signed-url', views.sign_s3_file, name='file-signed-url'),
     path('storage-stats', views.storage_stats, name='storage-stats'),
+    # we mirror the API surface at /iam/ - and set that path up in sls with an IAM authorizer as opposed to a JWT one
+    path('iam/', include(router.urls)),
+    # the main API surface authenticated using JWTs
     path('', include(router.urls)),
 ]
 
