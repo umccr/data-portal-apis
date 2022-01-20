@@ -36,9 +36,14 @@ def create_library_run_from_sequence(payload: dict):
     sample_sheet_name = payload.get('sample_sheet_name', "SampleSheet.csv")
     runinfo_name = payload.get('runinfo_name', "RunInfo.xml")
 
-    samplesheet_path = gds_folder_path + os.path.sep + sample_sheet_name
-    samplesheet_json = liborca.get_samplesheet_to_json(gds_volume=gds_volume_name, samplesheet_path=samplesheet_path)
-    samplesheet_dict = json.loads(samplesheet_json)
+    try:
+        samplesheet_path = gds_folder_path + os.path.sep + sample_sheet_name
+        samplesheet_json = liborca.get_samplesheet_to_json(gds_volume_name, samplesheet_path)
+        samplesheet_dict = json.loads(samplesheet_json)
+    except ValueError as e:
+        logger.warning(f"SKIP populating LibraryRun for {instr_run_id}. It may be that {sample_sheet_name} is "
+                       f"yet to be uploaded into the run directory.")
+        return []
 
     library_run_list = []
     data_rows = samplesheet_dict['Data']

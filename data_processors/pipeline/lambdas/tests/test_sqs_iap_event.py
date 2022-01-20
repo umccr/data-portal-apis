@@ -3,6 +3,7 @@ from datetime import datetime
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from libumccr import libslack, libjson
+from libumccr.aws import libssm
 from mockito import when, verify
 
 from data_portal.models.batchrun import BatchRun
@@ -10,7 +11,8 @@ from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMeta
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
-from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowRunEventType
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, WorkflowRunEventType, \
+    SequenceRuleError
 from data_processors.pipeline.lambdas import sqs_iap_event
 from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests import _rand, _uuid
@@ -74,7 +76,6 @@ def _mock_bcl_convert_output():
 
 
 def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED):
-
     event_details = {}
     if workflow_status == WorkflowStatus.FAILED:
         event_details = {
@@ -192,6 +193,83 @@ def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = Wor
     return sqs_event_message
 
 
+def _sqs_bssh_event_message():
+    mock_run_id = TestConstant.run_id.value
+    mock_instrument_run_id = TestConstant.instrument_run_id.value
+    mock_date_modified = "2020-05-09T22:17:03.1015272Z"
+    mock_status = "PendingAnalysis"
+
+    sequence_run_message = {
+        "gdsFolderPath": f"/Runs/{mock_instrument_run_id}_{mock_run_id}",
+        "gdsVolumeName": "bssh.acgtacgt498038ed99fa94fe79523959",
+        "reagentBarcode": "NV9999999-ACGTA",
+        "v1pre3Id": "666666",
+        "dateModified": mock_date_modified,
+        "acl": [
+            "wid:e4730533-d752-3601-b4b7-8d4d2f6373de"
+        ],
+        "flowcellBarcode": "BARCODEEE",
+        "sampleSheetName": "MockSampleSheet.csv",
+        "apiUrl": f"https://api.aps2.sh.basespace.illumina.com/v2/runs/{mock_run_id}",
+        "name": mock_instrument_run_id,
+        "id": mock_run_id,
+        "instrumentRunId": mock_instrument_run_id,
+        "status": mock_status
+    }
+
+    ens_sqs_message_attributes = {
+        "action": {
+            "stringValue": "statuschanged",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "actiondate": {
+            "stringValue": "2020-05-09T22:17:10.815Z",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "type": {
+            "stringValue": "bssh.runs",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "producedby": {
+            "stringValue": "BaseSpaceSequenceHub",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        },
+        "contenttype": {
+            "stringValue": "application/json",
+            "stringListValues": [],
+            "binaryListValues": [],
+            "dataType": "String"
+        }
+    }
+
+    sqs_event_message = {
+        "Records": [
+            {
+                "eventSource": "aws:sqs",
+                "body": libjson.dumps(sequence_run_message),
+                "messageAttributes": ens_sqs_message_attributes,
+                "attributes": {
+                    "ApproximateReceiveCount": "3",
+                    "SentTimestamp": "1589509337523",
+                    "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
+                    "ApproximateFirstReceiveTimestamp": "1589509337535"
+                },
+                "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
+            }
+        ]
+    }
+
+    return sqs_event_message
+
+
 class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
@@ -246,7 +324,8 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             ]
         }
 
-        sqs_iap_event.handler(sqs_event_message, None)
+        result = sqs_iap_event.handler(sqs_event_message, None)
+        self.assertIsNotNone(result)
 
     def test_sequence_run_event(self):
         """
@@ -254,82 +333,9 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         """
         when(libraryrun_srv).create_library_run_from_sequence(...).thenReturn(list())  # skip LibraryRun creation
 
-        mock_run_id = "r.ACGxTAC8mGCtAcgTmITyDA"
-        mock_instrument_run_id = "200508_A01052_0001_AC5GT7ACGT"
-        mock_date_modified = "2020-05-09T22:17:03.1015272Z"
-        mock_status = "PendingAnalysis"
+        _ = sqs_iap_event.handler(_sqs_bssh_event_message(), None)
 
-        sequence_run_message = {
-            "gdsFolderPath": f"/Runs/{mock_instrument_run_id}_{mock_run_id}",
-            "gdsVolumeName": "bssh.acgtacgt498038ed99fa94fe79523959",
-            "reagentBarcode": "NV9999999-ACGTA",
-            "v1pre3Id": "666666",
-            "dateModified": mock_date_modified,
-            "acl": [
-                "wid:e4730533-d752-3601-b4b7-8d4d2f6373de"
-            ],
-            "flowcellBarcode": "BARCODEEE",
-            "sampleSheetName": "MockSampleSheet.csv",
-            "apiUrl": f"https://api.aps2.sh.basespace.illumina.com/v2/runs/{mock_run_id}",
-            "name": mock_instrument_run_id,
-            "id": mock_run_id,
-            "instrumentRunId": mock_instrument_run_id,
-            "status": mock_status
-        }
-
-        ens_sqs_message_attributes = {
-            "action": {
-                "stringValue": "statuschanged",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "actiondate": {
-                "stringValue": "2020-05-09T22:17:10.815Z",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "type": {
-                "stringValue": "bssh.runs",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "producedby": {
-                "stringValue": "BaseSpaceSequenceHub",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            },
-            "contenttype": {
-                "stringValue": "application/json",
-                "stringListValues": [],
-                "binaryListValues": [],
-                "dataType": "String"
-            }
-        }
-
-        sqs_event_message = {
-            "Records": [
-                {
-                    "eventSource": "aws:sqs",
-                    "body": libjson.dumps(sequence_run_message),
-                    "messageAttributes": ens_sqs_message_attributes,
-                    "attributes": {
-                        "ApproximateReceiveCount": "3",
-                        "SentTimestamp": "1589509337523",
-                        "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
-                        "ApproximateFirstReceiveTimestamp": "1589509337535"
-                    },
-                    "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
-                }
-            ]
-        }
-
-        sqs_iap_event.handler(sqs_event_message, None)
-
-        qs = SequenceRun.objects.filter(run_id=mock_run_id)
+        qs = SequenceRun.objects.filter(run_id=TestConstant.run_id.value)
         sqr = qs.get()
         self.assertEqual(1, qs.count())
         logger.info(f"Asserted found SequenceRun record from db: {sqr}")
@@ -337,6 +343,26 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         # assert bcl convert workflow launch success and save workflow runs in portal db
         success_bcl_convert_workflow_runs = Workflow.objects.all()
         self.assertEqual(1, success_bcl_convert_workflow_runs.count())
+
+    def test_sequence_run_event_emergency_stop(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_sqs_iap_event.SQSIAPEventUnitTests.test_sequence_run_event_emergency_stop
+        """
+        when(libraryrun_srv).create_library_run_from_sequence(...).thenReturn(list())  # skip LibraryRun creation
+        when(libssm).get_ssm_param(...).thenReturn(libjson.dumps([TestConstant.instrument_run_id.value]))
+
+        _ = sqs_iap_event.handler(_sqs_bssh_event_message(), None)
+
+        qs = SequenceRun.objects.filter(run_id=TestConstant.run_id.value)
+        sqr = qs.get()
+        self.assertEqual(1, qs.count())
+        logger.info(f"Asserted found SequenceRun record from db: {sqr}")
+
+        # assert bcl convert workflow is not launched
+        success_bcl_convert_workflow_runs = Workflow.objects.all()
+        self.assertEqual(0, success_bcl_convert_workflow_runs.count())
+
+        self.assertRaises(SequenceRuleError)
 
     def test_wes_runs_event_dragen_wgs_qc(self):
         """
@@ -366,7 +392,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
         self.assertTrue(BatchRun.objects.count() > 1)
         self.assertTrue(wgs_qc_batch_runs[0].running)
 
-        logger.info(f"-"*32)
+        logger.info(f"-" * 32)
         for wfl in Workflow.objects.all():
             logger.info((wfl.wfr_id, wfl.type_name, wfl.notified))
             if wfl.type_name == WorkflowType.BCL_CONVERT.value:

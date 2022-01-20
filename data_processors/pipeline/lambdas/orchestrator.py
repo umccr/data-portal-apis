@@ -26,12 +26,14 @@ import logging
 from typing import List
 
 from data_portal.models.workflow import Workflow
+from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
     dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from libumccr import libjson
+from libumccr.aws import libssm
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -59,6 +61,17 @@ def handler(event, context):
         ]
     }
 
+    NOTE:
+    Orchestrator will read static configuration step_skip_list from SSM param. And merge with skip list from the event.
+    For example, to skip DRAGEN_WGS_QC_STEP, simply payload value like as follows. To reset, just payload empty list [].
+
+        aws ssm put-parameter \
+          --name "/iap/workflow/step_skip_list" \
+          --type "String" \
+          --value "[\"DRAGEN_WGS_QC_STEP\"]" \
+          --overwrite \
+          --profile dev
+
     :param event:
     :param context:
     :return: None
@@ -72,8 +85,17 @@ def handler(event, context):
     wfr_event = event.get('wfr_event')  # wfr_event is optional
     skip = event.get('skip', list())    # skip is optional
 
+    try:
+        step_skip_list_json = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list")
+        step_skip_list = libjson.loads(step_skip_list_json)
+    except Exception as e:
+        # If any exception found, log warning and proceed
+        logger.warning(f"Cannot read step_skip_list from SSM param. Exception: {e}")
+        step_skip_list = []
+    skip = skip + step_skip_list
+
     if "UPDATE_STEP" in skip:
-        # i.e. do not sync Workflow output from WES. Instead just use the Workflow output in Portal DB
+        # i.e. do not sync Workflow output from WES. Instead, just use the Workflow output in Portal DB
         this_workflow: Workflow = workflow_srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
     else:
         this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)

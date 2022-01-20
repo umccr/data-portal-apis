@@ -14,8 +14,10 @@ django.setup()
 from typing import List
 import logging
 
+from data_portal.models.sequence import SequenceStatus
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.libraryrun import LibraryRun
+from data_processors.pipeline.domain.workflow import SequenceRule, SequenceRuleError
 from data_processors.pipeline.services import notification_srv, sequence_srv, sequencerun_srv, libraryrun_srv
 from data_processors.pipeline.lambdas import bcl_convert, orchestrator
 from libumccr import libjson
@@ -78,20 +80,37 @@ def handle_bssh_run_event(message, event_action, event_type, context):
         notification_srv.notify_sequence_run_status(sqr=sqr, sqs_record_timestamp=int(ts), aws_account=aws_account)
 
         # Create or update Sequence record from BSSH Run event payload
-        seq = sequence_srv.create_or_update_sequence_from_bssh_event(payload)
+        this_sequence = sequence_srv.create_or_update_sequence_from_bssh_event(payload)
+
+        # Populate LibraryRun records
+        if this_sequence.status.lower() == SequenceStatus.STARTED.value.lower() \
+                or sqr.status.lower() == "PendingAnalysis".lower():
+            library_run_list: List[LibraryRun] = libraryrun_srv.create_library_run_from_sequence({
+                'instrument_run_id': this_sequence.instrument_run_id,
+                'run_id': this_sequence.run_id,
+                'gds_folder_path': this_sequence.gds_folder_path,
+                'gds_volume_name': this_sequence.gds_volume_name,
+                'sample_sheet_name': this_sequence.sample_sheet_name,
+            })
+
+        # Skip any further processing if a Run is registered in the emergency stop list
+        try:
+            SequenceRule(this_sequence).must_not_emergency_stop()
+        except SequenceRuleError as se:
+            reason = f"Aborted ICA pipeline. {se}"
+            logger.warning(reason)
+            event = {
+                'gds_volume_name': this_sequence.gds_volume_name,
+                'gds_folder_path': this_sequence.gds_folder_path,
+                'seq_run_id': this_sequence.run_id,
+                'seq_name': this_sequence.instrument_run_id,
+            }
+            notification_srv.notify_outlier(topic="Due to Emergency Stop", reason=reason, status="Aborted", event=event)
+            return
 
         # Using bssh.runs event status PendingAnalysis as trigger for next event
         # See https://github.com/umccr-illumina/stratus/issues/95
         if sqr.status.lower() == "PendingAnalysis".lower():
-            # populate LibraryRun records
-            library_run_list: List[LibraryRun] = libraryrun_srv.create_library_run_from_sequence({
-                'instrument_run_id': seq.instrument_run_id,
-                'run_id': seq.run_id,
-                'gds_folder_path': seq.gds_folder_path,
-                'gds_volume_name': seq.gds_volume_name,
-                'sample_sheet_name': seq.sample_sheet_name,
-            })
-
             # launch bcl convert workflow
             bcl_convert.handler({
                 'gds_volume_name': sqr.gds_volume_name,

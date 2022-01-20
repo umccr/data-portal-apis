@@ -6,6 +6,7 @@ See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
 import copy
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
@@ -16,6 +17,9 @@ from libumccr import libjson
 from libumccr.aws import libssm
 
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class SampleSheetCSV(Enum):
@@ -215,6 +219,50 @@ class SecondaryAnalysisHelper(WorkflowHelper):
     def construct_workflow_name(self, subject_id: str, sample_name: str):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[PORTAL_RUN_ID]
         return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{self.portal_run_id}"
+
+
+class SequenceRuleError(ValueError):
+    pass
+
+
+class SequenceRule:
+
+    def __init__(self, this_sequence):
+        self.this_sequence = this_sequence
+
+    def must_not_emergency_stop(self):
+        """
+        emergency_stop_list - is simple registry list that
+            - is in JSON format
+            - store in SSM param store
+            - contains Sequence instrument run ID(s) e.g. ["200612_A01052_0017_BH5LYWDSXY"]
+
+        Business rule:
+        If this_sequence is found in the emergency stop list then it will stop any further processing.
+        Otherwise, emergency stop list should be empty list [].
+
+        Here is an example to set emergency_stop_list for Run 200612_A01052_0017_BH5LYWDSXY.
+        To reset, simply payload value to the empty list [].
+
+            aws ssm put-parameter \
+              --name "/iap/workflow/emergency_stop_list" \
+              --type "String" \
+              --value "[\"200612_A01052_0017_BH5LYWDSXY\"]" \
+              --overwrite \
+              --profile dev
+        """
+        try:
+            emergency_stop_list_json = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/emergency_stop_list")
+            emergency_stop_list = libjson.loads(emergency_stop_list_json)
+        except Exception as e:
+            # If any exception found, log warning and proceed
+            logger.warning(f"Cannot read emergency_stop_list from SSM param. Exception: {e}")
+            emergency_stop_list = []
+
+        if self.this_sequence.instrument_run_id in emergency_stop_list:
+            raise SequenceRuleError(f"Sequence {self.this_sequence.instrument_run_id} is marked for emergency stop.")
+
+        return self
 
 
 class WorkflowRuleError(ValueError):
