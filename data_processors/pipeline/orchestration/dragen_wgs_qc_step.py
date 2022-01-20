@@ -15,7 +15,7 @@ from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.batch import Batcher, BatchRule, BatchRuleError
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WGS_QC_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import WorkflowType, MetadataRule, MetadataRuleError
+from data_processors.pipeline.domain.workflow import WorkflowType, LabMetadataRule, LabMetadataRuleError
 from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv, libraryrun_srv
 from data_processors.pipeline.tools import liborca
 
@@ -74,7 +74,7 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
         this_metadata: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
 
         try:
-            MetadataRule(this_metadata).must_exist().must_not_manual().must_be_wgs()
+            LabMetadataRule(this_metadata).must_not_manual().must_be_wgs()
 
             BatchRule(
                 batcher=batcher,
@@ -82,7 +82,7 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
                 libraryrun_srv=libraryrun_srv
             ).must_not_have_succeeded_runs()
 
-        except MetadataRuleError as me:
+        except LabMetadataRuleError as me:
             logger.warning(f"SKIP {WorkflowType.DRAGEN_WGS_QC.value} workflow for '{rgsm}_{rglb}' in lane {lane}. {me}")
             continue
 

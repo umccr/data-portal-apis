@@ -245,73 +245,70 @@ class WorkflowRule:
         return self
 
 
-class MetadataRuleError(ValueError):
+class LabMetadataRuleError(ValueError):
     pass
 
 
-class MetadataRule:
+class LabMetadataRule:
     """
-    MetadataRule model that check some state must conform in wrapped LabMetadata. Implement your rule that start with
-    must_XX expression. Raise MetadataRuleError if not conformant. Otherwise, return itself for chain validation.
+    LabMetadataRule model that check some state must conform in wrapped LabMetadata. Implement your rule that start with
+    must_XX expression. Raise LabMetadataRuleError if not conformant. Otherwise, return itself for chain validation.
 
-    NOTE: The aspect here is just "metadata" itself as-is validation. For LibraryRun aspect, see LibraryRule.
+    NOTE: The aspect here is just "metadata" itself as-is validation. For LibraryRun aspect, see LibraryRunRule.
     """
 
     def __init__(self, this_metadata):
+        if this_metadata is None:
+            raise LabMetadataRuleError(f"No metadata.")
         self.this_metadata = this_metadata
-
-    def must_exist(self):
-        if self.this_metadata is None:
-            raise MetadataRuleError(f"No metadata.")
-        return self
 
     def must_not_manual(self):
         from data_portal.models.labmetadata import LabMetadataWorkflow
         if self.this_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
-            raise MetadataRuleError(f"Workflow is set to manual.")
+            raise LabMetadataRuleError(f"Workflow is set to manual.")
         return self
 
     def must_not_ntc(self):
         from data_portal.models.labmetadata import LabMetadataPhenotype
         if self.this_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-            raise MetadataRuleError(f"Negative-control sample.")
+            raise LabMetadataRuleError(f"Negative-control sample.")
         return self
 
     def must_be_wgs(self):
         from data_portal.models.labmetadata import LabMetadataType
         if self.this_metadata.type.lower() != LabMetadataType.WGS.value.lower():
-            raise MetadataRuleError(f"'WGS' != '{self.this_metadata.type}'.")
+            raise LabMetadataRuleError(f"'WGS' != '{self.this_metadata.type}'.")
         return self
 
     def must_be_wts(self):
         from data_portal.models.labmetadata import LabMetadataType
         if self.this_metadata.type.lower() != LabMetadataType.WTS.value.lower():
-            raise MetadataRuleError(f"'WTS' != '{self.this_metadata.type}'.")
+            raise LabMetadataRuleError(f"'WTS' != '{self.this_metadata.type}'.")
         return self
 
     def must_be_cttso_ctdna(self):
         from data_portal.models.labmetadata import LabMetadataType, LabMetadataAssay
         if not (self.this_metadata.type.lower() == LabMetadataType.CT_DNA.value.lower() and
                 self.this_metadata.assay.lower() == LabMetadataAssay.CT_TSO.value.lower()):
-            raise MetadataRuleError(
+            raise LabMetadataRuleError(
                 f"Type: 'ctDNA' != '{self.this_metadata.type}' or Assay: 'ctTSO' != '{self.this_metadata.assay}'"
             )
         return self
 
 
-class LibraryRuleError(ValueError):
+class LibraryRunRuleError(ValueError):
     pass
 
 
-class LibraryRule:
+class LibraryRunRule:
     """
-    LibraryRule model that check some state must conform in wrapped LibraryRun. Implement your rule that start with
-    must_XX expression. Raise LibraryRuleError if not conformant. Otherwise, return itself for chain validation.
+    LibraryRunRule model that check some state must conform in wrapped LibraryRun. Implement your rule that start with
+    must_XX expression. Raise LibraryRunRuleError if not conformant. Otherwise, return itself for chain validation.
 
     NOTE: this_metadata is the corresponding counterpart of LabMetadata that compliment for validation purpose. You
     may wish to encapsulate services for more control with lookup. In that case, see batch module BatchRule for example
     as injecting service dependencies pattern... Otherwise, reconstruction of wrapped instances are not a concern of
-    this LibraryRule implementations. No strict practice here. Just use-as-see-fit for the better maintainable code...
+    this LibraryRunRule implementations. No strict practice here. Just use-as-see-fit for the better maintainable code...
     """
 
     def __init__(self, this_library, this_metadata):
