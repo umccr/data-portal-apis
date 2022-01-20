@@ -194,7 +194,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepIntegrationTests.test_prepare_dragen_tso_ctdna_jobs
         """
 
-        # --- pick one successful BCL Convert run in development project
+        # --- pick one successful BCL Convert run
 
         bcl_convert_wfr_id = "wfr.097dc05051b44c0c8717b32d89dfcf81"  # 210429_A00130_0157_BH3N3FDSX2 in PROD
         total_jobs_to_eval = 16

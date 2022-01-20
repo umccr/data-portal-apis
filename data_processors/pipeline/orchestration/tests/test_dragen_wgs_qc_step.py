@@ -163,11 +163,11 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepIntegrationTests.test_prepare_dragen_wgs_qc_jobs
         """
 
-        # --- pick one successful BCL Convert run in development project
+        # --- pick one successful BCL Convert run
         # ica workflows runs list
         # ica workflows runs get wfr.<ID>
 
-        bcl_convert_wfr_id = "wfr.18210c790f30452992c5fd723521f014"
+        bcl_convert_wfr_id = "wfr.18210c790f30452992c5fd723521f014"  # from PROD
         total_jobs_to_eval = 12
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)

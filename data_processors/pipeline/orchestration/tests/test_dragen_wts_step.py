@@ -118,7 +118,7 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wts_step.DragenWtsStepIntegrationTests.test_prepare_dragen_wts_jobs
         """
 
-        # --- pick one recent successful BCL Convert run in development project
+        # --- pick one recent successful BCL Convert run
         # ica workflows runs list
         # ica workflows runs get wfr.<ID>
 

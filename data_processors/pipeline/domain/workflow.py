@@ -217,10 +217,14 @@ class SecondaryAnalysisHelper(WorkflowHelper):
         return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{self.portal_run_id}"
 
 
+class WorkflowRuleError(ValueError):
+    pass
+
+
 class WorkflowRule:
     """
     WorkflowRule model that check some state must conform in wrapped Workflow. Each rule start with must_XX expression.
-    If rule is passed, return itself back. So that we can perform chain validation. Otherwise, it raise exception and
+    If rule is passed, return itself back. So that we can perform chain validation. Otherwise, it raises exception and
     halt the app. It is desirable to halt the execution as continue doing so is harmful to the system.
     """
 
@@ -230,12 +234,98 @@ class WorkflowRule:
     def must_associate_sequence_run(self):
         this_sqr = self.workflow.sequence_run
         if this_sqr is None:
-            raise ValueError(f"Workflow {self.workflow.type_name} wfr_id: '{self.workflow.wfr_id}' must be associated "
-                             f"with a SequenceRun. SequenceRun is: {this_sqr}")
+            raise WorkflowRuleError(f"Workflow {self.workflow.type_name} wfr_id: '{self.workflow.wfr_id}' must be "
+                                    f"associated with a SequenceRun. SequenceRun is: {this_sqr}")
         return self
 
     def must_have_output(self):
         # use case e.g. bcl convert workflow run must have output in order to continue next step(s)
         if self.workflow.output is None:
-            raise ValueError(f"Workflow '{self.workflow.wfr_id}' output is None")
+            raise WorkflowRuleError(f"Workflow '{self.workflow.wfr_id}' output is None")
+        return self
+
+
+class MetadataRuleError(ValueError):
+    pass
+
+
+class MetadataRule:
+    """
+    MetadataRule model that check some state must conform in wrapped LabMetadata. Implement your rule that start with
+    must_XX expression. Raise MetadataRuleError if not conformant. Otherwise, return itself for chain validation.
+
+    NOTE: The aspect here is just "metadata" itself as-is validation. For LibraryRun aspect, see LibraryRule.
+    """
+
+    def __init__(self, this_metadata):
+        self.this_metadata = this_metadata
+
+    def must_exist(self):
+        if self.this_metadata is None:
+            raise MetadataRuleError(f"No metadata.")
+        return self
+
+    def must_not_manual(self):
+        from data_portal.models.labmetadata import LabMetadataWorkflow
+        if self.this_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
+            raise MetadataRuleError(f"Workflow is set to manual.")
+        return self
+
+    def must_not_ntc(self):
+        from data_portal.models.labmetadata import LabMetadataPhenotype
+        if self.this_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
+            raise MetadataRuleError(f"Negative-control sample.")
+        return self
+
+    def must_be_wgs(self):
+        from data_portal.models.labmetadata import LabMetadataType
+        if self.this_metadata.type.lower() != LabMetadataType.WGS.value.lower():
+            raise MetadataRuleError(f"'WGS' != '{self.this_metadata.type}'.")
+        return self
+
+    def must_be_wts(self):
+        from data_portal.models.labmetadata import LabMetadataType
+        if self.this_metadata.type.lower() != LabMetadataType.WTS.value.lower():
+            raise MetadataRuleError(f"'WTS' != '{self.this_metadata.type}'.")
+        return self
+
+    def must_be_cttso_ctdna(self):
+        from data_portal.models.labmetadata import LabMetadataType, LabMetadataAssay
+        if not (self.this_metadata.type.lower() == LabMetadataType.CT_DNA.value.lower() and
+                self.this_metadata.assay.lower() == LabMetadataAssay.CT_TSO.value.lower()):
+            raise MetadataRuleError(
+                f"Type: 'ctDNA' != '{self.this_metadata.type}' or Assay: 'ctTSO' != '{self.this_metadata.assay}'"
+            )
+        return self
+
+
+class LibraryRuleError(ValueError):
+    pass
+
+
+class LibraryRule:
+    """
+    LibraryRule model that check some state must conform in wrapped LibraryRun. Implement your rule that start with
+    must_XX expression. Raise LibraryRuleError if not conformant. Otherwise, return itself for chain validation.
+
+    NOTE: this_metadata is the corresponding counterpart of LabMetadata that compliment for validation purpose. You
+    may wish to encapsulate services for more control with lookup. In that case, see batch module BatchRule for example
+    as injecting service dependencies pattern... Otherwise, reconstruction of wrapped instances are not a concern of
+    this LibraryRule implementations. No strict practice here. Just use-as-see-fit for the better maintainable code...
+    """
+
+    def __init__(self, this_library, this_metadata):
+        self.this_library = this_library
+        self.this_metadata = this_metadata
+
+    def must_pass_qc(self):
+        # TODO
+        return self
+
+    def must_have_acceptable_coverage_yield(self):
+        # TODO
+        return self
+
+    def must_be_valid_for_analysis(self):
+        # TODO
         return self

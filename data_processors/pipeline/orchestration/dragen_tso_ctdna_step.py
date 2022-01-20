@@ -14,12 +14,11 @@ import pandas as pd
 from libumccr import libjson
 from libumccr.aws import libssm, libsqs
 
-from data_portal.models.labmetadata import LabMetadata, LabMetadataWorkflow, LabMetadataType, \
-    LabMetadataAssay
+from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
-from data_processors.pipeline.domain.batch import Batcher
+from data_processors.pipeline.domain.batch import Batcher, BatchRule, BatchRuleError
 from data_processors.pipeline.domain.config import SQS_DRAGEN_TSO_CTDNA_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowType, MetadataRule, MetadataRuleError
 from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv, libraryrun_srv
 from data_processors.pipeline.tools import liborca
 
@@ -32,7 +31,6 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_workflow: Workflow):
-
     batcher = Batcher(
         workflow=this_workflow,
         run_step=WorkflowType.DRAGEN_TSO_CTDNA.value,
@@ -59,21 +57,19 @@ def perform(this_workflow: Workflow):
 
 def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
     """
-    NOTE: This launches the cttso cwl workflow that mimics the ISL workflow
-    See Example IAP Run > Inputs
-    https://github.com/umccr-illumina/cwl-iap/blob/master/.github/tool-help/development/wfl.5cc28c147e4e4dfa9e418523188aacec/3.7.5--1.3.5.md
+    NOTE:
 
     ctTSO job preparation is at _pure_ Library level aggregate.
     Here "Pure" Library ID means without having _topup(N) or _rerun(N) suffixes.
-    The fastq_list_row lambda already stripped these topup/rerun suffixes (i.e. what is in this_batch.context_data cache).
+    The fastq_list_row lambda already stripped these topup/rerun suffixes.
     Therefore, it aggregates all fastq list at
         - per sequence run by per library for
             - all different lane(s)
             - all topup(s)
             - all rerun(s)
-    This constitute one ctTSO job (i.e. one ctTSO workflow run).
+    This constitutes one ctTSO job (i.e. one ctTSO workflow run).
 
-    See test_prepare_dragen_tso_ctdna_jobs() for example job list of validation run.
+    See DragenTsoCtDnaStepIntegrationTests test_prepare_dragen_tso_ctdna_jobs() for example job list of validation run.
 
     :param batcher:
     :return:
@@ -89,29 +85,23 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
 
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
-        meta: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
-        # make sure we have recognised sample (e.g. not undetermined)
-        if meta is None:
-            logger.error(f"SKIP DRAGEN_TSO_CTDNA workflow for {rgsm}_{rglb}. "
-                         f"No metadata for {rglb}, this should not happen!")
+        this_metadata: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
+
+        try:
+            MetadataRule(this_metadata).must_exist().must_not_manual().must_be_cttso_ctdna()
+
+            BatchRule(
+                batcher=batcher,
+                this_library=str(rglb),
+                libraryrun_srv=libraryrun_srv
+            ).must_not_have_succeeded_runs()
+
+        except MetadataRuleError as me:
+            logger.warning(f"SKIP {WorkflowType.DRAGEN_TSO_CTDNA.value} workflow for '{rgsm}_{rglb}'. {me}")
             continue
 
-        # skip negative control samples
-        # if meta.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-        #     logger.info(f"SKIP DRAGEN_TSO_CTDNA workflow for '{rgsm}_{rglb}'. Negative-control.")
-        #     continue
-
-        # Skip samples where metadata workflow is set to manual
-        if meta.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
-            # We do not pursue manual samples
-            logger.info(f"SKIP DRAGEN_TSO_CTDNA workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
-            continue
-
-        # skip if assay is not CT_TSO and type is not CT_DNA
-        if not (meta.type.lower() == LabMetadataType.CT_DNA.value.lower() and
-                meta.assay.lower() == LabMetadataAssay.CT_TSO.value.lower()):
-            logger.warning(f"SKIP DRAGEN_TSO_CTDNA workflow for '{rgsm}_{rglb}'. "
-                           f"Type: 'ctDNA' != '{meta.type}' or Assay: 'ctTSO' != '{meta.assay}'")
+        except BatchRuleError as be:
+            logger.warning(f"SKIP {be}")
             continue
 
         # Sample ID
@@ -144,7 +134,7 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
 
         job_list.append(job)
 
-    return filter_succeeded_runs(job_list)
+    return job_list
 
 
 def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
@@ -188,33 +178,3 @@ def get_run_xml_files_from_bcl_convert_workflow(bcl_convert_input):
     bcl_input_dir = bcl_convert_input['bcl_input_directory']['location']
 
     return f"{bcl_input_dir}/RunInfo.xml", f"{bcl_input_dir}/RunParameters.xml"
-
-
-def filter_succeeded_runs(job_list: List[dict]) -> List[dict]:
-    """
-    Filter out library_id that has been successfully run before
-    :param job_list:
-    :return:
-    """
-
-    filtered_job_list = []
-    for job in job_list:
-        library_id = job['library_id']
-        run_id = job['seq_run_id']
-        instrument_run_id = job['seq_name']
-
-        succeeded_library_runs = libraryrun_srv.get_library_runs(
-            library_id=library_id,
-            run_id=run_id,
-            instrument_run_id=instrument_run_id,
-            workflows__type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
-            workflows__end_status=WorkflowStatus.SUCCEEDED.value,
-        )
-
-        if not succeeded_library_runs:
-            filtered_job_list.append(job)
-        else:
-            logger.info(f"SKIP library_id {library_id} for {instrument_run_id} has {WorkflowStatus.SUCCEEDED.value} "
-                        f"{WorkflowType.DRAGEN_TSO_CTDNA.value} workflow run")
-
-    return filtered_job_list

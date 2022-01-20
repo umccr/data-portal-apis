@@ -11,12 +11,12 @@ import pandas as pd
 from libumccr import libjson
 from libumccr.aws import libssm, libsqs
 
-from data_portal.models.labmetadata import LabMetadata, LabMetadataWorkflow, LabMetadataType
+from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
-from data_processors.pipeline.domain.batch import Batcher
+from data_processors.pipeline.domain.batch import Batcher, BatchRule, BatchRuleError
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WTS_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import WorkflowType
-from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv
+from data_processors.pipeline.domain.workflow import WorkflowType, MetadataRule, MetadataRuleError
+from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv, libraryrun_srv
 from data_processors.pipeline.tools import liborca
 
 logger = logging.getLogger(__name__)
@@ -73,27 +73,23 @@ def prepare_dragen_wts_jobs(batcher: Batcher) -> List[dict]:
 
         # Get the metadata for the library
         # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
-        meta: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
-        # make sure we have recognised sample (e.g. not undetermined)
-        if meta is None:
-            logger.error(f"SKIP DRAGEN_WTS workflow for {rgsm}_{rglb}. "
-                         f"No metadata for {rglb}, this should not happen!")
+        this_metadata: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
+
+        try:
+            MetadataRule(this_metadata).must_exist().must_not_manual().must_be_wts()
+
+            BatchRule(
+                batcher=batcher,
+                this_library=str(rglb),
+                libraryrun_srv=libraryrun_srv
+            ).must_not_have_succeeded_runs()
+
+        except MetadataRuleError as me:
+            logger.warning(f"SKIP {WorkflowType.DRAGEN_WTS.value} workflow for '{rgsm}_{rglb}'. {me}")
             continue
 
-        # skip negative control samples
-        # if meta.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-        #     logger.info(f"SKIP DRAGEN_WTS workflow for '{rgsm}_{rglb}'. Negative-control.")
-        #     continue
-
-        # Skip samples where metadata workflow is set to manual
-        if meta.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
-            # We do not pursue manual samples
-            logger.info(f"SKIP DRAGEN_WTS workflow for '{rgsm}_{rglb}'. Workflow set to manual.")
-            continue
-
-        # skip DRAGEN_WTS workflow if assay type is not WTS
-        if meta.type.lower() != LabMetadataType.WTS.value.lower():
-            logger.warning(f"SKIP DRAGEN_WTS workflow for '{rgsm}_{rglb}'. 'WTS' != '{meta.type}'.")
+        except BatchRuleError as be:
+            logger.warning(f"SKIP {be}")
             continue
 
         # Update read 1 and read 2 strings to cwl file paths

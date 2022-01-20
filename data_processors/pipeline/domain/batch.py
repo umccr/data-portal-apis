@@ -10,8 +10,9 @@ Batcher encapsulate Batch creation logics. It is a loose builder (See Creational
 Once instantiated, you get a batcher object that has a Batch and related BatchRun.
 You can use it for those jobs (workflows) that wish to run in batch manner and batch notification.
 
-Note that _import_ free here! And also passing X_srv module into the constructor. Power of Python duck typing!
-We could import those respective classes and hint the typing to the caller. Otherwise you know what you are passing
+Note that _import_ free here! And also passing X_srv module into the constructor. Power of Python duck typing! And, you
+may wish to read a bit about topics in Polymorphism, Dependency Injection (DI) and Inversion of Control (IoC) patterns.
+We could import those respective classes and hint the typing to the caller. Otherwise, you know what you are passing
 into the constructor by "naming" convention. That's the lore of pure Pythonic-ism "readability".
 """
 
@@ -80,3 +81,45 @@ class Batcher:
             'batch_run_step': self.batch_run.step,
             'batch_run_status': "RUNNING" if self.batch_run.running else "NOT_RUNNING"
         }
+
+
+class BatchRuleError(ValueError):
+    pass
+
+
+class BatchRule:
+    """
+    BatchRule model that check some state must conform in wrapped this_library. Implement your rule that start with
+    must_XX expression. Raise BatchRuleError if not conformant. Otherwise, return itself for chain validation.
+
+    NOTE: Here we injected this_library as in its primitive form (i.e. string) and accompanying libraryrun_srv service
+    module to reconstruct LibraryRun state from database. We could build this LibraryRun instance outside at the caller.
+    But, we wish to encapsulate all business logic together here to avoid repetitive building at the caller side.
+    """
+
+    def __init__(self, batcher: Batcher, this_library: str, libraryrun_srv):
+        self.batcher = batcher
+        self.this_library = this_library
+        self.libraryrun_srv = libraryrun_srv
+
+        # derived attributes for convenience
+        self.run_id = self.batcher.sqr.run_id if self.batcher.sqr else None
+        self.instrument_run_id = self.batcher.sqr.name if self.batcher.sqr else None
+        self.run_step = self.batcher.run_step
+
+    def must_not_have_succeeded_runs(self):
+        from data_processors.pipeline.domain.workflow import WorkflowStatus
+        succeeded_library_runs = self.libraryrun_srv.get_library_runs(
+            library_id=self.this_library,
+            run_id=self.run_id,
+            instrument_run_id=self.instrument_run_id,
+            workflows__type_name=self.run_step,
+            workflows__end_status=WorkflowStatus.SUCCEEDED.value,
+        )
+
+        # if succeeded_library_runs is not empty then there must have some Runs already succeeded for this_library
+        if succeeded_library_runs:
+            raise BatchRuleError(f"library_id {self.this_library} for {self.instrument_run_id} has "
+                                 f"{WorkflowStatus.SUCCEEDED.value} {self.run_step} workflow run")
+
+        return self
