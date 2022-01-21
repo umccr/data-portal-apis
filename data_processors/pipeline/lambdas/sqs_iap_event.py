@@ -93,25 +93,29 @@ def handle_bssh_run_event(message, event_action, event_type, context):
                 'sample_sheet_name': this_sequence.sample_sheet_name,
             })
 
-        # Skip any further processing if a Run is registered in the emergency stop list
-        try:
-            SequenceRule(this_sequence).must_not_emergency_stop()
-        except SequenceRuleError as se:
-            reason = f"Aborted ICA pipeline. {se}"
-            logger.warning(reason)
-            event = {
-                'gds_volume_name': this_sequence.gds_volume_name,
-                'gds_folder_path': this_sequence.gds_folder_path,
-                'seq_run_id': this_sequence.run_id,
-                'seq_name': this_sequence.instrument_run_id,
-            }
-            notification_srv.notify_outlier(topic="Due to Emergency Stop", reason=reason, status="Aborted", event=event)
-            return
-
-        # Using bssh.runs event status PendingAnalysis as trigger for next event
+        # Using bssh.runs event status PendingAnalysis as start of trigger for our workflow automation
         # See https://github.com/umccr-illumina/stratus/issues/95
         if sqr.status.lower() == "PendingAnalysis".lower():
-            # launch bcl convert workflow
+            # Skip any further processing if a Run is registered in the emergency stop list
+            try:
+                SequenceRule(this_sequence).must_not_emergency_stop()
+            except SequenceRuleError as se:
+                reason = f"Aborted ICA pipeline. {se}"
+                logger.warning(reason)
+                notification_srv.notify_outlier(
+                    topic="Due to Emergency Stop",
+                    reason=reason,
+                    status="Aborted",
+                    event={
+                        'gds_volume_name': this_sequence.gds_volume_name,
+                        'gds_folder_path': this_sequence.gds_folder_path,
+                        'seq_run_id': this_sequence.run_id,
+                        'seq_name': this_sequence.instrument_run_id,
+                    }
+                )
+                return
+
+            # Launch bcl_convert workflow
             bcl_convert.handler({
                 'gds_volume_name': sqr.gds_volume_name,
                 'gds_folder_path': sqr.gds_folder_path,
