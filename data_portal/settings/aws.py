@@ -4,6 +4,8 @@
 Usage:
 - export DJANGO_SETTINGS_MODULE=data_portal.settings.aws
 """
+import copy
+
 from environ import Env
 from libumccr.aws import libssm
 
@@ -31,8 +33,4 @@ CORS_ALLOWED_ORIGINS = [
     'https://data.dev.umccr.org',
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    'data.umccr.org',
-    'data.prod.umccr.org',
-    'data.dev.umccr.org',
-]
+CSRF_TRUSTED_ORIGINS = copy.deepcopy(CORS_ALLOWED_ORIGINS)

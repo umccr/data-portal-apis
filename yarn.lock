@@ -678,7 +678,7 @@ at-least-node@^1.0.0:
   resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
-aws-sdk@^2.1058.0, aws-sdk@^2.1060.0:
+aws-sdk@^2.1058.0:
   version "2.1061.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1061.0.tgz#79c75e6856e5a59e0857d0d066a8ff5ff5e0d752"
   integrity sha512-T29yV+EPo4Fis9hAArxAXS/u6utKnlBq3DEu85LTSIA8i6e6Xg7e9u7Rveo8DmrlVrf7EGCNThaeF9WERHnwLg==
@@ -3745,12 +3745,12 @@ serverless-associate-waf@^1.2.1:
   dependencies:
     chalk "^2.4.2"
 
-serverless-domain-manager@^5.4.0:
-  version "5.4.0"
-  resolved "https://registry.yarnpkg.com/serverless-domain-manager/-/serverless-domain-manager-5.4.0.tgz#845c2347972bb56aa84c5578aba308226a23ec0d"
-  integrity sha512-MLjhGeeVC78s8XpZVoxwx/5NF/XYa8WovSEXJ4hpmGUNWjRZzkjQV09CinrtDA8au2KRTF+GepNgspN9meOxkw==
+serverless-domain-manager@5.3.2:
+  version "5.3.2"
+  resolved "https://registry.yarnpkg.com/serverless-domain-manager/-/serverless-domain-manager-5.3.2.tgz#9e1d7cd8bef0197d73bccc7564bb1067e55c5fe6"
+  integrity sha512-NrDnULxaVx6hI6httUxhrwjcWTvvVWf4Z5oFM1oq+cb//lztYiyikGB7RZ9f8Wf/o42URBiPdvRD/HTNifCMww==
   dependencies:
-    aws-sdk "^2.1060.0"
+    aws-sdk "^2.1058.0"
     chalk "^4.1.2"
 
 serverless-prune-plugin@^2.0.1:
