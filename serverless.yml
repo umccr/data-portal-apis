@@ -211,6 +211,15 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_tumor_normal_queue_arn}
     timeout: 28
 
+  sqs_umccrise_event_processor:
+    handler: data_processors.pipeline.lambdas.umccrise.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_umccrise_queue_arn}
+    timeout: 28
+
   sqs_notification_event_processor:
     handler: data_processors.pipeline.lambdas.notification.sqs_handler
     layers:
