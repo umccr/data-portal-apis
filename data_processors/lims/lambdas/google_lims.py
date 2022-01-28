@@ -11,9 +11,8 @@ django.setup()
 
 # ---
 
-import io
 import logging
-from typing import Dict
+import pandas as pd
 
 from datetime import datetime
 
@@ -26,17 +25,21 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def scheduled_update_handler(event, context) -> Dict[str, int]:
-    """
-    Handler for LIMS update by reading the designated Spreadsheet file from Google Drive.
-    Can be hit by Cron like job scheduler. It uses EventBridge on default EventBus with cron(0 12 * * ? *). See REF.
-    Can be also invoked directly:
-        aws lambda invoke --function-name data-portal-api-[dev|prod]-lims_scheduled_update_processor
+def _halt(msg):
+    logger.error(msg)
+    return {
+        'message': msg
+    }
 
-    REF:
-    https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduled-events.html
-    https://docs.aws.amazon.com/eventbridge/latest/userguide/event-types.html#schedule-event-type
-    https://docs.aws.amazon.com/eventbridge/latest/userguide/run-lambda-schedule.html
+
+def scheduled_update_handler(event, context):
+    """event payload dict
+    {
+        'sheets': ["Sheet1", "Sheet2"],
+        'truncate': False
+    }
+
+    Handler for LIMS update by reading the designated Spreadsheet file from Google Drive.
 
     :param event:
     :param context:
@@ -45,12 +48,34 @@ def scheduled_update_handler(event, context) -> Dict[str, int]:
     logger.info("Start processing LIMS update event")
     logger.info(libjson.dumps(event))
 
+    sheets = event.get('sheets', ["Sheet1", ])
+    is_truncate = event.get('truncate', False)
+
+    if not isinstance(sheets, list):
+        _halt(f"Payload error. Must be array of string for sheets. Found: {type(sheets)}")
+
+    if not isinstance(is_truncate, bool):
+        _halt(f"Payload error. Must be boolean for truncate. Found: {type(is_truncate)}")
+
+    truncated = False
+    if is_truncate:
+        truncated = google_lims_srv.truncate()
+
+    if not truncated:
+        logger.warning(f"LIMSRow table is not truncated. Continue with create or update merging strategy.")
+        # Note we can decide to error out and halt here instead
+
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LIMS data from google drive at {requested_time}")
 
     lims_sheet_id = libssm.get_secret(const.LIMS_SHEET_ID)
     account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
 
-    bytes_data = libgdrive.download_sheet1_csv(account_info, lims_sheet_id)
+    frames = []
+    for sheet in sheets:
+        logger.info(f"Downloading {sheet} sheet")
+        frames.append(libgdrive.download_sheet(account_info, lims_sheet_id, sheet))
 
-    return google_lims_srv.persist_lims_data(io.BytesIO(bytes_data))
+    df: pd.DataFrame = pd.concat(frames)
+
+    return google_lims_srv.persist_lims_data(df)

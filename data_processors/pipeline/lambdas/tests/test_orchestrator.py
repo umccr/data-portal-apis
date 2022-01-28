@@ -1,12 +1,16 @@
 import json
 from datetime import datetime
+from unittest import skip
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
+from libumccr import libjson
+from libumccr.aws import libssm
 from mockito import when
 
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
+from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.tests import _rand
@@ -88,4 +92,16 @@ class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
     # uncomment @skip and hit the each test case!
     # and keep decorated @skip after tested
 
-    pass
+    @skip
+    def test_load_skip_list(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorIntegrationTests.test_load_skip_list
+        """
+        step_skip_list_json = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list")
+        step_skip_list = libjson.loads(step_skip_list_json)
+
+        logger.info(step_skip_list)
+        self.assertIsInstance(step_skip_list, list)
+        self.assertIn("DRAGEN_WTS_STEP", step_skip_list)
+        self.assertIn("TUMOR_NORMAL_STEP", step_skip_list)
+        self.assertIn("UMCCRISE_STEP", step_skip_list)
