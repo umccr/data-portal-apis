@@ -18,11 +18,11 @@ from data_processors.pipeline.tools import liborca, libregex
 
 def perform(workflow: Workflow):
     libraries = get_libs_from_run(workflow=workflow)
-    run_name = workflow.sequence_run.name
+    instrument_run_id = workflow.sequence_run.instrument_run_id
 
     lims_rows = list()
     for library in libraries:
-        lims_row = create_lims_entry(lib_id=library, seq_run_name=run_name)
+        lims_row = create_lims_entry(lib_id=library, seq_run_name=instrument_run_id)
         lims_rows.append(lims_row)
 
     resp = update_google_lims_sheet(lims_rows)
@@ -65,26 +65,33 @@ def create_lims_entry(lib_id: str, seq_run_name: str) -> LIMSRow:
     # way outlier at this point in pipeline and something bad had happened
     lab_meta: LabMetadata = LabMetadata.objects.get(library_id=lib_id)
 
+    def sanitize(value):
+        if isinstance(value, str):
+            value = value.strip()
+        return value
+
     lims_row = LIMSRow(
         illumina_id=seq_run_name,
         run=liborca.get_run_number_from_run_name(seq_run_name),
         timestamp=liborca.get_timestamp_from_run_name(seq_run_name),
-        subject_id=lab_meta.subject_id,
-        sample_id=lab_meta.sample_id,
-        library_id=lab_meta.library_id,
-        external_subject_id=lab_meta.external_subject_id,
-        external_sample_id=lab_meta.external_sample_id,
-        sample_name=lab_meta.sample_name,
-        project_owner=lab_meta.project_owner,
-        project_name=lab_meta.project_name,
-        type=lab_meta.type,
-        assay=lab_meta.assay,
-        override_cycles=lab_meta.override_cycles,
-        phenotype=lab_meta.phenotype,
-        source=lab_meta.source,
-        quality=lab_meta.quality,
-        workflow=lab_meta.workflow
+        subject_id=sanitize(lab_meta.subject_id),
+        sample_id=sanitize(lab_meta.sample_id),
+        library_id=sanitize(lab_meta.library_id),
+        external_subject_id=sanitize(lab_meta.external_subject_id),
+        external_sample_id=sanitize(lab_meta.external_sample_id),
+        sample_name=sanitize(lab_meta.sample_name),
+        project_owner=sanitize(lab_meta.project_owner),
+        project_name=sanitize(lab_meta.project_name),
+        type=sanitize(lab_meta.type),
+        assay=sanitize(lab_meta.assay),
+        override_cycles=sanitize(lab_meta.override_cycles),
+        phenotype=sanitize(lab_meta.phenotype),
+        source=sanitize(lab_meta.source),
+        quality=sanitize(lab_meta.quality),
+        workflow=sanitize(lab_meta.workflow)
     )
+
+    lims_row.save()
 
     return lims_row
 
