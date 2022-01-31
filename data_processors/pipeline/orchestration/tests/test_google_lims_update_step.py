@@ -90,6 +90,8 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         lims_row: LIMSRow = create_mock_lims_row()
         lims_tuple: tuple = google_lims_update_step.convert_limsrow_to_tuple(limsrow=lims_row)
 
+        logger.info(lims_tuple)
+
         self.assertEqual(len(lims_tuple), lc_no)
         self.assertEqual(lims_tuple[lc_idx_run_name], mock_run_name)
         self.assertEqual(lims_tuple[lc_idx_workflow], mock_workflow_type)
@@ -156,6 +158,35 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         self.assertEqual(lims_row.workflow, mock_workflow_type)
         self.assertEqual(lims_row.run, liborca.get_run_number_from_run_name(mock_run_name))
         self.assertEqual(lims_row.timestamp, liborca.get_timestamp_from_run_name(mock_run_name))
+
+        # assert lims_row has saved
+        self.assertEqual(LIMSRow.objects.count(), 1)
+        self.assertEqual(LIMSRow.objects.get(library_id=mock_library_id).sample_id, mock_sample_id)
+
+    def test_create_lims_entry_sanitize(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_create_lims_entry_sanitize
+        """
+        mock_lab_meta: LabMetadata = LabMetadata(
+            library_id=mock_library_id,
+            sample_id=mock_sample_id,
+            sample_name=mock_rgms_1,
+            external_subject_id="EXTSBJ1\r\n",  # mock malformed CRLF is got into db somehow
+            project_owner="UMCCR",
+        )
+        mock_lab_meta.save()
+
+        mock_lab_meta_from_db = LabMetadata.objects.get(library_id=mock_library_id)
+        logger.info(mock_lab_meta_from_db.external_subject_id)
+        self.assertEqual(mock_lab_meta_from_db.external_subject_id, "EXTSBJ1\r\n")
+
+        lims_row: LIMSRow = google_lims_update_step.create_lims_entry(mock_library_id, mock_run_name)
+
+        logger.info((lims_row.external_subject_id, lims_row.project_owner))
+
+        self.assertEqual(lims_row.external_subject_id, "EXTSBJ1")
+        self.assertEqual(LIMSRow.objects.count(), 1)
+        self.assertEqual(LIMSRow.objects.get(library_id=mock_library_id).project_owner, "UMCCR")
 
     def test_get_workflow_for_seq_run_name(self):
         """
