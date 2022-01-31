@@ -1,12 +1,16 @@
 import json
 import tempfile
 from io import BytesIO
-from typing import List, Dict
+from typing import List, Dict, Union
 from unittest import skip
 
+import pandas as pd
+from libumccr import libgdrive
+from libumccr.aws import libssm
 from mockito import when
 
 from data_portal.models.limsrow import LIMSRow
+from data_processors import const
 from data_processors.lims.lambdas import google_lims
 from data_processors.lims.services import google_lims_srv
 from data_processors.lims.tests.case import LimsUnitTestCase, LimsIntegrationTestCase, logger
@@ -52,6 +56,10 @@ def _generate_lims_csv(rows: List[Dict[str, str]]):
     return csv_data
 
 
+def _df(b: Union[bytes, BytesIO]):
+    return pd.read_csv(b, dtype=str)
+
+
 class LimsUnitTests(LimsUnitTestCase):
 
     def setUp(self) -> None:
@@ -73,7 +81,7 @@ class LimsUnitTests(LimsUnitTestCase):
         # print csv file in tmp dir -- if delete=False, you can see the mock csv content
         logger.info(f"Path to mock lims sheet: {mock_lims_sheet.name}")
 
-        when(google_lims.libgdrive).download_sheet1_csv(...).thenReturn(mock_lims_sheet.read())
+        when(google_lims.libgdrive).download_sheet(...).thenReturn(_df(mock_lims_sheet))
 
         result = google_lims.scheduled_update_handler({'event': "mock lims update event"}, None)
 
@@ -100,7 +108,7 @@ class LimsUnitTests(LimsUnitTestCase):
         row_1['SampleID'] = sample_id
         row_1['SubjectID'] = subject_id
 
-        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()), True)
+        process_results = google_lims_srv.persist_lims_data(_df(BytesIO(_generate_lims_csv([row_1]).encode())), True)
 
         self.assertEqual(process_results['lims_row_new_count'], 1)
         self.assertEqual(LIMSRow.objects.get(illumina_id='IlluminaID1', sample_id=sample_id).results, row_1['Results'])
@@ -111,12 +119,12 @@ class LimsUnitTests(LimsUnitTestCase):
         python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_update
         """
         row_1 = _generate_lims_csv_row_dict('1')
-        google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
+        google_lims_srv.persist_lims_data(_df(BytesIO(_generate_lims_csv([row_1]).encode())))
 
         new_results = 'NewResults'
         row_1['Results'] = new_results
         row_2 = _generate_lims_csv_row_dict('2')
-        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1, row_2]).encode()))
+        process_results = google_lims_srv.persist_lims_data(_df(BytesIO(_generate_lims_csv([row_1, row_2]).encode())))
 
         self.assertEqual(process_results['lims_row_new_count'], 1)
         self.assertEqual(process_results['lims_row_update_count'], 1)
@@ -127,7 +135,9 @@ class LimsUnitTests(LimsUnitTestCase):
         python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsUnitTests.test_lims_row_duplicate
         """
         row_duplicate = _generate_lims_csv_row_dict('3')
-        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_duplicate, row_duplicate]).encode()))
+        process_results = google_lims_srv.persist_lims_data(_df(BytesIO(
+            _generate_lims_csv([row_duplicate, row_duplicate]).encode()
+        )))
         self.assertEqual(process_results['lims_row_invalid_count'], 1)
 
     def test_lims_non_nullable_columns(self) -> None:
@@ -146,7 +156,7 @@ class LimsUnitTests(LimsUnitTestCase):
         row_1['SampleID'] = '-'
         row_1['LibraryID'] = '-'
 
-        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1, row_2]).encode()))
+        process_results = google_lims_srv.persist_lims_data(_df(BytesIO(_generate_lims_csv([row_1, row_2]).encode())))
 
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -161,7 +171,7 @@ class LimsUnitTests(LimsUnitTestCase):
         row_1 = _generate_lims_csv_row_dict('1')
 
         row_1['SubjectID'] = '-'
-        process_results = google_lims_srv.persist_lims_data(BytesIO(_generate_lims_csv([row_1]).encode()))
+        process_results = google_lims_srv.persist_lims_data(_df(BytesIO(_generate_lims_csv([row_1]).encode())))
 
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(process_results['lims_row_new_count'], 1)
@@ -184,3 +194,38 @@ class LimsIntegrationTests(LimsIntegrationTestCase):
         self.assertGreater(result['lims_row_new_count'], 1)
 
         logger.info(f"Total ingested rows into test db: {LIMSRow.objects.count()}")
+
+    @skip
+    def test_scheduled_update_handler_crlf(self):
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_google_lims.LimsIntegrationTests.test_scheduled_update_handler_crlf
+
+        See https://github.com/umccr/data-portal-apis/issues/395
+        """
+
+        lims_sheet_id = "1EgqIxmoJxjmxuaBJP0NpRVJgUtPesON6knVXqQDSUMA"  # Google Sheet with a cell having Windows CRLF
+        account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
+
+        # bytes_data = libgdrive.download_sheet1_csv(account_info, lims_sheet_id)
+        # with open("lims_mock.csv", "wb") as out:
+        #     out.write(bytes_data)
+        # result = google_lims_srv.persist_lims_data(BytesIO(bytes_data))
+
+        df: pd.DataFrame = libgdrive.download_sheet(account_info, lims_sheet_id, "Sheet1")
+        # df.to_csv("lims_mock2.csv", index=False)
+        # result = google_lims_srv.persist_lims_data(BytesIO(df.to_csv().encode()))
+        result = google_lims_srv.persist_lims_data(df)
+
+        logger.info("-" * 32)
+        logger.info("Example google_lims.scheduled_update_handler lambda output:")
+        logger.info(json.dumps(result))
+        self.assertEqual(result['lims_row_new_count'], 3)
+
+        logger.info(f"Total ingested rows into test db: {LIMSRow.objects.count()}")
+
+        lib_79 = LIMSRow.objects.get(library_id='L2200079')
+        logger.info(lib_79)
+        logger.info(lib_79.external_subject_id)
+        logger.info(lib_79.project_owner)
+        self.assertIsNotNone(lib_79.external_subject_id)
+        self.assertIsNotNone(lib_79.project_owner)

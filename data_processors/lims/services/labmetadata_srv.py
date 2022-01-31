@@ -127,9 +127,11 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _clean_data_cell(value):
+    if isinstance(value, str):
+        value = value.strip()
+
     # python NaNs are != to themselves
     if value == '_' or value == '-' or value == np.nan or value != value:
         value = ''
-    if isinstance(value, str) and value.strip() == '':
-        value = ''
+
     return value

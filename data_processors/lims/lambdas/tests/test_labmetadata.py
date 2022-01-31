@@ -7,9 +7,11 @@ import numpy as np
 import pandas as pd
 from django.test import TransactionTestCase
 from libumccr import libgdrive
+from libumccr.aws import libssm
 from mockito import when
 
 from data_portal.models.labmetadata import LabMetadata
+from data_processors import const
 from data_processors.lims.lambdas import labmetadata
 from data_processors.lims.services import labmetadata_srv
 from data_processors.lims.tests.case import LimsIntegrationTestCase, logger
@@ -295,3 +297,35 @@ class LabMetadataIntegrationTests(LimsIntegrationTestCase):
         self.assertGreater(result['labmetadata_row_new_count'], 1)
 
         logger.info(f"Total ingested rows into test db: {LabMetadata.objects.count()}")
+
+    @skip
+    def test_labmetadata_cell_strip(self) -> None:
+        """
+        python manage.py test data_processors.lims.lambdas.tests.test_labmetadata.LabMetadataIntegrationTests.test_labmetadata_cell_strip
+
+        See https://github.com/umccr/data-portal-apis/issues/395
+        """
+        year = "2022"
+        lab_sheet_id = "1_TdlTF5X0Nt5TtQvnTHnOR4f5jEPHEG6i1if72ZVlhE"
+        account_info = libssm.get_secret(const.GDRIVE_SERVICE_ACCOUNT)
+        mock_df = libgdrive.download_sheet(account_info, lab_sheet_id, sheet=year)
+
+        when(libgdrive).download_sheet(...).thenReturn(mock_df)
+
+        result = labmetadata.scheduled_update_handler({'sheets': [year]}, None)  # set only to 1 sheet
+
+        logger.info("-" * 32)
+        logger.info("Example labmetadata.scheduled_update_handler lambda output:")
+        logger.info(json.dumps(result))
+
+        self.assertEqual(result['labmetadata_row_new_count'], 7)
+        self.assertEqual(result['labmetadata_row_update_count'], 0)
+        self.assertEqual(result['labmetadata_row_invalid_count'], 0)
+        self.assertEqual(7, LabMetadata.objects.count())
+
+        lib_79 = LabMetadata.objects.get(library_id='L2200079')
+        logger.info(lib_79)
+        logger.info(lib_79.external_subject_id)
+        logger.info(lib_79.project_owner)
+        self.assertIsNotNone(lib_79.external_subject_id)
+        self.assertIsNotNone(lib_79.project_owner)

@@ -1,9 +1,8 @@
-import csv
-import io
 import logging
 import re
 from typing import Dict
 
+import pandas as pd
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from libumccr import libdt
@@ -15,15 +14,21 @@ logger.setLevel(logging.INFO)
 
 
 @transaction.atomic
-def persist_lims_data(csv_input: io.BytesIO, rewrite: bool = False) -> Dict[str, int]:
+def persist_lims_data(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, int]:
     """
     Persist lims data into the db
-    :param csv_input: buffer instance of io.BytesIO
+
+    :param df: dataframe to persist
     :param rewrite: whether we are rewriting the data
     :return: result statistics - count of updated, new and invalid LIMS rows
     """
     logger.info(f"Start processing LIMS data")
-    csv_reader = csv.DictReader(io.TextIOWrapper(csv_input))
+
+    df = df.applymap(_clean_data_cell)
+    # df = df.drop_duplicates()  # Defer handling row duplicate a bit further down for invalid rows stat
+    df = df.reset_index(drop=True)
+
+    rows = df.to_dict(orient='index')
 
     if rewrite:
         # Delete all rows first
@@ -37,7 +42,9 @@ def persist_lims_data(csv_input: io.BytesIO, rewrite: bool = False) -> Dict[str,
     dirty_ids = {}
     na_symbol = "-"  # LIMS Not Applicable symbol is dash
 
-    for row_number, row in enumerate(csv_reader):
+    for row_number in rows:
+        row = rows[row_number]
+
         sample_id = row['SampleID']
         illumina_id = row['IlluminaID']
         library_id = row['LibraryID']
@@ -77,7 +84,6 @@ def persist_lims_data(csv_input: io.BytesIO, rewrite: bool = False) -> Dict[str,
 
         dirty_ids[row_id] = row_number
 
-    csv_input.close()
     logger.info(f"LIMS data processing complete. "
                 f"{lims_row_new_count} new, {lims_row_update_count} updated, {lims_row_invalid_count} invalid")
 
@@ -101,9 +107,13 @@ def __parse_lims_row(csv_row: dict, row_object: LIMSRow = None) -> LIMSRow:
     lims_row = LIMSRow() if row_object is None else row_object
 
     for key, value in row_copied.items():
-        parsed_value = value.strip()
+        try:
+            parsed_value = value.strip()
+        except AttributeError as e:
+            logger.error(f"Error processing csv row: {csv_row}")
+            raise e
 
-        # Make sure we dont write in empty strings
+        # Make sure we don't write in empty strings
         if parsed_value == '-' or value.strip() == '':
             parsed_value = None
 
@@ -130,3 +140,10 @@ def __csv_column_to_field_name(column_name: str) -> str:
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', column_name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def _clean_data_cell(value):
+    if isinstance(value, str):
+        value = value.strip()
+
+    return value
