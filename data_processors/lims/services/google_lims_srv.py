@@ -13,18 +13,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def truncate():
-    """DDL TRUNCATE TABLE is implicit commit, hence, keep default autocommit for transaction"""
-    tbl_name = LIMSRow.get_table_name()
-    try:
-        LIMSRow.truncate()
-        logger.info(f"Truncating '{tbl_name}' table succeeded")
-        return True
-    except Exception as e:
-        logger.error(f"Error truncating '{tbl_name}' table. Exception: {e}")
-        return False
-
-
 @transaction.atomic
 def persist_lims_data(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, int]:
     """

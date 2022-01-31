@@ -76,17 +76,6 @@ class LIMSRow(PortalBaseModel):
     # This is the common logic used for both persisting s3 and lims.
     S3_LINK_ATTRS = ('subject_id', 'sample_id')
 
-    @classmethod
-    def get_table_name(cls):
-        return cls._meta.db_table
-
-    @classmethod
-    def truncate(cls):
-        # with connection.cursor() as cursor:
-        #     cursor.execute(f"TRUNCATE TABLE {cls.get_table_name()};")
-        # TODO we need to get rid of S3LIMS association table -- see below issue #343 deprecation note
-        raise NotImplementedError(f"Table truncation for {cls.get_table_name()} is not supported yet.")
-
 
 class S3LIMS(models.Model):
     """TODO mark to be deprecated, see https://github.com/umccr/data-portal-apis/issues/343

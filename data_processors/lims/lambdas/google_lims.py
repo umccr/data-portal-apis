@@ -35,8 +35,7 @@ def _halt(msg):
 def scheduled_update_handler(event, context):
     """event payload dict
     {
-        'sheets': ["Sheet1", "Sheet2"],
-        'truncate': False
+        'sheets': ["Sheet1", "Sheet2"]
     }
 
     Handler for LIMS update by reading the designated Spreadsheet file from Google Drive.
@@ -49,21 +48,9 @@ def scheduled_update_handler(event, context):
     logger.info(libjson.dumps(event))
 
     sheets = event.get('sheets', ["Sheet1", ])
-    is_truncate = event.get('truncate', False)
 
     if not isinstance(sheets, list):
         _halt(f"Payload error. Must be array of string for sheets. Found: {type(sheets)}")
-
-    if not isinstance(is_truncate, bool):
-        _halt(f"Payload error. Must be boolean for truncate. Found: {type(is_truncate)}")
-
-    truncated = False
-    if is_truncate:
-        truncated = google_lims_srv.truncate()
-
-    if not truncated:
-        logger.warning(f"LIMSRow table is not truncated. Continue with create or update merging strategy.")
-        # Note we can decide to error out and halt here instead
 
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LIMS data from google drive at {requested_time}")
