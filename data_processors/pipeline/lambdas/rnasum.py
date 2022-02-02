@@ -76,7 +76,7 @@ def handler(event, context) -> dict:
         "report_directory": "report_directory"
         "dataset": "reference_data",
         "subject_identifier": "SBJ_ID" #adding this input to construct workflow run name
-        "library_identifier": "LIB_ID" #
+        "library_identifier": "LIB_ID" #adding this input to link workflow and library run
     }
 
     :param event:
