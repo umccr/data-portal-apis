@@ -29,7 +29,7 @@ from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
-    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from libumccr import libjson
@@ -57,7 +57,8 @@ def handler(event, context):
             "DRAGEN_TSO_CTDNA_STEP",
             "TUMOR_NORMAL_STEP",
             "DRAGEN_WTS_STEP",
-            "UMCCRISE_STEP"
+            "UMCCRISE_STEP",
+            "RNASUM_STEP"
         ]
     }
 
@@ -204,5 +205,21 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
         else:
             logger.info("Performing UMCCRISE_STEP")
             results.append(umccrise_step.perform(this_workflow))
+
+        return results
+
+    elif this_workflow.type_name.lower() == WorkflowType.UMCCRISE.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        logger.info("Received UMCCRISE workflow notification")
+        # TODO: also check for WTS workflow notification?
+        WorkflowRule(this_workflow).must_have_output()
+
+        results = list()
+
+        if "RNASUM_STEP" in skip:
+            logger.info("Skip performing RNASUM_STEP")
+        else:
+            logger.info("Performing RNASUM_STEP")
+            results.append(rnasum_step.perform(this_workflow))
 
         return results

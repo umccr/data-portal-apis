@@ -34,6 +34,7 @@ class WorkflowType(Enum):
     DRAGEN_TSO_CTDNA = "tso_ctdna_tumor_only"
     DRAGEN_WTS = "wts_tumor_only"
     UMCCRISE = "umccrise"
+    RNASUM = "rnasum"
 
     @classmethod
     def from_value(cls, value):
@@ -49,6 +50,8 @@ class WorkflowType(Enum):
             return cls.DRAGEN_WTS
         elif value == cls.UMCCRISE.value:
             return cls.UMCCRISE
+        elif value == cls.RNASUM.value:
+            return cls.RNASUM
         else:
             raise ValueError(f"No matching type found for {value}")
 
@@ -185,6 +188,7 @@ class SecondaryAnalysisHelper(WorkflowHelper):
             WorkflowType.DRAGEN_WTS,
             WorkflowType.TUMOR_NORMAL,
             WorkflowType.UMCCRISE,
+            WorkflowType.RNASUM
         ]
         if type_ not in allowed_workflow_types:
             raise ValueError(f"Unsupported WorkflowType for Secondary analysis: {type_}")
