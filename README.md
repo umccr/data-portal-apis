@@ -135,8 +135,8 @@ npx serverless deploy --stage dev
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-SLS_DEBUG=true npx serverless delete_domain --stage dev
-SLS_DEBUG=true npx serverless remove --stage dev
+npx serverless delete_domain --stage dev
+npx serverless remove --stage dev
 ```
 
 ## X-Ray

@@ -1,6 +1,6 @@
 service: data-portal-api
 
-frameworkVersion: '^2'
+frameworkVersion: '^3'
 
 plugins:
   - serverless-wsgi
@@ -10,7 +10,6 @@ plugins:
   - serverless-prune-plugin
 
 provider:
-  lambdaHashingVersion: 20201221
   name: aws
   runtime: python3.9
   stage: ${opt:stage, 'dev'}
@@ -173,7 +172,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/iap_ens_event_sqs_arn}
-    timeout: 28
+    timeout: 120
 
   sqs_dragen_wgs_qc_event_processor:
     handler: data_processors.pipeline.lambdas.dragen_wgs_qc.sqs_handler
