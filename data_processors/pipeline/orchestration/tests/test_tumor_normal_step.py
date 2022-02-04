@@ -3,13 +3,15 @@ from datetime import datetime
 
 from django.utils.timezone import make_aware
 from libica.openapi import libwes
-from mockito import when
+from libumccr.aws import libssm
+from mockito import when, spy2
 
-from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.fastqlistrow import FastqListRow
-from data_portal.models.workflow import Workflow
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory, LibraryRunFactory
+from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import tumor_normal_step, google_lims_update_step
@@ -92,6 +94,10 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
 
         # ignore the google lims update (that's covered elsewhere)
         when(google_lims_update_step).perform(any).thenReturn(True)
+
+        # ignore step_skip_list
+        spy2(libssm.get_ssm_param)
+        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps([]))
 
         logger.info("-" * 32)
 

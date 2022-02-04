@@ -5,7 +5,8 @@ from unittest import skip
 from django.utils.timezone import make_aware
 from libica.app import wes
 from libica.openapi import libwes
-from mockito import when
+from libumccr.aws import libssm
+from mockito import when, spy2
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
@@ -13,6 +14,7 @@ from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, La
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.batch import Batcher
+from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import fastq_update_step, dragen_tso_ctdna_step
@@ -106,6 +108,10 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
         mock_labmetadata_tumor.type = LabMetadataType.CT_DNA.value
         mock_labmetadata_tumor.assay = LabMetadataAssay.CT_TSO.value
         mock_labmetadata_tumor.save()
+
+        # ignore step_skip_list
+        spy2(libssm.get_ssm_param)
+        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps([]))
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,
