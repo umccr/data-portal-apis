@@ -6,6 +6,7 @@ See orchestration package __init__.py doc string.
 """
 from typing import List, Set
 
+from django.db.models import QuerySet
 from libumccr import libgdrive
 from libumccr.aws import libssm
 
@@ -22,7 +23,7 @@ def perform(workflow: Workflow):
 
     lims_rows = list()
     for library in libraries:
-        lims_row = create_lims_entry(lib_id=library, seq_run_name=instrument_run_id)
+        lims_row = create_lims_entry(lib_id=library, instrument_run_id=instrument_run_id)
         lims_rows.append(lims_row)
 
     resp = update_google_lims_sheet(lims_rows)
@@ -58,38 +59,46 @@ def get_libs_from_run(workflow: Workflow) -> List[str]:
     return list(libraries)
 
 
-def create_lims_entry(lib_id: str, seq_run_name: str) -> LIMSRow:
-    # this will return the first match if there exists multiple metadata records for given library id
-    # this may be okay as meta-info should remain the same for given library id
-    # if given library id metadata is not found by now then let the program crash it as this is
-    # way outlier at this point in pipeline and something bad had happened
-    lab_meta: LabMetadata = LabMetadata.objects.get(library_id=lib_id)
-
+def create_lims_entry(lib_id: str, instrument_run_id: str) -> LIMSRow:
     def sanitize(value):
         if isinstance(value, str):
             value = value.strip()
         return value
 
-    lims_row = LIMSRow(
-        illumina_id=seq_run_name,
-        run=liborca.get_run_number_from_run_name(seq_run_name),
-        timestamp=liborca.get_timestamp_from_run_name(seq_run_name),
-        subject_id=sanitize(lab_meta.subject_id),
-        sample_id=sanitize(lab_meta.sample_id),
-        library_id=sanitize(lab_meta.library_id),
-        external_subject_id=sanitize(lab_meta.external_subject_id),
-        external_sample_id=sanitize(lab_meta.external_sample_id),
-        sample_name=sanitize(lab_meta.sample_name),
-        project_owner=sanitize(lab_meta.project_owner),
-        project_name=sanitize(lab_meta.project_name),
-        type=sanitize(lab_meta.type),
-        assay=sanitize(lab_meta.assay),
-        override_cycles=sanitize(lab_meta.override_cycles),
-        phenotype=sanitize(lab_meta.phenotype),
-        source=sanitize(lab_meta.source),
-        quality=sanitize(lab_meta.quality),
-        workflow=sanitize(lab_meta.workflow)
-    )
+    sane_library_id = sanitize(lib_id)
+    sane_instrument_run_id = sanitize(instrument_run_id)
+
+    # this will return the first match if there exists multiple metadata records for given library id
+    # this may be okay as meta-info should remain the same for given library id
+    # if given library id metadata is not found by now then let the program crash it as this is
+    # way outlier at this point in pipeline and something bad had happened
+    lab_meta: LabMetadata = LabMetadata.objects.get(library_id=sane_library_id)
+
+    qs: QuerySet = LIMSRow.objects.filter(library_id=sane_library_id, illumina_id=sane_instrument_run_id)
+
+    if qs.exists():
+        lims_row: LIMSRow = qs.get()
+    else:
+        lims_row = LIMSRow()
+        lims_row.illumina_id = sane_instrument_run_id
+        lims_row.library_id = sane_library_id
+
+    lims_row.run = liborca.get_run_number_from_run_name(sane_instrument_run_id)
+    lims_row.timestamp = liborca.get_timestamp_from_run_name(sane_instrument_run_id)
+    lims_row.subject_id = sanitize(lab_meta.subject_id)
+    lims_row.sample_id = sanitize(lab_meta.sample_id)
+    lims_row.external_subject_id = sanitize(lab_meta.external_subject_id)
+    lims_row.external_sample_id = sanitize(lab_meta.external_sample_id)
+    lims_row.sample_name = sanitize(lab_meta.sample_name)
+    lims_row.project_owner = sanitize(lab_meta.project_owner)
+    lims_row.project_name = sanitize(lab_meta.project_name)
+    lims_row.type = sanitize(lab_meta.type)
+    lims_row.assay = sanitize(lab_meta.assay)
+    lims_row.override_cycles = sanitize(lab_meta.override_cycles)
+    lims_row.phenotype = sanitize(lab_meta.phenotype)
+    lims_row.source = sanitize(lab_meta.source)
+    lims_row.quality = sanitize(lab_meta.quality)
+    lims_row.workflow = sanitize(lab_meta.workflow)
 
     lims_row.save()
 

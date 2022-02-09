@@ -163,6 +163,45 @@ class GoogleLimsUpdateStepUnitTests(PipelineUnitTestCase):
         self.assertEqual(LIMSRow.objects.count(), 1)
         self.assertEqual(LIMSRow.objects.get(library_id=mock_library_id).sample_id, mock_sample_id)
 
+    def test_create_lims_entry_update_existing(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_create_lims_entry_update_existing
+        """
+        mock_lab_meta: LabMetadata = LabMetadata(
+            library_id=mock_library_id,
+            sample_id=mock_sample_id,
+            sample_name=mock_rgms_1,
+            phenotype="tumor",
+            quality="good",
+            source="tissue",
+            type="WGS",
+            assay="TsqNano",
+            workflow=mock_workflow_type,
+        )
+        mock_lab_meta.save()
+
+        mock_existing_lims_row = LIMSRow(
+            library_id=mock_library_id,
+            illumina_id=mock_run_name,
+            sample_id="THIS_SHOULD_BE_UPDATED",
+            run=0,
+            timestamp="1970-01-01",
+        )
+        mock_existing_lims_row.save()
+
+        lims_row: LIMSRow = google_lims_update_step.create_lims_entry(mock_library_id, mock_run_name)
+
+        self.assertEqual(lims_row.illumina_id, mock_run_name)
+        self.assertEqual(lims_row.library_id, mock_library_id)
+        self.assertEqual(lims_row.sample_id, mock_sample_id)
+        self.assertEqual(lims_row.workflow, mock_workflow_type)
+        self.assertEqual(lims_row.run, liborca.get_run_number_from_run_name(mock_run_name))
+        self.assertEqual(lims_row.timestamp, liborca.get_timestamp_from_run_name(mock_run_name))
+
+        # assert lims_row has saved
+        self.assertEqual(LIMSRow.objects.count(), 1)
+        self.assertEqual(LIMSRow.objects.get(library_id=mock_library_id).sample_id, mock_sample_id)
+
     def test_create_lims_entry_sanitize(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_google_lims_update_step.GoogleLimsUpdateStepUnitTests.test_create_lims_entry_sanitize
