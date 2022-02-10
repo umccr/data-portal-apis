@@ -286,6 +286,19 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
             from data_processors.pipeline.lambdas import libraryrun
             libraryrun.handler(bssh_run_event, None)
 
+            # replay initial BatchRun state
+            init_batcher = Batcher(
+                workflow=mock_bcl_convert,
+                run_step=WorkflowType.DRAGEN_TSO_CTDNA.value,
+                batch_srv=batch_srv,
+                fastq_srv=fastq_srv,
+                logger=logger
+            )
+            init_batch_run: BatchRun = init_batcher.batch_run
+            init_batch_run.running = False
+            init_batch_run.notified = True
+            init_batch_run.save()
+
             # https://umccr.slack.com/archives/C8CG6K76W/p1639550197031800
             run_pairs = [
                 ("L2101514", "wfr.5f812da668334a84b33e926fd02ce3d9"),
@@ -317,6 +330,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
                     end=wfr.time_stopped if wfr.time_stopped else wfr.time_modified,
                     end_status=wfr.status,
                     sequence_run=sqr,
+                    batch_run=init_batch_run,
                 )
                 libraryrun_srv.link_library_runs_with_workflow(library_id=library_id, workflow=wfl)
 
@@ -407,6 +421,19 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
             from data_processors.pipeline.lambdas import libraryrun
             libraryrun.handler(bssh_run_event, None)
 
+            # replay initial BatchRun state
+            init_batcher = Batcher(
+                workflow=mock_bcl_convert,
+                run_step=WorkflowType.DRAGEN_TSO_CTDNA.value,
+                batch_srv=batch_srv,
+                fastq_srv=fastq_srv,
+                logger=logger
+            )
+            init_batch_run: BatchRun = init_batcher.batch_run
+            init_batch_run.running = False
+            init_batch_run.notified = True
+            init_batch_run.save()
+
             run_pairs = [
                 # https://umccr.slack.com/archives/C8CG6K76W/p1639293539003900
                 ("L2101498", "wfr.06f8301aacfe414b853d1a2dd1fc51ac"),
@@ -449,6 +476,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
                     end=wfr.time_stopped if wfr.time_stopped else wfr.time_modified,
                     end_status=wfr.status,
                     sequence_run=sqr,
+                    batch_run=init_batch_run,
                 )
                 libraryrun_srv.link_library_runs_with_workflow(library_id=library_id, workflow=wfl)
 

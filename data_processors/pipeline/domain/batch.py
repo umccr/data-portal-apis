@@ -106,9 +106,14 @@ class BatchRule:
         self.run_id = self.batcher.sqr.run_id if self.batcher.sqr else None
         self.instrument_run_id = self.batcher.sqr.name if self.batcher.sqr else None
         self.run_step = self.batcher.run_step
+        self.batch_id = self.batcher.batch.id
+        self.batch_run_id = self.batcher.batch_run.id
 
     def must_not_have_succeeded_runs(self):
         from data_processors.pipeline.domain.workflow import WorkflowStatus
+
+        succeeded_library_runs_in_same_batch = []
+
         succeeded_library_runs = self.libraryrun_srv.get_library_runs(
             library_id=self.this_library,
             run_id=self.run_id,
@@ -117,9 +122,23 @@ class BatchRule:
             workflows__end_status=WorkflowStatus.SUCCEEDED.value,
         )
 
-        # if succeeded_library_runs is not empty then there must have some Runs already succeeded for this_library
-        if succeeded_library_runs:
-            raise BatchRuleError(f"library_id {self.this_library} for {self.instrument_run_id} has "
-                                 f"{WorkflowStatus.SUCCEEDED.value} {self.run_step} workflow run")
+        # check for within the same Batch scope
+        for lib_run in succeeded_library_runs:
+            for wfl in lib_run.workflows.all():
+                if wfl.batch_run is not None and wfl.batch_run.batch.id == self.batch_id:
+                    # succeeded lib_run is in the same batch
+                    succeeded_library_runs_in_same_batch.append(lib_run)
+                else:
+                    # otherwise, this is the whole new batch re-run case
+                    # though it is succeeded lib_run, it bears different batch id
+                    # typically this is to support the whole batch re-run condition whereas
+                    # previous runs were not marked Failed or Tainted or Abandoned yet
+                    pass
+
+        # if succeeded_library_run_in_same_batch is _not_ empty then
+        # there must have run already succeeded for this_library
+        if succeeded_library_runs_in_same_batch:
+            raise BatchRuleError(f"{self.this_library} for {self.instrument_run_id} has succeeded {self.run_step} "
+                                 f"workflow run with batch: {self.batch_id}, batch run: {self.batch_run_id}")
 
         return self
