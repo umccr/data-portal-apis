@@ -74,6 +74,7 @@ provider:
         - ${ssm:/data_portal/backend/lambda_subnet_ids}
   environment:
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
+    LAB_METADATA_SYNC_LAMBDA: ${self:service}-${sls:stage}-labmetadata_scheduled_update_processor
 
 functions:
 

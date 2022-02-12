@@ -163,22 +163,15 @@ class S3ObjectSerializer(serializers.Serializer):
         pass
 
 
-class LIMSRowModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LIMSRow
-        fields = '__all__'
+class LabMetadataSyncSerializer(serializers.Serializer):
+    sheets = serializers.ListField(default=['2020', '2021', '2022'])
+    truncate = serializers.BooleanField(default=True)
 
+    def update(self, instance, validated_data):
+        pass
 
-class LabMetadataModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LabMetadata
-        fields = '__all__'
-
-
-class S3ObjectModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = S3Object
-        fields = '__all__'
+    def create(self, validated_data):
+        pass
 
 
 class SubjectIdSerializer(serializers.BaseSerializer):
@@ -209,12 +202,6 @@ class RunIdSerializer(serializers.BaseSerializer):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
 
 
-class ReportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Report
-        fields = '__all__'
-
-
 class BucketIdSerializer(serializers.BaseSerializer):
     def to_representation(self, instance):
         return instance.bucket
@@ -227,6 +214,30 @@ class BucketIdSerializer(serializers.BaseSerializer):
 
     def create(self, validated_data):
         raise NotImplementedError(READ_ONLY_SERIALIZER)
+
+
+class LIMSRowModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LIMSRow
+        fields = '__all__'
+
+
+class LabMetadataModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabMetadata
+        fields = '__all__'
+
+
+class S3ObjectModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = S3Object
+        fields = '__all__'
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = '__all__'
 
 
 class GDSFileModelSerializer(serializers.ModelSerializer):
