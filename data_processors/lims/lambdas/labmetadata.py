@@ -33,7 +33,7 @@ def _halt(msg):
 def scheduled_update_handler(event, context):
     """event payload dict
     {
-        'sheets': ["2020", "2021", "2022"],
+        'sheets': ["2019", "2020", "2021", "2022"],
         'truncate': True
     }
     Handler for LabMetadata update by reading the designated Spreadsheet file from Google Drive.
@@ -54,7 +54,7 @@ def scheduled_update_handler(event, context):
     requested_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Reading LabMetadata sheet from google drive at {requested_time}")
 
-    years = event.get('sheets', ["2020", "2021", "2022"])
+    years = event.get('sheets', ["2019", "2020", "2021", "2022"])
     is_truncate = event.get('truncate', True)
 
     if not isinstance(years, list):
