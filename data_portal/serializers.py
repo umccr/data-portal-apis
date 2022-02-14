@@ -164,7 +164,7 @@ class S3ObjectSerializer(serializers.Serializer):
 
 
 class LabMetadataSyncSerializer(serializers.Serializer):
-    sheets = serializers.ListField(default=['2020', '2021', '2022'])
+    sheets = serializers.ListField(default=['2019', '2020', '2021', '2022'])  # OpenAPI swagger doc hint only
     truncate = serializers.BooleanField(default=True)
 
     def update(self, instance, validated_data):
