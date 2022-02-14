@@ -7,7 +7,7 @@ from libica.app import wes
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
-from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory
 from data_processors.pipeline.domain.batch import Batcher
@@ -89,6 +89,7 @@ class DragenWtsStepUnitTests(PipelineUnitTestCase):
         mock_labmetadata_tumor.library_id = mock_library_id
         mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
         mock_labmetadata_tumor.type = LabMetadataType.WTS.value
+        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CLINICAL.value
         mock_labmetadata_tumor.save()
 
         result = dragen_wts_step.perform(mock_bcl_workflow)
@@ -123,7 +124,7 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
         # ica workflows runs get wfr.<ID>
 
         bcl_convert_wfr_id = "wfr.8885338040b542f290c9bf6b7e0c4a36"  # from Run 171 in PROD
-        total_jobs_to_eval = 9
+        total_jobs_to_eval = 8
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 

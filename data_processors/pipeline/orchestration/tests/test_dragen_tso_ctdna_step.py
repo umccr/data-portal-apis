@@ -10,7 +10,8 @@ from mockito import when, spy2
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
-from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataAssay
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataAssay, \
+    LabMetadataWorkflow
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.batch import Batcher
@@ -107,6 +108,7 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
         mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
         mock_labmetadata_tumor.type = LabMetadataType.CT_DNA.value
         mock_labmetadata_tumor.assay = LabMetadataAssay.CT_TSO.value
+        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.RESEARCH.value
         mock_labmetadata_tumor.save()
 
         # ignore step_skip_list
@@ -203,7 +205,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
         # --- pick one successful BCL Convert run
 
         bcl_convert_wfr_id = "wfr.097dc05051b44c0c8717b32d89dfcf81"  # 210429_A00130_0157_BH3N3FDSX2 in PROD
-        total_jobs_to_eval = 16
+        total_jobs_to_eval = 15
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 

@@ -74,7 +74,11 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
         this_metadata: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
 
         try:
-            LabMetadataRule(this_metadata).must_not_manual().must_be_wgs()
+            LabMetadataRule(this_metadata) \
+                .must_set_workflow() \
+                .must_not_manual() \
+                .must_not_bcl() \
+                .must_be_wgs()
 
             BatchRule(
                 batcher=batcher,

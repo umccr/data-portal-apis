@@ -88,7 +88,13 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
         this_metadata: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
 
         try:
-            LabMetadataRule(this_metadata).must_not_manual().must_be_cttso_ctdna()
+            LabMetadataRule(this_metadata) \
+                .must_set_workflow() \
+                .must_not_manual() \
+                .must_not_bcl() \
+                .must_not_qc() \
+                .must_be_cttso_ctdna() \
+                .must_be_tumor()
 
             BatchRule(
                 batcher=batcher,
