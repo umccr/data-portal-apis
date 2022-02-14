@@ -10,7 +10,7 @@ from mockito import when, spy2
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
-from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant
 from data_processors.pipeline.domain.batch import Batcher
@@ -102,6 +102,7 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         mock_labmetadata_tumor.library_id = mock_library_id
         mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
         mock_labmetadata_tumor.type = LabMetadataType.WGS.value
+        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CLINICAL.value
         mock_labmetadata_tumor.save()
 
         # ignore step_skip_list

@@ -310,16 +310,43 @@ class LabMetadataRule:
             raise LabMetadataRuleError(f"No metadata.")
         self.this_metadata = this_metadata
 
+    def must_set_workflow(self):
+        """Workflow can not be null or empty"""
+        if self.this_metadata.workflow is None or str(self.this_metadata.workflow) == "":
+            raise LabMetadataRuleError(f"Workflow is not defined.")
+        return self
+
     def must_not_manual(self):
         from data_portal.models.labmetadata import LabMetadataWorkflow
         if self.this_metadata.workflow.lower() == LabMetadataWorkflow.MANUAL.value.lower():
             raise LabMetadataRuleError(f"Workflow is set to manual.")
         return self
 
+    def must_not_qc(self):
+        """Demultiplex and run QC on FASTQ (once on ICA that includes DRAGEN alignment for better stats)"""
+        from data_portal.models.labmetadata import LabMetadataWorkflow
+        if self.this_metadata.workflow.lower() == LabMetadataWorkflow.QC.value.lower():
+            raise LabMetadataRuleError(f"Workflow is set to QC.")
+        return self
+
+    def must_not_bcl(self):
+        """Do not demultiplex, concept; keep flowcell as-is"""
+        from data_portal.models.labmetadata import LabMetadataWorkflow
+        if self.this_metadata.workflow.lower() == LabMetadataWorkflow.BCL.value.lower():
+            raise LabMetadataRuleError(f"Workflow is set to BCL.")
+        return self
+
     def must_not_ntc(self):
         from data_portal.models.labmetadata import LabMetadataPhenotype
         if self.this_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
             raise LabMetadataRuleError(f"Negative-control sample.")
+        return self
+
+    def must_be_tumor(self):
+        """Sample Phenotype must be tumor"""
+        from data_portal.models.labmetadata import LabMetadataPhenotype
+        if self.this_metadata.phenotype.lower() != LabMetadataPhenotype.TUMOR.value.lower():
+            raise LabMetadataRuleError(f"Not tumor sample.")
         return self
 
     def must_be_wgs(self):
