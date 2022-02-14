@@ -51,15 +51,16 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    patterns=[path('', include(router.urls)), ],
 )
 
 urlpatterns = [
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    path('files', views.search_file, name='file-search'),
-    path('file-signed-url', views.sign_s3_file, name='file-signed-url'),
-    path('storage-stats', views.storage_stats, name='storage-stats'),
+    path('files', views.search_file, name='file-search'),  # TODO deprecate
+    path('file-signed-url', views.sign_s3_file, name='file-signed-url'),  # TODO deprecate
+    path('storage-stats', views.storage_stats, name='storage-stats'),  # TODO deprecate
     # we mirror the API surface at /iam/ - and set that path up in sls with an IAM authorizer as opposed to a JWT one
     path('iam/', include(router.urls)),
     # the main API surface authenticated using JWTs

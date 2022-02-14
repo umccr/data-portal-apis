@@ -235,38 +235,6 @@
         }
       ]
     },
-    "/file-signed-url": {
-      "get": {
-        "operationId": "file-signed-url_list",
-        "description": "query params\n* bucket: str,    mandatory,  the bucket name\n* key:    str,    mandatory,  the s3 object key",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "file-signed-url"
-        ]
-      },
-      "parameters": []
-    },
-    "/files": {
-      "get": {
-        "operationId": "files_list",
-        "description": "query_params\n* query:          str,    mandatory,  the query string (leave empty for no filter)\n* rowsPerPage:    int,    optional,   number of rows per page. (no effect is randomSamples is set).\n* page:           int,    optional,   the current page number. 0-based.\n* sortCol:        str,    optional,   the column to be sorted\n* sortAsc:        bool,   optional,   sort in ascending order\n* randomSamples:  int,    optional,   retrieve n randomly-selected samples",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "files"
-        ]
-      },
-      "parameters": []
-    },
     "/gds/": {
       "get": {
         "operationId": "gds_list",
@@ -654,6 +622,34 @@
                   }
                 }
               }
+            }
+          }
+        },
+        "tags": [
+          "metadata"
+        ]
+      },
+      "parameters": []
+    },
+    "/metadata/sync/": {
+      "post": {
+        "operationId": "metadata_sync",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LabMetadataSync"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/LabMetadataSync"
             }
           }
         },
@@ -1440,22 +1436,6 @@
           "type": "string"
         }
       ]
-    },
-    "/storage-stats": {
-      "get": {
-        "operationId": "storage-stats_list",
-        "description": "Storage statistics",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "storage-stats"
-        ]
-      },
-      "parameters": []
     },
     "/subjects/": {
       "get": {
@@ -2309,6 +2289,29 @@
           "type": "string",
           "maxLength": 255,
           "x-nullable": true
+        }
+      }
+    },
+    "LabMetadataSync": {
+      "type": "object",
+      "properties": {
+        "sheets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "x-nullable": true
+          },
+          "default": [
+            "2019",
+            "2020",
+            "2021",
+            "2022"
+          ]
+        },
+        "truncate": {
+          "title": "Truncate",
+          "type": "boolean",
+          "default": true
         }
       }
     },
