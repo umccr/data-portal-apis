@@ -37,7 +37,6 @@ where lbr.instrument_run_id = @instr_run_id
   and wfl.start < @cut_off_time
 group by wfl.portal_run_id;
 
-
 -- ### find all workflows related to this instrument run id
 select lbr.library_id, wfl.wfr_id, wfl.start, wfl.wfr_name, wfl.type_name, wfl.portal_run_id, wfl.end_status
 from data_portal.data_portal_libraryrun lbr
@@ -55,6 +54,27 @@ set wfl.end_status='Failed'
 where
 	lbr.instrument_run_id=@instr_run_id
     and wfl.start < @cut_off_time;
+
+-- Find FastqListRows from not Succeeded conversions
+select * from data_portal.data_portal_fastqlistrow 
+where rgid like concat('%', @instr_run_id, '%')
+ and read_1 not regexp(concat('.+/', COALESCE((select distinct(wfl.portal_run_id)
+		from data_portal.data_portal_libraryrun lbr
+    		inner join data_portal.data_portal_libraryrun_workflows linker on linker.libraryrun_id = lbr.id
+    		inner join data_portal.data_portal_workflow wfl on linker.workflow_id = wfl.id
+		where lbr.instrument_run_id = @instr_run_id
+  		 and wfl.type_name = 'bcl_convert'
+  		 and wfl.end_status = 'Succeeded'), 'XXXXX'), '/.+'));
+
+--delete from data_portal.data_portal_fastqlistrow 
+where rgid like concat('%', @instr_run_id, '%')
+ and read_1 not regexp(concat('.+/', COALESCE((select distinct(wfl.portal_run_id)
+		from data_portal.data_portal_libraryrun lbr
+    		inner join data_portal.data_portal_libraryrun_workflows linker on linker.libraryrun_id = lbr.id
+    		inner join data_portal.data_portal_workflow wfl on linker.workflow_id = wfl.id
+		where lbr.instrument_run_id = @instr_run_id
+  		 and wfl.type_name = 'bcl_convert'
+  		 and wfl.end_status = 'Succeeded'), 'XXXXX'), '/.+'));
 
 
 -- ### ONLY NEEDED FOR THOSE CASE OF TOTALLY FAILED RUN. NOT NEEDED FOR RERUN CASES.
@@ -107,4 +127,3 @@ select * from data_portal.data_portal_libraryrun where instrument_run_id=@instr_
 -- ### delete limsrow entries
 select * from data_portal.data_portal_limsrow where illumina_id=@instr_run_id;
 -- delete from data_portal.data_portal_limsrow where illumina_id=@instr_run_id;
-
