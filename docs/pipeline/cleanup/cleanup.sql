@@ -1,3 +1,5 @@
+-- ### Clean up script for the whole run
+
 -- ### set these vars
 set @instr_run_id='220121_A00130_0197_BHWJ2HDSX2';
 set @cut_off_time='2022-02-04 23:59:14.249707';  -- do not touch data after this time, useful to preserve rerun cases
