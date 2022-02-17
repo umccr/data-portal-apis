@@ -1,0 +1,64 @@
+{
+  "Records": [
+    {
+      "messageId": "c3c8ac12-4e87-4d8d-9b04-caeb3e8ee4a1",
+      "receiptHandle": "AQQQQQQQQQQQws0JNZJUnK7O5+9MGlTFem6yoTqYxJOq3JfULa5HX9M3yEjNJBaTW7Hd1L/gZ/txSZ6yUslsntSJfzvnW2ZLISc1FObz6su54g79AlaIgLZjlEPQ7Zjyq3wko8RRNWpFxDIkuffe0WrrmBlrYFUB/5pnBUFl4L9YeZwfLFgUiP6tpFCBsfomlagXrkdhqzddbYr4n0m4kmblURsmk3/ys+8lJNEWjMs3olggdazCSGMZ9OO/B+lbifps2UiqDbXDcCwJ84xeIYgluWAsggb6KVKElIp2v0sQRVphxUC7mRW4+/8JFlhiBv5nvdCg8WlefvFdq2IJLHPouphJBOEuGxe1trc838o44zpz3PkB8Nmuut3FavH/+CR7wzQC7hB47wnFY78MHUF0YGzVi9huw462npN+4gfJQgI=",
+      "body": "{\"gdsFolderPath\":\"/200612_A01052_0017_BH5LYWDSXY\",\"gdsVolumeName\":\"umccr-raw-sequence-data-dev\",\"reagentBarcode\":\"null\",\"v1pre3Id\":\"623627\",\"dateModified\":\"2021-04-12T04:29:51.4800606Z\",\"acl\":[\"wid:99999999-f453-3ff2-bffa-ae153b1ee565\"],\"flowcellBarcode\":\"1ADD1CKMC\",\"sampleSheetName\":\"SampleSheet.csv\",\"apiUrl\":\"https://api.aps2.sh.basespace.illumina.com/v2/runs/r.AnPk0ox1OU-pACGtvSEQC2\",\"name\":\"200612_A01052_0017_BH5LYWDSXY\",\"id\":\"r.AnPk0ox1OU-pACGtvSEQC2\",\"instrumentRunId\":\"200612_A01052_0017_BH5LYWDSXY\",\"status\":\"PendingAnalysis\"}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1589509372323",
+        "SenderId": "AAAAAAAAA2IGZA4XHGYYY:mkia-mkia",
+        "ApproximateFirstReceiveTimestamp": "1589509373008"
+      },
+      "messageAttributes": {
+        "subscription-urn": {
+          "stringValue": "urn:ilmn:igp:us-east-1:YXXXXXxxxxxxxxxxXXXXXXXXXXXXXXXXXXXXYTU5YWUxLWZkYWUtNDNiYS1hM2I1LTRkMzY3YTQzYWJkNQ:subscription:sub.889",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "contentversion": {
+          "stringValue": "v1",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "action": {
+          "stringValue": "statuschanged",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "actiondate": {
+          "stringValue": "2021-04-12T04:29:52.212Z",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "type": {
+          "stringValue": "bssh.runs",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "producedby": {
+          "stringValue": "BaseSpaceSequenceHub",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "contenttype": {
+          "stringValue": "application/json",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        }
+      },
+      "md5OfBody": "9510796fd84652b9baac6a784b2ab42d",
+      "md5OfMessageAttributes": "b8173dd28ac484e479f584f8b671ba35",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:ap-southeast-2:123456789876:data-portal-dev-iap-ens-event-queue",
+      "awsRegion": "ap-southeast-2"
+    }
+  ]
+}
