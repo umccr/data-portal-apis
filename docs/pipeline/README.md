@@ -5,16 +5,16 @@ Typically, this is a fully automated pipeline with workflows orchestration _i.e.
 ## TL;DR
 
 - See [cleanup](cleanup) for pipeline failure, cleanup and rerun SOP.
-- See [automation.md](automation.md) for operational note.
+- See [automation.md](automation.md) for operational notes.
 
 
 ## Concept
 
-We have developed in such that there are a particular point where we can invoke an AWS lambda function to start from a particular step in the pipeline. This offers so that we can resume the pipeline from that point onwards.
+The current automation is centered around (workflow) events, i.e. actions are triggered by previous actions/events. As such particular workflows/steps can be triggered by replying/simulating external events.
 
-A better architecture diagram is available [here](https://lucid.app/lucidchart/e18f78ed-4132-4a5d-81f3-98d3b44936d4/edit?page=0_0#?folder_id=home&browser=icon).
+More architecture details (at various stages) can be found in [this](https://lucid.app/lucidchart/e18f78ed-4132-4a5d-81f3-98d3b44936d4/edit?page=0_0#?folder_id=home&browser=icon) LucidChart document.
 
-Since development is evolving fast, here is a simplified text diagram for main pipeline automation.
+Since development is evolving fast, here is a simplified text diagram of the main steps of the pipeline automation.
 
 ```
                      UPDATE_STEP
@@ -25,9 +25,9 @@ BSSH > BCL_CONVERT > DRAGEN_WGS_QC_STEP        > TUMOR_NORMAL_STEP  > UMCCRISE_S
                      DRAGEN_WTS_STEP
 ```
 
-Automation entry-points are cloud-native serverless AWS Lambda compute unit -- an event controller. These controllers are Event-driven and Reactive upon ICA ENS subscription through SQS. They are a Job Consumer of a particular queue.
+Automation entry-points are cloud-native serverless AWS Lambda compute unit -- an event controller. These controllers are event-driven and react to events delivered from ICA ENS event subscription through SQS. These lambdas can be seen as job/event consumers of a particular queue.
 
-Orchestrator contains 2 simple interfaces: 
+A central Orchestrator receives most external events and performs 2 simple tasks: 
 1. update step
 2. next step
 
@@ -35,5 +35,5 @@ This works like in feedback loop tandem such that:
 
 - In each update step for a given workflow run, orchestrator perform updating _this_ workflow automation state in database.
 - Then, it determines next step based on _this_ workflow status and invoke _step module's_ perform interface method.
-- **Step module** is Job Producer and, it produces a job (or job list) into their respective  queue. These main queues are then configured to **DLQ** for error handling and fault-tolerant purpose.
+- **Step module** is Job Producer and, it produces a job (or job list) into their respective queue. These main queues are then configured to **DLQ** for error handling and fault-tolerant purpose.
 - Main queues are FIFO and deduplication by message content for distributed event control.
