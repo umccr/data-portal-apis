@@ -18,7 +18,7 @@ Depending on use case different cleanup steps should be performed.
 There are a couple of key concepts to keep in mind when rerunning/cleaning up workflows:
 
 - If a workflow has failed outright, there should not be any output, so cleanup is generally not required.
-- Workflow output is always contained in a workflow run specific ("folder") location, using the internal `porta_run_id` as part of the output path. Hence data is not overwritten. If previous data does exist it may be visible in the portal though and can cause confusion. Therefore a cleanup is recommended (ideally before new data is generated).
+- Workflow output is always contained in a workflow run specific ("folder") location, using the internal `portal_run_id` as part of the output path. Hence data is not overwritten. If previous data does exist it may be visible in the portal though and can cause confusion. Therefore a cleanup is recommended (ideally before new data is generated).
 - Every workflow execution will generate DB entries, most will not affect reruns, some will auto-update, some will need manual update. This depends on the state the data is in when reruns happen.
 - Generally workflow are rerun simulating/replaying the previous successful workflow/step, i.e. resume from the last successful/consistent state.
 
