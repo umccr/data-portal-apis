@@ -112,6 +112,7 @@ def parse_somatic_workflow_output_directory(output_json: str, deep_check: bool =
 
     return dragen_somatic_output_directory
 
+
 def parse_transcriptome_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:
     """
     Parse the transcriptome workflow run output and get the output directory of the transcriptome workflow
@@ -129,6 +130,7 @@ def parse_transcriptome_workflow_output_directory(output_json: str, deep_check: 
 
     return dragen_transcriptome_output_directory
 
+
 def parse_umccrise_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:
     """
     Parse the umccrise workflow run output and get the output directory of the transcriptome workflow
@@ -137,7 +139,7 @@ def parse_umccrise_workflow_output_directory(output_json: str, deep_check: bool 
     :return:
     """
 
-    lookup_keys = ['main/output_directory_umccrise', 'output_directory_umccrise']
+    lookup_keys = ['main/umccrise_output_directory', 'umccrise_output_directory']
 
     umccrise_output_directory = parse_workflow_output(output_json, lookup_keys)
 
@@ -145,6 +147,7 @@ def parse_umccrise_workflow_output_directory(output_json: str, deep_check: bool 
         raise ValueError("Could not find a umccrise output directory from the umccrise workflow")
 
     return umccrise_output_directory
+
 
 def cwl_file_path_as_string_to_dict(file_path):
     """

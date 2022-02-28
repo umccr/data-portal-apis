@@ -211,7 +211,7 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
     elif this_workflow.type_name.lower() == WorkflowType.UMCCRISE.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info("Received UMCCRISE workflow notification")
-        # TODO: also check for WTS workflow notification?
+
         WorkflowRule(this_workflow).must_have_output()
 
         results = list()

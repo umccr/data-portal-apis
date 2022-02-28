@@ -15,6 +15,8 @@ from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMeta
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
+from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, _extract_unique_subjects, \
+    _mint_libraries
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 from data_processors.pipeline.tools import liborca
 
@@ -61,34 +63,6 @@ def perform(this_workflow):
         "subjects": subjects,
         "submitting_subjects": submitting_subjects
     }
-
-
-def _reduce_and_transform_to_df(meta_list: List[LabMetadata]) -> pd.DataFrame:
-    # also reduce to columns of interest
-    return pd.DataFrame(
-        [
-            {
-                "library_id": meta.library_id,
-                "subject_id": meta.subject_id,
-                "phenotype": meta.phenotype,
-                "type": meta.type,
-                "workflow": meta.workflow
-            } for meta in meta_list
-        ]
-    )
-
-
-def _extract_unique_subjects(meta_list_df: pd.DataFrame) -> List[str]:
-    if meta_list_df.empty:
-        return []
-    return meta_list_df["subject_id"].unique().tolist()
-
-
-def _mint_libraries(libraries):
-    s = set()
-    for lib in libraries:
-        s.add(liborca.strip_topup_rerun_from_library_id(lib))
-    return list(s)
 
 
 def _is_tn_in_run(meta_list_df, subject_libraries_stripped):

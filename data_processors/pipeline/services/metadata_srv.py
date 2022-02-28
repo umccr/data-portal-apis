@@ -98,6 +98,27 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
 
 
 @transaction.atomic
+def get_wts_metadata_by_subject(subject_id) -> List[LabMetadata]:
+    """
+    Find clinical or research grade, WTS tumor sample library metadata by given subject
+    """
+    meta_list = list()
+
+    qs: QuerySet = LabMetadata.objects.filter(
+        subject_id=subject_id,
+        phenotype__in=[LabMetadataPhenotype.TUMOR.value, ],
+        type__in=[LabMetadataType.WTS.value, ],
+        workflow__in=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+    )
+
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
+
+    return meta_list
+
+
+@transaction.atomic
 def get_subject_id_from_library_id(library_id):
     """
     Get subject from a library id through metadata objects list

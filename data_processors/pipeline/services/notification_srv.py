@@ -121,8 +121,8 @@ def resolve_sample_display_name(workflow: Workflow):
     elif workflow_type == WorkflowType.BCL_CONVERT:
         return None
 
-    elif workflow_type in [WorkflowType.TUMOR_NORMAL, WorkflowType.UMCCRISE]:
-        # if tumor_normal or umccrise, we use TUMOR_SAMPLE_ID as display name
+    elif workflow_type in [WorkflowType.TUMOR_NORMAL, WorkflowType.UMCCRISE, WorkflowType.RNASUM]:
+        # if tumor_normal or umccrise or rnasum, we use TUMOR_SAMPLE_ID as display name
         meta_list: List[LabMetadata] = metadata_srv.get_metadata_for_library_runs(all_library_runs)
         for meta in meta_list:
             if meta.phenotype == LabMetadataPhenotype.TUMOR.value:

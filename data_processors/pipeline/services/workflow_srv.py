@@ -176,3 +176,26 @@ def get_all_library_runs_by_workflow(workflow: Workflow):
         for lib_run in qs.all():
             library_run_list.append(lib_run)
     return library_run_list
+
+
+@transaction.atomic
+def get_succeeded_by_library_id_and_workflow_type(library_id: str, workflow_type: WorkflowType) -> List[Workflow]:
+    """
+    Get all succeeded workflow runs related to this library_id and WorkflowType. It will join call through LibraryRun
+    using library_id. It is also sorted desc by workflow end time. So, latest is always at top i.e. workflow_list[0]
+    """
+    workflow_list = list()
+
+    qs: QuerySet = Workflow.objects.filter(
+        type_name=workflow_type.value,
+        end_status=WorkflowStatus.SUCCEEDED.value,
+        end__isnull=False,
+        output__isnull=False,
+        libraryrun__library_id=library_id,
+    ).order_by('-end')
+
+    if qs.exists():
+        for wfl in qs.all():
+            workflow_list.append(wfl)
+
+    return workflow_list
