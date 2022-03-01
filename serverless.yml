@@ -220,6 +220,15 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_umccrise_queue_arn}
     timeout: 28
 
+  sqs_rnasum_event_processor:
+    handler: data_processors.pipeline.lambdas.rnasum.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_rnasum_queue_arn}
+    timeout: 28
+
   sqs_notification_event_processor:
     handler: data_processors.pipeline.lambdas.notification.sqs_handler
     layers:
@@ -249,6 +258,24 @@ functions:
 
   tumor_normal:
     handler: data_processors.pipeline.lambdas.tumor_normal.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  umccrise:
+    handler: data_processors.pipeline.lambdas.umccrise.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  rnasum:
+    handler: data_processors.pipeline.lambdas.rnasum.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  manops:
+    handler: data_processors.pipeline.lambdas.manops.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28

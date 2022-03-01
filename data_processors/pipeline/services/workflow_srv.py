@@ -90,10 +90,13 @@ def create_or_update_workflow(model: dict):
 
 
 @transaction.atomic
-def get_workflow_by_ids(wfr_id, wfv_id):
+def get_workflow_by_ids(wfr_id, wfv_id=None):
     workflow = None
     try:
-        workflow = Workflow.objects.get(wfr_id=wfr_id, wfv_id=wfv_id)
+        if wfv_id:
+            workflow = Workflow.objects.get(wfr_id=wfr_id, wfv_id=wfv_id)
+        else:
+            workflow = Workflow.objects.get(wfr_id=wfr_id)
     except Workflow.DoesNotExist as e:
         logger.debug(e)  # silent unless debug
     return workflow

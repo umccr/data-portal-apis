@@ -22,8 +22,17 @@ from data_processors.pipeline.tools import liborca
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+STEP_NOT_AUTOMATED = True  # safety switch
+
 
 def perform(this_workflow: Workflow):
+
+    if STEP_NOT_AUTOMATED:
+        return {
+            "message": "STEP_NOT_AUTOMATED",
+            "issue": "https://github.com/umccr/data-portal-apis/issues/417"
+        }
+
     # prepare job list and dispatch to job queue
     job_list = prepare_rnasum_jobs(this_workflow)
     if job_list:

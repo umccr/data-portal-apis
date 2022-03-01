@@ -54,6 +54,10 @@ aws lambda invoke --profile prod \
   orchestrator_197.json
 ```
 
+### RNAsum
+
+See [rnasum.md](rnasum.md)
+
 ### Other Lambda
 
 Others Lambda are possible. Look into their docstring for event payload requirement. Typically, we drive (i.e. restart/resume/rerun) the step from Orchestrator for post BCL conversion steps.
