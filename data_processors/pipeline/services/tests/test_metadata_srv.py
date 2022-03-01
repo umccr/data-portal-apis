@@ -1,3 +1,5 @@
+from typing import List
+
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.tests import factories
@@ -60,3 +62,13 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         meta_list, _ = metadata_srv.get_tn_metadata_by_qc_runs([mock_workflow])
         logger.info(meta_list)
         self.assertEqual(meta_list[0].subject_id, mock_meta.subject_id)
+
+    def test_get_wts_metadata_by_subject(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wts_metadata_by_subject
+        """
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wts_metadata_by_subject(TestConstant.subject_id.value)
+        for meta in meta_list:
+            logger.info(meta.library_id)
+            self.assertEqual(meta.library_id, TestConstant.wts_library_id_tumor.value)

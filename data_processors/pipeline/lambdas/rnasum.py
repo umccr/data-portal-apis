@@ -130,7 +130,7 @@ def handler(event, context) -> dict:
         logger.warning(libjson.dumps(error_result))
         return error_result
 
-    logger.info(f"Using dataset {dataset}")
+    logger.info(f"Using TCGA dataset: {dataset}")
 
     # read workflow id and version from parameter store
     workflow_id = wfl_helper.get_workflow_id()

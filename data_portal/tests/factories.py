@@ -13,7 +13,7 @@ from data_portal.models.workflow import Workflow
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.report import Report, ReportType
-from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.labmetadata import LabMetadata, LabMetadataType
 from data_portal.models.sequence import Sequence, SequenceStatus
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.labmetadata import LabMetadataPhenotype
@@ -27,6 +27,9 @@ class TestConstant(Enum):
     wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
+    umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
+    umccrise_wfv_id = f"wfv.umccrisenVTCE8KhfXEurUfTCqSa6zVx"
+    umccrise_wfl_id = f"wfl.umccrisejhzOf3NbqAYjSmzkE1oWKI9H"
     version = "v1"
     instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
     sqr_name = instrument_run_id
@@ -40,6 +43,9 @@ class TestConstant(Enum):
     sample_id = "PRJ210001"
     sample_name_normal = f"{sample_id}_{library_id_normal}"
     sample_name_tumor = f"{sample_id}_{library_id_tumor}"
+    wts_library_id_tumor = "L2100003"
+    wts_lane_tumor_library = 4
+    wts_sample_id = "MDX210002"
 
 
 class LabMetadataFactory(factory.django.DjangoModelFactory):
@@ -84,6 +90,30 @@ class TumorLabMetadataFactory(factory.django.DjangoModelFactory):
     experiment_id = "TSqN123456LL"
     type = "WGS"
     assay = "TsqNano"
+    override_cycles = TestConstant.override_cycles.value
+    workflow = "clinical"
+    coverage = "40.0"
+    truseqindex = "A09"
+
+
+class WtsTumorLabMetadataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LabMetadata
+
+    library_id = TestConstant.wts_library_id_tumor.value
+    sample_name = "Ambiguous WTS Sample"
+    sample_id = TestConstant.wts_sample_id.value
+    external_sample_id = "RNA123456"
+    subject_id = TestConstant.subject_id.value
+    external_subject_id = "PM1234567"
+    phenotype = LabMetadataPhenotype.TUMOR.value
+    quality = "good"
+    source = "blood"
+    project_name = "CUP"
+    project_owner = "UMCCR"
+    experiment_id = "TSqN123456LL"
+    type = LabMetadataType.WTS.value
+    assay = "NebRNA"
     override_cycles = TestConstant.override_cycles.value
     workflow = "clinical"
     coverage = "40.0"
@@ -191,6 +221,17 @@ class TumorLibraryRunFactory(factory.django.DjangoModelFactory):
     override_cycles = TestConstant.override_cycles.value
 
 
+class WtsTumorLibraryRunFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LibraryRun
+
+    library_id = TestConstant.wts_library_id_tumor.value
+    instrument_run_id = TestConstant.instrument_run_id.value
+    run_id = TestConstant.run_id.value
+    lane = TestConstant.wts_lane_tumor_library.value
+    override_cycles = TestConstant.override_cycles.value
+
+
 class SequenceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Sequence
@@ -274,6 +315,27 @@ class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     )
 
 
+class DragenWtsWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    wfr_id = TestConstant.wfr_id.value
+    wfv_id = TestConstant.wfv_id.value
+    wfl_id = TestConstant.wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.DRAGEN_WTS.value
+    input = json.dumps({
+        "mock": "override me"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
 class TumorNormalWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
@@ -283,6 +345,27 @@ class TumorNormalWorkflowFactory(factory.django.DjangoModelFactory):
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
     type_name = WorkflowType.TUMOR_NORMAL.value
+    input = json.dumps({
+        "mock": "override me"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
+class UmccriseWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    wfr_id = TestConstant.umccrise_wfr_id.value
+    wfv_id = TestConstant.umccrise_wfv_id.value
+    wfl_id = TestConstant.umccrise_wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.UMCCRISE.value
     input = json.dumps({
         "mock": "override me"
     })

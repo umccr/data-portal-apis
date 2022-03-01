@@ -33,6 +33,71 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(KeyError)
 
+    def test_parse_umccrise_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_umccrise_workflow_output_directory
+        """
+        mock_umccrise_output = json.dumps({
+            "umccrise_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00001/umccrise/2022012324bd4c96/L3200003__L3200004",
+                "basename": "L3200003__L3200004",
+                "nameroot": "",
+                "nameext": "",
+                "class": "Directory",
+                "size": None
+            },
+            "output_dir_gds_session_id": "ssn.611111111e9c400aa6aa3652951d91a8",
+            "output_dir_gds_folder_id": "fol.ccccccc6ca06666666d008d89d4636ab"
+        })
+        result: dict = liborca.parse_umccrise_workflow_output_directory(mock_umccrise_output)
+
+        logger.info("-" * 32)
+        logger.info(f"parse_umccrise_workflow_output_directory: {json.dumps(result)}")
+
+        self.assertEqual(result['basename'], "L3200003__L3200004")
+        self.assertEqual(result['class'], "Directory")
+
+    def test_parse_transcriptome_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_transcriptome_workflow_output_directory
+        """
+        mock_wts_tumor_only_output = json.dumps({
+            "arriba_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/arriba_outputs",
+                "basename": "arriba_outputs",
+                "nameroot": "",
+                "nameext": "",
+                "class": "Directory",
+                "size": None
+            },
+            "dragen_transcriptome_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/L3200000_dragen",
+                "basename": "L3200000_dragen",
+                "nameroot": "",
+                "nameext": "",
+                "class": "Directory",
+                "size": None
+            },
+            "multiqc_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/PTC_NebRNA12345_dragen_transcriptome_multiqc",
+                "basename": "PTC_NebRNA12345_dragen_transcriptome_multiqc",
+                "nameroot": "",
+                "nameext": "",
+                "class": "Directory",
+                "size": None
+            },
+            "output_dir_gds_session_id": "ssn.99999999b45b4f96bc9baf056a79ede2",
+            "output_dir_gds_folder_id": "fol.cccccccca064e0362d008d89d4636ab"
+        })
+
+        result: dict = liborca.parse_transcriptome_workflow_output_directory(mock_wts_tumor_only_output)
+
+        logger.info("-" * 32)
+        logger.info(f"parse_transcriptome_workflow_output_directory: {json.dumps(result)}")
+
+        self.assertEqual(result['basename'], "L3200000_dragen")
+        self.assertEqual(result['class'], "Directory")
+
     def test_parse_somatic_workflow_output_directory(self):
         """
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_somatic_workflow_output_directory
@@ -357,3 +422,43 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
 
         self.assertIn("class", dragen_somatic_output_directory.keys())
         self.assertEqual(dragen_somatic_output_directory['class'], "Directory")
+
+    @skip
+    def test_parse_umccrise_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_umccrise_workflow_output_directory
+        """
+
+        # umccrise run from PROD
+        wfr_id = "wfr.d5c896503d9443ce9579d9f05e75bf71"  # SBJ01312 wgs(L2200063, L2200064)
+
+        wfl_run = wes.get_run(wfr_id)
+
+        umccrise_output_directory = liborca.parse_umccrise_workflow_output_directory(json.dumps(wfl_run.output))
+
+        logger.info(f"\n{umccrise_output_directory}")
+
+        self.assertIn("class", umccrise_output_directory.keys())
+        self.assertEqual("Directory", umccrise_output_directory['class'])
+        self.assertIn("SBJ01312", umccrise_output_directory['location'])
+
+    @skip
+    def test_parse_transcriptome_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_transcriptome_workflow_output_directory
+        """
+
+        # wts_tumor_only run from PROD
+        wfr_id = "wfr.a9bcb2e3a2fe49b4b64ba01bb2ad9cc9"  # SBJ01312 wts(L2200023)
+
+        wfl_run = wes.get_run(wfr_id)
+
+        dragen_transcriptome_output_directory = liborca.parse_transcriptome_workflow_output_directory(
+            json.dumps(wfl_run.output)
+        )
+
+        logger.info(f"\n{dragen_transcriptome_output_directory}")
+
+        self.assertIn("class", dragen_transcriptome_output_directory.keys())
+        self.assertEqual(dragen_transcriptome_output_directory['class'], "Directory")
+        self.assertIn("SBJ01312", dragen_transcriptome_output_directory['location'])

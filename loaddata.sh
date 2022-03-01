@@ -107,6 +107,10 @@ load_localstack() {
   sqs_umccrise_queue_name=${sqs_umccrise_queue_arn##*:}
   eval "$aws_local_cmd sqs create-queue --queue-name $sqs_umccrise_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
 
+  sqs_rnasum_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_rnasum_queue_arn' --with-decryption | jq -r .Parameter.Value)
+  sqs_rnasum_queue_name=${sqs_rnasum_queue_arn##*:}
+  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_rnasum_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
+
   sqs_notification_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_notification_queue_arn' --with-decryption | jq -r .Parameter.Value)
   sqs_notification_queue_name=${sqs_notification_queue_arn##*:}
   eval "$aws_local_cmd sqs create-queue --queue-name $sqs_notification_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
