@@ -12,6 +12,7 @@ class SequenceStatus(models.TextChoices):
     STARTED = "started"
     FAILED = "failed"
     SUCCEEDED = "succeeded"
+    ABORTED = "aborted"
 
     @classmethod
     def from_value(cls, value):
@@ -45,6 +46,8 @@ class SequenceStatus(models.TextChoices):
             return cls.SUCCEEDED
         elif value in ["failed", "needsattention", "timedout", "failedupload"]:
             return cls.FAILED
+        elif value in ["stopped"]:
+            return cls.ABORTED
         else:
             raise ValueError(f"No matching SequenceStatus found for value: {value}")
 
