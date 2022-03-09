@@ -3,6 +3,12 @@
   "description": "UMCCR Data Portal API backend in cloud native serverless",
   "license": "MIT",
   "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "aws-sdk": "^2.1089.0",
+    "aws4-axios": "^2.4.9",
+    "axios": "^0.26.0"
+  },
   "devDependencies": {
     "husky": "^7.0.4",
     "serverless": "^3.1.1",
@@ -15,6 +21,5 @@
   "scripts": {
     "prepare": "husky install"
   },
-  "resolutions": {
-  }
+  "resolutions": {}
 }
