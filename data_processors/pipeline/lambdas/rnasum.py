@@ -73,7 +73,7 @@ def handler(event, context) -> dict:
         "arriba_directory": {
             "class": "Directory",
             "location": "gds://path/to/arriba/output/dir"
-        }
+        },
         "sample_name": "TUMOR_SAMPLE_ID",
         "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
         "dataset": "reference_data",

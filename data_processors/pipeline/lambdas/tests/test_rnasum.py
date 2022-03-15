@@ -31,6 +31,10 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
                     "class": "Directory",
                     "location": "gds://path/to/umccrise/output/dir"
                 },
+                "arriba_directory": {
+                    "class": "Directory",
+                    "location": "gds://path/to/arriba/output/dir"
+                },
                 "sample_name": "TUMOR_SAMPLE_ID",
                 "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
                 "dataset": "BRCA",
@@ -88,6 +92,10 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
                     "class": "Directory",
                     "location": "gds://path/to/umccrise/output/dir"
                 },
+                "arriba_directory": {
+                    "class": "Directory",
+                    "location": "gds://path/to/arriba/output/dir"
+                },
                 "sample_name": "TUMOR_SAMPLE_ID",
                 "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
                 "dataset": None,
@@ -140,6 +148,10 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
                 "umccrise_directory": {
                     "class": "Directory",
                     "location": "gds://path/to/umccrise/output/dir"
+                },
+                "arriba_directory": {
+                    "class": "Directory",
+                    "location": "gds://path/to/arriba/output/dir"
                 },
                 "sample_name": "TUMOR_SAMPLE_ID",
                 "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",

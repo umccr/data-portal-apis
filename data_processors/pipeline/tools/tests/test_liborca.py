@@ -61,42 +61,57 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_transcriptome_workflow_output_directory
         """
-        mock_wts_tumor_only_output = json.dumps({
-            "arriba_output_directory": {
-                "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/arriba_outputs",
-                "basename": "arriba_outputs",
-                "nameroot": "",
-                "nameext": "",
-                "class": "Directory",
-                "size": None
-            },
-            "dragen_transcriptome_output_directory": {
-                "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/L3200000_dragen",
-                "basename": "L3200000_dragen",
-                "nameroot": "",
-                "nameext": "",
-                "class": "Directory",
-                "size": None
-            },
-            "multiqc_output_directory": {
-                "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/PTC_NebRNA12345_dragen_transcriptome_multiqc",
-                "basename": "PTC_NebRNA12345_dragen_transcriptome_multiqc",
-                "nameroot": "",
-                "nameext": "",
-                "class": "Directory",
-                "size": None
-            },
-            "output_dir_gds_session_id": "ssn.99999999b45b4f96bc9baf056a79ede2",
-            "output_dir_gds_folder_id": "fol.cccccccca064e0362d008d89d4636ab"
-        })
+        mock_wts_tumor_only_output = json.dumps(
+            {
+                "arriba_output_directory": {
+                    "basename": "arriba",
+                    "class": "Directory",
+                    "location": "gds://development/analysis_data/SBJ00001/wts_tumor_only/20220312486fec39/arriba",
+                    "nameext": "",
+                    "nameroot": "arriba",
+                    "size": None
+                },
+                "dragen_transcriptome_output_directory": {
+                    "basename": "L3200000_dragen",
+                    "class": "Directory",
+                    "location": "gds://development/analysis_data/SBJ00001/wts_tumor_only/20220312486fec39/L3200000_dragen",
+                    "nameext": "",
+                    "nameroot": "L3200000_dragen",
+                    "size": None
+                },
+                "multiqc_output_directory": {
+                    "basename": "MDX320000_dragen_transcriptome_multiqc",
+                    "class": "Directory",
+                    "location": "gds://development/analysis_data/SBJ00001/wts_tumor_only/20220312486fec39/MDX320000_dragen_transcriptome_multiqc",
+                    "nameext": "",
+                    "nameroot": "MDX320000_dragen_transcriptome_multiqc",
+                    "size": None
+                },
+                "output_dir_gds_folder_id": "fol.cccccccca064e0362d008d89d4636ab",
+                "output_dir_gds_session_id": "ssn.99999999b45b4f96bc9baf056a79ede2",
+                "somalier_output_directory": {
+                    "basename": "MDX320000_somalier",
+                    "class": "Directory",
+                    "location": "gds://development/analysis_data/SBJ00001/wts_tumor_only/20220312486fec39/MDX320000_somalier",
+                    "nameext": "",
+                    "nameroot": "MDX320000_somalier",
+                    "size": None
+                }
+            }
+        )
 
         result: dict = liborca.parse_transcriptome_workflow_output_directory(mock_wts_tumor_only_output)
+        result_arriba: dict = liborca.parse_arriba_workflow_output_directory(mock_wts_tumor_only_output)
 
         logger.info("-" * 32)
         logger.info(f"parse_transcriptome_workflow_output_directory: {json.dumps(result)}")
+        logger.info(f"parse_arriba_workflow_output_directory: {json.dumps(result_arriba)}")
 
         self.assertEqual(result['basename'], "L3200000_dragen")
         self.assertEqual(result['class'], "Directory")
+
+        self.assertEqual(result_arriba['basename'], "arriba")
+        self.assertEqual(result_arriba['class'], "Directory")
 
     def test_parse_somatic_workflow_output_directory(self):
         """
@@ -448,8 +463,8 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_transcriptome_workflow_output_directory
         """
 
-        # wts_tumor_only run from PROD
-        wfr_id = "wfr.a9bcb2e3a2fe49b4b64ba01bb2ad9cc9"  # SBJ01312 wts(L2200023)
+        # wts_tumor_only run from DEV, see https://umccr.slack.com/archives/C7QC9N8G4/p1647112587377499
+        wfr_id = "wfr.b61f86b3ac2748fe997ecdf1d4b79d84"  # L2100732
 
         wfl_run = wes.get_run(wfr_id)
 
@@ -457,8 +472,16 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
             json.dumps(wfl_run.output)
         )
 
+        arriba_output_directory = liborca.parse_arriba_workflow_output_directory(json.dumps(wfl_run.output))
+
         logger.info(f"\n{dragen_transcriptome_output_directory}")
+        logger.info(f"\n{arriba_output_directory}")
 
         self.assertIn("class", dragen_transcriptome_output_directory.keys())
         self.assertEqual(dragen_transcriptome_output_directory['class'], "Directory")
-        self.assertIn("SBJ01312", dragen_transcriptome_output_directory['location'])
+        self.assertIn("SBJ00910", dragen_transcriptome_output_directory['location'])
+
+        self.assertIn("class", arriba_output_directory.keys())
+        self.assertEqual(arriba_output_directory['class'], "Directory")
+        self.assertIn("SBJ00910", arriba_output_directory['location'])
+        self.assertIn("arriba", arriba_output_directory['location'])
