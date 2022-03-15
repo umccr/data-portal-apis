@@ -131,6 +131,24 @@ def parse_transcriptome_workflow_output_directory(output_json: str, deep_check: 
     return dragen_transcriptome_output_directory
 
 
+def parse_arriba_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:
+    """
+    Parse the arriba workflow run output and get the output directory of the arriba workflow
+    :param output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return:
+    """
+
+    lookup_keys = ['main/arriba_output_directory', 'arriba_output_directory']
+
+    arriba_output_directory = parse_workflow_output(output_json, lookup_keys)
+
+    if deep_check and arriba_output_directory is None:
+        raise ValueError("Could not find a dragen arriba output directory from the arriba workflow")
+
+    return arriba_output_directory
+
+
 def parse_umccrise_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:
     """
     Parse the umccrise workflow run output and get the output directory of the transcriptome workflow

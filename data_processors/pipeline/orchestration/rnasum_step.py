@@ -139,6 +139,9 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     # Get the dragen transcriptome output directory location
     dragen_transcriptome_directory = liborca.parse_transcriptome_workflow_output_directory(this_wts_workflow.output)
 
+    # Get the arriba output directory location
+    arriba_directory = liborca.parse_arriba_workflow_output_directory(this_wts_workflow.output)
+
     # Get metadata for wts tumor library
     meta_tumor: LabMetadata = metadata_srv.get_metadata_by_library_id(this_wts_tumor_library)
 
@@ -148,6 +151,7 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     job = {
         "dragen_transcriptome_directory": dragen_transcriptome_directory,
         "umccrise_directory": umccrise_directory,
+        "arriba_directory": arriba_directory,
         "sample_name": meta_tumor.sample_id,
         "report_directory": f"{this_subject}__{this_wts_tumor_library}",
         "dataset": tumor_dataset,

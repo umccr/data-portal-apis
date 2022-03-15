@@ -70,6 +70,10 @@ def handler(event, context) -> dict:
             "class": "Directory",
             "location": "gds://path/to/umccrise/output/dir"
         },
+        "arriba_directory": {
+            "class": "Directory",
+            "location": "gds://path/to/arriba/output/dir"
+        }
         "sample_name": "TUMOR_SAMPLE_ID",
         "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
         "dataset": "reference_data",
@@ -97,6 +101,7 @@ def handler(event, context) -> dict:
     workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input['dragen_transcriptome_directory'] = event['dragen_transcriptome_directory']
     workflow_input['umccrise_directory'] = event['umccrise_directory']
+    workflow_input['arriba_directory'] = event['arriba_directory']
     workflow_input['report_directory'] = event['report_directory']
     workflow_input['sample_name'] = sample_name
 
