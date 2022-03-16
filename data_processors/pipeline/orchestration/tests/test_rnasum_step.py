@@ -288,6 +288,79 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         self.assertEqual(len(job_list), 1)
 
     @skip
+    def test_prepare_rnasum_jobs_SBJ00910(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_prepare_rnasum_jobs_SBJ00910
+        """
+
+        wgs_library_normal = LibraryRun.objects.create(
+            library_id="L2100745",
+            instrument_run_id="210708_A00130_0166_AH7KTJDSX2",
+            run_id="r.166",
+            lane=1,
+            override_cycles="Y151;I8N2;I8N2;Y151",
+        )
+
+        wgs_library_tumor = LibraryRun.objects.create(
+            library_id="L2100746",
+            instrument_run_id="210708_A00130_0166_AH7KTJDSX2",
+            run_id="r.166",
+            lane=1,
+            override_cycles="Y151;I8N2;I8N2;Y151",
+        )
+
+        wts_library_tumor = LibraryRun.objects.create(
+            library_id="L2100732",
+            instrument_run_id="210708_A00130_0166_AH7KTJDSX2",
+            run_id="r.166",
+            lane=1,
+            override_cycles="Y151;I8N2;I8N2;Y151",
+        )
+
+        umccrise_workflow_id = "wfr.cf4b46bc5ea346678200cd8ad2bf3b65"  # in DEV
+        wts_workflow_id = "wfr.b61f86b3ac2748fe997ecdf1d4b79d84"       # in DEV
+
+        #  ---
+
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2021", "2022"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        mock_umccrise_workflow: Workflow = UmccriseWorkflowFactory()
+        mock_wts_workflow: Workflow = DragenWtsWorkflowFactory()
+
+        umccrise_wfl_run = wes.get_run(umccrise_workflow_id, to_dict=True)
+        mock_umccrise_workflow.wfr_id = umccrise_workflow_id
+        mock_umccrise_workflow.input = json.dumps(umccrise_wfl_run['input'])
+        mock_umccrise_workflow.output = json.dumps(umccrise_wfl_run['output'])
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_normal)
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_tumor)
+        mock_umccrise_workflow.end = now()
+        mock_umccrise_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_umccrise_workflow.save()
+
+        wts_wfl_run = wes.get_run(wts_workflow_id, to_dict=True)
+        mock_wts_workflow.wfr_id = wts_workflow_id
+        mock_wts_workflow.input = json.dumps(wts_wfl_run['input'])
+        mock_wts_workflow.output = json.dumps(wts_wfl_run['output'])
+        mock_wts_workflow.libraryrun_set.add(wts_library_tumor)
+        mock_wts_workflow.end = now()
+        mock_wts_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_wts_workflow.save()
+
+        job_list = rnasum_step.prepare_rnasum_jobs(this_workflow=mock_umccrise_workflow)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(f"\n{json.dumps(job_list)}")
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), 1)
+
+    @skip
     def test_lookup_tcga_dataset(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_lookup_tcga_dataset

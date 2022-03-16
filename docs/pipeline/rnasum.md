@@ -50,6 +50,10 @@ aws lambda invoke --profile prodops \
             "class": "Directory",
             "location": "gds://path/to/WTS/output/dir"
         },
+        "arriba_directory": {
+            "class": "Directory",
+            "location": "gds://path/to/arriba/output/dir"
+        },
         "umccrise_directory": {
             "class": "Directory",
             "location": "gds://path/to/umccrise/output/dir"
