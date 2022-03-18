@@ -45,7 +45,7 @@ class ReportUnitTests(ReportUnitTestCase):
             bucket="some-bucket",
             size=170,
             last_modified_date=make_aware(datetime.now()),
-            e_tag="1870ed1a461dad0af6fd8da246343948"
+            e_tag=""
         )
         mock_s3_obj.save()
 
@@ -62,7 +62,7 @@ class ReportUnitTests(ReportUnitTestCase):
                 'size': 170,
                 'eTag': mock_s3_obj.e_tag,
                 'key': mock_s3_obj.key,
-                'sequencer': "006078FC7966A0E163"
+                'sequencer': ""
             }
         }, None)
 
@@ -193,7 +193,7 @@ class ReportUnitTests(ReportUnitTestCase):
             bucket="some-bucket",
             size=170,
             last_modified_date=make_aware(datetime.now()),
-            e_tag="1870ed1a461dad0af6fd8da246343948"
+            e_tag=""
         )
         mock_s3_obj.save()
 
@@ -210,7 +210,7 @@ class ReportUnitTests(ReportUnitTestCase):
                 'size': 170,
                 'eTag': mock_s3_obj.e_tag,
                 'key': mock_s3_obj.key,
-                'sequencer': "006078FC7966A0E163"
+                'sequencer': ""
             }
         }, None)
 

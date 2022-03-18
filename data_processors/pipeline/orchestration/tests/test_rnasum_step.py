@@ -48,8 +48,8 @@ mock_wts_tumor_only_output = json.dumps({
         "size": None
     },
     "multiqc_output_directory": {
-        "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/PTC_NebRNA12345_dragen_transcriptome_multiqc",
-        "basename": "PTC_NebRNA12345_dragen_transcriptome_multiqc",
+        "location": "gds://vol/analysis_data/SBJ00001/wts_tumor_only/202201232df89fee/dragen_transcriptome_multiqc",
+        "basename": "dragen_transcriptome_multiqc",
         "nameroot": "",
         "nameext": "",
         "class": "Directory",

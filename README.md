@@ -8,7 +8,7 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 
 #### TL;DR
 
-- Required: 
+- Required:
   - **Python 3.9**
   - Node.js with Yarn
   - See `buildspec.yml` for runtime versions requirement
@@ -23,7 +23,7 @@ v14.17.3
 
 npm i -g yarn
 yarn -v
-1.22.10 
+1.22.10
 ```
 
 then activate it:
@@ -39,7 +39,7 @@ make install
 aws sso login --profile dev && export AWS_PROFILE=dev
 
 make up
-docker ps
+make ps
 (depends on your laptop performance :P, please wait all services to be fully started)
 
 make test_iap_mock
@@ -76,9 +76,15 @@ make syncdata
 make loaddata
 ```
 
-#### Husky & Git
+#### Git Flow & Pre-commit Hook
 
-> NOTE: [husky](https://typicode.github.io/husky/) 🐕 will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encourage to fix those. If you wish to skip this for good reason, you can by-pass husky by using [`--no-verify`](https://github.com/typicode/husky/issues/124) flag in `git` command.
+> NOTE: We use [pre-commit](https://github.com/umccr/wiki/blob/master/computing/dev-environment/git-hooks.md). It will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encouraged to fix those. If you wish to skip this for good reason, you can by-pass [Git pre-commit hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) by using `git commit --no-verify` flag.
+
+```commandline
+git config --unset core.hooksPath
+pre-commit install
+pre-commit run --all-files
+```
 
 - The default branch is `dev`. Any merges are CI/CD to `DEV` account environment.
 - The `main` branch is production. Any merges are CI/CD to `PROD` account environment.
@@ -95,10 +101,7 @@ git push origin main
 aws sso login --profile dev
 export AWS_PROFILE=dev
 aws lambda invoke --function-name data-portal-api-dev-migrate output.json
-aws lambda invoke --function-name data-portal-api-dev-lims_scheduled_update_processor output.json
 ```
-
-> If lambda timeout error then try again. Lambda needs warm-up time and LIMS rows are growing.
 
 ## Serverless
 
@@ -208,4 +211,3 @@ def lambda_handler(event, context):
 - Refer the following links for example and doc:
   - https://docs.aws.amazon.com/xray-sdk-for-python/latest/reference/index.html
   - https://docs.aws.amazon.com/lambda/latest/dg/python-tracing.html
-

@@ -8,8 +8,8 @@ from environ import Env
 
 from .base import *  # noqa
 
+db_conn_cfg = Env.db_url_config(os.getenv('PORTAL_DB_URL', 'mysql://root:root@localhost:3306/data_portal'))
+
 DATABASES = {
-    'default': Env.db_url_config(
-        os.getenv('PORTAL_DB_URL', 'mysql://root:root@localhost:3306/data_portal')
-    )
+    'default': db_conn_cfg
 }

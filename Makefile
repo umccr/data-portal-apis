@@ -4,7 +4,11 @@ DJANGO_SETTINGS_MODULE = data_portal.settings.local
 install:
 	@pip install -r requirements-dev.txt
 	@yarn install
-	@npx husky install
+	@pre-commit install
+
+check:
+	@pre-commit run --all-files
+	@npx yarn audit
 
 up:
 	@docker compose up -d
