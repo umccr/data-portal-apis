@@ -71,8 +71,15 @@ https://api.data.prod.umccr.org/iam/lims
   - Install `brew install awscurl` 
   - Login AWS CLI using `ProdOperator` role as per normal
   - Then
+
+_GET_
 ```
-awscurl --profile prodops --region ap-southeast-2 -H "Accept: application/json" "https://api.data.prod.umccr.org/iam/lims" | jq
+awscurl -H "Accept: application/json" --profile prodops --region ap-southeast-2 "https://api.data.prod.umccr.org/iam/lims" | jq
+```
+
+_POST_
+```
+awscurl -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.data.prod.umccr.org/iam/pairing" | jq
 ```
 
 #### Python
@@ -336,7 +343,12 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 _Create T/N Pairing by SequenceRuns:_
 ```
-curl -s -X POST -d '["211014_A00130_0179_AHLFYJDSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing" | jq
+curl -s -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing" | jq
+```
+
+_In iam endpoint with awscurl:_
+```
+awscurl -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.data.prod.umccr.org/iam/pairing" | jq
 ```
 
 _POST payload JSON can also be in file as follows_:
@@ -351,12 +363,12 @@ curl -s -X POST -d '["SBJ01031", "SBJ01032", "SBJ01033", "SBJ01034"]' -H "Conten
 
 _Create T/N Pairing by Libraries:_
 ```
-curl -s -X POST -d '["L2101175", "L2101176"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_libraries" | jq
+curl -s -X POST -d '["L2200331", "L2200332"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_libraries" | jq
 ```
 
 _Create T/N Pairing by Samples:_
 ```
-curl -s -X POST -d '["MDX210327", "MDX210328"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_samples" | jq
+curl -s -X POST -d '["PRJ220785", "PRJ220786"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing/by_samples" | jq
 ```
 
 _Create T/N Pairing by Workflows (WGS QC wfr_id):_

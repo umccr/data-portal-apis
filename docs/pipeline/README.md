@@ -5,7 +5,8 @@ Typically, this is a fully automated pipeline with workflows orchestration _i.e.
 ## TL;DR
 
 - See [cleanup](cleanup) for pipeline failure, cleanup and rerun SOP.
-- See [automation.md](automation.md) for operational notes.
+- See [automation](automation) for operational notes.
+- See [metadata.md](metadata.md) for syncing upstream Metadata.
 
 
 ## Concept
