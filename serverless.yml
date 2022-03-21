@@ -118,7 +118,7 @@ functions:
       - schedule:
           rate: cron(0 12 * * ? *)
           enabled: ${self:custom.enabled.${self:provider.stage}, self:custom.enabled.other}
-    timeout: 120
+    timeout: 240
 
   labmetadata_scheduled_update_processor:
     handler: data_processors.lims.lambdas.labmetadata.scheduled_update_handler
@@ -128,7 +128,7 @@ functions:
       - schedule:
           rate: cron(0 12 * * ? *)
           enabled: ${self:custom.enabled.${self:provider.stage}, self:custom.enabled.other}
-    timeout: 120
+    timeout: 240
 
   sqs_s3_event_processor:
     handler: data_processors.s3.lambdas.s3_event.handler
