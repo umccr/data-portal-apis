@@ -22,16 +22,8 @@ from data_processors.pipeline.tools import liborca
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-STEP_NOT_AUTOMATED = True  # safety switch
-
 
 def perform(this_workflow: Workflow):
-
-    if STEP_NOT_AUTOMATED:
-        return {
-            "message": "STEP_NOT_AUTOMATED",
-            "issue": "https://github.com/umccr/data-portal-apis/issues/417"
-        }
 
     # prepare job list and dispatch to job queue
     job_list = prepare_rnasum_jobs(this_workflow)
@@ -177,5 +169,8 @@ def lookup_tcga_dataset(meta: LabMetadata):
     sample_id = meta.sample_id
     ext_sample_id = meta.external_sample_id
     ext_subject_id = meta.external_subject_id
+
+    # FIXME given any of aforementioned ID, request respective RedCAP project for TCGA dataset annotation meta info
+    #  If this return None then it will use the default config set in RNAsum input template
 
     return None

@@ -97,9 +97,7 @@ class RNAsumStepUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(results)
 
         logger.info(f"{json.dumps(results)}")
-        # self.assertEqual(results['submitting_subjects'][0], TestConstant.subject_id.value)
-        # FIXME issue #417
-        self.assertEqual(results['message'], "STEP_NOT_AUTOMATED")
+        self.assertEqual(results['submitting_subjects'][0], TestConstant.subject_id.value)
 
     def test_prepare_rnasum_jobs(self):
         """

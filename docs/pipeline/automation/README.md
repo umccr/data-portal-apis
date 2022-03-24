@@ -42,14 +42,22 @@ aws lambda invoke --profile dev \
 
 ### Orchestrator
 
+NOTES:
+
+1. Here `wfr.<ID>` is the Workflow Run ID of one step before your next target step that you wish to trigger.
+2. And `wfv.<ID>` correspond to Workflow Version ID counterpart from point 1 Workflow Run ID.
+3. You can skip steps. See Pipeline [Concept](../README.md).
+
+You should get this information typically through correspond Slack notification from ICA Pipeline Automated Workflow Event in `#biobot`. 
+
 ```
 aws lambda invoke --profile prod \
   --function-name data-portal-api-prod-orchestrator \
   --cli-binary-format raw-in-base64-out \
   --payload '{
-    "wfr_id": "wfr.e7cd80eee78e425ca94507f505315e9b", 
-    "wfv_id": "wfv.f776566ff2b94edeab92b25b33b89eb8", 
-    "skip": ["GOOGLE_LIMS_UPDATE_STEP"]
+      "wfr_id": "wfr.<ID>", 
+      "wfv_id": "wfv.<ID>", 
+      "skip": ["GOOGLE_LIMS_UPDATE_STEP", "DRAGEN_WGS_QC_STEP"]
     }' \
   orchestrator_197.json
 ```
@@ -76,7 +84,7 @@ aws ssm put-parameter \
   --profile dev
 ```
 
-### Step Skip
+### Global Step Skip
 
 - This will globally skip `TUMOR_NORMAL_STEP` and `DRAGEN_WTS_STEP` analysis workflows.
 - Payload with `[]` to reset.

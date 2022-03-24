@@ -1,6 +1,10 @@
 # RNAsum ICA Pipeline Lambda
 
-RNAsum in ICA Pipeline is not fully automated yet due to TCGA dataset lookup issue [#417](https://github.com/umccr/data-portal-apis/issues/417).
+## Notes:
+
+- RNAsum in ICA Pipeline is fully automated. 
+- However, only with statically configured TCGA dataset that set in RNAsum workflow input template.
+- For dynamic lookup, see issue [#417](https://github.com/umccr/data-portal-apis/issues/417).
 
 The following options are available at the moment.
 
