@@ -140,6 +140,9 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     # Get patient specific reference dataset
     tumor_dataset = lookup_tcga_dataset(meta=meta_tumor)
 
+    # Extend umccrise directory by one additional directory that is named as '<subject_id>__<sample_name>'
+    umccrise_directory = umccrise_directory + f"{this_subject}__{meta_tumor.sample_id}"
+
     job = {
         "dragen_transcriptome_directory": dragen_transcriptome_directory,
         "umccrise_directory": umccrise_directory,
