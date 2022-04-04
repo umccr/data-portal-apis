@@ -161,6 +161,17 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     return [job]
 
 
+def get_umccrise_sample_results_from_root_dir(umccrise_directory_location: str, subject_id: str, sample_name: str) -> str:
+    """
+    Append, subject id and sample name to the umccrise_directory_location
+    :param umccrise_directory_location:
+    :param subject_id:
+    :param sample_name:
+    :return:
+    """
+    return umccrise_directory_location.rstrip("/") + "/" + f"{subject_id}__{sample_name}"
+
+
 def lookup_tcga_dataset(meta: LabMetadata):
     # TODO resolve https://github.com/umccr/data-portal-apis/issues/417
     #  Implement dynamic TCGA dataset lookup
