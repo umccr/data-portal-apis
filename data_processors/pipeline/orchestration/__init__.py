@@ -25,7 +25,7 @@ from typing import List
 
 import pandas as pd
 
-from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
 from data_processors.pipeline.tools import liborca
 
 
@@ -36,24 +36,35 @@ def _reduce_and_transform_to_df(meta_list: List[LabMetadata]) -> pd.DataFrame:
             {
                 "library_id": meta.library_id,
                 "subject_id": meta.subject_id,
+                "sample_id": meta.sample_id,
                 "phenotype": meta.phenotype,
                 "type": meta.type,
-                "workflow": meta.workflow
+                "workflow": meta.workflow,
             } for meta in meta_list
         ]
     )
 
 
-def _extract_unique_subjects(meta_list_df: pd.DataFrame) -> List[str]:
+def _extract_unique_meta(meta_list_df: pd.DataFrame, column_prop: str) -> List[str]:
     if meta_list_df.empty:
         return []
-    return meta_list_df["subject_id"].unique().tolist()
+    return meta_list_df[column_prop].unique().tolist()
+
+
+def _extract_unique_subjects(meta_list_df: pd.DataFrame) -> List[str]:
+    return _extract_unique_meta(meta_list_df, "subject_id")
 
 
 def _extract_unique_libraries(meta_list_df: pd.DataFrame) -> List[str]:
-    if meta_list_df.empty:
-        return []
-    return meta_list_df["library_id"].unique().tolist()
+    return _extract_unique_meta(meta_list_df, "library_id")
+
+
+def _extract_unique_wgs_tumor_samples(meta_list_df: pd.DataFrame) -> List[str]:
+    _df = meta_list_df.copy().loc[
+        (meta_list_df['type'] == LabMetadataType.WGS.value) &
+        (meta_list_df['phenotype'] == LabMetadataPhenotype.TUMOR.value)
+        ]
+    return _extract_unique_meta(_df, "sample_id")
 
 
 def _mint_libraries(libraries):

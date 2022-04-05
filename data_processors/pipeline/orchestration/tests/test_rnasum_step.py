@@ -115,6 +115,24 @@ class RNAsumStepUnitTests(PipelineUnitTestCase):
             self.assertEqual(job['subject_id'], TestConstant.subject_id.value)
             self.assertEqual(job['tumor_library_id'], TestConstant.wts_library_id_tumor.value)
 
+    def test_deduce_umccrise_result_location_from_root_dir(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepUnitTests.test_deduce_umccrise_result_location_from_root_dir
+        """
+        mock_umccrise_directory = {
+            "location": "gds://production/analysis_data/SBJ00000/umccrise/20220327e8ba9649/L3200000__L3200001",
+            "basename": "L3200000__L3200001",
+            "nameroot": "L3200000__L3200001",
+            "nameext": "",
+            "class": "Directory",
+            "size": None
+        }
+
+        rnasum_step.deduce_umccrise_result_location_from_root_dir(mock_umccrise_directory, "SBJ00000", "MDX320001")
+
+        logger.info(mock_umccrise_directory['location'])
+        self.assertIn("MDX320001", mock_umccrise_directory['location'])
+
     def test_lookup_tcga_dataset(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepUnitTests.test_lookup_tcga_dataset
@@ -123,6 +141,95 @@ class RNAsumStepUnitTests(PipelineUnitTestCase):
 
 
 class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
+
+    @skip
+    def test_prepare_rnasum_jobs_SBJ01670(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_prepare_rnasum_jobs_SBJ01670
+        """
+
+        # Replaying https://data.umccr.org/subjects/SBJ01670
+        # awscurl --profile prodops --region ap-southeast-2 -H "Accept: application/json" "https://api.data.prod.umccr.org/iam/libraryrun?library_id=L2200320" | jq
+
+        wgs_library_normal = LibraryRun.objects.create(
+            library_id="L2200319",
+            instrument_run_id="220311_A01052_0085_AHGGTWDSX3",
+            run_id="r.85",
+            lane=3,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wgs_library_tumor = LibraryRun.objects.create(
+            library_id="L2200320",
+            instrument_run_id="220311_A01052_0085_AHGGTWDSX3",
+            run_id="r.85",
+            lane=3,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wgs_library_tumor_topup = LibraryRun.objects.create(
+            library_id="L2200320",
+            instrument_run_id="220325_A01052_0086_AHGGCKDSX3",
+            run_id="r.86",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wts_library_tumor = LibraryRun.objects.create(
+            library_id="L2200308",
+            instrument_run_id="220311_A01052_0084_BH3TYCDSX3",
+            run_id="r.84",
+            lane=4,
+            override_cycles="Y151;I8N2;I8N2;Y151",
+        )
+
+        umccrise_workflow_id = "wfr.f5b92a35bcf6418c9420a432cd013f71"   # prod
+        wts_workflow_id = "wfr.d0399c0d6c4341029733d70dd1484805"        # prod
+
+        #  ---
+
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2021", "2022"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        mock_umccrise_workflow: Workflow = UmccriseWorkflowFactory()
+        mock_wts_workflow: Workflow = DragenWtsWorkflowFactory()
+
+        umccrise_wfl_run = wes.get_run(umccrise_workflow_id, to_dict=True)
+        mock_umccrise_workflow.wfr_id = umccrise_workflow_id
+        mock_umccrise_workflow.input = json.dumps(umccrise_wfl_run['input'])
+        mock_umccrise_workflow.output = json.dumps(umccrise_wfl_run['output'])
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_normal)
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_tumor)
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_tumor_topup)
+        mock_umccrise_workflow.end = now()
+        mock_umccrise_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_umccrise_workflow.save()
+
+        wts_wfl_run = wes.get_run(wts_workflow_id, to_dict=True)
+        mock_wts_workflow.wfr_id = wts_workflow_id
+        mock_wts_workflow.input = json.dumps(wts_wfl_run['input'])
+        mock_wts_workflow.output = json.dumps(wts_wfl_run['output'])
+        mock_wts_workflow.libraryrun_set.add(wts_library_tumor)
+        mock_wts_workflow.end = now()
+        mock_wts_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_wts_workflow.save()
+
+        job_list = rnasum_step.prepare_rnasum_jobs(this_workflow=mock_umccrise_workflow)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(f"\n{json.dumps(job_list)}")
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), 1)
+
+        # Extra assert that we have really pointed to umccrise sample result subdirectory
+        wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2200320").sample_id
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise_directory']['location'])
 
     @skip
     def test_prepare_rnasum_jobs_SBJ01285(self):
@@ -290,6 +397,8 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_prepare_rnasum_jobs_SBJ00910
         """
+
+        # Replaying https://data.dev.umccr.org/subjects/SBJ00910
 
         wgs_library_normal = LibraryRun.objects.create(
             library_id="L2100745",

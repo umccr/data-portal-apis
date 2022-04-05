@@ -15,7 +15,7 @@ from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_RNASUM_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, _extract_unique_subjects, \
-    _extract_unique_libraries, _mint_libraries
+    _extract_unique_libraries, _mint_libraries, _extract_unique_wgs_tumor_samples
 from data_processors.pipeline.services import metadata_srv, workflow_srv
 from data_processors.pipeline.tools import liborca
 
@@ -24,7 +24,6 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_workflow: Workflow):
-
     # prepare job list and dispatch to job queue
     job_list = prepare_rnasum_jobs(this_workflow)
     if job_list:
@@ -77,6 +76,16 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
         return []
 
     this_subject = subjects[0]
+
+    # Get this_(umccrise)_workflow related WGS tumor sample ID
+    wgs_tumor_samples = _extract_unique_wgs_tumor_samples(umccrise_meta_list_df)
+    if len(wgs_tumor_samples) > 1:
+        # rare! but not impossible.
+        logger.warning(f"[SKIP] Found multiple distinct WGS tumor samples {wgs_tumor_samples} belong to {this_subject} "
+                       f"{this_workflow.type_name} workflow run with {this_workflow.wfr_id}")
+        return []
+
+    this_wgs_tumor_sample = wgs_tumor_samples[0]
 
     # Find the correspondent wts tumor sample library metadata based on this_subject
     wts_meta_list: List[LabMetadata] = metadata_srv.get_wts_metadata_by_subject(subject_id=this_subject)
@@ -135,23 +144,18 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     arriba_directory = liborca.parse_arriba_workflow_output_directory(this_wts_workflow.output)
 
     # Get metadata for wts tumor library
-    meta_tumor: LabMetadata = metadata_srv.get_metadata_by_library_id(this_wts_tumor_library)
+    wts_tumor_meta: LabMetadata = metadata_srv.get_metadata_by_library_id(this_wts_tumor_library)
 
     # Get patient specific reference dataset
-    tumor_dataset = lookup_tcga_dataset(meta=meta_tumor)
+    tumor_dataset = lookup_tcga_dataset(meta=wts_tumor_meta)
 
-    # Extend umccrise directory by one additional directory that is named as '<subject_id>__<sample_name>'
-    if "location" in umccrise_directory.keys():
-        umccrise_directory['location'] = get_umccrise_sample_results_from_root_dir(umccrise_directory["location"],
-                                                                                   this_subject, meta_tumor.sample_id)
-    else:
-        umccrise_directory = None
+    deduce_umccrise_result_location_from_root_dir(umccrise_directory, this_subject, this_wgs_tumor_sample)
 
     job = {
         "dragen_transcriptome_directory": dragen_transcriptome_directory,
         "umccrise_directory": umccrise_directory,
         "arriba_directory": arriba_directory,
-        "sample_name": meta_tumor.sample_id,
+        "sample_name": wts_tumor_meta.sample_id,
         "report_directory": f"{this_subject}__{this_wts_tumor_library}",
         "dataset": tumor_dataset,
         "subject_id": this_subject,
@@ -161,15 +165,28 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     return [job]
 
 
-def get_umccrise_sample_results_from_root_dir(umccrise_directory_location: str, subject_id: str, sample_name: str) -> str:
+def deduce_umccrise_result_location_from_root_dir(umccrise_directory: dict, subject_id: str, wgs_tumor_sample_id: str):
     """
-    Append, subject id and sample name to the umccrise_directory_location
-    :param umccrise_directory_location:
+    Deduce umccrise_directory (dict) by one additional level down i.e. sample result subdirectory that has naming
+    pattern '<subject_id>__<wgs_tumor_sample_id>'
+
+    :param umccrise_directory:
     :param subject_id:
-    :param sample_name:
-    :return:
+    :param wgs_tumor_sample_id:
     """
-    return umccrise_directory_location.rstrip("/") + "/" + f"{subject_id}__{sample_name}"
+
+    if "location" in umccrise_directory.keys():
+        new_basename = f"{subject_id}__{wgs_tumor_sample_id}"
+
+        # modify the location
+        original_location = umccrise_directory['location']
+        umccrise_directory['location'] = original_location.rstrip("/") + "/" + new_basename
+
+        if "basename" in umccrise_directory.keys():
+            umccrise_directory['basename'] = new_basename  # modify the basename
+
+        if "nameroot" in umccrise_directory.keys():
+            umccrise_directory['nameroot'] = new_basename  # modify the nameroot
 
 
 def lookup_tcga_dataset(meta: LabMetadata):
