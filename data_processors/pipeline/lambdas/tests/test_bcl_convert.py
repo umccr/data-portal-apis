@@ -312,6 +312,137 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # should not call to slack webhook
         verify(libslack.http.client.HTTPSConnection, times=0).request(...)
 
+    def test_get_settings_by_instrument_type_assay(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="mock",
+            sample_type="mock",
+            assay="mock",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertIsNotNone(settings)
+        self.assertIsInstance(settings, dict)
+        self.assertEqual(len(settings), 0)
+
+    def test_get_settings_by_instrument_type_assay_10X(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_10X
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="mock",
+            sample_type="10X",
+            assay="10X-5prime-expression",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertEqual(len(settings), 4)
+        self.assertEqual(settings['minimum_adapter_overlap'], 3)
+        self.assertEqual(settings['minimum_trimmed_read_length'], 8)
+        self.assertEqual(settings['mask_short_reads'], 8)
+
+    def test_get_settings_by_instrument_type_assay_TSO(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_TSO
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="NovaSeq",
+            sample_type="ctDNA",
+            assay="ctTSO",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertEqual(len(settings), 6)
+        self.assertEqual(settings['minimum_adapter_overlap'], 3)
+        self.assertEqual(settings['minimum_trimmed_read_length'], 35)
+        self.assertEqual(settings['mask_short_reads'], 35)
+        self.assertEqual(settings['adapter_behavior'], "trim")
+
+    def test_get_settings_by_instrument_type_assay_TsqNano(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_TsqNano
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="mock",
+            sample_type="mock",
+            assay="TsqNano",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertEqual(len(settings), 3)
+
+    def test_get_settings_by_instrument_type_assay_NebDNA(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_NebDNA
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="mock",
+            sample_type="mock",
+            assay="NebDNA",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertEqual(len(settings), 3)
+
+    def test_get_settings_by_instrument_type_assay_PCR(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_PCR
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="mock",
+            sample_type="mock",
+            assay="PCR-Free-Tagmentation",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertEqual(len(settings), 3)
+
+    def test_get_settings_by_instrument_type_assay_agilent(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_agilent
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="MiSeq",
+            sample_type="mock",
+            assay="AgSsCRE",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertEqual(len(settings), 3)
+
+    def test_get_settings_by_instrument_type_assay_external(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_get_settings_by_instrument_type_assay_external
+        """
+        settings = bcl_convert.get_settings_by_instrument_type_assay(
+            instrument="NovaSeq",
+            sample_type="Metagenm",
+            assay="IlmnDNAprep",
+        )
+
+        logger.info("-" * 32)
+        logger.info(settings)
+
+        self.assertIsNotNone(settings)
+        self.assertIsInstance(settings, dict)
+        self.assertEqual(len(settings), 0)
+
 
 class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip
