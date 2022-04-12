@@ -221,7 +221,7 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
         return settings
 
     # Otherwise return blank settings set
-    return {}
+    return settings
 
 
 def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
