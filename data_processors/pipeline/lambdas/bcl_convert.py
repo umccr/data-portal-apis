@@ -160,23 +160,31 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
     PCR-Free-Tagmentation -> Set PCR-Free-Tagmentation Adapters
     """
 
+    settings = {
+        "minimum_adapter_overlap": 3
+    }
+
     # First start with if type == 10X -> return nextera adapters
     if sample_type == "10X":
         # Return nextera adapter
         # settings = ADAPTERS_BY_KIT["nextera"].copy()  # FIXME - 10X adapter settings based on kit used
         # See: https://kb.10xgenomics.com/hc/en-us/articles/360061619811-Why-are-different-index-plates-required-for-different-library-types-
         # We also wish to keep the indexes as reads
-        settings = {
-            "create_fastq_for_index_reads": True,
-            "minimum_trimmed_read_length": 8,
-            "mask_short_reads": 8
-        }
+        settings.update(
+            {
+                "create_fastq_for_index_reads": True,
+                "minimum_trimmed_read_length": 8,
+                "mask_short_reads": 8
+            }
+        )
         return settings
 
     # Then if assay is TSO -> return TSO parameters
     if assay in ["ctTSO", "TSODNA", "TSORNA"]:
         # Return tso500 samplesheet settings
-        settings = ADAPTERS_BY_KIT["truseq"].copy()
+        settings.update(
+            ADAPTERS_BY_KIT["truseq"].copy()
+        )
 
         # Add in TSO500 settings
         settings.update(
@@ -191,19 +199,25 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
     # Then check if starts with Neb, Tsq
     if assay.startswith("Tsq") or assay.startswith("Neb"):
         # Return TruSeq adapters
-        settings = ADAPTERS_BY_KIT["truseq"].copy()
+        settings.update(
+            ADAPTERS_BY_KIT["truseq"].copy()
+        )
         return settings
 
     # That leaves just agilent or pcr free tagmentation
 
     # Check if assay if PCR-Free-Tagmentation
     if assay == "PCR-Free-Tagmentation":
-        settings = ADAPTERS_BY_KIT["pcr_free_tagmentation"]
+        settings.update(
+            ADAPTERS_BY_KIT["pcr_free_tagmentation"]
+        )
         return settings
 
     # Check if instrument is MiSeq and assay is agilent
     if assay == "AgSsCRE" and instrument == "MiSeq":
-        settings = ADAPTERS_BY_KIT["agilent_sureselect_qxt"].copy()
+        settings.update(
+            ADAPTERS_BY_KIT["agilent_sureselect_qxt"].copy()
+        )
         return settings
 
     # Otherwise return blank settings set
