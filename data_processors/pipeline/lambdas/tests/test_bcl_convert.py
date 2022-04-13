@@ -327,7 +327,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
         self.assertIsNotNone(settings)
         self.assertIsInstance(settings, dict)
-        self.assertEqual(len(settings), 0)
+        self.assertEqual(len(settings), 1)
+        self.assertIn("minimum_adapter_overlap", settings.keys())
+        self.assertEqual(settings['minimum_adapter_overlap'], 3)
 
     def test_get_settings_by_instrument_type_assay_10X(self):
         """
@@ -441,7 +443,9 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
 
         self.assertIsNotNone(settings)
         self.assertIsInstance(settings, dict)
-        self.assertEqual(len(settings), 0)
+        self.assertEqual(len(settings), 1)
+        self.assertIn("minimum_adapter_overlap", settings.keys())
+        self.assertEqual(settings['minimum_adapter_overlap'], 3)
 
 
 class BCLConvertIntegrationTests(PipelineIntegrationTestCase):

@@ -220,7 +220,7 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
         )
         return settings
 
-    # Otherwise return blank settings set
+    # Otherwise, return the default settings
     return settings
 
 
