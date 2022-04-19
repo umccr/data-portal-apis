@@ -166,15 +166,17 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
 
     # First start with if type == 10X -> return nextera adapters
     if sample_type == "10X":
-        # Return nextera adapter
-        # settings = ADAPTERS_BY_KIT["nextera"].copy()  # FIXME - 10X adapter settings based on kit used
         # See: https://kb.10xgenomics.com/hc/en-us/articles/360061619811-Why-are-different-index-plates-required-for-different-library-types-
         # We also wish to keep the indexes as reads
         settings.update(
             {
                 "create_fastq_for_index_reads": True,
                 "minimum_trimmed_read_length": 8,
-                "mask_short_reads": 8
+                "mask_short_reads": 8,
+                # Remove adapters as suggested here:
+                # https://protect-au.mimecast.com/s/mNQhCBNZkph7mW5y3izNXin?domain=kb.10xgenomics.com
+                "adapter_read_1": "",
+                "adapter_read_2": ""
             }
         )
         return settings
