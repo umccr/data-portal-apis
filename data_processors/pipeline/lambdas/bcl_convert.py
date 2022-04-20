@@ -174,7 +174,7 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
                 "minimum_trimmed_read_length": 8,
                 "mask_short_reads": 8,
                 # Remove adapters as suggested here:
-                # https://protect-au.mimecast.com/s/mNQhCBNZkph7mW5y3izNXin?domain=kb.10xgenomics.com
+                # https://kb.10xgenomics.com/hc/en-us/articles/4424193781517-What-adapters-should-I-use-in-my-IEM-sample-sheet-
                 "adapter_read_1": "",
                 "adapter_read_2": ""
             }
