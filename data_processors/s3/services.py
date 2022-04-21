@@ -14,10 +14,10 @@ from typing import Tuple, List
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import ExpressionWrapper, Value, CharField, Q, F
+# from django.db.models import ExpressionWrapper, Value, CharField, Q, F  FIXME to be removed when refactoring #343
 from libumccr.aws import libs3
 
-from data_portal.models.limsrow import LIMSRow, S3LIMS
+# from data_portal.models.limsrow import LIMSRow, S3LIMS  FIXME to be removed when refactoring #343
 from data_portal.models.s3object import S3Object
 from data_processors.const import S3EventRecord
 
@@ -109,35 +109,40 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
         return 0, 0
 
     # TODO remove association logic and drop S3LIMS table, related with global search overhaul
+    #  see https://github.com/umccr/data-portal-apis/issues/343
     # Number of s3-lims association records we have created in this run
     new_association_count = 0
 
-    # Find all related LIMS rows and associate them
-    # Credit: https://stackoverflow.com/questions/49622088/django-filtering-queryset-by-parameter-has-part-of-fields-value
-    # If the linking columns have changed, we need to modify
-    key_param = ExpressionWrapper(Value(key), output_field=CharField())
-
-    # For each attr (values), s3 object key should contain it
-    attr_filter = Q()
-    # AND all filters
-    for attr in LIMSRow.S3_LINK_ATTRS:
-        attr_filter &= Q(param__contains=F(attr))
-
-    lims_rows = LIMSRow.objects.annotate(param=key_param).filter(attr_filter)
-    lims_row: LIMSRow
-    for lims_row in lims_rows:
-        # Create association if not exist
-        if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
-            logger.info(f"Linking the S3Object ({str(s3_object)}) with LIMSRow ({str(lims_row)})")
-
-            association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
-            association.save()
-
-            new_association_count += 1
-
-    # Check if we do find any association at all or not
-    if len(lims_rows) == 0:
-        logger.debug(f"No association to any LIMS row is found for the S3Object (bucket={bucket}, key={key})")
+    # FIXME quick patch fix, permanently remove these when refactoring #343 in next iteration
+    #  commented out the following association link due to performance issue upon S3 object Update events
+    #  see https://github.com/umccr/data-portal-apis/issues/143
+    #
+    # # Find all related LIMS rows and associate them
+    # # Credit: https://stackoverflow.com/questions/49622088/django-filtering-queryset-by-parameter-has-part-of-fields-value
+    # # If the linking columns have changed, we need to modify
+    # key_param = ExpressionWrapper(Value(key), output_field=CharField())
+    #
+    # # For each attr (values), s3 object key should contain it
+    # attr_filter = Q()
+    # # AND all filters
+    # for attr in LIMSRow.S3_LINK_ATTRS:
+    #     attr_filter &= Q(param__contains=F(attr))
+    #
+    # lims_rows = LIMSRow.objects.annotate(param=key_param).filter(attr_filter)
+    # lims_row: LIMSRow
+    # for lims_row in lims_rows:
+    #     # Create association if not exist
+    #     if not S3LIMS.objects.filter(s3_object=s3_object, lims_row=lims_row).exists():
+    #         logger.info(f"Linking the S3Object ({str(s3_object)}) with LIMSRow ({str(lims_row)})")
+    #
+    #         association = S3LIMS(s3_object=s3_object, lims_row=lims_row)
+    #         association.save()
+    #
+    #         new_association_count += 1
+    #
+    # # Check if we do find any association at all or not
+    # if len(lims_rows) == 0:
+    #     logger.debug(f"No association to any LIMS row is found for the S3Object (bucket={bucket}, key={key})")
 
     return 1, new_association_count
 
@@ -152,9 +157,16 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     """
     try:
         s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
-        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
-        s3_lims_count = s3_lims_records.count()
-        s3_lims_records.delete()
+
+        # FIXME quick patch fix, permanently remove these when refactoring #343 in next iteration
+        #  commented out the following de-association link due to performance issue upon S3 object Delete events
+        #  see https://github.com/umccr/data-portal-apis/issues/143
+        #
+        # s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
+        # s3_lims_count = s3_lims_records.count()
+        # s3_lims_records.delete()
+        s3_lims_count = 0
+
         s3_object.delete()
         logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")
         return 1, s3_lims_count

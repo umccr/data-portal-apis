@@ -26,8 +26,15 @@ class ReportHelper(ABC):
         "dragen_tso_ctdna",
     ]
 
-    # Operational limit for decompressed report json data size ~10MB
-    MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES = 11000000
+    # FIXME Report table growth rate is quite progressive; this observes over a year worth of run
+    #  since we started report data ingesting pipeline. See a quick db stats snapshot at
+    #  https://github.com/umccr/data-portal-apis/issues/143
+    #  Initially, we started ingest report data size < 150MB; then quickly reduced to 10MB. And now 1MB.
+    #  So I propose, this merit its own Report data warehousing ETL pipeline with a better fitted solution for the need.
+    #  -victor, on 20220421
+    #
+    # Operational limit for decompressed report json data size ~1MB
+    MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES = 1100000
 
     SQS_REPORT_EVENT_QUEUE_ARN = "/data_portal/backend/sqs_report_event_queue_arn"
 
