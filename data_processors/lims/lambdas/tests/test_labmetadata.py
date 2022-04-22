@@ -51,10 +51,7 @@ def _generate_labmetadata_row_dict(id_: str) -> dict:
 def _generate_labmetadata_df(rows: List[Dict[str, str]]) -> pd.DataFrame:
     df = pd.DataFrame(columns=labmetadata_csv_columns)
     df = labmetadata_srv.clean_columns(df)
-
-    for row in rows:
-        df = df.append(row, ignore_index=True)
-
+    df = pd.concat([df, pd.DataFrame.from_records(rows)])
     return df
 
 

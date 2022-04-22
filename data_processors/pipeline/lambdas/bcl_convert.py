@@ -235,6 +235,7 @@ def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
     )
 
     metadata_df: pd.DataFrame = pd.DataFrame()
+    rows = []
 
     for sample_name in sample_names:
         # NOTE: ideally we wish to query with just _pure_ Library ID like so:
@@ -256,7 +257,9 @@ def get_metadata_df(gds_volume: str, samplesheet_path: str) -> pd.DataFrame:
             'library_id': meta.library_id
         }
 
-        metadata_df = metadata_df.append(new_row, ignore_index=True)
+        rows.append(new_row)
+
+    metadata_df = pd.concat([metadata_df, pd.DataFrame.from_records(rows)])
 
     return metadata_df
 

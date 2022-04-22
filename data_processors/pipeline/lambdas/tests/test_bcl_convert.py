@@ -470,8 +470,8 @@ class BCLConvertIntegrationTests(PipelineIntegrationTestCase):
         mock_sqr: SequenceRun = mock_bcl_workflow.sequence_run
         mock_sqr.run_id = "r.Uvlx2DEIME-KH0BRyF9XBg"
         mock_sqr.instrument_run_id = "200612_A01052_0017_BH5LYWDSXY"
-        mock_sqr.gds_volume_name = "umccr-raw-sequence-data-dev"
-        mock_sqr.gds_folder_path = f"/{mock_sqr.instrument_run_id}_{mock_sqr.run_id}"
+        mock_sqr.gds_volume_name = "bssh.acddbfda498038ed99fa94fe79523959"
+        mock_sqr.gds_folder_path = f"/Runs/{mock_sqr.instrument_run_id}_{mock_sqr.run_id}"
         mock_sqr.sample_sheet_name = "SampleSheet.csv"
         mock_sqr.name = mock_sqr.instrument_run_id
         mock_sqr.save()
