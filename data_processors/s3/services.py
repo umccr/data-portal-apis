@@ -17,7 +17,7 @@ from django.db import transaction
 # from django.db.models import ExpressionWrapper, Value, CharField, Q, F  FIXME to be removed when refactoring #343
 from libumccr.aws import libs3
 
-# from data_portal.models.limsrow import LIMSRow, S3LIMS  FIXME to be removed when refactoring #343
+from data_portal.models.limsrow import LIMSRow, S3LIMS
 from data_portal.models.s3object import S3Object
 from data_processors.const import S3EventRecord
 
@@ -158,14 +158,12 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     try:
         s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
 
-        # FIXME quick patch fix, permanently remove these when refactoring #343 in next iteration
-        #  commented out the following de-association link due to performance issue upon S3 object Delete events
-        #  see https://github.com/umccr/data-portal-apis/issues/143
+        # TODO remove association logic and drop S3LIMS table, related with global search overhaul
+        #  see https://github.com/umccr/data-portal-apis/issues/343
         #
-        # s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
-        # s3_lims_count = s3_lims_records.count()
-        # s3_lims_records.delete()
-        s3_lims_count = 0
+        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
+        s3_lims_count = s3_lims_records.count()
+        s3_lims_records.delete()
 
         s3_object.delete()
         logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")

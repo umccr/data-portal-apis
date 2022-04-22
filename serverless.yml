@@ -138,6 +138,7 @@ functions:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
     timeout: 120
+    reservedConcurrency: 20
     # Uncomment to enable xray on this lambda
 #    tracing: Active
 #    environment:
