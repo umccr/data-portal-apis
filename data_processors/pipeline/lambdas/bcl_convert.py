@@ -179,6 +179,9 @@ def get_settings_by_instrument_type_assay(instrument, sample_type, assay):
                 "adapter_read_2": ""
             }
         )
+        # Drop minimum adapter overlap since we are removing
+        # AdapterRead1 and AdapterRead2
+        del settings["minimum_adapter_overlap"]
         return settings
 
     # Then if assay is TSO -> return TSO parameters
