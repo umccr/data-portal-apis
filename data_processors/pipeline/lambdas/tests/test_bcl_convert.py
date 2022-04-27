@@ -344,8 +344,8 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         logger.info("-" * 32)
         logger.info(settings)
 
-        self.assertEqual(len(settings), 6)
-        self.assertEqual(settings['minimum_adapter_overlap'], 3)
+        self.assertEqual(len(settings), 5)
+        self.assertNotIn('minimum_adapter_overlap', settings.keys())
         self.assertEqual(settings['minimum_trimmed_read_length'], 8)
         self.assertEqual(settings['mask_short_reads'], 8)
 
