@@ -74,7 +74,8 @@ class S3ObjectManager(models.Manager):
         wts_bam = Q(key__iregex='wts') & Q(key__iregex='ready') & Q(key__iregex='.bam$')
         wts_qc = Q(key__iregex='wts') & Q(key__iregex='multiqc/') & Q(key__iregex='multiqc_report.html$')
         rnasum = Q(key__iregex='RNAseq_report.html$')
-        q_results: Q = bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | rnasum
+        gpl = Q(key__iregex='wgs') & Q(key__iregex='gridss_purple_linx') & Q(key__iregex='linx.html$')
+        q_results: Q = bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | rnasum | gpl
         qs = qs.filter(q_results)
 
         bucket = kwargs.get('bucket', None)
