@@ -7,7 +7,6 @@ from django.db.models import QuerySet
 from data_portal.models.base import PortalBaseManager, PortalBaseModel
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.sequencerun import SequenceRun
-from data_portal.models.limsrow import LIMSRow
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +38,8 @@ class FastqListRowManager(PortalBaseManager):
         type_ = kwargs.get('type', None)
         if type_:
             q = self.reduce_multi_values_qor('type', type_)
-            qs_lims = LIMSRow.objects.filter(q).values("library_id")
-            qs = qs.filter(rglb__in=qs_lims)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
             kwargs.pop('type')
 
         return self.get_model_fields_query(qs, **kwargs)
