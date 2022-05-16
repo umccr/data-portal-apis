@@ -28,6 +28,20 @@ class FastqListRowManager(PortalBaseManager):
             qs = qs.filter(rglb__in=qs_meta)
             kwargs.pop('project_owner')
 
+        project_name = kwargs.get('project_name', None)
+        if project_name:
+            q = self.reduce_multi_values_qor('project_name', project_name)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
+            kwargs.pop('project_name')
+
+        type_ = kwargs.get('type', None)
+        if type_:
+            q = self.reduce_multi_values_qor('type', type_)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
+            kwargs.pop('type')
+
         return self.get_model_fields_query(qs, **kwargs)
 
 
