@@ -349,9 +349,67 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     return int(lane_cnt)
 
 
+def get_file_from_gds_by_suffix(location, file_suffix) -> List[str]:
+    volume_name, path_ = parse_gds_path(location)
+
+    file_list = []
+
+    with libgds.ApiClient(configuration(libgds)) as api_client:
+        files_api = libgds.FilesApi(api_client)
+        try:
+            page_token = None
+            while True:
+                file_list: libgds.FileListResponse = files_api.list_files(
+                    volume_name=[volume_name],
+                    path=[f"{path_}/*"],
+                    page_size=1000,
+                    page_token=page_token,
+                )
+
+                for item in file_list.items:
+                    file: libgds.FileResponse = item
+
+                    if file.name.endswith(file_suffix):
+                        file_list.append(file)
+
+                page_token = file_list.next_page_token
+                if not file_list.next_page_token:
+                    break
+            # while end
+
+        except libgds.ApiException as e:
+            logger.error(f"Exception when calling list_files: \n{e}")
+
+    return file_list
+
+
 def parse_bam_file(workflow_output) -> str:
     """
     Parse the bam file out of the wts or dragen wgs qc workflow
+
+    WTS Workflow output
+    dragen_transcriptome_output_directory -> *.bam
+
+    WGS Workflow output
+    dragen_bam_out
+
     :param workflow_output:
     :return:
     """
+    if "dragen_bam_out" in workflow_output.keys():
+        bam_file = workflow_output.get("dragen_bam_out").get("location")
+
+    elif "dragen_transcriptome_output_directory" in workflow_output.keys():
+        bam_file = get_file_from_gds_by_suffix(
+            location=workflow_output.get("dragen_transcriptome_output_directory").get("location"),
+            file_suffix=".bam"
+        )[0]
+    else
+        logger.warning("Didn't know where to look in the workflow output for the bam file")
+        return None
+
+    return bam_file
+
+
+
+

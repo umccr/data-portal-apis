@@ -68,7 +68,9 @@ def handler(event, context):
 
     # Get execution arn
     somalier_check_execution_arn = step_function_instance_obj.get('execution_arn', None)
-    # TODO - check valid execution arg
+    if somalier_check_execution_arn is None:
+        logger.warning("Could not get somalier check execution arg")
+        return None
 
     running_status = "RUNNING"
     while True:
@@ -76,7 +78,9 @@ def handler(event, context):
             executionArn=somalier_check_execution_arn
         )
         status = execution_dict.get("status", None)
-        # TODO - check valid status
+        if status is None:
+            logger.warning("Could not get status of somalier check execution")
+            return None
         if status != running_status:
             break
         logger.info(f"Execution still running, sleeping 3")
