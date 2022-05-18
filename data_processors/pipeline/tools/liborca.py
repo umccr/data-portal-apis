@@ -347,3 +347,11 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     fcl = root.find('Run/FlowcellLayout')
     lane_cnt = fcl.get('LaneCount')
     return int(lane_cnt)
+
+
+def parse_bam_file(workflow_output) -> str:
+    """
+    Parse the bam file out of the wts or dragen wgs qc workflow
+    :param workflow_output:
+    :return:
+    """
