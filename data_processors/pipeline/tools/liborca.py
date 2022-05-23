@@ -20,8 +20,9 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 from typing import List, Dict, Any
 
-from libica.app import gds
+from libica.app import gds, configuration
 from libumccr import libjson
+from data_processors.pipeline.lambdas.fastq import parse_gds_path
 from sample_sheet import SampleSheet
 
 from data_processors.pipeline.tools import libregex
@@ -383,7 +384,7 @@ def get_file_from_gds_by_suffix(location, file_suffix) -> List[str]:
     return file_list
 
 
-def parse_bam_file(workflow_output) -> str:
+def parse_bam_file_from_dragen_output(workflow_output_json: str) -> str:
     """
     Parse the bam file out of the wts or dragen wgs qc workflow
 
@@ -393,23 +394,33 @@ def parse_bam_file(workflow_output) -> str:
     WGS Workflow output
     dragen_bam_out
 
-    :param workflow_output:
+    :param workflow_output_json:
     :return:
     """
-    if "dragen_bam_out" in workflow_output.keys():
-        bam_file = workflow_output.get("dragen_bam_out").get("location")
 
-    elif "dragen_transcriptome_output_directory" in workflow_output.keys():
-        bam_file = get_file_from_gds_by_suffix(
-            location=workflow_output.get("dragen_transcriptome_output_directory").get("location"),
+    # Set look up keys
+    alignment_qc_look_up_key = "dragen_bam_out"
+    transcriptome_look_up_key = "dragen_transcriptome_output_directory"
+
+    try:
+        workflow_output: Dict = parse_workflow_output(workflow_output_json, [alignment_qc_look_up_key])
+        return workflow_output.get(alignment_qc_look_up_key).get("location")
+    except KeyError:
+        pass
+
+    try:
+        # Failed to get workflow output from alignment qc, maybe its a transcriptome workflow
+        workflow_output: Dict = parse_workflow_output(workflow_output_json, [transcriptome_look_up_key])
+        transcriptome_output_location = workflow_output.get(transcriptome_look_up_key).get("location")
+        bam_files = get_file_from_gds_by_suffix(
+            location=transcriptome_output_location,
             file_suffix=".bam"
-        )[0]
-    else
-        logger.warning("Didn't know where to look in the workflow output for the bam file")
+        )
+        if not len(bam_files) == 1:
+            logger.warning(f"Couldn't get bam file from transcriptome workflow "
+                           f"output directory '{transcriptome_output_location}'")
+        return bam_files[0]
+    except KeyError:
+        logger.warning(f"Couldn't get either {alignment_qc_look_up_key} "
+                       f"or {transcriptome_look_up_key} as workflow output lookup keys")
         return None
-
-    return bam_file
-
-
-
-

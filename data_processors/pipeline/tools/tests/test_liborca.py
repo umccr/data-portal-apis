@@ -485,3 +485,26 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
         self.assertEqual(arriba_output_directory['class'], "Directory")
         self.assertIn("SBJ00910", arriba_output_directory['location'])
         self.assertIn("arriba", arriba_output_directory['location'])
+
+    @skip
+    def test_parse_bam_file_transcriptome(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_bam_file_transcriptome
+        """
+
+        # wts_tumor_only run from DEV, see https://umccr.slack.com/archives/C7QC9N8G4/p1647112587377499
+        wfr_id = "wfr.b61f86b3ac2748fe997ecdf1d4b79d84"  # L2100732
+
+        wfl_run = wes.get_run(wfr_id)
+
+        # First assure that this IS a dragen transcriptome workflow
+        dragen_transcriptome_output_directory = liborca.parse_transcriptome_workflow_output_directory(json.dumps(wfl_run.output))
+        self.assertIn("class", dragen_transcriptome_output_directory.keys())
+        self.assertEqual(dragen_transcriptome_output_directory['class'], "Directory")
+
+        # Then assert this is a transcriptome bam file
+        dragen_transcriptome_bam_file = liborca.parse_bam_file_from_dragen_output(
+            json.dumps(wfl_run.output)
+        )
+        # Assert that we return a bam file
+        self.assertRegex(dragen_transcriptome_bam_file, "^gds://*.bam$")
