@@ -26,8 +26,7 @@ def perform(this_workflow: Workflow):
     else:
         logger.warning(f"Calling to prepare_somalier_extract_jobs() return empty list, no job to dispatch...")
 
-    # FIXME - do I need to return anything?
-    return None
+    return job_list
 
 
 def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
@@ -45,4 +44,3 @@ def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
     }
 
     return [job]
-
