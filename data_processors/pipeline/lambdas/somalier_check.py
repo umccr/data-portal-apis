@@ -22,14 +22,14 @@ from urllib.parse import urlparse
 from datetime import datetime
 
 from time import sleep
-
+from typing import List
 from libumccr import libjson
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def handler(event, context):
+def handler(event, context) -> List:
     """event payload dict
     {
         "index": "gds://path/to/volume"
@@ -53,21 +53,25 @@ def handler(event, context):
     # Get name
     timestamp = int(datetime.now().replace(microsecond=0).timestamp())
     step_function_instance_name = "__".join([
-                                             "somalier_check",
-                                             urlparse(gds_path).path.replace("/", "_"),
-                                             str(timestamp)
-                                             ])
+        "somalier_check",
+        urlparse(gds_path).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
+        str(timestamp)
+    ])
 
     # Call check step function
     client = boto3.client('stepfunctions')
     step_function_instance_obj = client.start_execution(
         stateMachineArn=somalier_check_step_function,
         name=step_function_instance_name,
-        input={"index": gds_path}
+        input=json.dumps(
+            {
+                "index": gds_path
+            }
+        )
     )
 
     # Get execution arn
-    somalier_check_execution_arn = step_function_instance_obj.get('execution_arn', None)
+    somalier_check_execution_arn = step_function_instance_obj.get('executionArn', None)
     if somalier_check_execution_arn is None:
         logger.warning("Could not get somalier check execution arg")
         return None
@@ -87,4 +91,4 @@ def handler(event, context):
         sleep(3)
 
     # Return output
-    return execution_dict.get("output")
+    return json.loads(execution_dict.get("output"))

@@ -4,6 +4,7 @@ except ImportError:
     pass
 
 import os
+import json
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
@@ -83,7 +84,7 @@ def handler(event, context) -> dict:
     timestamp = int(datetime.now().replace(microsecond=0).timestamp())
     step_function_instance_name = "__".join([
         "somalier_extract",
-        urlparse(gds_path).path.replace("/", "_"),
+        urlparse(gds_path).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
         str(timestamp)
     ])
 
@@ -92,15 +93,17 @@ def handler(event, context) -> dict:
     step_function_instance_obj = client.start_execution(
         stateMachineArn=somalier_extract_step_function,
         name=step_function_instance_name,
-        input={
-                "needsFingerprinting": [
-                                         gds_path
-                                       ]
-              }
+        input=json.dumps({
+            "needsFingerprinting": [
+                [
+                    gds_path
+                ]
+            ]
+        })
     )
 
     # Get execution arn
-    somalier_extract_execution_arn = step_function_instance_obj.get('execution_arn', None)
+    somalier_extract_execution_arn = step_function_instance_obj.get('executionArn', None)
     logger.info(f"Extracting fingerprint from '{gds_path}' with "
                 f"step function instance '{somalier_extract_execution_arn}'")
 

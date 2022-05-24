@@ -371,7 +371,7 @@ def get_files_from_gds_by_suffix(location, file_suffix) -> List[str]:
                     file_: libgds.FileResponse = item
 
                     if file_.name.endswith(file_suffix):
-                        file_list.append(file_)
+                        file_list.append(f"gds://{file_.volume_name}{file_.path}")
 
                 page_token = file_list_response.next_page_token
                 if not file_list_response.next_page_token:
