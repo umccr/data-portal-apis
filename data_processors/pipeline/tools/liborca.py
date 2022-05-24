@@ -19,7 +19,7 @@ from contextlib import closing
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from typing import List, Dict, Any
-
+from libica.openapi import libgds
 from libica.app import gds, configuration
 from libumccr import libjson
 from data_processors.pipeline.lambdas.fastq import parse_gds_path
@@ -350,7 +350,7 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     return int(lane_cnt)
 
 
-def get_file_from_gds_by_suffix(location, file_suffix) -> List[str]:
+def get_files_from_gds_by_suffix(location, file_suffix) -> List[str]:
     volume_name, path_ = parse_gds_path(location)
 
     file_list = []
@@ -360,21 +360,21 @@ def get_file_from_gds_by_suffix(location, file_suffix) -> List[str]:
         try:
             page_token = None
             while True:
-                file_list: libgds.FileListResponse = files_api.list_files(
+                file_list_response: libgds.FileListResponse = files_api.list_files(
                     volume_name=[volume_name],
                     path=[f"{path_}/*"],
                     page_size=1000,
                     page_token=page_token,
                 )
 
-                for item in file_list.items:
-                    file: libgds.FileResponse = item
+                for item in file_list_response.items:
+                    file_: libgds.FileResponse = item
 
-                    if file.name.endswith(file_suffix):
-                        file_list.append(file)
+                    if file_.name.endswith(file_suffix):
+                        file_list.append(file_)
 
-                page_token = file_list.next_page_token
-                if not file_list.next_page_token:
+                page_token = file_list_response.next_page_token
+                if not file_list_response.next_page_token:
                     break
             # while end
 
@@ -404,15 +404,15 @@ def parse_bam_file_from_dragen_output(workflow_output_json: str) -> str:
 
     try:
         workflow_output: Dict = parse_workflow_output(workflow_output_json, [alignment_qc_look_up_key])
-        return workflow_output.get(alignment_qc_look_up_key).get("location")
+        return workflow_output.get("location")
     except KeyError:
         pass
 
     try:
         # Failed to get workflow output from alignment qc, maybe its a transcriptome workflow
-        workflow_output: Dict = parse_workflow_output(workflow_output_json, [transcriptome_look_up_key])
-        transcriptome_output_location = workflow_output.get(transcriptome_look_up_key).get("location")
-        bam_files = get_file_from_gds_by_suffix(
+        transcriptome_directory_output: Dict = parse_workflow_output(workflow_output_json, [transcriptome_look_up_key])
+        transcriptome_output_location = transcriptome_directory_output.get("location")
+        bam_files = get_files_from_gds_by_suffix(
             location=transcriptome_output_location,
             file_suffix=".bam"
         )
