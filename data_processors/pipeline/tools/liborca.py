@@ -19,9 +19,10 @@ from contextlib import closing
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from typing import List, Dict, Any
-
-from libica.app import gds
+from libica.openapi import libgds
+from libica.app import gds, configuration
 from libumccr import libjson
+from data_processors.pipeline.lambdas.fastq import parse_gds_path
 from sample_sheet import SampleSheet
 
 from data_processors.pipeline.tools import libregex
@@ -347,3 +348,79 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     fcl = root.find('Run/FlowcellLayout')
     lane_cnt = fcl.get('LaneCount')
     return int(lane_cnt)
+
+
+def get_files_from_gds_by_suffix(location, file_suffix) -> List[str]:
+    volume_name, path_ = parse_gds_path(location)
+
+    file_list = []
+
+    with libgds.ApiClient(configuration(libgds)) as api_client:
+        files_api = libgds.FilesApi(api_client)
+        try:
+            page_token = None
+            while True:
+                file_list_response: libgds.FileListResponse = files_api.list_files(
+                    volume_name=[volume_name],
+                    path=[f"{path_}/*"],
+                    page_size=1000,
+                    page_token=page_token,
+                )
+
+                for item in file_list_response.items:
+                    file_: libgds.FileResponse = item
+
+                    if file_.name.endswith(file_suffix):
+                        file_list.append(f"gds://{file_.volume_name}{file_.path}")
+
+                page_token = file_list_response.next_page_token
+                if not file_list_response.next_page_token:
+                    break
+            # while end
+
+        except libgds.ApiException as e:
+            logger.error(f"Exception when calling list_files: \n{e}")
+
+    return file_list
+
+
+def parse_bam_file_from_dragen_output(workflow_output_json: str) -> str:
+    """
+    Parse the bam file out of the wts or dragen wgs qc workflow
+
+    WTS Workflow output
+    dragen_transcriptome_output_directory -> *.bam
+
+    WGS Workflow output
+    dragen_bam_out
+
+    :param workflow_output_json:
+    :return:
+    """
+
+    # Set look up keys
+    alignment_qc_look_up_key = "dragen_bam_out"
+    transcriptome_look_up_key = "dragen_transcriptome_output_directory"
+
+    try:
+        workflow_output: Dict = parse_workflow_output(workflow_output_json, [alignment_qc_look_up_key])
+        return workflow_output.get("location")
+    except KeyError:
+        pass
+
+    try:
+        # Failed to get workflow output from alignment qc, maybe its a transcriptome workflow
+        transcriptome_directory_output: Dict = parse_workflow_output(workflow_output_json, [transcriptome_look_up_key])
+        transcriptome_output_location = transcriptome_directory_output.get("location")
+        bam_files = get_files_from_gds_by_suffix(
+            location=transcriptome_output_location,
+            file_suffix=".bam"
+        )
+        if not len(bam_files) == 1:
+            logger.warning(f"Couldn't get bam file from transcriptome workflow "
+                           f"output directory '{transcriptome_output_location}'")
+        return bam_files[0]
+    except KeyError:
+        logger.warning(f"Couldn't get either {alignment_qc_look_up_key} "
+                       f"or {transcriptome_look_up_key} as workflow output lookup keys")
+        return None
