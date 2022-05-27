@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, now
 from libica.openapi import libwes
 from libumccr.aws import libssm
 from mockito import when, spy2
@@ -83,6 +83,23 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         self.verify_local()
 
         mock_dragen_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+        mock_dragen_wgs_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_dragen_wgs_qc_workflow.end = now()
+        mock_dragen_wgs_qc_workflow.output = json.dumps({
+            "dragen_alignment_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00001/wgs_alignment_qc/2022052276d4397b/L4200006__3_dragen",
+                "class": "Directory",
+            },
+            "dragen_bam_out": {
+                "location": "gds://vol/analysis_data/SBJ00001/wgs_alignment_qc/2022052276d4397b/L4200006__3_dragen/PRJ420003.bam",
+                "basename": "PRJ420003.bam",
+                "nameroot": "PRJ420003",
+                "nameext": ".bam",
+                "class": "File",
+            }
+        })
+        mock_dragen_wgs_qc_workflow.save()
+
         mock_normal_library_run: LibraryRun = LibraryRunFactory()
         _ = libraryrun_srv.link_library_run_with_workflow(
             library_id=mock_normal_library_run.library_id,
@@ -110,8 +127,8 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(result)
         logger.info(f"Orchestrator lambda call output: {json.dumps(result)}")
 
-        self.assertEqual(1, len(result))
-        self.assertEqual(tn_mock_subject_id, result[0]['subjects'][0])
+        self.assertEqual(2, len(result))
+        self.assertEqual(tn_mock_subject_id, result[1]['subjects'][0])
 
     def test_create_tn_job(self):
         """

@@ -2,6 +2,7 @@ import json
 from unittest import skip
 
 from libica.app import wes
+from mockito import when
 
 from data_portal.tests.factories import TestConstant
 from data_processors.pipeline.tools import liborca
@@ -332,6 +333,55 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         logger.info(f"{id_in} has rerun {has_rerun}")
         self.assertTrue(has_rerun)
 
+    def test_parse_wgs_alignment_qc_output_for_bam_file(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_wgs_alignment_qc_output_for_bam_file
+        """
+        dragen_bam_out = liborca.parse_wgs_alignment_qc_output_for_bam_file(json.dumps({
+            "dragen_bam_out": {
+                "location": "gds://vol/analysis_data/SBJ00001/wgs_alignment_qc/2022052276d4397b/L3200006__3_dragen/PRJ320001.bam",
+                "basename": "PRJ320001.bam",
+                "nameroot": "PRJ320001",
+                "nameext": ".bam",
+                "class": "File",
+                "size": 44992201152,
+                "secondaryFiles": [
+                    {
+                        "basename": "PRJ320001.bam.bai",
+                        "location": "gds://vol/analysis_data/SBJ00001/wgs_alignment_qc/2022052276d4397b/L3200006__3_dragen/PRJ320001.bam.bai",
+                        "class": "File",
+                        "nameroot": "PRJ320001.bam",
+                        "nameext": ".bai",
+                        "http://commonwl.org/cwltool#generation": 0
+                    }
+                ],
+                "http://commonwl.org/cwltool#generation": 0
+            },
+        }))
+
+        self.assertRegex(dragen_bam_out, r"^gds:\/\/\S+\.bam$")
+        logger.info(dragen_bam_out)
+
+    def test_parse_transcriptome_output_for_bam_file(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_transcriptome_output_for_bam_file
+        """
+        when(liborca).get_files_from_gds_by_suffix(...).thenReturn(["gds://vol/fol/L4200002_dragen.bam", ])
+
+        transcriptome_bam = liborca.parse_transcriptome_output_for_bam_file(json.dumps({
+            "dragen_transcriptome_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00009/wts_tumor_only/202205155e5fec36/L4200002_dragen",
+                "basename": "L4200002_dragen",
+                "nameroot": "L4200002_dragen",
+                "nameext": "",
+                "class": "Directory",
+                "size": None
+            },
+        }))
+
+        self.assertRegex(transcriptome_bam, r"^gds:\/\/\S+\.bam$")
+        logger.info(transcriptome_bam)
+
 
 class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip
@@ -487,47 +537,51 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
         self.assertIn("arriba", arriba_output_directory['location'])
 
     @skip
-    def test_parse_bam_file_wgs_qc(self):
+    def test_parse_wgs_alignment_qc_output_for_bam_file(self):
         """
-        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_bam_file_transcriptome
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_wgs_alignment_qc_output_for_bam_file
         """
 
-        # wts_tumor_only run from DEV, see https://umccr.slack.com/archives/C7QC9N8G4/p1647112587377499
         wfr_id = "wfr.0d3dea278b1c471d8316b9d5a242dd34"  # SBJ00913
 
         wfl_run = wes.get_run(wfr_id)
 
         # First assure that this IS a dragen wgs qc workflow
-        dragen_wgs_alignment_output_directory = liborca.parse_workflow_output(json.dumps(wfl_run.output), ["dragen_alignment_output_directory"])
+        dragen_wgs_alignment_output_directory = liborca.parse_workflow_output(
+            json.dumps(wfl_run.output), ["dragen_alignment_output_directory"]
+        )
         self.assertIn("class", dragen_wgs_alignment_output_directory.keys())
         self.assertEqual(dragen_wgs_alignment_output_directory['class'], "Directory")
 
         # Then assert this is a transcriptome bam file
-        dragen_transcriptome_bam_file = liborca.parse_bam_file_from_dragen_output(
+        dragen_bam_out = liborca.parse_wgs_alignment_qc_output_for_bam_file(
             json.dumps(wfl_run.output)
         )
         # Assert that we return a bam file
-        self.assertRegex(dragen_transcriptome_bam_file, r"^gds:\/\/\S+\.bam$")
+        self.assertRegex(dragen_bam_out, r"^gds:\/\/\S+\.bam$")
+        logger.info(dragen_bam_out)
 
     @skip
-    def test_parse_bam_file_transcriptome(self):
+    def test_parse_transcriptome_output_for_bam_file(self):
         """
-        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_bam_file_transcriptome
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_transcriptome_output_for_bam_file
         """
 
-        # wts_tumor_only run from DEV, see https://umccr.slack.com/archives/C7QC9N8G4/p1647112587377499
-        wfr_id = "wfr.b61f86b3ac2748fe997ecdf1d4b79d84"  # L2100732
+        wfr_id = "wfr.b61f86b3ac2748fe997ecdf1d4b79d84"  # SBJ00910__L2100732
 
         wfl_run = wes.get_run(wfr_id)
 
         # First assure that this IS a dragen transcriptome workflow
-        dragen_transcriptome_output_directory = liborca.parse_transcriptome_workflow_output_directory(json.dumps(wfl_run.output))
+        dragen_transcriptome_output_directory = liborca.parse_transcriptome_workflow_output_directory(
+            json.dumps(wfl_run.output)
+        )
         self.assertIn("class", dragen_transcriptome_output_directory.keys())
         self.assertEqual(dragen_transcriptome_output_directory['class'], "Directory")
 
         # Then assert this is a transcriptome bam file
-        dragen_transcriptome_bam_file = liborca.parse_bam_file_from_dragen_output(
+        dragen_transcriptome_bam_file = liborca.parse_transcriptome_output_for_bam_file(
             json.dumps(wfl_run.output)
         )
         # Assert that we return a bam file
         self.assertRegex(dragen_transcriptome_bam_file, r"^gds:\/\/\S+\.bam$")
+        logger.info(dragen_transcriptome_bam_file)

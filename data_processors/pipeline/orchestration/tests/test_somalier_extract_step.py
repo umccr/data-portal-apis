@@ -1,21 +1,14 @@
 import json
 from typing import List, Dict
-from unittest import skip
 
 from django.utils.timezone import now
-from libica.app import wes
 from libumccr import libjson
-from mockito import when
 
-from data_portal.models.labmetadata import LabMetadata
-from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import DragenWgsQcWorkflowFactory, LibraryRunFactory, \
-    TumorLibraryRunFactory, LabMetadataFactory, TumorLabMetadataFactory, DragenWtsWorkflowFactory, \
-    WtsTumorLabMetadataFactory, WtsTumorLibraryRunFactory, TestConstant
+from data_portal.tests.factories import DragenWgsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.orchestration import somalier_extract_step
-from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
+from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
 
 # From from wfr.0d3dea278b1c471d8316b9d5a242dd34
 mock_wgs_workflow_id = "wfr.0d3dea278b1c471d8316b9d5a242dd34"
@@ -67,6 +60,7 @@ mock_wgs_output = json.dumps({
   }
 })
 
+
 def build_wgs_qc_mock():
     mock_wgc_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
     mock_wgc_qc_workflow.wfr_id = mock_wgs_workflow_id
@@ -74,7 +68,6 @@ def build_wgs_qc_mock():
     mock_wgc_qc_workflow.end = now()
     mock_wgc_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
     mock_wgc_qc_workflow.save()
-
     return mock_wgc_qc_workflow
 
 
@@ -90,7 +83,7 @@ class SomalierExtractStepUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(results)
 
         logger.info(f"{json.dumps(results)}")
-        self.assertEqual(results['submitting_subjects'][0], TestConstant.subject_id.value)
+        self.assertIn('gds_path', results['somalier_extract_step'][0])
 
     def test_prepare_somalier_extract_jobs(self):
         """
@@ -98,12 +91,10 @@ class SomalierExtractStepUnitTests(PipelineUnitTestCase):
         """
         mock_wgs_qc_workflow = build_wgs_qc_mock()
 
-        print(mock_wgs_qc_workflow.output)
-
         job_list: List[Dict] = somalier_extract_step.prepare_somalier_extract_jobs(mock_wgs_qc_workflow)
         self.assertIsNotNone(job_list)
 
         for job in job_list:
-            logger.info(f"\n{libjson.dumps(job)}")  # NOTE libjson is intentional and part of ser/deser test
+            logger.info(f"{libjson.dumps(job)}")  # NOTE libjson is intentional and part of serde test
             self.assertIn("dragen_bam_out", json.loads(mock_wgs_qc_workflow.output).keys())
-            self.assertEqual(job['gds_path'], json.loads(mock_wgs_qc_workflow.output).get("dragen_bam_out"))
+            self.assertEqual(job['gds_path'], json.loads(mock_wgs_qc_workflow.output)['dragen_bam_out']['location'])

@@ -230,6 +230,15 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_rnasum_queue_arn}
     timeout: 28
 
+  sqs_somalier_extract_event_processor:
+    handler: data_processors.pipeline.lambdas.somalier_extract.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_somalier_extract_queue_arn}
+    timeout: 28
+
   sqs_notification_event_processor:
     handler: data_processors.pipeline.lambdas.notification.sqs_handler
     layers:
@@ -340,6 +349,18 @@ functions:
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 60
+
+  somalier_extract:
+    handler: data_processors.pipeline.lambdas.somalier_extract.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  somalier_check:
+    handler: data_processors.pipeline.lambdas.somalier_check.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
 
 custom:
   enabled:

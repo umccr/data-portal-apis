@@ -22,7 +22,6 @@ from typing import List, Dict, Any
 from libica.openapi import libgds
 from libica.app import gds, configuration
 from libumccr import libjson
-from data_processors.pipeline.lambdas.fastq import parse_gds_path
 from sample_sheet import SampleSheet
 
 from data_processors.pipeline.tools import libregex
@@ -350,8 +349,13 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     return int(lane_cnt)
 
 
-def get_files_from_gds_by_suffix(location, file_suffix) -> List[str]:
-    volume_name, path_ = parse_gds_path(location)
+def get_files_from_gds_by_suffix(location: str, file_suffix: str) -> List[str]:
+    """TODO refactor this into libica.app.gds
+    Use case:
+        For given gds://vol/path/to/folder find file end with extension defined in file_suffix e.g. '.bam'
+        Collect all found and return a list ['gds://location/1.bam', ...]
+    """
+    volume_name, path_ = gds.parse_path(location)
 
     file_list = []
 
@@ -384,43 +388,56 @@ def get_files_from_gds_by_suffix(location, file_suffix) -> List[str]:
     return file_list
 
 
-def parse_bam_file_from_dragen_output(workflow_output_json: str) -> str:
+def parse_wgs_alignment_qc_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
     """
-    Parse the bam file out of the wts or dragen wgs qc workflow
+    Parse the bam file out of the DRAGEN_WGS_QC (wgs_alignment_qc) workflow
+
+    :param workflow_output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return:
+    """
+
+    lookup_keys = ["dragen_bam_out"]
+
+    dragen_bam_out: Dict = parse_workflow_output(workflow_output_json, lookup_keys)
+
+    if deep_check:
+        if dragen_bam_out is None:
+            raise ValueError(f"Unexpected wgs_alignment_qc output. The dragen_bam_out is {dragen_bam_out}")
+
+        if 'location' not in dragen_bam_out.keys():
+            raise ValueError(f"Unexpected wgs_alignment_qc output. The dragen_bam_out has no location to BAM file")
+
+    return dragen_bam_out['location']
+
+
+def parse_transcriptome_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
+    """
+    Parse the bam file out of the transcriptome (DRAGEN_WTS or wts_tumor_only) workflow
 
     WTS Workflow output
     dragen_transcriptome_output_directory -> *.bam
 
-    WGS Workflow output
-    dragen_bam_out
-
     :param workflow_output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
     :return:
     """
 
-    # Set look up keys
-    alignment_qc_look_up_key = "dragen_bam_out"
-    transcriptome_look_up_key = "dragen_transcriptome_output_directory"
+    transcriptome_output_directory: Dict = parse_transcriptome_workflow_output_directory(workflow_output_json)
 
-    try:
-        workflow_output: Dict = parse_workflow_output(workflow_output_json, [alignment_qc_look_up_key])
-        return workflow_output.get("location")
-    except KeyError:
-        pass
+    if deep_check and 'location' not in transcriptome_output_directory.keys():
+        raise ValueError(f"Unexpected wts_tumor_only output. "
+                         f"No location key found for dragen_transcriptome_output_directory")
 
-    try:
-        # Failed to get workflow output from alignment qc, maybe its a transcriptome workflow
-        transcriptome_directory_output: Dict = parse_workflow_output(workflow_output_json, [transcriptome_look_up_key])
-        transcriptome_output_location = transcriptome_directory_output.get("location")
-        bam_files = get_files_from_gds_by_suffix(
-            location=transcriptome_output_location,
-            file_suffix=".bam"
-        )
-        if not len(bam_files) == 1:
-            logger.warning(f"Couldn't get bam file from transcriptome workflow "
-                           f"output directory '{transcriptome_output_location}'")
-        return bam_files[0]
-    except KeyError:
-        logger.warning(f"Couldn't get either {alignment_qc_look_up_key} "
-                       f"or {transcriptome_look_up_key} as workflow output lookup keys")
-        return None
+    transcriptome_output_location = transcriptome_output_directory['location']
+
+    bam_files = get_files_from_gds_by_suffix(
+        location=transcriptome_output_location,
+        file_suffix=".bam"
+    )
+
+    # assuming it should have only 1 BAM file in output directory
+    if not len(bam_files) == 1:
+        logger.warning(f"Couldn't get bam file from transcriptome output directory '{transcriptome_output_location}'")
+
+    return bam_files[0]

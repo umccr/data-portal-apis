@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
 try:
     import unzip_requirements
 except ImportError:
@@ -7,9 +6,6 @@ except ImportError:
 
 import django
 import os
-from data_processors.pipeline.services.somalier_check_srv import \
-    get_fingerprint_check_service_instance
-import json
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -17,19 +13,18 @@ django.setup()
 # ---
 
 import logging
-import boto3
 from urllib.parse import urlparse
 from datetime import datetime
 
-from time import sleep
-from typing import List
 from libumccr import libjson
+
+from data_processors.pipeline.domain.somalier import HolmesPipeline
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def handler(event, context) -> List:
+def handler(event, context):
     """event payload dict
     {
         "index": "gds://path/to/volume"
@@ -47,9 +42,6 @@ def handler(event, context) -> List:
 
     gds_path: str = event['index']
 
-    # Call somalier check step
-    somalier_check_step_function = get_fingerprint_check_service_instance()
-
     # Get name
     timestamp = int(datetime.now().replace(microsecond=0).timestamp())
     step_function_instance_name = "__".join([
@@ -58,37 +50,11 @@ def handler(event, context) -> List:
         str(timestamp)
     ])
 
-    # Call check step function
-    client = boto3.client('stepfunctions')
-    step_function_instance_obj = client.start_execution(
-        stateMachineArn=somalier_check_step_function,
-        name=step_function_instance_name,
-        input=json.dumps(
-            {
-                "index": gds_path
-            }
-        )
+    holmes_pipeline = (
+        HolmesPipeline()
+        .check(instance_name=step_function_instance_name, index_path=gds_path)
+        .poll()
     )
 
-    # Get execution arn
-    somalier_check_execution_arn = step_function_instance_obj.get('executionArn', None)
-    if somalier_check_execution_arn is None:
-        logger.warning("Could not get somalier check execution arg")
-        return None
-
-    running_status = "RUNNING"
-    while True:
-        execution_dict = client.describe_execution(
-            executionArn=somalier_check_execution_arn
-        )
-        status = execution_dict.get("status", None)
-        if status is None:
-            logger.warning("Could not get status of somalier check execution")
-            return None
-        if status != running_status:
-            break
-        logger.info(f"Execution still running, sleeping 3")
-        sleep(3)
-
     # Return output
-    return json.loads(execution_dict.get("output"))
+    return libjson.loads(holmes_pipeline.execution_result['output'])

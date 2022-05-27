@@ -18,6 +18,7 @@ from data_portal.viewsets.run import RunViewSet
 from data_portal.viewsets.s3object import S3ObjectViewSet
 from data_portal.viewsets.sequence import SequenceViewSet
 from data_portal.viewsets.sequencerun import SequenceRunViewSet
+from data_portal.viewsets.somalier import SomalierViewSet
 from data_portal.viewsets.subject import SubjectViewSet
 from data_portal.viewsets.workflow import WorkflowViewSet
 
@@ -39,6 +40,7 @@ router.register(r'sequence', SequenceViewSet, basename='sequence')
 router.register(r'libraryrun', LibraryRunViewSet, basename='libraryrun')
 router.register(r'workflows', WorkflowViewSet, basename='workflows')
 router.register(r'pairing', PairingViewSet, basename='pairing')
+router.register(r'somalier', SomalierViewSet, basename='somalier')
 
 schema_view = get_schema_view(
     openapi.Info(

@@ -58,7 +58,8 @@ def handler(event, context):
             "TUMOR_NORMAL_STEP",
             "DRAGEN_WTS_STEP",
             "UMCCRISE_STEP",
-            "RNASUM_STEP"
+            "RNASUM_STEP",
+            "SOMALIER_EXTRACT_STEP"
         ]
     }
 
@@ -176,20 +177,34 @@ def next_step(this_workflow: Workflow, skip: List[str], context=None):
             results.append(dragen_wts_step.perform(this_workflow))
 
         return results
+
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS.value.lower():
         logger.info(f"Received DRAGEN_WTS workflow notification")
-        # Call somalier check on output bam file and do nothing else
-        WorkflowRule(this_workflow).must_associate_sequence_run()
 
-        return [somalier_extract_step.perform(this_workflow)]
+        WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
+
+        results = list()
+
+        if "SOMALIER_EXTRACT_STEP" in skip:
+            logger.info("Skip performing SOMALIER_EXTRACT_STEP")
+        else:
+            logger.info("Performing SOMALIER_EXTRACT_STEP")
+            results.append(somalier_extract_step.perform(this_workflow))
+
+        return results
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
         logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
-        WorkflowRule(this_workflow).must_associate_sequence_run()
+        WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
 
-        # Call somalier check on output bam file
-        results = [somalier_extract_step.perform(this_workflow)]
+        results = list()
+
+        if "SOMALIER_EXTRACT_STEP" in skip:
+            logger.info("Skip performing SOMALIER_EXTRACT_STEP")
+        else:
+            logger.info("Performing SOMALIER_EXTRACT_STEP")
+            results.append(somalier_extract_step.perform(this_workflow))
 
         if "TUMOR_NORMAL_STEP" in skip:
             logger.info("Skip performing TUMOR_NORMAL_STEP")
