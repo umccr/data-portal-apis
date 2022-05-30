@@ -9,12 +9,16 @@ from libumccr.aws import libssm
 from mockito import when
 
 from data_portal.models.workflow import Workflow
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
+
+from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step, somalier_extract_step
 
 
 class OrchestratorUnitTests(PipelineUnitTestCase):
@@ -84,6 +88,168 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
 
         self.assertRaises(json.JSONDecodeError)
+
+    def test_skip_list_no_skip(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_no_skip
+        """
+        mock_sqr = SequenceRun()
+        mock_sqr.instrument_run_id = TestConstant.instrument_run_id.value
+
+        mock_workflow = Workflow()
+        mock_workflow.wfr_id = f"wfr.{_rand(32)}"
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
+        mock_workflow.output = ""
+
+        when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
+        when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+
+        skiplist = {
+            'global': [],
+            'by_run': {}
+        }
+
+        results = []
+        try:
+            results = orchestrator.next_step(mock_workflow, skiplist, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        print(results)
+
+        self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue( 'DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
+    def test_skip_list_run_skip(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_run_skip
+        """
+        mock_sqr = SequenceRun()
+        mock_sqr.instrument_run_id = TestConstant.instrument_run_id.value
+
+        mock_workflow = Workflow()
+        mock_workflow.wfr_id = f"wfr.{_rand(32)}"
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
+        mock_workflow.output = ""
+
+        when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
+        when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+
+        run_id = TestConstant.instrument_run_id.value
+        skiplist = {
+            'global': [],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_WGS_QC_STEP"
+                ]
+            }
+        }
+
+        results = []
+        try:
+            results = orchestrator.next_step(mock_workflow, skiplist, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        print(results)
+
+        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
+        skiplist = {
+            'global': ["DRAGEN_WGS_QC_STEP"],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_TSO_CTDNA_STEP",
+                    "DRAGEN_WTS_STEP"
+                ]
+            }
+        }
+
+        results = []
+        try:
+            results = orchestrator.next_step(mock_workflow, skiplist, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        print(results)
+
+        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertFalse('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertFalse('DRAGEN_WTS_STEP' in results)
+
+    def test_skip_list_wrong_run_skip(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_wrong_run_skip
+        """
+        mock_sqr = SequenceRun()
+        mock_sqr.instrument_run_id = TestConstant.instrument_run_id.value
+
+        mock_workflow = Workflow()
+        mock_workflow.wfr_id = f"wfr.{_rand(32)}"
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
+        mock_workflow.output = ""
+
+        when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
+        when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+
+        run_id = str(TestConstant.instrument_run_id.value).replace("2", "1")
+        skiplist = {
+            'global': [],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_WGS_QC_STEP"
+                ]
+            }
+        }
+
+        results = []
+        try:
+            results = orchestrator.next_step(mock_workflow, skiplist, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        print(results)
+
+        # by_run skip list should not apply, since run id mismatch, so all workflows should be listed
+        self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
+        skiplist = {
+            'global': ["DRAGEN_WGS_QC_STEP"],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_TSO_CTDNA_STEP",
+                    "DRAGEN_WTS_STEP"
+                ]
+            }
+        }
+
+        results = []
+        try:
+            results = orchestrator.next_step(mock_workflow, skiplist, None)
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        print(results)
+
+        # only global skip list should apply, due to run ID mismatch
+        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
 
 
 class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
