@@ -8,17 +8,16 @@ from libumccr import libjson
 from libumccr.aws import libssm
 from mockito import when
 
-from data_portal.models.workflow import Workflow
 from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
+from data_processors.pipeline.orchestration import dragen_wgs_qc_step, google_lims_update_step, \
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
-
-from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
-    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step, somalier_extract_step
 
 
 class OrchestratorUnitTests(PipelineUnitTestCase):
@@ -114,15 +113,11 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             'by_run': {}
         }
 
-        results = []
-        try:
-            results = orchestrator.next_step(mock_workflow, skiplist, None)
-        except Exception as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-        print(results)
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
 
         self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
-        self.assertTrue( 'DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
         self.assertTrue('DRAGEN_WTS_STEP' in results)
 
     def test_skip_list_run_skip(self):
@@ -155,12 +150,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             }
         }
 
-        results = []
-        try:
-            results = orchestrator.next_step(mock_workflow, skiplist, None)
-        except Exception as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-        print(results)
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
 
         self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
         self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
@@ -176,12 +167,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             }
         }
 
-        results = []
-        try:
-            results = orchestrator.next_step(mock_workflow, skiplist, None)
-        except Exception as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-        print(results)
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
 
         self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
         self.assertFalse('DRAGEN_TSO_CTDNA_STEP' in results)
@@ -217,12 +204,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             }
         }
 
-        results = []
-        try:
-            results = orchestrator.next_step(mock_workflow, skiplist, None)
-        except Exception as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-        print(results)
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
 
         # by_run skip list should not apply, since run id mismatch, so all workflows should be listed
         self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
@@ -239,12 +222,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
             }
         }
 
-        results = []
-        try:
-            results = orchestrator.next_step(mock_workflow, skiplist, None)
-        except Exception as e:
-            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
-        print(results)
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
 
         # only global skip list should apply, due to run ID mismatch
         self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
@@ -267,7 +246,8 @@ class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
         step_skip_list = libjson.loads(step_skip_list_json)
 
         logger.info(step_skip_list)
-        self.assertIsInstance(step_skip_list, list)
-        self.assertIn("DRAGEN_WTS_STEP", step_skip_list)
-        self.assertIn("TUMOR_NORMAL_STEP", step_skip_list)
-        self.assertIn("UMCCRISE_STEP", step_skip_list)
+
+        self.assertIn('global', step_skip_list)
+        self.assertIn("DRAGEN_WTS_STEP", step_skip_list['global'])
+        self.assertIn("TUMOR_NORMAL_STEP", step_skip_list['global'])
+        self.assertIn("UMCCRISE_STEP", step_skip_list['global'])
