@@ -114,7 +114,7 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
 
         # ignore step_skip_list
         spy2(libssm.get_ssm_param)
-        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps([]))
+        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps({}))
 
         logger.info("-" * 32)
 

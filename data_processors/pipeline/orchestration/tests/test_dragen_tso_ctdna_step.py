@@ -113,7 +113,7 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
 
         # ignore step_skip_list
         spy2(libssm.get_ssm_param)
-        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps([]))
+        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps({}))
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,

@@ -8,11 +8,14 @@ from libumccr import libjson
 from libumccr.aws import libssm
 from mockito import when
 
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
+from data_processors.pipeline.orchestration import dragen_wgs_qc_step, google_lims_update_step, \
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step
 from data_processors.pipeline.tests import _rand
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
@@ -85,6 +88,148 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         self.assertRaises(json.JSONDecodeError)
 
+    def test_skip_list_no_skip(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_no_skip
+        """
+        mock_sqr = SequenceRun()
+        mock_sqr.instrument_run_id = TestConstant.instrument_run_id.value
+
+        mock_workflow = Workflow()
+        mock_workflow.wfr_id = f"wfr.{_rand(32)}"
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
+        mock_workflow.output = ""
+
+        when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
+        when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+
+        skiplist = {
+            'global': [],
+            'by_run': {}
+        }
+
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
+
+        self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
+    def test_skip_list_run_skip(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_run_skip
+        """
+        mock_sqr = SequenceRun()
+        mock_sqr.instrument_run_id = TestConstant.instrument_run_id.value
+
+        mock_workflow = Workflow()
+        mock_workflow.wfr_id = f"wfr.{_rand(32)}"
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
+        mock_workflow.output = ""
+
+        when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
+        when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+
+        run_id = TestConstant.instrument_run_id.value
+        skiplist = {
+            'global': [],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_WGS_QC_STEP"
+                ]
+            }
+        }
+
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
+
+        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
+        skiplist = {
+            'global': ["DRAGEN_WGS_QC_STEP"],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_TSO_CTDNA_STEP",
+                    "DRAGEN_WTS_STEP"
+                ]
+            }
+        }
+
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
+
+        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertFalse('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertFalse('DRAGEN_WTS_STEP' in results)
+
+    def test_skip_list_wrong_run_skip(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_wrong_run_skip
+        """
+        mock_sqr = SequenceRun()
+        mock_sqr.instrument_run_id = TestConstant.instrument_run_id.value
+
+        mock_workflow = Workflow()
+        mock_workflow.wfr_id = f"wfr.{_rand(32)}"
+        mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.sequence_run = mock_sqr
+        mock_workflow.output = ""
+
+        when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
+        when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+
+        run_id = str(TestConstant.instrument_run_id.value).replace("2", "1")
+        skiplist = {
+            'global': [],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_WGS_QC_STEP"
+                ]
+            }
+        }
+
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
+
+        # by_run skip list should not apply, since run id mismatch, so all workflows should be listed
+        self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
+        skiplist = {
+            'global': ["DRAGEN_WGS_QC_STEP"],
+            'by_run': {
+                run_id: [
+                    "DRAGEN_TSO_CTDNA_STEP",
+                    "DRAGEN_WTS_STEP"
+                ]
+            }
+        }
+
+        results = orchestrator.next_step(mock_workflow, skiplist, None)
+        logger.info(results)
+
+        # only global skip list should apply, due to run ID mismatch
+        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
+        self.assertTrue('DRAGEN_WTS_STEP' in results)
+
 
 class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
@@ -101,7 +246,8 @@ class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
         step_skip_list = libjson.loads(step_skip_list_json)
 
         logger.info(step_skip_list)
-        self.assertIsInstance(step_skip_list, list)
-        self.assertIn("DRAGEN_WTS_STEP", step_skip_list)
-        self.assertIn("TUMOR_NORMAL_STEP", step_skip_list)
-        self.assertIn("UMCCRISE_STEP", step_skip_list)
+
+        self.assertIn('global', step_skip_list)
+        self.assertIn("DRAGEN_WTS_STEP", step_skip_list['global'])
+        self.assertIn("TUMOR_NORMAL_STEP", step_skip_list['global'])
+        self.assertIn("UMCCRISE_STEP", step_skip_list['global'])
