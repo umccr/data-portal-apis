@@ -30,15 +30,35 @@ class GDSFileManager(models.Manager):
     def get_subject_results(self, subject_id: str, **kwargs):
         qs: QuerySet = self.filter(path__icontains=subject_id)
 
+        bam = Q(path__iregex='wgs') & Q(path__iregex='tumor') & Q(path__iregex='normal') & Q(path__iregex='.bam$')
+        vcf = (Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^(work)*]')
+               & Q(path__iregex='small_variants/[^\/]*(.vcf.gz$|.maf$)'))
+
+        cancer = Q(path__iregex='umccrise') & Q(path__iregex='cancer_report.html$')
+        qc = Q(path__iregex='umccrise') & Q(path__iregex='multiqc_report.html$')
+        pcgr = Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^\/]*/[^\/]*(pcgr|cpsr).html$')
+        coverage = Q(path__iregex='umccrise') & Q(path__iregex='(normal|tumor).cacao.html$')
+        circos = (Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^(work)*]') & Q(path__iregex='purple/')
+                  & Q(path__iregex='circos') & Q(path__iregex='baf') & Q(path__iregex='.png$'))
+
+        wts_bam = Q(path__iregex='wts') & Q(path__iregex='tumor') & Q(path__iregex='.bam$')
+        wts_qc = Q(path__iregex='wts') & Q(path__iregex='tumor') & Q(path__iregex='multiqc') & Q(path__iregex='.html$')
+        rnasum = Q(path__iregex='rnasum') & Q(path__iregex='RNAseq_report.html$')
+
+        gpl = Q(path__iregex='wgs') & Q(path__iregex='gridss_purple_linx') & Q(path__iregex='linx.html$')
+
         tso_ctdna_bam = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.bam$')
         tso_ctdna_vcf = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.vcf.gz$')
 
-        q_results: Q = tso_ctdna_bam | tso_ctdna_vcf
+        q_results: Q = (bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | rnasum | gpl
+                        | tso_ctdna_bam | tso_ctdna_vcf)
+
         qs = qs.filter(q_results)
 
         volume_name = kwargs.get('volume_name', None)
         if volume_name:
             qs = qs.filter(volume_name__iexact=volume_name)
+
         return qs
 
 

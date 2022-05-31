@@ -6,6 +6,7 @@ NOTE:
 """
 import logging
 
+from libica.app import gds
 from libumccr.aws import libs3
 from rest_framework import filters
 from rest_framework.response import Response
@@ -39,6 +40,14 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         results_gds = GDSFile.objects.get_subject_results(pk).all()
 
         features = []
+
+        for gds_file in results_gds:
+            g: GDSFile = gds_file
+            if g.path.endswith('png'):
+                ok, g_signed_url = gds.presign_gds_file(g.file_id, g.volume_name, g.path)
+                if ok:
+                    features.append(g_signed_url)
+
         for obj in results:
             o: S3Object = obj
             if o.key.endswith('png'):
