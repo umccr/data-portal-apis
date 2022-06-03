@@ -26,7 +26,7 @@ start:
 	@pip install -r requirements-dev.txt
 	@echo $$DJANGO_SETTINGS_MODULE
 	@python manage.py migrate
-	@python manage.py runserver_plus --print-sql
+	@python manage.py runserver_plus --print-sql --keep-meta-shutdown
 
 .PHONY: syncdata, loaddata
 syncdata:

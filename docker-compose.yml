@@ -6,7 +6,7 @@ version: '3.1'
 services:
 
   db:
-    image: mariadb:latest
+    image: public.ecr.aws/docker/library/mysql:8
     container_name: portal_db
     command: |
       --default-authentication-plugin=mysql_native_password
@@ -24,7 +24,7 @@ services:
       - MYSQL_PASSWORD=data_portal
 
   localstack:
-    image: localstack/localstack:0.12.9
+    image: public.ecr.aws/localstack/localstack:0.14
     container_name: portal_localstack
     ports:
       - "4566:4566"
@@ -42,7 +42,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
 
   haproxy:
-    image: haproxy:2.3
+    image: public.ecr.aws/docker/library/haproxy:2.4
     container_name: portal_haproxy
     ports:
       - 80:80
