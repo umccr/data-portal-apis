@@ -1,3 +1,4 @@
+import json
 from unittest import skip
 
 from mockito import when, mock
@@ -40,8 +41,8 @@ class SomalierCheckUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info(results)
-        self.assertIsInstance(results, list)
-        self.assertEqual(results[0]['relatedness'], 1000)
+        self.assertIsInstance(results, dict)
+        self.assertEqual(json.loads(results['output'])[0]['relatedness'], 1000)
 
 
 class SomalierCheckIntegrationTests(PipelineIntegrationTestCase):
@@ -63,10 +64,10 @@ class SomalierCheckIntegrationTests(PipelineIntegrationTestCase):
             "index": "gds://development/analysis_data/SBJ00913/wgs_alignment_qc/20220312c26574d6/L2100747__2_dragen/MDX210178.bam"
         }
 
-        results: list = somalier_check.handler(event, None)
+        results = somalier_check.handler(event, None)
 
         self.assertIsNotNone(results)
-        self.assertIsInstance(results, list)
+        self.assertIsInstance(results, dict)
         # Assert that the list returned is at least itself
-        self.assertGreaterEqual(len(results), 1)
+        self.assertGreaterEqual(len(json.loads(results['output'])), 1)
         logger.info(results)

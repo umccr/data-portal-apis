@@ -37,6 +37,10 @@ class SomalierViewSet(ViewSet):
     @action(detail=False, methods=['post'])
     def check(self, request):
         payload = self.request.data
+        # TODO just return check execution_result as-is for now
+        #  we can improve API response with more deterministic Responses
+        #  such as 200 or 400 by checking execution_result['status']
+        #  and with custom Serializer for response model e.g. see LabMetadataSyncSerializer
         output = HolmesProxyImpl(payload).check().output
         return Response(data=output)
 

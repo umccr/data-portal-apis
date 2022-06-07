@@ -4,7 +4,7 @@ from unittest import skip
 from mockito import when, mock
 
 from data_processors.pipeline.domain.somalier import HolmesPipeline
-from data_processors.pipeline.lambdas import somalier_extract
+from data_processors.pipeline.lambdas import somalier_extract, somalier_check
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 
@@ -36,14 +36,15 @@ class SomalierExtractUnitTests(PipelineUnitTestCase):
         mock_holmes_pipeline.execution_arn = mock_execution_instance['executionArn']
 
         when(HolmesPipeline).extract(...).thenReturn(mock_holmes_pipeline)
+        when(somalier_check).handler(...).thenReturn(None)
 
         result = somalier_extract.handler({
             "gds_path": "gds://vol/fol/MDX123456.bam"
         }, None)
 
         logger.info(result)
-        self.assertIsInstance(result, str)
-        self.assertIn('0123456789', result)
+        self.assertIsInstance(result, dict)
+        self.assertIn('0123456789', result['executionArn'])
 
 
 class SomalierExtractIntegrationTests(PipelineIntegrationTestCase):
@@ -63,9 +64,10 @@ class SomalierExtractIntegrationTests(PipelineIntegrationTestCase):
             "gds_path": "gds://development/analysis_data/SBJ00913/wgs_alignment_qc/20220312c26574d6/L2100747__2_dragen/MDX210178.bam"
         }
 
-        results: dict = somalier_extract.handler(event, None)
+        results = somalier_extract.handler(event, None)
 
         self.assertIsNotNone(results)
         self.assertIsInstance(results, dict)
-        self.assertIsNotNone(results.get("executionArn", None))
+        self.assertIsNotNone(results.get("message", None))
+        self.assertEqual(results['message'], "NOT_RUNNING")
         logger.info(results)

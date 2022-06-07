@@ -19,6 +19,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from data_processors.pipeline.domain.somalier import HolmesPipeline
+from data_processors.pipeline.lambdas import somalier_check
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -76,6 +77,15 @@ def handler(event, context) -> dict:
     # Extract name of sample and the fastq list rows
     gds_path = event['gds_path']
 
+    # Do a Check call to determine whether fingerprint has been done before
+    execution_result = somalier_check.handler({'index': gds_path}, context)
+    if execution_result and 'output' in execution_result:
+        # We have existing fingerprint somalier output
+        return {
+            'message': "NOT_RUNNING",
+            'check': execution_result,
+        }
+
     # Get name
     timestamp = int(datetime.now().replace(microsecond=0).timestamp())
     step_function_instance_name = "__".join([
@@ -93,4 +103,5 @@ def handler(event, context) -> dict:
     logger.info(f"Extracting fingerprint from '{gds_path}' with "
                 f"step function instance of '{holmes_pipeline.execution_arn}'")
 
-    return holmes_pipeline.execution_arn
+    # Return execution instance info as-is
+    return holmes_pipeline.execution_instance

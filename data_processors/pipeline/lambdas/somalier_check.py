@@ -56,5 +56,5 @@ def handler(event, context):
         .poll()
     )
 
-    # Return output
-    return libjson.loads(holmes_pipeline.execution_result['output'])
+    # Return execution result as-is for now
+    return holmes_pipeline.execution_result
