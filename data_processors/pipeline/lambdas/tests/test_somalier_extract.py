@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest import skip
 
@@ -42,9 +43,9 @@ class SomalierExtractUnitTests(PipelineUnitTestCase):
             "gds_path": "gds://vol/fol/MDX123456.bam"
         }, None)
 
-        logger.info(result)
         self.assertIsInstance(result, dict)
         self.assertIn('0123456789', result['executionArn'])
+        logger.info(json.dumps(result))  # NOTE this json dumps also mimic the AWS CLI Lambda datetime serde
 
 
 class SomalierExtractIntegrationTests(PipelineIntegrationTestCase):

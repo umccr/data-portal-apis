@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from unittest import skip
 
 from mockito import when, mock
@@ -19,7 +20,7 @@ class SomalierCheckUnitTests(PipelineUnitTestCase):
             "stateMachineArn": "arn:aws:states:ap-southeast-5:0123456789:stateMachine:SomalierCheckStateMachine",
             "name": "somalier_check__312c26574d6_L4100001__2_dragen_MDX00001__1653558046",
             "status": "SUCCEEDED",
-            "startDate": "2022-05-26T19:40:52.073000+10:00",
+            "startDate": datetime.now(),
             "stopDate": "2022-05-26T19:40:54.763000+10:00",
             "input": "{\"index\": \"gds://vol/analysis_data/SBJ00001/wgs_alignment_qc/20220312c26574d6/L4100001__2_dragen/MDX00001.bam\"}",
             "inputDetails": {
@@ -40,9 +41,9 @@ class SomalierCheckUnitTests(PipelineUnitTestCase):
             "index": "gds://vol/fol/MDX00001.bam"
         }, None)
 
-        logger.info(results)
         self.assertIsInstance(results, dict)
         self.assertEqual(json.loads(results['output'])[0]['relatedness'], 1000)
+        logger.info(json.dumps(results))  # NOTE this json dumps also mimic the AWS CLI Lambda datetime serde
 
 
 class SomalierCheckIntegrationTests(PipelineIntegrationTestCase):

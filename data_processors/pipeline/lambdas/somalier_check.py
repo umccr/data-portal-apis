@@ -24,7 +24,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def handler(event, context):
+def handler(event, context) -> dict:
     """event payload dict
     {
         "index": "gds://path/to/volume"
@@ -57,4 +57,4 @@ def handler(event, context):
     )
 
     # Return execution result as-is for now
-    return holmes_pipeline.execution_result
+    return libjson.loads(libjson.dumps(holmes_pipeline.execution_result))

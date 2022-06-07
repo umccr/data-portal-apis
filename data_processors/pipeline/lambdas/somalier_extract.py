@@ -104,4 +104,4 @@ def handler(event, context) -> dict:
                 f"step function instance of '{holmes_pipeline.execution_arn}'")
 
     # Return execution instance info as-is
-    return holmes_pipeline.execution_instance
+    return libjson.loads(libjson.dumps(holmes_pipeline.execution_instance))
