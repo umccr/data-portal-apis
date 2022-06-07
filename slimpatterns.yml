@@ -231,7 +231,7 @@ slimPatterns:
   - 'botocore/data/service-quotas/*'
   - 'botocore/data/servicecatalog/*'
   - 'botocore/data/servicecatalog-appregistry/*'
-  - 'botocore/data/servicediscovery/*'
+#  - 'botocore/data/servicediscovery/*'
   - 'botocore/data/ses/*'
   - 'botocore/data/sesv2/*'
   - 'botocore/data/shield/*'
