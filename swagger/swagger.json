@@ -1437,6 +1437,67 @@
         }
       ]
     },
+    "/somalier/": {
+      "get": {
+        "operationId": "somalier_list",
+        "description": "You have hit GET /somalier. This is placeholder only list endpoint. Nothing here yet.\nPlease use POST /somalier endpoint which do Holmes check projection by default.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "somalier"
+        ]
+      },
+      "post": {
+        "operationId": "somalier_create",
+        "description": "POST /somalier endpoint which do Holmes check projection by default",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "somalier"
+        ]
+      },
+      "parameters": []
+    },
+    "/somalier/check/": {
+      "post": {
+        "operationId": "somalier_check",
+        "description": "Experimental endpoint for exposing Somalier through Holmes interfaces",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "somalier"
+        ]
+      },
+      "parameters": []
+    },
+    "/somalier/extract/": {
+      "post": {
+        "operationId": "somalier_extract",
+        "description": "Experimental endpoint for exposing Somalier through Holmes interfaces",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "somalier"
+        ]
+      },
+      "parameters": []
+    },
     "/subjects/": {
       "get": {
         "operationId": "subjects_list",
@@ -2538,7 +2599,8 @@
           "enum": [
             "started",
             "failed",
-            "succeeded"
+            "succeeded",
+            "aborted"
           ]
         },
         "start_time": {

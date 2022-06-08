@@ -66,6 +66,24 @@ aws lambda invoke --profile prod \
 
 See [rnasum.md](rnasum.md)
 
+### Somalier
+
+```
+aws lambda invoke --profile prodops \
+  --function-name data-portal-api-prod-somalier_extract \
+  --cli-binary-format raw-in-base64-out \
+  --payload '{"gds_path": "gds://production/analysis_data/SBJ02296/wgs_tumor_normal/20220605e40c7f62/L2200674_L2200673_dragen/PRJ221207_tumor.bam"}' \
+  out_extract.json
+```
+
+```
+aws lambda invoke --profile prodops \
+  --function-name data-portal-api-prod-somalier_check \
+  --cli-binary-format raw-in-base64-out \
+  --payload '{"index": "gds://production/analysis_data/SBJ02296/wgs_tumor_normal/20220605e40c7f62/L2200674_L2200673_dragen/PRJ221207_tumor.bam"}' \
+  out_check.json
+```
+
 ### Other Lambda
 
 Others Lambda are possible. Look into their docstring for event payload requirement. Typically, we drive (i.e. restart/resume/rerun) the step from Orchestrator for post BCL conversion steps.
@@ -84,16 +102,52 @@ aws ssm put-parameter \
   --profile dev
 ```
 
-### Global Step Skip
+### Step Skip
 
 - This will globally skip `TUMOR_NORMAL_STEP` and `DRAGEN_WTS_STEP` analysis workflows.
-- Payload with `[]` to reset.
+- Payload with `{}` to reset.
 
 ```
 aws ssm put-parameter \
   --name "/iap/workflow/step_skip_list" \
   --type "String" \
-  --value "[\"TUMOR_NORMAL_STEP\", \"DRAGEN_WTS_STEP\"]" \
+  --value "{}" \
   --overwrite \
   --profile dev
+```
+
+- It can be "global" or SequenceRun context. A possible example config as follows.
+
+```
+{
+  "global": [
+    "UPDATE_STEP",
+    "FASTQ_UPDATE_STEP",
+    "GOOGLE_LIMS_UPDATE_STEP",
+    "DRAGEN_WGS_QC_STEP",
+    "DRAGEN_TSO_CTDNA_STEP",
+    "DRAGEN_WTS_STEP",
+    "TUMOR_NORMAL_STEP",
+    "UMCCRISE_STEP",
+    "RNASUM_STEP",
+    "SOMALIER_EXTRACT_STEP"
+  ],
+  "by_run": {
+    "220524_A01010_0998_ABCF2HDSYX": [
+      "FASTQ_UPDATE_STEP",
+      "GOOGLE_LIMS_UPDATE_STEP",
+      "DRAGEN_WGS_QC_STEP",
+      "DRAGEN_TSO_CTDNA_STEP",
+      "DRAGEN_WTS_STEP"
+    ],
+    "220525_A01010_0999_ABCF2HDSYX": [
+      "UPDATE_STEP",
+      "FASTQ_UPDATE_STEP",
+      "GOOGLE_LIMS_UPDATE_STEP",
+      "DRAGEN_WGS_QC_STEP",
+      "DRAGEN_TSO_CTDNA_STEP",
+      "DRAGEN_WTS_STEP"
+    ]
+  }
+}
 ```

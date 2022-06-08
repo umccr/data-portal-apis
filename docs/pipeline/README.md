@@ -20,8 +20,8 @@ Since development is evolving fast, here is a simplified text diagram of the mai
 ```
                      UPDATE_STEP
                      FASTQ_UPDATE_STEP
-                     GOOGLE_LIMS_UPDATE_STEP
-BSSH > BCL_CONVERT > DRAGEN_WGS_QC_STEP        > TUMOR_NORMAL_STEP  > UMCCRISE_STEP > RNASUM_STEP
+                     GOOGLE_LIMS_UPDATE_STEP   >  SOMALIER_EXTRACT_STEP
+BSSH > BCL_CONVERT > DRAGEN_WGS_QC_STEP        >  TUMOR_NORMAL_STEP       >  UMCCRISE_STEP >  RNASUM_STEP  ...  GPL_STEP (UI MANUAL TRIGGER)
                      DRAGEN_TSO_CTDNA_STEP
                      DRAGEN_WTS_STEP
 ```
