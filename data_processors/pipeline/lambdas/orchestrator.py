@@ -207,7 +207,8 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
 
         return results
 
-    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS.value.lower():
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received DRAGEN_WTS workflow notification")
 
         WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
@@ -222,7 +223,8 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
 
         return results
 
-    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
         WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
