@@ -51,6 +51,7 @@ https://api.data.prod.umccr.org/iam/lims
 #### Assume Role
 
 - Required: Attach the following policy to the service role (IAM Role) permission.
+- Please check AWS developer document [Control access for invoking an API](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html) on tailoring the role permission in regard to your stack needs.
 ```
 {
    "Effect": "Allow",
@@ -58,7 +59,46 @@ https://api.data.prod.umccr.org/iam/lims
         "execute-api:Invoke"
     ],
     "Resource": [
-        "*"
+        "arn:aws:execute-api:<region>:<account-id>:<api-id>/<stage-name>/<HTTP-VERB>/<resource-path-specifier>"
+    ]
+}
+```
+
+... whereas
+
+```
+region                  = ap-southeast-2
+account-id              = 123456789                           (depends on environment - DEV or PROD Account ID)
+api-id                  = ssm://data_portal/backend/api_id    (depends on environment - avail at SSM parameter store or scan on target environment API Gateway resources with keyword "data-portal-api")
+stage-name              = $default                            
+HTTP-VERB               = GET or POST or ...                  (depends on caller - ref ENDPOINTS.md)
+resource-path-specifier = lims or metadata or ...             (depends on caller - ref ENDPOINTS.md) 
+```
+
+... as an example strict `/metadata` endpoint `GET` query
+
+```
+{
+   "Effect": "Allow",
+    "Action": [
+        "execute-api:Invoke"
+    ],
+    "Resource": [
+        "arn:aws:execute-api:ap-southeast-2:123456789:abcdEFG123/$default/GET/metadata"
+    ]
+}
+```
+
+... or slightly relax on all endpoints as
+
+```
+{
+   "Effect": "Allow",
+    "Action": [
+        "execute-api:Invoke"
+    ],
+    "Resource": [
+        "arn:aws:execute-api:ap-southeast-2:123456789:abcdEFG123/*"
     ]
 }
 ```
@@ -95,6 +135,12 @@ awscurl -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: applica
 #### R
 - Recommend to use Python [requests-aws4auth](https://github.com/tedder/requests-aws4auth) through [reticulate](https://rstudio.github.io/reticulate/)
 - See [examples/portal_api_sig4.R](examples/portal_api_sig4.R)
+
+
+#### Caveats
+
+- Unlike normal JWT authorized endpoint, the [GPL stack notes](https://github.com/umccr/gridss-purple-linx-nf/blob/5117e1793c183670e7e457999f8365b52069b3cd/deployment/lambdas/submit_job/lambda_entrypoint.py#L342-L345) that sudden special control characters are not working through `/iam/` counterpart. 
+
 
 ## Endpoints
 
