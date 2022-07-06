@@ -64,12 +64,14 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        "subject_id": "SUBJECT_ID",
-        "sample_name": "TUMOR_SAMPLE_ID",
+        "subject_id": "subjectId",
+        "sample_name": "tumorLibraryId",
+        "output_file_prefix": "tumorSampleId",
+        "output_directory": "tumorLibraryId_normalLibraryId",
         "fastq_list_rows": [{
-            "rgid": "index1.index2.lane",
-            "rgsm": "sample_name",
-            "rglb": "UnknownLibrary",
+            "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
+            "rgsm": "sampleId",
+            "rglb": "libraryId",
             "lane": int,
             "read_1": {
               "class": "File",
@@ -81,9 +83,9 @@ def handler(event, context) -> dict:
             }
         }],
         "tumor_fastq_list_rows": [{
-            "rgid": "index1.index2.lane",
-            "rgsm": "sample_name",
-            "rglb": "UnknownLibrary",
+            "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
+            "rgsm": "sampleId",
+            "rglb": "libraryId",
             "lane": int,
             "read_1": {
               "class": "File",
@@ -93,10 +95,12 @@ def handler(event, context) -> dict:
               "class": "File",
               "location": "gds://path/to/read_2.fastq.gz"
             }
-        }],
-        "output_file_prefix": "SAMPLEID_LIBRARYID",
-        "output_directory": "SAMPLEID_LIBRARYID"
+        }]
     }
+
+    NOTE:
+        For fastq_list_rows, you should typically get them from Portal /fastq endpoint
+        rglb is a library_id without suffixes i.e. no _topup nor _rerun
 
     :param event:
     :param context:

@@ -1,5 +1,10 @@
 # Portal Automation Lambda
 
+- Multiple entrypoints into the Pipeline (workflow automation) is possible. This is exposed as invoking a Lambda.
+- Depends on the step entry, it may impose a bit of complexity setting up the required Lambda event payload.
+- Pipeline will pick up the workflow event, as long as a workflow run name start with `umccr__automated` into the Pipeline orchestration.
+- These different entry points are designed in mind such that — when we need to run workflow manually as _out-of-band_ cases but, still align as in the main Pipeline semantic or, get recorded into the Pipeline database.
+
 ### ICA Event Controller
 
 ```
@@ -57,10 +62,14 @@ aws lambda invoke --profile prod \
   --payload '{
       "wfr_id": "wfr.<ID>", 
       "wfv_id": "wfv.<ID>", 
-      "skip": ["GOOGLE_LIMS_UPDATE_STEP", "DRAGEN_WGS_QC_STEP"]
+      "skip": { "global": ["UPDATE_STEP", "FASTQ_UPDATE_STEP", "GOOGLE_LIMS_UPDATE_STEP", "DRAGEN_WGS_QC_STEP", "DRAGEN_TSO_CTDNA_STEP"] }
     }' \
   orchestrator_197.json
 ```
+
+### Tumor Normal
+
+See [tumor_normal.md](tumor_normal.md)
 
 ### RNAsum
 
@@ -104,21 +113,20 @@ aws ssm put-parameter \
 
 ### Step Skip
 
-- This will globally skip `TUMOR_NORMAL_STEP` and `DRAGEN_WTS_STEP` analysis workflows.
-- Payload with `{}` to reset.
+- Pipeline can skip some steps globally or by Sequence Run context. For example:
 
 ```
 aws ssm put-parameter \
   --name "/iap/workflow/step_skip_list" \
   --type "String" \
-  --value "{}" \
+  --value "{ \"global\": [ \"DRAGEN_WGS_QC_STEP\", \"DRAGEN_TSO_CTDNA_STEP\"] }" \
   --overwrite \
   --profile dev
 ```
 
-- It can be "global" or SequenceRun context. A possible example config as follows.
+- Some possible example config in JSON as follows.
 
-```
+```json
 {
   "global": [
     "UPDATE_STEP",
@@ -150,4 +158,15 @@ aws ssm put-parameter \
     ]
   }
 }
+```
+
+- Payload with `{}` to reset.
+
+```
+aws ssm put-parameter \
+  --name "/iap/workflow/step_skip_list" \
+  --type "String" \
+  --value "{}" \
+  --overwrite \
+  --profile dev
 ```
