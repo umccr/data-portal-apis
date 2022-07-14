@@ -67,9 +67,9 @@ def handler(event, context) -> dict:
             "location": "gds://path/to/somatic/output/dir"
         },
         "fastq_list_rows_germline": [{
-            "rgid": "index1.index2.lane",
-            "rgsm": "sample_name",
-            "rglb": "UnknownLibrary",
+            "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
+            "rgsm": "sampleId",
+            "rglb": "libraryId",
             "lane": int,
             "read_1": {
               "class": "File",

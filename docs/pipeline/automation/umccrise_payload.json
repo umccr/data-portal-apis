@@ -1,0 +1,29 @@
+{
+  "dragen_somatic_directory": {
+    "class": "Directory",
+    "location": "gds://path/to/somatic/output/dir"
+  },
+  "fastq_list_rows_germline": [
+    {
+      "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
+      "rgsm": "sampleId",
+      "rglb": "libraryId",
+      "lane": 1,
+      "read_1": {
+        "class": "File",
+        "location": "gds://path/to/read_1.fastq.gz"
+      },
+      "read_2": {
+        "class": "File",
+        "location": "gds://path/to/read_2.fastq.gz"
+      }
+    }
+  ],
+  "output_directory_germline": "PRJ1234567",
+  "output_directory_umccrise": "TumorRglb__NormalRglb",
+  "output_file_prefix_germline": "PRJ1234567",
+  "subject_identifier_umccrise": "SBJ01234",
+  "sample_name": "TUMOR_SAMPLE_ID",
+  "tumor_library_id": "tumor_rglb",
+  "normal_library_id": "normal_rglb"
+}

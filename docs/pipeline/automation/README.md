@@ -5,6 +5,8 @@
 - Pipeline will pick up the workflow event, as long as a workflow run name start with `umccr__automated` into the Pipeline orchestration.
 - These different entry points are designed in mind such that — when we need to run workflow manually as _out-of-band_ cases but, still align as in the main Pipeline semantic or, get recorded into the Pipeline database.
 
+## Primary Stage
+
 ### ICA Event Controller
 
 ```
@@ -67,13 +69,29 @@ aws lambda invoke --profile prod \
   orchestrator_197.json
 ```
 
+## Secondary and Tertiary Analysis Stage
+
+> NOTE: Others Lambda entry points are possible. We are documenting it as we speak. Please look into [their docstring](../../../data_processors/pipeline/lambdas) for event payload requirement. Typically, we drive (i.e. restart/resume/rerun) the step from Orchestrator for post BCL conversion steps.
+
 ### Tumor Normal
 
 See [tumor_normal.md](tumor_normal.md)
 
+### Umccrise
+
+See [umccrise.md](umccrise.md)
+
+### Transcriptome
+
+_aka WTS_
+
+See [transcriptome.md](transcriptome.md)
+
 ### RNAsum
 
 See [rnasum.md](rnasum.md)
+
+## Post Analysis Stage
 
 ### Somalier
 
@@ -93,9 +111,7 @@ aws lambda invoke --profile prodops \
   out_check.json
 ```
 
-### Other Lambda
-
-Others Lambda are possible. Look into their docstring for event payload requirement. Typically, we drive (i.e. restart/resume/rerun) the step from Orchestrator for post BCL conversion steps.
+## Pipeline Control
 
 ### Emergency Stop
 
