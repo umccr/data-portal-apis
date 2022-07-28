@@ -1,5 +1,6 @@
 version: 0.2
 env:
+  shell: bash
   variables:
     STAGE: $STAGE
     ICA_BASE_URL: $ICA_BASE_URL
@@ -11,7 +12,6 @@ phases:
         nodejs: 14
         python: 3.9
     commands:
-      - bash
       - ps -p $$
       - python -m venv .venv
       - source .venv/bin/activate
