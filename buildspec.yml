@@ -11,17 +11,23 @@ phases:
         nodejs: 14
         python: 3.9
     commands:
+      - bash
+      - ps -p $$
+      - python -m venv .venv
+      - source .venv/bin/activate
+      - which python
+      - which pip
+      - pip install -U pip
       - pip install -r requirements-test.txt
       - yarn install
   build:
     commands:
       - which docker
       - which docker-compose
-      - which python3
       - which aws
       - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up -d
       - make load_localstack
-      - python3 manage.py test
+      - python manage.py test
       - docker-compose -f docker-compose.yml -f docker-compose.ci.yml down
       - npx serverless create_domain --stage $STAGE
       - npx serverless deploy --stage $STAGE
