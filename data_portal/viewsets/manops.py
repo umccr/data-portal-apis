@@ -85,7 +85,6 @@ class ManOpsViewSet(ViewSet):
             lambda_details = {
                 'payload': payload,
                 'status': report_response['StatusCode'],
-                'response': libjson.dumps(report_response),
             }
             logger.info(libjson.dumps(lambda_details))
             return Response(data=lambda_details, status=status.HTTP_200_OK)

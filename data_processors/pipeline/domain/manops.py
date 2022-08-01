@@ -76,7 +76,7 @@ class RNAsumReport(ReportInterface):
             self.wfr_id = workflow_list[0].wfr_id
 
     def generate(self):
-        fn_name = os.getenv('MANOPS_LAMBDA', 'data-portal-api-prod-manops')
+        fn_name = os.getenv('MANOPS_LAMBDA', 'data-portal-api-dev-manops')
 
         payload_json = json.dumps({
             "event_type": Report.RNASUM.value,
