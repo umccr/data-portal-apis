@@ -21,6 +21,7 @@ from data_portal.viewsets.sequencerun import SequenceRunViewSet
 from data_portal.viewsets.somalier import SomalierViewSet
 from data_portal.viewsets.subject import SubjectViewSet
 from data_portal.viewsets.workflow import WorkflowViewSet
+from data_portal.viewsets.manops import ManOpsViewSet
 
 router = OptionalSlashDefaultRouter()
 router.register(r'lims', LIMSRowViewSet, basename='lims')
@@ -41,6 +42,7 @@ router.register(r'libraryrun', LibraryRunViewSet, basename='libraryrun')
 router.register(r'workflows', WorkflowViewSet, basename='workflows')
 router.register(r'pairing', PairingViewSet, basename='pairing')
 router.register(r'somalier', SomalierViewSet, basename='somalier')
+router.register(r'manops', ManOpsViewSet, basename='manops')
 
 schema_view = get_schema_view(
     openapi.Info(

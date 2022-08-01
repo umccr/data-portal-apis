@@ -10,6 +10,7 @@ from libumccr import libjson
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
+from data_portal.models.labmetadata import LabMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -140,7 +141,6 @@ def get_succeeded_by_sequence_run(sequence_run: SequenceRun, workflow_type: Work
 
 @transaction.atomic
 def get_workflow_for_seq_run_name(seq_run_name: str) -> Workflow:
-
     search_resp = Workflow.objects.filter(
         type_name=WorkflowType.BCL_CONVERT.value,
         end_status=WorkflowStatus.SUCCEEDED.value
@@ -199,6 +199,32 @@ def get_succeeded_by_library_id_and_workflow_type(library_id: str, workflow_type
 
     if qs.exists():
         for wfl in qs.all():
+            workflow_list.append(wfl)
+
+    return workflow_list
+
+
+@transaction.atomic
+def get_succeeded_by_subject_id_and_workflow_type(subject_id: str, workflow_type: WorkflowType) -> List[Workflow]:
+    """
+    Get all succeeded workflow runs related to this library_id and WorkflowType. It will join call through LibraryRun
+    using library_id. It is also sorted desc by workflow end time. So, latest is always at top i.e. workflow_list[0]
+    """
+    workflow_list = list()
+
+    # Get all library_id from subject_id
+    matching_library_id_qs: QuerySet = LabMetadata.objects.values_list('library_id', named=False).filter(
+        subject_id=subject_id).distinct()
+
+    # Find the latest workflows from given libraryrun
+    workflow_qs: QuerySet = Workflow.objects.filter(
+        type_name=workflow_type.value,
+        end_status=WorkflowStatus.SUCCEEDED.value,
+        libraryrun__library_id__in=matching_library_id_qs,
+    ).order_by('-id')
+
+    if workflow_qs.exists():
+        for wfl in workflow_qs.all():
             workflow_list.append(wfl)
 
     return workflow_list
