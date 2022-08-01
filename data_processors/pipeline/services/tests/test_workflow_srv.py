@@ -6,7 +6,10 @@ from django.utils.timezone import now
 
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import TestConstant, DragenWtsWorkflowFactory
+from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.tests.factories import TestConstant, DragenWtsWorkflowFactory, WorkflowFactory, LabMetadataFactory, \
+    LibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
@@ -66,3 +69,34 @@ class WorkflowSrvUnitTests(PipelineUnitTestCase):
         lbr1 = latest.libraryrun_set.first()
         self.assertEqual(latest.wfr_id, TestConstant.wfr_id.value)
         self.assertEqual(lbr1.library_id, TestConstant.wts_library_id_tumor.value)
+
+    def test_get_succeeded_by_subject_id_and_workflow_type(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_succeeded_by_subject_id_and_workflow_type
+        """
+
+        # Test values
+        test_subject_id = TestConstant.subject_id.value
+        test_wfr_type_name = WorkflowType.UMCCRISE
+
+        # Create Mock datas
+        mock_labmetadata = LabMetadataFactory()
+        mock_labmetadata.save()
+        mock_libraryrun = LibraryRunFactory()
+        mock_libraryrun.save()
+
+        mock_workflow: Workflow = WorkflowFactory()
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.type_name = test_wfr_type_name.value
+        mock_workflow.wfr_name = f"umccr__automated__umccrise__{test_subject_id}__L2000002__20220222abcdef"
+        mock_workflow.save()
+        mock_libraryrun.workflows.add(mock_workflow)
+
+        # Test the function
+        workflow_list: List[Workflow] = workflow_srv.get_succeeded_by_subject_id_and_workflow_type(
+            workflow_type=test_wfr_type_name,
+            subject_id=test_subject_id)
+
+        # Test result
+        self.assertEqual(1, len(workflow_list))
+        self.assertTrue(test_subject_id in workflow_list[0].wfr_name)
