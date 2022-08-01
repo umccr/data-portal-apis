@@ -45,7 +45,7 @@ class ManOpsViewSet(ViewSet):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
-    def run_rnasum(self, request):
+    def rnasum(self, request):
         """
         Expected payload:
         {
