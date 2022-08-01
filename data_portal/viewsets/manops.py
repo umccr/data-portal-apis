@@ -68,13 +68,16 @@ class ManOpsViewSet(ViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            logger.info('Processing event:', libjson.dumps(payload))
+
             # Create domain
             rnasum_report = RNAsumReport()
             rnasum_report.add_dataset(dataset)
             if wfr_id:
+                logger.info('Using given wfr_id')
                 rnasum_report.add_workflow(wfr_id=wfr_id)
             else:
-                logger.info('Find latest wfr_id from subject_id latest UMCCRISE')
+                logger.info('From given subject_id, find latest UMCCRISE wfr_id')
                 rnasum_report.add_workflow_from_subject(subject_id=subject_id)
 
             # Triggering and response
