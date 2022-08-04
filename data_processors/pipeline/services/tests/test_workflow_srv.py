@@ -70,9 +70,9 @@ class WorkflowSrvUnitTests(PipelineUnitTestCase):
         self.assertEqual(latest.wfr_id, TestConstant.wfr_id.value)
         self.assertEqual(lbr1.library_id, TestConstant.wts_library_id_tumor.value)
 
-    def test_get_succeeded_by_subject_id_and_workflow_type(self):
+    def test_get_succeed_workflows_by_subject_id_and_workflow_type(self):
         """
-        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_succeeded_by_subject_id_and_workflow_type
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_succeed_workflows_by_subject_id_and_workflow_type
         """
 
         # Test values
@@ -93,10 +93,77 @@ class WorkflowSrvUnitTests(PipelineUnitTestCase):
         mock_libraryrun.workflows.add(mock_workflow)
 
         # Test the function
-        workflow_list: List[Workflow] = workflow_srv.get_succeeded_by_subject_id_and_workflow_type(
+        workflow_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
             workflow_type=test_wfr_type_name,
             subject_id=test_subject_id)
 
         # Test result
         self.assertEqual(1, len(workflow_list))
         self.assertTrue(test_subject_id in workflow_list[0].wfr_name)
+
+    def test_get_running_workflows_by_subject_id_and_workflow_type(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_running_workflows_by_subject_id_and_workflow_type
+        """
+
+        # Test values
+        test_subject_id = TestConstant.subject_id.value
+        test_wfr_type_name = WorkflowType.UMCCRISE
+
+        # Create Mock datas
+        mock_labmetadata = LabMetadataFactory()
+        mock_labmetadata.save()
+        mock_libraryrun = LibraryRunFactory()
+        mock_libraryrun.save()
+
+        mock_workflow: Workflow = WorkflowFactory()
+        mock_workflow.end_status = WorkflowStatus.RUNNING.value
+        mock_workflow.type_name = test_wfr_type_name.value
+        mock_workflow.wfr_name = f"umccr__automated__umccrise__{test_subject_id}__L2000002__20220222abcdef"
+        mock_workflow.save()
+        mock_libraryrun.workflows.add(mock_workflow)
+
+        # Test the function
+        succeed_workflow_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+            workflow_type=test_wfr_type_name,
+            subject_id=test_subject_id)
+
+        # Test result
+        self.assertEqual(0, len(succeed_workflow_list))
+
+        # Test the function
+        running_workflow_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+            workflow_type=test_wfr_type_name, subject_id=test_subject_id, workflow_status=WorkflowStatus.RUNNING)
+        # Test result
+        self.assertEqual(1, len(running_workflow_list))
+        self.assertTrue(test_subject_id in running_workflow_list[0].wfr_name)
+
+    def test_get_labmetadata_from_wfr_id(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_labmetadata_from_wfr_id
+        """
+
+        # Test values
+        test_subject_id = TestConstant.subject_id.value
+        test_wfr_type_name = WorkflowType.UMCCRISE
+
+        # Create Mock datas
+        mock_labmetadata = LabMetadataFactory()
+        mock_labmetadata.save()
+        mock_libraryrun = LibraryRunFactory()
+        mock_libraryrun.save()
+
+        mock_workflow: Workflow = WorkflowFactory()
+        mock_workflow.end_status = WorkflowStatus.RUNNING.value
+        mock_workflow.type_name = test_wfr_type_name.value
+        mock_workflow.wfr_name = f"umccr__automated__umccrise__{test_subject_id}__L2000002__20220222abcdef"
+        mock_workflow.save()
+        mock_libraryrun.workflows.add(mock_workflow)
+
+        # Test the function
+
+        matched_labmetadata: List[LabMetadata] = workflow_srv.get_labmetadata_by_wfr_id(mock_workflow.wfr_id)
+
+        # Test result
+        self.assertEqual(1, len(matched_labmetadata))
+        self.assertTrue(matched_labmetadata[0].subject_id, test_subject_id)

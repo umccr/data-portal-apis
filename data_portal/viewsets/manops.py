@@ -8,12 +8,10 @@ import logging
 import os
 from enum import Enum
 
-import boto3
 from libumccr import libjson
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.viewsets import ViewSet
 from rest_framework import parsers
 
@@ -68,7 +66,6 @@ class ManOpsViewSet(ViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            logger.info('Processing event:', libjson.dumps(payload))
 
             # Create domain
             rnasum_report = RNAsumReport()
@@ -91,4 +88,4 @@ class ManOpsViewSet(ViewSet):
 
         except Exception as e:
             logger.error(e)
-            return Response(data={'message': "INTERNAL_SERVER_ERROR"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

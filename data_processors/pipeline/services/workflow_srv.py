@@ -9,6 +9,7 @@ from libumccr import libjson
 
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
+from data_portal.models.libraryrun import LibraryRun
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_portal.models.labmetadata import LabMetadata
 
@@ -205,22 +206,41 @@ def get_succeeded_by_library_id_and_workflow_type(library_id: str, workflow_type
 
 
 @transaction.atomic
-def get_succeeded_by_subject_id_and_workflow_type(subject_id: str, workflow_type: WorkflowType) -> List[Workflow]:
+def get_labmetadata_by_wfr_id(wfr_id: str) -> List[LabMetadata]:
     """
-    Get all succeeded workflow runs related to this subject_id and WorkflowType. It will join call between LabMetadata,
-    LibraryRun, and Workflow to fetch the correct subject_id. It is also sorted desc by workflow id. So, latest is
-    always at top i.e. workflow_list[0]
+    Get LabMetadata from given wfr_id
+    """
+
+    # Get library_id from wfr_id
+    matching_library_id: QuerySet = LibraryRun.objects.values_list('library_id', named=False).filter(
+        workflows__wfr_id=wfr_id).distinct()
+
+    # find subject_id from library_id
+    matching_labmetadata: QuerySet = LabMetadata.objects.filter(
+        library_id__in=matching_library_id).distinct()
+
+    return list(matching_labmetadata)
+
+
+@transaction.atomic
+def get_workflows_by_subject_id_and_workflow_type(subject_id: str,
+                                                  workflow_type: WorkflowType,
+                                                  workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED
+                                                  ) -> List[Workflow]:
+    """
+    Get all workflow runs related to this subject_id and WorkflowType. It will join call between LabMetadata,
+    LibraryRun, and Workflow to fetch the corresponding workflows. It is also sorted desc by workflow id. So, latest is
+    always at top i.e. workflow_list[0]. By default, it will query SUCCEEDED workflows unless specified otherwise
     """
     workflow_list = list()
 
     # Get all library_id from subject_id
     matching_library_id_qs: QuerySet = LabMetadata.objects.values_list('library_id', named=False).filter(
         subject_id=subject_id).distinct()
-
     # Find the latest workflows from given libraryrun
     workflow_qs: QuerySet = Workflow.objects.filter(
         type_name=workflow_type.value,
-        end_status=WorkflowStatus.SUCCEEDED.value,
+        end_status=workflow_status.value,
         libraryrun__library_id__in=matching_library_id_qs,
     ).order_by('-end')
 
