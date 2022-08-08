@@ -45,7 +45,7 @@ class GDSFileManager(models.Manager):
         wts_qc = Q(path__iregex='wts') & Q(path__iregex='tumor') & Q(path__iregex='multiqc') & Q(path__iregex='.html$')
         rnasum = Q(path__iregex='rnasum') & Q(path__iregex='RNAseq_report.html$')
 
-        gpl = Q(path__iregex='wgs') & Q(path__iregex='gridss_purple_linx') & Q(path__iregex='linx.html$')
+        gpl = Q(path__iregex='gridss_purple_linx') & Q(path__iregex='linx.html$')
 
         tso_ctdna_bam = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.bam$')
         tso_ctdna_vcf = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.vcf.gz$')
