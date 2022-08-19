@@ -109,7 +109,6 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
 
         build_tn_mock()
 
-        # ignore the google lims update (that's covered elsewhere)
         when(google_lims_update_step).perform(any).thenReturn(True)
 
         # ignore step_skip_list
@@ -149,11 +148,54 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         self.assertEqual(job_dict['fastq_list_rows'][0]['rglb'], TestConstant.library_id_normal.value)
         self.assertEqual(job_dict['fastq_list_rows'][0]['read_1']['location'], tn_mock_normal_read_1)
 
+    def test_prepare_tumor_normal_jobs_issue_475_no_skip(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_tumor_normal_step.TumorNormalStepUnitTests.test_prepare_tumor_normal_jobs_issue_475_no_skip
+        """
+        build_tn_mock()
+
+        meta_list = LabMetadata.objects.all()
+
+        job_list, subjects, submitting_subjects = tumor_normal_step.prepare_tumor_normal_jobs(meta_list)
+
+        logger.info(f"job_list: {json.dumps(job_list)}")
+
+        job_dict = job_list[0]
+        self.assertEqual(job_dict['subject_id'], tn_mock_subject_id)
+        self.assertEqual(job_dict['fastq_list_rows'][0]['rglb'], TestConstant.library_id_normal.value)
+        self.assertEqual(job_dict['fastq_list_rows'][0]['read_1']['location'], tn_mock_normal_read_1)
+
+    def test_prepare_tumor_normal_jobs_issue_475_skip(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_tumor_normal_step.TumorNormalStepUnitTests.test_prepare_tumor_normal_jobs_issue_475_skip
+        """
+        mock_dragen_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+        mock_dragen_wgs_qc_workflow.end_status = WorkflowStatus.RUNNING.value  # mock normal library QC is still running
+        mock_dragen_wgs_qc_workflow.end = now()
+        mock_dragen_wgs_qc_workflow.save()
+
+        mock_normal_library_run: LibraryRun = LibraryRunFactory()
+        _ = libraryrun_srv.link_library_run_with_workflow(
+            library_id=mock_normal_library_run.library_id,
+            lane=mock_normal_library_run.lane,
+            workflow=mock_dragen_wgs_qc_workflow,
+        )
+
+        build_tn_mock()
+
+        meta_list = LabMetadata.objects.all()
+
+        job_list, subjects, submitting_subjects = tumor_normal_step.prepare_tumor_normal_jobs(meta_list)
+
+        logger.info(f"job_list: {json.dumps(job_list)}")
+
+        self.assertEqual(len(job_list), 0)
+
 
 class TumorNormalStepIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
-    # uncomment @skip and hit the each test case!
+    # uncomment @skip and hit each test case!
     # and keep decorated @skip after tested
 
     pass

@@ -14,7 +14,7 @@ from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMetadataPhenotype
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import WorkflowType
+from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, _extract_unique_subjects, \
     _mint_libraries
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
@@ -87,7 +87,7 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
     See https://github.com/umccr/data-portal-apis/pull/262 for T/N paring algorithm
     Here we note the step from above algorithm as we go through in comment
 
-    If you need debug locally for this routine, see tn_debug.py
+    If you need debug locally for this routine, see test_tumor_normal_step.py
 
     Oh, btw, you need "CCR Greatest Hits" playlist in the background, if you go through this! -victor
 
@@ -161,10 +161,20 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 # Don't really know how we got here
                 continue
 
-            # step 7 - check only one normal exists
+            # step 7a - check only one normal exists
             if not len(list(set(subject_normal_libraries_stripped))) == 1:
                 logger.warning(f"We have multiple normals {subject_normal_libraries_stripped} for this "
                                f"{subject}/{workflow}. Skipping!")
+                continue
+
+            # step 7b - check subject has no pending QC workflow running across sequencing (See issue #475)
+            subject_qc_across_sequencing: list[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+                subject_id=subject,
+                workflow_type=WorkflowType.DRAGEN_WGS_QC,
+                workflow_status=WorkflowStatus.RUNNING,
+            )
+            if len(subject_qc_across_sequencing) > 0:
+                logger.warning(f"We still have QC workflow running for this {subject}/{workflow}. Skipping!")
                 continue
 
             # ---
@@ -185,7 +195,7 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 continue
 
             # step 9 - set tumor FastqListRow(s) that should be per library
-            # If we're here because theres a normal in the run, iterate over all tumors we have
+            # If we're here because there is a normal in the run, iterate over all tumors we have
             # includes the ones in this run AND those in previous runs
             if normal_in_run:
                 for tumor_library_id in subject_tumor_libraries_stripped:
