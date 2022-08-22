@@ -19,8 +19,8 @@ from contextlib import closing
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from typing import List, Dict, Any
-from libica.openapi import libgds
-from libica.app import gds, configuration
+
+from libica.app import gds
 from libumccr import libjson
 from sample_sheet import SampleSheet
 
@@ -349,45 +349,6 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     return int(lane_cnt)
 
 
-def get_files_from_gds_by_suffix(location: str, file_suffix: str) -> List[str]:
-    """TODO refactor this into libica.app.gds
-    Use case:
-        For given gds://vol/path/to/folder find file end with extension defined in file_suffix e.g. '.bam'
-        Collect all found and return a list ['gds://location/1.bam', ...]
-    """
-    volume_name, path_ = gds.parse_path(location)
-
-    file_list = []
-
-    with libgds.ApiClient(configuration(libgds)) as api_client:
-        files_api = libgds.FilesApi(api_client)
-        try:
-            page_token = None
-            while True:
-                file_list_response: libgds.FileListResponse = files_api.list_files(
-                    volume_name=[volume_name],
-                    path=[f"{path_}/*"],
-                    page_size=1000,
-                    page_token=page_token,
-                )
-
-                for item in file_list_response.items:
-                    file_: libgds.FileResponse = item
-
-                    if file_.name.endswith(file_suffix):
-                        file_list.append(f"gds://{file_.volume_name}{file_.path}")
-
-                page_token = file_list_response.next_page_token
-                if not file_list_response.next_page_token:
-                    break
-            # while end
-
-        except libgds.ApiException as e:
-            logger.error(f"Exception when calling list_files: \n{e}")
-
-    return file_list
-
-
 def parse_wgs_alignment_qc_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
     """
     Parse the bam file out of the DRAGEN_WGS_QC (wgs_alignment_qc) workflow
@@ -431,7 +392,7 @@ def parse_transcriptome_output_for_bam_file(workflow_output_json: str, deep_chec
 
     transcriptome_output_location = transcriptome_output_directory['location']
 
-    bam_files = get_files_from_gds_by_suffix(
+    bam_files = gds.get_files_from_gds_by_suffix(
         location=transcriptome_output_location,
         file_suffix=".bam"
     )

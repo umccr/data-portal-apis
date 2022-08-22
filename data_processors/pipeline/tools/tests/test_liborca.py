@@ -366,7 +366,7 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_transcriptome_output_for_bam_file
         """
-        when(liborca).get_files_from_gds_by_suffix(...).thenReturn(["gds://vol/fol/L4200002_dragen.bam", ])
+        when(liborca.gds).get_files_from_gds_by_suffix(...).thenReturn(["gds://vol/fol/L4200002_dragen.bam", ])
 
         transcriptome_bam = liborca.parse_transcriptome_output_for_bam_file(json.dumps({
             "dragen_transcriptome_output_directory": {
