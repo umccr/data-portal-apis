@@ -19,7 +19,7 @@ provider:
     serverSideEncryption: AES256
   iam:
     role: ${ssm:/data_portal/backend/lambda_iam_role_arn}
-  endpointType: regional
+  endpointType: REGIONAL
   logs:
     httpApi: true
   httpApi:
@@ -166,7 +166,8 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/ica_gds_event_sqs_arn}
-    timeout: 28
+    timeout: 120
+    reservedConcurrency: 20
 
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
@@ -257,6 +258,12 @@ functions:
 
   dragen_wgs_qc:
     handler: data_processors.pipeline.lambdas.dragen_wgs_qc.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  dragen_wts:
+    handler: data_processors.pipeline.lambdas.dragen_wts.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
