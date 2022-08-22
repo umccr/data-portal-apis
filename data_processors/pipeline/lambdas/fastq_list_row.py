@@ -15,8 +15,7 @@ import logging
 from typing import List
 import pandas as pd
 
-from data_processors.pipeline.tools import libregex
-from libumccr import libjson
+from libumccr import libjson, libregex
 from libica.app import gds
 
 logger = logging.getLogger()

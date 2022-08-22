@@ -6,10 +6,9 @@ NOTE:
 """
 import logging
 import os
-from enum import Enum
 
-import boto3
-from libumccr import libjson
+from libumccr import libjson, aws
+from libumccr.aws.liblambda import LambdaInvocationType
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,12 +19,6 @@ from data_portal.pagination import StandardResultsSetPagination
 from data_portal.serializers import LabMetadataModelSerializer, LabMetadataSyncSerializer
 
 logger = logging.getLogger(__name__)
-
-
-class LambdaInvocationType(Enum):
-    EVENT = 'Event'
-    REQUEST_RESPONSE = 'RequestResponse'
-    DRY_RUN = 'DryRun'
 
 
 class LabMetadataViewSet(ReadOnlyModelViewSet):
@@ -50,7 +43,7 @@ class LabMetadataViewSet(ReadOnlyModelViewSet):
 
             logger.debug(payload_json)
 
-            client = boto3.client('lambda')
+            client = aws.lambda_client()
             lmbda_response = client.invoke(
                 FunctionName=fn_name,
                 InvocationType=LambdaInvocationType.EVENT.value,

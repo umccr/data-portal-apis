@@ -7,14 +7,14 @@ See orchestration package __init__.py doc string.
 from typing import List, Set
 
 from django.db.models import QuerySet
-from libumccr import libgdrive
+from libumccr import libgdrive, libregex
 from libumccr.aws import libssm
 
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.limsrow import LIMSRow
 from data_portal.models.workflow import Workflow
 from data_processors import const
-from data_processors.pipeline.tools import liborca, libregex
+from data_processors.pipeline.tools import liborca
 
 
 def perform(workflow: Workflow):

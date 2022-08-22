@@ -8,28 +8,16 @@ See orchestration package __init__.py doc string.
 """
 import json
 import os
-from typing import List
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import List
+
 from libumccr import aws
+from libumccr.aws.liblambda import LambdaInvocationType
+
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
-from data_processors.pipeline.services.workflow_srv import get_workflows_by_subject_id_and_workflow_type, \
-    get_labmetadata_by_wfr_id
-import boto3
-
-
-############################################################
-# Improvement: importing from libumccr when it is available
-# Ref: https://github.com/umccr/libumccr/commit/cbf781fbd271e63c17dd45bd73751bf4807c1f6c
-
-class LambdaInvocationType(Enum):
-    EVENT = 'Event'
-    REQUEST_RESPONSE = 'RequestResponse'
-    DRY_RUN = 'DryRun'
-
-
-############################################################
+from data_processors.pipeline.services import workflow_srv
 
 
 class Report(Enum):
@@ -69,7 +57,7 @@ class RNAsumReport(ReportInterface):
     def add_workflow(self, wfr_id: str):
         self.wfr_id = wfr_id
 
-        matching_labmetadata = get_labmetadata_by_wfr_id(wfr_id=wfr_id)
+        matching_labmetadata = workflow_srv.get_labmetadata_by_wfr_id(wfr_id=wfr_id)
 
         # Get subject_id, it should only contain one labmetadata
         self.subject_id = matching_labmetadata[0].subject_id
@@ -77,9 +65,10 @@ class RNAsumReport(ReportInterface):
     def add_workflow_from_subject(self, subject_id: str):
         self.subject_id = subject_id
 
-        workflow_list: List[Workflow] = get_workflows_by_subject_id_and_workflow_type(subject_id=subject_id,
-                                                                                      workflow_type=WorkflowType.UMCCRISE
-                                                                                      )
+        workflow_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+            subject_id=subject_id,
+            workflow_type=WorkflowType.UMCCRISE,
+        )
         # Set if value exist
         if len(workflow_list) > 0:
             self.wfr_id = workflow_list[0].wfr_id
@@ -88,10 +77,11 @@ class RNAsumReport(ReportInterface):
         fn_name = os.getenv('MANOPS_LAMBDA', 'data-portal-api-dev-manops')
 
         # Check if existing RNAsum workflows is running
-        workflow_list: List[Workflow] = get_workflows_by_subject_id_and_workflow_type(subject_id=self.subject_id,
-                                                                                      workflow_type=WorkflowType.RNASUM,
-                                                                                      workflow_status=WorkflowStatus.RUNNING
-                                                                                      )
+        workflow_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+            subject_id=self.subject_id,
+            workflow_type=WorkflowType.RNASUM,
+            workflow_status=WorkflowStatus.RUNNING,
+        )
 
         if len(workflow_list) > 0:
             # Current RNAsum workflow has run. Terminating
@@ -103,7 +93,7 @@ class RNAsumReport(ReportInterface):
             "dataset": self.dataset
         })
 
-        lambda_client = boto3.client('lambda')
+        lambda_client = aws.lambda_client()
         lambda_response = lambda_client.invoke(
             FunctionName=fn_name,
             InvocationType=LambdaInvocationType.EVENT.value,

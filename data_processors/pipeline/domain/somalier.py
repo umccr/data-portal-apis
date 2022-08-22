@@ -22,14 +22,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def stepfn_client(**kwargs):
-    return aws.client('stepfunctions', **kwargs)
-
-
-def srv_discovery_client(**kwargs):
-    return aws.client('servicediscovery', **kwargs)
-
-
 class SomalierInterface(ABC):
     """Somalier Interface Contract
 
@@ -103,8 +95,8 @@ class HolmesPipeline(HolmesInterface):
     EXTRACT_STEPS_ARN_KEY = "extractStepsArn"
 
     def __init__(self):
-        self.srv_discovery_client = srv_discovery_client()
-        self.stepfn_client = stepfn_client()
+        self.srv_discovery_client = aws.srv_discovery_client()
+        self.stepfn_client = aws.stepfn_client()
 
         self.service_id = self.__discover_service_id()
         self.service_attributes = self.__discover_service_attributes()

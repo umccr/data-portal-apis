@@ -10,7 +10,7 @@ python-dateutil==2.8.2
 google-auth==2.9.1
 Werkzeug==2.2.0
 libica==2.1.0
-libumccr==0.2.0
+libumccr==0.3.0
 gspread==5.4.0
 gspread-pandas==3.2.2
 sample-sheet==0.12.0

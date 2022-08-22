@@ -21,10 +21,8 @@ from tempfile import NamedTemporaryFile
 from typing import List, Dict, Any
 
 from libica.app import gds
-from libumccr import libjson
+from libumccr import libjson, libregex
 from sample_sheet import SampleSheet
-
-from data_processors.pipeline.tools import libregex
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
