@@ -80,30 +80,20 @@ class DracarysMultiqcStepUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepUnitTests.test_perform
         """
         mock_wgs_qc_workflow = build_wgs_qc_mock()
-        # TODO mock some WHENs of libgds here
-        when(dracarys_multiqc_step.perform).collect_gds_multiqc_json_files(...).thenReturn([{ "mock": "mock"}])
-        when(dracarys_multiqc_step.perform).get_presign_url_for_single_file(...).thenReturn("http://127.0.0.1")
-        when(libsqs.perform).dispatch_jobs(...).thenReturn("ok")
+        when(dracarys_multiqc_step).collect_gds_multiqc_json_files(...).thenReturn([{ "mock": "mock"}])
+        when(dracarys_multiqc_step).get_presign_url_for_single_file(...).thenReturn("http://127.0.0.1")
+        when(libsqs).dispatch_jobs(...).thenReturn("ok")
         results = dracarys_multiqc_step.perform(mock_wgs_qc_workflow)
-        self.assertIsNotNone(results)
-
-        assert True
-
+        self.assertIsNotNone(results['dracarys_multiqc_step'])
 
 
 class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
-    # integration test hit actual File or API endpoint, thus, manual run in most cases
-    # required appropriate access mechanism setup such as active aws login session
-    # uncomment @skip and hit the each test case!
-    # and keep decorated @skip after tested
-
-    #@skip
+    @skip
     def test_handler(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler
         """
 
         mock_wgs_qc_workflow = build_wgs_qc_mock()
-        # TODO mock some WHENs of libgds here
         results = dracarys_multiqc_step.perform(mock_wgs_qc_workflow)
-        self.assertIsNotNone(results)
+        self.assertIsNotNone(results['dracarys_multiqc_step'])
