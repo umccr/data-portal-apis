@@ -3,12 +3,14 @@ from typing import List, Dict
 
 from django.utils.timezone import now
 from libumccr import libjson
+from libumccr.aws import libssm, libsqs
 from unittest import skip
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import DragenWgsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.orchestration import dracarys_multiqc_step
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
+from mockito import unstub, mock, when
 
 # From from wfr.0d3dea278b1c471d8316b9d5a242dd34
 mock_wgs_workflow_id = "wfr.0d3dea278b1c471d8316b9d5a242dd34"
@@ -79,25 +81,14 @@ class DracarysMultiqcStepUnitTests(PipelineUnitTestCase):
         """
         mock_wgs_qc_workflow = build_wgs_qc_mock()
         # TODO mock some WHENs of libgds here
+        when(dracarys_multiqc_step.perform).collect_gds_multiqc_json_files(...).thenReturn([{ "mock": "mock"}])
+        when(dracarys_multiqc_step.perform).get_presign_url_for_single_file(...).thenReturn("http://127.0.0.1")
+        when(libsqs.perform).dispatch_jobs(...).thenReturn("ok")
         results = dracarys_multiqc_step.perform(mock_wgs_qc_workflow)
         self.assertIsNotNone(results)
 
-        #logger.info(f"{json.dumps(results)}")
-        #self.assertIn('gds_path', results['dracarys_multiqc_step'][0])
         assert True
-#    def test_prepare_dracarys_extract_jobs(self):
-#        """
-#        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysExtractStepUnitTests.test_prepare_dracarys_extract_jobs
-#        """
-#        mock_wgs_qc_workflow = build_wgs_qc_mock()
-#
-#        job_list: List[Dict] = dracarys_multiqc_step.prepare_dracarys_extract_jobs(mock_wgs_qc_workflow)
-#        self.assertIsNotNone(job_list)
-#
-#        for job in job_list:
-#            logger.info(f"{libjson.dumps(job)}")  # NOTE libjson is intentional and part of serde test
-#            self.assertIn("dragen_bam_out", json.loads(mock_wgs_qc_workflow.output).keys())
-#            self.assertEqual(job['gds_path'], json.loads(mock_wgs_qc_workflow.output)['dragen_bam_out']['location'])
+
 
 
 class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
@@ -116,7 +107,3 @@ class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
         # TODO mock some WHENs of libgds here
         results = dracarys_multiqc_step.perform(mock_wgs_qc_workflow)
         self.assertIsNotNone(results)
-
-        #logger.info(f"{json.dumps(results)}")
-        #self.assertIn('gds_path', results['dracarys_multiqc_step'][0])
-        assert True

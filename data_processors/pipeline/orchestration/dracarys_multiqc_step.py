@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
-from data_processors.pipeline.domain.config import SQS_UMCCRISE_QUEUE_ARN
+from data_processors.pipeline.domain.config import SQS_DRACARYS_QUEUE_ARN, S3_DRACARYS_BUCKET_NAME
 from data_processors.pipeline.services import metadata_srv
 from data_processors.pipeline.tools import liborca
 
@@ -22,8 +22,11 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_workflow: Workflow):
-    logging.warning("CALLED PERFORM")
     output_json = this_workflow.output
+    
+    lookup_keys = ['dragen_bam_out' ]
+    outprefix = liborca.parse_workflow_output(output_json, lookup_keys)['nameroot']
+ 
     lookup_keys = ['multiqc_output_directory', 'location']
     multiqc_output_directory = liborca.parse_workflow_output(output_json, lookup_keys)
 
@@ -31,16 +34,23 @@ def perform(this_workflow: Workflow):
 
     for multiqc_file in multiqc_files:
         presignurl = get_presign_url_for_single_file(multiqc_file)
-        # call lambda - Q is how
-        # print(presignurl)
 
-    #TODO how do we call lambdas from here? 
-    #arn:aws:sqs:ap-southeast-2:843407916570:DracarysCdkStack-TriggerDracarysQueueBDD94255-v9akoKRrIeI6
+        queue_arn=libssm.get_ssm_param(SQS_DRACARYS_QUEUE_ARN)
+
+        jobs_list = []
+        job = {  "presign_url_json": presignurl, "output_prefix": outprefix, "target_bucket_name": libssm.get_ssm_param(S3_DRACARYS_BUCKET_NAME) }
+        jobs_list.append(job) 
+
+        libsqs.dispatch_jobs(
+                queue_arn=queue_arn,
+                job_list=jobs_list,
+            )
 
     return {
-        "None": None
+        "dracarys_multiqc_step": jobs_list
     }
 
+    
 def get_presign_url_for_single_file(multiqc_file):
     path = multiqc_file.path
     volume_name = multiqc_file.volume_name
@@ -83,7 +93,6 @@ def collect_gds_multiqc_json_files(location: str):
                     page_size=1000,
                     page_token=page_token,
                 )
-                print(file_list)
                 for item in file_list.items:
                     file: libgds.FileResponse = item
 
