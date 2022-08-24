@@ -27,7 +27,7 @@ import logging
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.services import workflow_srv
-from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
+from data_processors.pipeline.orchestration import dracarys_multiqc_step, dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
     dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step, somalier_extract_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
@@ -220,6 +220,13 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing SOMALIER_EXTRACT_STEP")
             results.append(somalier_extract_step.perform(this_workflow))
+
+
+        if "DRACARYS_MULTIQC_STEP" in skiplist:
+            logger.info("Skip performing DRACARYS_MULTIQC_STEP")
+        else:
+            logger.info("Performing DRACARYS_MULTIQC_STEP")
+        results.append(dracarys_multiqc_step.perform(this_workflow))
 
         return results
 
