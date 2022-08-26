@@ -32,14 +32,14 @@ def perform(this_workflow: Workflow):
     except KeyError as e:
         logging.info("Dracarys multiqc step didn't find expected multiqc output data. Exiting.")
         return {}
-
+    
+    jobs_list = []
 
     for multiqc_file in multiqc_files:
         presignurl = get_presign_url_for_single_file(multiqc_file)
 
         queue_arn=libssm.get_ssm_param(SQS_DRACARYS_QUEUE_ARN)
 
-        jobs_list = []
         job = {  "presign_url_json": presignurl, "output_prefix": outprefix, "target_bucket_name": libssm.get_ssm_param(S3_DRACARYS_BUCKET_NAME) }
         jobs_list.append(job) 
 
@@ -47,6 +47,9 @@ def perform(this_workflow: Workflow):
                 queue_arn=queue_arn,
                 job_list=jobs_list,
             )
+    
+    if not jobs_list:
+        return {}
 
     return {
         "dracarys_multiqc_step": jobs_list
