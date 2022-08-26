@@ -102,7 +102,7 @@ class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
         results = dracarys_multiqc_step.perform(mock_wgs_qc_workflow)
         self.assertIsNotNone(results['dracarys_multiqc_step'])
 
-    #@skip
+    @skip
     def test_handler_wts(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_wts
@@ -120,7 +120,7 @@ class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
         results = dracarys_multiqc_step.perform(mock_workflow)
         self.assertIsNotNone(results['dracarys_multiqc_step'])
 
-
+    @skip
     def test_handler_tn(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_tn
@@ -138,17 +138,16 @@ class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
         results = dracarys_multiqc_step.perform(mock_workflow)
         self.assertIsNotNone(results['dracarys_multiqc_step'])
 
-    def test_handler_umccrise(self):
+    @skip
+    def test_handler_umccrise_nomultiqc(self):
         """
-        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_umccrise
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_umccrise_nomultiqc
         """
-        # there is no multiqc step here, we in fact assume this will fail
+        # there is no multiqc step here, we in fact assume this will return empty
         test_wfr="wfr.ea2419104cbd4d8f837ff93d0d36ba99" # umccr__automated__umccrise__SBJ00915__L2100742__20220313ac60d1d2
         mock_workflow: Workflow = WorkflowFactory()
 
         wesrun = wes.get_run(test_wfr, to_dict=True)
-        
-        jsonout = (json.dumps(wesrun['output']))
         
         mock_workflow.output = json.dumps(wesrun['output'])
         mock_workflow.input = json.dumps(wesrun['input'])
@@ -156,4 +155,26 @@ class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
         
         results = dracarys_multiqc_step.perform(mock_workflow)
         self.assertDictEqual(results,{}) # empty dict apporpiate response
+
+    @skip
+    def test_handler_wgs_qc_nomultiqcloc(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_wgs_qc_nomultiqcloc
+        """
+        # there IS multiqc in this output, but it has NO LOCATION - assume an empty response
+        test_wfr="wfr.526b30148ada4a8c9fcf0985c6a1170e" # umccr__automated__dragen_wgs_qc__210708_A00130_0166_AH7KTJDSX2__r
+        mock_workflow: Workflow = WorkflowFactory()
+
+        wesrun = wes.get_run(test_wfr, to_dict=True)
+        
+        mock_workflow.output = json.dumps(wesrun['output'])
+        mock_workflow.input = json.dumps(wesrun['input'])
+        mock_workflow.save()
+        
+        results = dracarys_multiqc_step.perform(mock_workflow)
+        
+        self.assertDictEqual(results,{}) # empty dict apporpiate response
+
+
+        
 
