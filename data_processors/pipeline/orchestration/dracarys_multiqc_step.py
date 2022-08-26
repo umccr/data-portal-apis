@@ -23,17 +23,16 @@ logger.setLevel(logging.INFO)
 
 def perform(this_workflow: Workflow):
     output_json = this_workflow.output
-    try:
-        lookup_keys = ['dragen_bam_out']
-        outprefix = liborca.parse_workflow_output(output_json, lookup_keys)['nameroot']
     
-        lookup_keys = ['multiqc_output_directory', 'location']
+    try:
+        lookup_keys = ['multiqc_output_directory']
         multiqc_output_directory = liborca.parse_workflow_output(output_json, lookup_keys)
-
+        outprefix = multiqc_output_directory['nameroot']
         multiqc_files = collect_gds_multiqc_json_files(multiqc_output_directory['location'])
     except KeyError as e:
-        logging.info("Dracarys multiqc step didn't find the keys it looked for. Exiting.")
+        logging.info("Dracarys multiqc step didn't find expected multiqc output data. Exiting.")
         return {}
+
 
     for multiqc_file in multiqc_files:
         presignurl = get_presign_url_for_single_file(multiqc_file)

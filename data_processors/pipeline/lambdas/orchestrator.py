@@ -279,6 +279,12 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
 
         results = list()
 
+        if "DRACARYS_MULTIQC_STEP" in skiplist:
+            logger.info("Skip performing DRACARYS_MULTIQC_STEP")
+        else:
+            logger.info("Performing DRACARYS_MULTIQC_STEP")
+        results.append(dracarys_multiqc_step.perform(this_workflow))
+
         if "UMCCRISE_STEP" in skiplist:
             logger.info("Skip performing UMCCRISE_STEP")
         else:
@@ -302,3 +308,17 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
             results.append(rnasum_step.perform(this_workflow))
 
         return results
+        
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        logger.info("Received DRAGEN_TSO_CTDNA workflow notification")
+
+        WorkflowRule(this_workflow).must_have_output()
+
+        results = list()
+
+        if "DRACARYS_MULTIQC_STEP" in skiplist:
+            logger.info("Skip performing DRACARYS_MULTIQC_STEP")
+        else:
+            logger.info("Performing DRACARYS_MULTIQC_STEP")
+        results.append(dracarys_multiqc_step.perform(this_workflow))

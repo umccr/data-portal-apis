@@ -4,8 +4,12 @@ from typing import List, Dict
 from django.utils.timezone import now
 from libumccr import libjson
 from libumccr.aws import libssm, libsqs
+from libica.app import wes
+
+
 from unittest import skip
 from data_portal.models.workflow import Workflow
+from data_portal.tests.factories import WorkflowFactory
 from data_portal.tests.factories import DragenWgsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.orchestration import dracarys_multiqc_step
@@ -97,3 +101,59 @@ class DracarysMultiqcStepIntegrationTests(PipelineIntegrationTestCase):
         mock_wgs_qc_workflow = build_wgs_qc_mock()
         results = dracarys_multiqc_step.perform(mock_wgs_qc_workflow)
         self.assertIsNotNone(results['dracarys_multiqc_step'])
+
+    #@skip
+    def test_handler_wts(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_wts
+        """
+
+        test_wfr="wfr.485aaf32336540ee839a929473708fff"
+        mock_workflow: Workflow = WorkflowFactory()
+
+        wesrun = wes.get_run(test_wfr, to_dict=True)
+                
+        mock_workflow.output = json.dumps(wesrun['output'])
+        mock_workflow.input = json.dumps(wesrun['input'])
+        mock_workflow.save()
+
+        results = dracarys_multiqc_step.perform(mock_workflow)
+        self.assertIsNotNone(results['dracarys_multiqc_step'])
+
+
+    def test_handler_tn(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_tn
+        """
+
+        test_wfr="wfr.25f2c89ce8954d038fdbf268d7cc70c9" # umccr__automated__wgs_tumor_normal__SBJ00716__L2100751__20220312aace133e
+        mock_workflow: Workflow = WorkflowFactory()
+
+        wesrun = wes.get_run(test_wfr, to_dict=True)
+        
+        mock_workflow.output = json.dumps(wesrun['output'])
+        mock_workflow.input = json.dumps(wesrun['input'])
+        mock_workflow.save()
+        
+        results = dracarys_multiqc_step.perform(mock_workflow)
+        self.assertIsNotNone(results['dracarys_multiqc_step'])
+
+    def test_handler_umccrise(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dracarys_multiqc_step.DracarysMultiqcStepIntegrationTests.test_handler_umccrise
+        """
+        # there is no multiqc step here, we in fact assume this will fail
+        test_wfr="wfr.ea2419104cbd4d8f837ff93d0d36ba99" # umccr__automated__umccrise__SBJ00915__L2100742__20220313ac60d1d2
+        mock_workflow: Workflow = WorkflowFactory()
+
+        wesrun = wes.get_run(test_wfr, to_dict=True)
+        
+        jsonout = (json.dumps(wesrun['output']))
+        
+        mock_workflow.output = json.dumps(wesrun['output'])
+        mock_workflow.input = json.dumps(wesrun['input'])
+        mock_workflow.save()
+        
+        results = dracarys_multiqc_step.perform(mock_workflow)
+        self.assertDictEqual(results,{}) # empty dict apporpiate response
+
