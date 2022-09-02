@@ -14,8 +14,6 @@ django.setup()
 import logging
 from datetime import datetime
 
-import pandas as pd
-
 from data_processors.lims.services import labmetadata_srv
 from libumccr import libjson
 
@@ -71,11 +69,13 @@ def scheduled_update_handler(event, context):
         logger.warning(f"LabMetadata table is not truncated. Continue with create or update merging strategy.")
         # Note we can decide to error out and halt here instead
 
-    frames = []
+    resp_d = {}
     for year in years:
         logger.info(f"Downloading {year} sheet")
-        frames.append(labmetadata_srv.download_metadata(year))
+        df = labmetadata_srv.download_metadata(year)
+        stats_d = labmetadata_srv.persist_labmetadata(df)
+        resp_d.update({
+            year: stats_d
+        })
 
-    df = pd.concat(frames)
-
-    return labmetadata_srv.persist_labmetadata(df)
+    return resp_d

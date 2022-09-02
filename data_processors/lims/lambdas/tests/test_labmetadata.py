@@ -100,8 +100,10 @@ class LabMetadataUnitTests(TransactionTestCase):
 
         when(libgdrive).download_sheet(...).thenReturn(pd.read_csv(mock_labmetadata_sheet))
 
+        mock_sheet_year = "2021"
+
         result = labmetadata.scheduled_update_handler({
-            'sheets': ["2021"],
+            'sheets': [mock_sheet_year],
             'truncate': False,
         }, None)
 
@@ -109,9 +111,9 @@ class LabMetadataUnitTests(TransactionTestCase):
         logger.info("Example labmetadata.scheduled_update_handler lambda output:")
         logger.info(json.dumps(result))
 
-        self.assertEqual(result['labmetadata_row_new_count'], 3)
-        self.assertEqual(result['labmetadata_row_update_count'], 1)
-        self.assertEqual(result['labmetadata_row_invalid_count'], 0)
+        self.assertEqual(result[mock_sheet_year]['labmetadata_row_new_count'], 3)
+        self.assertEqual(result[mock_sheet_year]['labmetadata_row_update_count'], 1)
+        self.assertEqual(result[mock_sheet_year]['labmetadata_row_invalid_count'], 0)
 
         lib_blank_ext_sample_id = LabMetadata.objects.get(library_id="LIB01")
         self.assertEqual(lib_blank_ext_sample_id.external_sample_id, "")
@@ -160,15 +162,18 @@ class LabMetadataUnitTests(TransactionTestCase):
 
         when(libgdrive).download_sheet(...).thenReturn(pd.read_csv(mock_labmetadata_sheet))
 
-        result = labmetadata.scheduled_update_handler({'sheets': ["2020"]}, None)  # set only to 1 sheet
+        mock_sheet_year = "2020"
+
+        result = labmetadata.scheduled_update_handler({'sheets': [mock_sheet_year]}, None)  # set only to 1 sheet
 
         logger.info("-" * 32)
         logger.info("Example labmetadata.scheduled_update_handler lambda output:")
         logger.info(json.dumps(result))
 
-        self.assertEqual(result['labmetadata_row_new_count'], 4)
-        self.assertEqual(result['labmetadata_row_update_count'], 0)  # no update, everything should be re-created!!
-        self.assertEqual(result['labmetadata_row_invalid_count'], 0)
+        self.assertEqual(result[mock_sheet_year]['labmetadata_row_new_count'], 4)
+        # no update, everything should be re-created!!
+        self.assertEqual(result[mock_sheet_year]['labmetadata_row_update_count'], 0)
+        self.assertEqual(result[mock_sheet_year]['labmetadata_row_invalid_count'], 0)
 
         self.assertEqual(4, LabMetadata.objects.count())
 
@@ -291,7 +296,7 @@ class LabMetadataIntegrationTests(LimsIntegrationTestCase):
         logger.info("-" * 32)
         logger.info("Example LabMetadataIntegrationTests.scheduled_update_handler lambda output:")
         logger.info(json.dumps(result))
-        self.assertGreater(result['labmetadata_row_new_count'], 1)
+        self.assertGreater(result['2022']['labmetadata_row_new_count'], 1)
 
         logger.info(f"Total ingested rows into test db: {LabMetadata.objects.count()}")
 
@@ -315,9 +320,9 @@ class LabMetadataIntegrationTests(LimsIntegrationTestCase):
         logger.info("Example labmetadata.scheduled_update_handler lambda output:")
         logger.info(json.dumps(result))
 
-        self.assertEqual(result['labmetadata_row_new_count'], 7)
-        self.assertEqual(result['labmetadata_row_update_count'], 0)
-        self.assertEqual(result['labmetadata_row_invalid_count'], 0)
+        self.assertEqual(result[year]['labmetadata_row_new_count'], 7)
+        self.assertEqual(result[year]['labmetadata_row_update_count'], 0)
+        self.assertEqual(result[year]['labmetadata_row_invalid_count'], 0)
         self.assertEqual(7, LabMetadata.objects.count())
 
         lib_79 = LabMetadata.objects.get(library_id='L2200079')
