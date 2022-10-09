@@ -71,15 +71,12 @@ See [README_CLI.md](README_CLI.md)
   - https://www.r-bloggers.com/2019/09/athena-and-r-there-is-another-way/
 - noctua 
   - https://github.com/DyfanJones/noctua
-- RStudio/ODBC 
-  - https://db.rstudio.com/databases/athena/
-  - https://docs.aws.amazon.com/athena/latest/ug/connect-with-odbc.html
 - rJava/RJDBC
   - https://github.com/s-u/rJava
   - https://aws.amazon.com/blogs/big-data/running-r-on-amazon-athena/
   - https://developer.ibm.com/tutorials/athena-goes-r-how-to-handle-s3-object-storage-queries-from-r/
-- DBI
-  - https://dbi.r-dbi.org
+- DBI/ODBC
+  - See [RStudio](RStudio)
 
 ### Python
 

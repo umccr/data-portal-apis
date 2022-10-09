@@ -403,6 +403,7 @@ custom:
     number: 3
 
 package:
+  # See https://www.serverless.com/framework/docs/providers/aws/guide/packaging/
   patterns:
     - '!.husky/**'
     - '!.git/**'
@@ -419,6 +420,7 @@ package:
     - '!.env/**'
     - '!data/**'
     - '!swagger/**'
+    - '!docs/**'
     - '!docker-compose.yml'
     - '!docker-compose.override.sample.yml'
     - '!docker-compose.override.yml'
