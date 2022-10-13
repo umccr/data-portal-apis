@@ -6,7 +6,6 @@ from rest_framework.fields import empty
 from data_portal.models.s3object import S3Object
 from data_portal.models.limsrow import LIMSRow
 from data_portal.models.gdsfile import GDSFile
-from data_portal.models.report import Report
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.sequencerun import SequenceRun
@@ -231,12 +230,6 @@ class LabMetadataModelSerializer(serializers.ModelSerializer):
 class S3ObjectModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = S3Object
-        fields = '__all__'
-
-
-class ReportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Report
         fields = '__all__'
 
 

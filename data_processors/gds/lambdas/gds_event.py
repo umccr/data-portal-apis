@@ -17,10 +17,9 @@ from typing import List
 from dateutil.parser import parse
 
 from libumccr import libjson
-from libumccr.aws import libssm, libsqs
 from libica.app import GDSFilesEventType
 
-from data_processors.const import GDSEventRecord, ReportHelper
+from data_processors.const import GDSEventRecord
 from data_processors.gds import services
 
 logger = logging.getLogger()
@@ -43,13 +42,8 @@ def handler(event, context):
     event_records_dict = parse_raw_gds_event_records(messages)
 
     gds_event_records = event_records_dict['gds_event_records']
-    report_event_records = event_records_dict['report_event_records']
 
     results = services.sync_gds_event_records(gds_event_records)
-
-    if report_event_records:
-        queue_arn = libssm.get_ssm_param(ReportHelper.SQS_REPORT_EVENT_QUEUE_ARN)
-        libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=report_event_records, fifo=False)
 
     logger.info("GDS event processing complete")
 
@@ -58,7 +52,6 @@ def handler(event, context):
 
 def parse_raw_gds_event_records(messages: List[dict]):
     gds_event_records = []
-    report_event_records = []
 
     for message in messages:
         event_time = parse(message['messageAttributes']['actiondate']['stringValue'])
@@ -70,15 +63,6 @@ def parse_raw_gds_event_records(messages: List[dict]):
 
         gds_event_records.append(GDSEventRecord(event_type, event_time, gds_volume_name, gds_object_meta))
 
-        if ReportHelper.is_report(gds_object_meta['path']):
-            report_event_records.append({
-                'event_type': event_type.value,
-                'event_time': event_time,
-                'gds_volume_name': gds_volume_name,
-                'gds_object_meta': gds_object_meta
-            })
-
     return {
         'gds_event_records': gds_event_records,
-        'report_event_records': report_event_records
     }
