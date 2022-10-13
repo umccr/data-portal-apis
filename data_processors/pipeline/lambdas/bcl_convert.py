@@ -46,6 +46,10 @@ ADAPTERS_BY_KIT = {
     },
 }
 
+UNSUPPORTED_SAMPLE_TYPE_ASSAY_COMBO = [
+    "ctTSO_ctTSO",
+]
+
 
 def _build_error_message(reason) -> dict:
     error_message = {'message': reason}
@@ -71,8 +75,8 @@ def validate_metadata(event, settings_by_samples):
     # Check through each settings by samples
     # Make sure each has a batch_name, a non-zero length of samples, and override_cycles in the settings section
 
-    # Check batch name
     for settings_by_samples_batch in settings_by_samples:
+
         # Check batch_name attribute
         if settings_by_samples_batch.get("batch_name", None) is None or \
                 settings_by_samples_batch.get("batch_name") == "":
@@ -80,15 +84,21 @@ def validate_metadata(event, settings_by_samples):
             notification_srv.notify_outlier(topic="Batch Name not found", reason=reason, status="Aborted", event=event)
             return reason
 
-    # Check non-zero length samples
-    for settings_by_samples_batch in settings_by_samples:
         batch_name = settings_by_samples_batch.get("batch_name")
+
+        # Check un-supported sample type and assay combo
+        if batch_name in UNSUPPORTED_SAMPLE_TYPE_ASSAY_COMBO:
+            reason = f"{prefix} unsupported sample type and assay combination found for batch {batch_name}"
+            notification_srv.notify_outlier(topic="Invalid metadata", reason=reason, status="Aborted", event=event)
+            return reason
+
         # Check samples length
         if settings_by_samples_batch.get("samples", None) is None or \
                 len(settings_by_samples_batch.get("samples")) == 0:
             reason = f"{prefix} no samples found for batch {batch_name}"
             notification_srv.notify_outlier(topic="Samples not found", reason=reason, status="Aborted", event=event)
             return reason
+
         # Check each samples value is not null
         for sample in settings_by_samples_batch.get("samples"):
             if sample is None or sample == "":
@@ -96,15 +106,13 @@ def validate_metadata(event, settings_by_samples):
                 notification_srv.notify_outlier(topic="Sample was blank", reason=reason, status="Aborted", event=event)
                 return reason
 
-    # Check settings section
-    for settings_by_samples_batch in settings_by_samples:
-        batch_name = settings_by_samples_batch.get("batch_name")
         # Check settings are present
         if settings_by_samples_batch.get("settings", None) is None or \
                 len(settings_by_samples_batch.get("settings")) == 0:
             reason = f"{prefix} no settings found for batch {batch_name}"
             notification_srv.notify_outlier(topic="Settings not found", reason=reason, status="Aborted", event=event)
             return reason
+
         # Check override cycles section
         if settings_by_samples_batch.get("settings").get("override_cycles", None) is None:
             reason = f"{prefix} no override cycles found for batch {batch_name}"
