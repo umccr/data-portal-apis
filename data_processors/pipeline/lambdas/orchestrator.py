@@ -115,7 +115,7 @@ def handler(event, context):
         # If any exception found, log warning and proceed
         logger.warning(f"Cannot read step_skip_list from SSM param. Exception: {e}")
         ssm_skip = {}
-    skip['global'].append(ssm_skip.get('global', []))
+    skip['global'].extend(ssm_skip.get('global', []))
     skip['by_run'].update(ssm_skip.get('by_run', dict()))
 
     if "UPDATE_STEP" in skip['global']:

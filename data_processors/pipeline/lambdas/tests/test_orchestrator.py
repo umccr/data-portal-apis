@@ -88,6 +88,46 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         self.assertRaises(json.JSONDecodeError)
 
+    def test_skip_list_handler(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_handler
+        """
+        mock_workflow = WorkflowFactory()
+        mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_workflow.output = ""
+        mock_workflow.save()
+
+        # stub at after bcl_convert workflow succeeded state
+        when(fastq_update_step).perform(...).thenRaise(ValueError("FASTQ_UPDATE_STEP should not be called"))
+        when(google_lims_update_step).perform(...).thenRaise(ValueError("GOOGLE_LIMS_UPDATE_STEP should not be called"))
+        when(dragen_wgs_qc_step).perform(...).thenRaise(ValueError("DRAGEN_WGS_QC_STEP should not be called"))
+        when(dragen_tso_ctdna_step).perform(...).thenRaise(ValueError("DRAGEN_TSO_CTDNA_STEP should not be called"))
+        when(dragen_wts_step).perform(...).thenRaise(ValueError("DRAGEN_WTS_STEP should not be called"))
+        when(orchestrator).update_step(...).thenRaise(ValueError("UPDATE_STEP should not be called"))
+
+        skiplist = {
+            'global': [
+                "UPDATE_STEP",
+                "FASTQ_UPDATE_STEP",
+                "GOOGLE_LIMS_UPDATE_STEP",
+                "DRAGEN_WGS_QC_STEP",
+                "DRAGEN_TSO_CTDNA_STEP",
+                "DRAGEN_WTS_STEP",
+            ],
+            'by_run': {}
+        }
+
+        event = {
+            'wfr_id': mock_workflow.wfr_id,
+            'wfv_id': mock_workflow.wfv_id,
+            'skip': skiplist,
+        }
+
+        results = orchestrator.handler(event, None)
+        logger.info(results)
+
+        self.assertEqual(len(results), 0)  # should skip all
+
     def test_skip_list_no_skip(self):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_skip_list_no_skip
@@ -234,7 +274,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 class OrchestratorIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
-    # uncomment @skip and hit the each test case!
+    # uncomment @skip and hit each test case!
     # and keep decorated @skip after tested
 
     @skip
