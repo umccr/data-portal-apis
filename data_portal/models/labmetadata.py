@@ -156,7 +156,7 @@ class LabMetadata(PortalBaseModel):
     # external_library_id = models.CharField(max_length=255)
 
     library_id = models.CharField(max_length=255, unique=True)
-    sample_name = models.CharField(max_length=255)
+    sample_name = models.CharField(max_length=255, null=True, blank=True)
     sample_id = models.CharField(max_length=255)
     external_sample_id = models.CharField(max_length=255, null=True, blank=True)
     subject_id = models.CharField(max_length=255, null=True, blank=True)
@@ -177,8 +177,8 @@ class LabMetadata(PortalBaseModel):
     objects = LabMetadataManager()
 
     def __str__(self):
-        return 'id=%s, library_id=%s, sample_id=%s, sample_name=%s, subject_id=%s' \
-               % (self.id, self.library_id, self.sample_id, self.sample_name, self.subject_id)
+        return 'id=%s, library_id=%s, sample_id=%s, subject_id=%s' \
+               % (self.id, self.library_id, self.sample_id, self.subject_id)
 
     @classmethod
     def get_table_name(cls):
