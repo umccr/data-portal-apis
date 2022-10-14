@@ -13,7 +13,6 @@ from data_portal.viewsets.libraryrun import LibraryRunViewSet
 from data_portal.viewsets.limsrow import LIMSRowViewSet
 from data_portal.viewsets.pairing import PairingViewSet
 from data_portal.viewsets.presignedurl import PresignedUrlViewSet
-from data_portal.viewsets.report import ReportViewSet
 from data_portal.viewsets.run import RunViewSet
 from data_portal.viewsets.s3object import S3ObjectViewSet
 from data_portal.viewsets.sequence import SequenceViewSet
@@ -31,7 +30,6 @@ router.register(r'gds', GDSFileViewSet, basename='gds')
 router.register(r'buckets', BucketViewSet, basename='buckets')
 router.register(r'subjects', SubjectViewSet, basename='subjects')
 router.register(r'runs', RunViewSet, basename='runs')
-router.register(r'reports', ReportViewSet, basename='reports')
 router.register(r'presign', PresignedUrlViewSet, basename='presign')
 
 # ica pipeline workflow automation related endpoints

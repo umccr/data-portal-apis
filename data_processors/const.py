@@ -12,69 +12,6 @@ TRACKING_SHEET_ID = "/umccr/google/drive/tracking_sheet_id"
 LIMS_SHEET_ID = "/umccr/google/drive/lims_sheet_id"
 
 
-class ReportHelper(ABC):
-    """Abstract helper for Report pipeline"""
-
-    REPORT_EXTENSIONS = [
-        "json.gz",
-        "json",
-    ]
-
-    REPORT_KEYWORDS = [
-        "cancer_report_tables",
-        "multiqc_report_data",
-        "dragen_tso_ctdna",
-    ]
-
-    # FIXME Report table growth rate is quite progressive; this observes over a year worth of run
-    #  since we started report data ingesting pipeline. See a quick db stats snapshot at
-    #  https://github.com/umccr/data-portal-apis/issues/143
-    #  Initially, we started ingest report data size < 150MB; then quickly reduced to 10MB. And now 1MB.
-    #  So I propose, this merit its own Report data warehousing ETL pipeline with a better fitted solution for the need.
-    #  -victor, on 20220421
-    #
-    # Operational limit for decompressed report json data size ~1MB
-    MAX_DECOMPRESSED_REPORT_SIZE_IN_BYTES = 1100000
-
-    SQS_REPORT_EVENT_QUEUE_ARN = "/data_portal/backend/sqs_report_event_queue_arn"
-
-    @classmethod
-    def extract_format(cls, key: str):
-        """
-        We limit that all reports must be provided in JSON format.
-        """
-
-        key = key.lower()
-
-        for ext in cls.REPORT_EXTENSIONS:
-            if key.endswith(ext):
-                return ext
-
-        return None
-
-    @classmethod
-    def extract_source(cls, key: str):
-        """
-        Check S3 object key to determine report source.
-        """
-
-        key = key.lower()
-
-        for keyword in cls.REPORT_KEYWORDS:
-            if keyword in key:
-                return keyword
-
-        return None
-
-    @classmethod
-    def is_report(cls, key: str) -> bool:
-        """
-        Use report format and reporting source to determine further processing is required for report data ingestion.
-        Filtering strategy is finding a very discriminated "keyword" in S3 object key and must be JSON format.
-        """
-        return True if cls.extract_format(key) is not None and cls.extract_source(key) is not None else False
-
-
 class AbstractEventRecord(ABC):
 
     def __init__(self, event_type, event_time):

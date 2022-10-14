@@ -145,20 +145,6 @@ functions:
 #    environment:
 #      AWS_XRAY_SDK_ENABLED: true
 
-  sqs_report_event_processor:
-    handler: data_processors.reports.lambdas.report_event.sqs_handler
-    layers:
-      - { Ref: PythonRequirementsLambdaLayer }
-    events:
-      - sqs:
-          arn: ${ssm:/data_portal/backend/sqs_report_event_queue_arn}
-    timeout: 60
-    memorySize: 4096
-    # Uncomment to enable xray on this lambda
-#    tracing: Active
-#    environment:
-#      AWS_XRAY_SDK_ENABLED: true
-
   sqs_gds_event_processor:
     handler: data_processors.gds.lambdas.gds_event.handler
     layers:

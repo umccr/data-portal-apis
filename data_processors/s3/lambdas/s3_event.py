@@ -16,9 +16,9 @@ from typing import Union, Dict, List
 from dateutil.parser import parse
 
 from libumccr import libjson
-from libumccr.aws import libssm, libsqs, libs3
+from libumccr.aws import libs3
 from data_processors.s3 import services
-from data_processors.const import ReportHelper, S3EventRecord
+from data_processors.const import S3EventRecord
 
 # from aws_xray_sdk.core import xray_recorder
 
@@ -45,18 +45,11 @@ def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
     event_records_dict = parse_raw_s3_event_records(messages)
 
     s3_event_records = event_records_dict['s3_event_records']
-    report_event_records = event_records_dict['report_event_records']
 
     # subsegment.put_metadata('total', len(s3_event_records), 's3_event_records')
     # subsegment.put_metadata('records', s3_event_records, 's3_event_records')
-    # subsegment.put_metadata('total', len(report_event_records), 'report_event_records')
-    # subsegment.put_metadata('records', report_event_records, 'report_event_records')
 
     results = services.sync_s3_event_records(s3_event_records)
-
-    if report_event_records:
-        queue_arn = libssm.get_ssm_param(ReportHelper.SQS_REPORT_EVENT_QUEUE_ARN)
-        libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=report_event_records, fifo=False)
 
     # xray_recorder.end_subsegment()
 
@@ -100,16 +93,6 @@ def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
 
             s3_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
 
-            # filter early for records that need further processing with Report pipeline
-            if ReportHelper.is_report(s3_object_meta['key']):
-                report_event_records.append({
-                    'event_type': event_type.value,
-                    'event_time': event_time,
-                    's3_bucket_name': s3_bucket_name,
-                    's3_object_meta': s3_object_meta
-                })
-
     return {
         's3_event_records': s3_event_records,
-        'report_event_records': report_event_records
     }
