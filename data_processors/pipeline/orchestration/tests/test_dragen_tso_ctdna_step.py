@@ -193,7 +193,7 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
 class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
-    # uncomment @skip and hit the each test case!
+    # uncomment @skip and hit each test case!
     # and keep decorated @skip after tested
 
     @skip
@@ -204,8 +204,8 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
 
         # --- pick one successful BCL Convert run
 
-        bcl_convert_wfr_id = "wfr.097dc05051b44c0c8717b32d89dfcf81"  # 210429_A00130_0157_BH3N3FDSX2 in PROD
-        total_jobs_to_eval = 15
+        bcl_convert_wfr_id = "wfr.ef474d3973e3406cb528fe45ac7be861"  # 210429_A00130_0157_BH3N3FDSX2 in PROD
+        total_jobs_to_eval = 8
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 
@@ -214,7 +214,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
         # - populate LabMetadata tables in test db
         from data_processors.lims.lambdas import labmetadata
         labmetadata.scheduled_update_handler({
-            'sheets': ["2020", "2021"],
+            'sheets': ["2022"],
             'truncate': False
         }, None)
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")

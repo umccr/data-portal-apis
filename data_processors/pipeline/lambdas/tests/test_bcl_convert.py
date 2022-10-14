@@ -211,6 +211,40 @@ class BCLConvertUnitTests(PipelineUnitTestCase):
         # should call to slack webhook once
         verify(libslack.http.client.HTTPSConnection, times=1).request(...)
 
+    def test_validate_unsupported_batch_name(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_unsupported_batch_name
+        """
+        mock_event = {
+            'gds_volume_name': "bssh.xxxx",
+            'gds_folder_path': "/Runs/cccc.gggg",
+            'seq_run_id': "yyy",
+            'seq_name': "zzz",
+        }
+
+        settings_by_samples = [
+            {
+                "batch_name": "ctTSO_ctTSO",
+                "samples": [
+                    "PTC_EXPn200908LL_L2000002",
+                    "PTC_EXPn200908LL_L2000003"
+                ],
+                "settings": {
+                    "override_cycles": "Y100;I8N2;I8N2;Y100"
+                }
+            }
+        ]
+
+        reason = bcl_convert.validate_metadata(mock_event, settings_by_samples)
+
+        logger.info("-" * 32)
+        logger.info(json.dumps(reason))
+
+        self.assertIsNotNone(reason)
+
+        # should call to slack webhook once
+        verify(libslack.http.client.HTTPSConnection, times=1).request(...)
+
     def test_validate_metadata_no_samples(self):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_bcl_convert.BCLConvertUnitTests.test_validate_metadata_no_samples

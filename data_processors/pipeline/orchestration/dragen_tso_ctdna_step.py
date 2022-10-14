@@ -24,7 +24,7 @@ from data_processors.pipeline.tools import liborca
 
 # GLOBALS
 SAMPLESHEET_ASSAY_TYPE_REGEX = r"^(?:SampleSheet\.)(\S+)(?:\.csv)$"
-CTTSO_ASSAY_TYPE = ["ctDNA_ctTSO", "ctTSO_ctTSO"]  # FIXME this will conform to one of these elements at some point.
+CTTSO_ASSAY_TYPE = ["ctDNA_ctTSO"]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -168,8 +168,10 @@ def get_ct_tso_samplesheet_from_bcl_convert_output(workflow_output):
         if assay_type in CTTSO_ASSAY_TYPE:
             return str(samplesheet_location)
 
-    logger.warning("Did not get a ct tso samplesheet from the bclconvert output")
-    return None
+    # If corresponding SampleSheet is not found then we should not proceed at this point
+    error_msg = "Did not get corresponding ctTSO samplesheet from the bcl_convert output"
+    logger.error(error_msg)
+    raise ValueError(error_msg)
 
 
 def get_run_xml_files_from_bcl_convert_workflow(bcl_convert_input):
