@@ -237,9 +237,8 @@ class LabMetadataUnitTests(TransactionTestCase):
         row_6 = _generate_labmetadata_row_dict('6')
 
         row_1['sample_id'] = ''
-        row_1['sample_name'] = ''
         row_1['library_id'] = ''
-        row_3['sample_name'] = ''
+        row_3['sample_id'] = ''
         row_4['sample_id'] = ''
         row_5['library_id'] = ''
 
