@@ -271,4 +271,3 @@ class GDSEventUnitTests(GDSEventUnitTestCase):
         """
         event_records_dict = gds_event.parse_raw_gds_event_records(_make_mock_sqs_message()['Records'])
         self.assertEqual(len(event_records_dict['gds_event_records']), 1)
-        self.assertEqual(len(event_records_dict['report_event_records']), 1)

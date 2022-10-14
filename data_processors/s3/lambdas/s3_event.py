@@ -65,7 +65,6 @@ def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
     :return: list of S3EventRecord objects
     """
     s3_event_records = []
-    report_event_records = []
 
     for message in messages:
         body: dict = libjson.loads(message['body'])

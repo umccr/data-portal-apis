@@ -2,13 +2,11 @@ import json
 import logging
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.test import override_settings
+from django.test.utils import override_settings
 from django.utils.timezone import now
 
 from data_portal.models.limsrow import LIMSRow, S3LIMS
-from data_portal.models.report import Report
 from data_portal.models.s3object import S3Object
-from data_portal.tests import factories
 from data_processors.s3.lambdas import s3_event
 from data_processors.s3.tests.case import S3EventUnitTestCase, S3EventIntegrationTestCase, logger
 
@@ -57,10 +55,12 @@ mock_report_event = {
 
 class S3EventUnitTests(S3EventUnitTestCase):
 
+    @override_settings(DEBUG=True)
     def test_handler(self) -> None:
         """
-        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler
+        python manage.py test -v 3 data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler
         """
+        logging.getLogger('django.db.backends').setLevel(logging.DEBUG)
 
         # Compose test data
         lims_row = LIMSRow(
@@ -198,57 +198,12 @@ class S3EventUnitTests(S3EventUnitTestCase):
         logger.info(json.dumps(results))
         self.assertEqual(results['created_count'], 1)
 
-    @override_settings(DEBUG=True)
-    def test_delete_s3_object_linked_with_report(self):
-        """
-        python manage.py test -v 3 data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_delete_s3_object_linked_with_report
-        """
-        logging.getLogger('django.db.backends').setLevel(logging.DEBUG)
-
-        mock_report: Report = factories.HRDetectReportFactory()
-        mock_s3_object: S3Object = factories.ReportLinkedS3ObjectFactory()
-        mock_report.s3_object_id = mock_s3_object.id
-        mock_report.save()
-
-        s3_event_message = {
-            "Records": [
-                {
-                    "eventTime": "2019-01-01T00:00:00.000Z",
-                    "eventName": "ObjectRemoved",
-                    "s3": {
-                        "bucket": {
-                            "name": f"{mock_s3_object.bucket}",
-                        },
-                        "object": {
-                            "key": f"{mock_s3_object.key}",
-                            "size": 1,
-                            "eTag": "object eTag",
-                        }
-                    }
-                }
-            ]
-        }
-
-        sqs_event = {
-            "Records": [
-                {
-                    "body": json.dumps(s3_event_message),
-                }
-            ]
-        }
-
-        s3_event.handler(sqs_event, None)
-
-        report_in_db = Report.objects.get(id__exact=mock_report.id)
-        self.assertIsNotNone(report_in_db.s3_object_id)
-
     def test_parse_raw_s3_event_records(self):
         """
         python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_parse_raw_s3_event_records
         """
         event_records_dict = s3_event.parse_raw_s3_event_records(mock_report_event['Records'])
         self.assertEqual(len(event_records_dict['s3_event_records']), 1)
-        self.assertEqual(len(event_records_dict['report_event_records']), 1)
 
     def test_parse_raw_s3_event_records_should_skip(self):
         """
@@ -256,13 +211,12 @@ class S3EventUnitTests(S3EventUnitTestCase):
         """
         event_records_dict = s3_event.parse_raw_s3_event_records(mock_event_no_records['Records'])
         self.assertEqual(len(event_records_dict['s3_event_records']), 0)
-        self.assertEqual(len(event_records_dict['report_event_records']), 0)
 
 
 class S3EventIntegrationTests(S3EventIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
     # required appropriate access mechanism setup such as active aws login session
-    # uncomment @skip and hit the each test case!
+    # uncomment @skip and hit each test case!
     # and keep decorated @skip after tested
 
     pass
