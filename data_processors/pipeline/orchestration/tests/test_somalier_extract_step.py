@@ -3,12 +3,14 @@ from typing import List, Dict
 
 from django.utils.timezone import now
 from libumccr import libjson
+from mockito import when
 
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import DragenWgsQcWorkflowFactory
-from data_processors.pipeline.domain.workflow import WorkflowStatus
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.orchestration import somalier_extract_step
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
+from data_processors.pipeline.tools import liborca
 
 # From from wfr.0d3dea278b1c471d8316b9d5a242dd34
 mock_wgs_workflow_id = "wfr.0d3dea278b1c471d8316b9d5a242dd34"
@@ -98,3 +100,32 @@ class SomalierExtractStepUnitTests(PipelineUnitTestCase):
             logger.info(f"{libjson.dumps(job)}")  # NOTE libjson is intentional and part of serde test
             self.assertIn("dragen_bam_out", json.loads(mock_wgs_qc_workflow.output).keys())
             self.assertEqual(job['gds_path'], json.loads(mock_wgs_qc_workflow.output)['dragen_bam_out']['location'])
+
+    def test_prepare_somalier_extract_jobs_cond(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_somalier_extract_step.SomalierExtractStepUnitTests.test_prepare_somalier_extract_jobs_cond
+        """
+
+        # NOTE: workflow output parser is already tested with liborca,
+        # so we just have to test if-else logic between workflow switch condition still works
+
+        when(liborca).parse_transcriptome_output_for_bam_file(...).thenReturn("gds://vol/path/wts.bam")
+        when(liborca).parse_wgs_alignment_qc_output_for_bam_file(...).thenReturn("gds://vol/path/wgs.bam")
+        when(liborca).parse_tso_ctdna_output_for_bam_file(...).thenReturn("gds://vol/path/tso.bam")
+
+        def trial_func(eval_me):
+            job_list: List[Dict] = somalier_extract_step.prepare_somalier_extract_jobs(badly_mutated_mockflow)
+            self.assertIsNotNone(job_list)
+
+            for job in job_list:
+                logger.info(f"{libjson.dumps(job)}")  # NOTE libjson is intentional and part of serde test
+                self.assertIn(eval_me, job['gds_path'])
+
+        badly_mutated_mockflow = build_wgs_qc_mock()
+        trial_func("wgs.bam")
+
+        badly_mutated_mockflow.type_name = WorkflowType.DRAGEN_WTS.value
+        trial_func("wts.bam")
+
+        badly_mutated_mockflow.type_name = WorkflowType.DRAGEN_TSO_CTDNA.value
+        trial_func("tso.bam")

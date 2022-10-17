@@ -397,6 +397,42 @@ def parse_transcriptome_output_for_bam_file(workflow_output_json: str, deep_chec
 
     # assuming it should have only 1 BAM file in output directory
     if not len(bam_files) == 1:
-        logger.warning(f"Couldn't get bam file from transcriptome output directory '{transcriptome_output_location}'")
+        raise ValueError(f"Couldn't get bam file from transcriptome output directory '{transcriptome_output_location}'")
 
     return bam_files[0]
+
+
+def parse_tso_ctdna_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
+    """
+    Parse the bam file out of the TSO ctDNA (DRAGEN_TSO_CTDNA or tso_ctdna_tumor_only) workflow
+
+    :param workflow_output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return:
+    """
+
+    lookup_keys = ["output_results_dir_by_sample"]
+
+    output_results_dir_by_sample: List = parse_workflow_output(workflow_output_json, lookup_keys)
+
+    if deep_check:
+        if output_results_dir_by_sample is None:
+            raise ValueError(f"Unexpected tso_ctdna_tumor_only output. The output_results_dir_by_sample is None")
+
+        if not len(output_results_dir_by_sample) == 1:
+            raise ValueError(f"Unexpected tso_ctdna_tumor_only output. Can't handle multiple samples output")
+
+    results_by_sample = output_results_dir_by_sample[0]
+
+    basename = results_by_sample['basename']  # the main BAM is using <basename>.bam under this directory
+    location = results_by_sample['location']
+
+    main_bam_path = f"{location}/{basename}.bam"
+
+    # make a check that it really exists in GDS
+    matched_bam_files = gds.check_file(gds_path=main_bam_path)
+
+    if not len(matched_bam_files) == 1:
+        raise ValueError(f"Couldn't get bam file from tso_ctdna_tumor_only output directory '{location}'")
+
+    return main_bam_path

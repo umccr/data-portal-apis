@@ -382,6 +382,73 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         self.assertRegex(transcriptome_bam, r"^gds:\/\/\S+\.bam$")
         logger.info(transcriptome_bam)
 
+    def test_parse_tso_ctdna_output_for_bam_file(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_tso_ctdna_output_for_bam_file
+        """
+        # NOTE: we would not really need a big mock here but that's the intention
+        # so that we capture the workflow output structure at this point
+        # When this "contract" is changed, it is unittest job to determine this contract is still check-in-place
+
+        when(liborca.gds).check_file(...).thenReturn(["gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results/PRJ420001_L4200001/PRJ420001_L4200001.bam", ])
+
+        tso_ctdna_bam = liborca.parse_tso_ctdna_output_for_bam_file(json.dumps(
+            {
+                "output_results_dir": {
+                    "location": "gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results",
+                    "basename": "Results",
+                    "nameroot": "Results",
+                    "nameext": "",
+                    "class": "Directory",
+                    "size": None
+                },
+                "output_results_dir_by_sample": [
+                    {
+                        "class": "Directory",
+                        "location": "gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results/PRJ420001_L4200001",
+                        "basename": "PRJ420001_L4200001",
+                        "listing": [
+                            {
+                                "class": "File",
+                                "location": "gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results/PRJ420001_L4200001/PRJ420001_L4200001.AlignCollapseFusionCaller_metrics.json.gz",
+                                "basename": "PRJ420001_L4200001.AlignCollapseFusionCaller_metrics.json.gz",
+                                "size": 2798,
+                                "nameroot": "PRJ420001_L4200001.AlignCollapseFusionCaller_metrics.json",
+                                "nameext": ".gz"
+                            },
+                            {
+                                "class": "File",
+                                "location": "gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results/PRJ420001_L4200001/PRJ420001_L4200001.bam",
+                                "basename": "PRJ420001_L4200001.bam",
+                                "size": 7714127545,
+                                "nameroot": "PRJ420001_L4200001",
+                                "nameext": ".bam"
+                            },
+                            {
+                                "class": "File",
+                                "location": "gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results/PRJ420001_L4200001/PRJ420001_L4200001.cleaned.stitched.bam",
+                                "basename": "PRJ420001_L4200001.cleaned.stitched.bam",
+                                "size": 3423990554,
+                                "nameroot": "PRJ420001_L4200001.cleaned.stitched",
+                                "nameext": ".bam"
+                            },
+                            {
+                                "class": "File",
+                                "location": "gds://vol/analysis_data/SBJ00001/tso_ctdna_tumor_only/20221011820647e4/L4200001/Results/PRJ420001_L4200001/evidence.PRJ420001_L4200001.bam",
+                                "basename": "evidence.PRJ420001_L4200001.bam",
+                                "size": 5336845,
+                                "nameroot": "evidence.PRJ420001_L4200001",
+                                "nameext": ".bam"
+                            },
+                        ]
+                    }
+                ],
+            }
+        ))
+
+        self.assertRegex(tso_ctdna_bam, r"^gds:\/\/\S+\.bam$")
+        logger.info(tso_ctdna_bam)
+
 
 class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip
@@ -585,3 +652,22 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
         # Assert that we return a bam file
         self.assertRegex(dragen_transcriptome_bam_file, r"^gds:\/\/\S+\.bam$")
         logger.info(dragen_transcriptome_bam_file)
+
+    @skip
+    def test_parse_tso_ctdna_output_for_bam_file(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_tso_ctdna_output_for_bam_file
+        """
+
+        wfr_id = "wfr.bee03c85c5c44d63925b35428ef147a2"  # SBJ02873 in PROD
+
+        wfl_run = wes.get_run(wfr_id)
+
+        dragen_tso_ctdna_main_bam_file = liborca.parse_tso_ctdna_output_for_bam_file(
+            json.dumps(wfl_run.output)
+        )
+
+        # Assert that we return a bam file
+        self.assertRegex(dragen_tso_ctdna_main_bam_file, r"^gds:\/\/\S+\.bam$")
+        self.assertIn("SBJ02873", dragen_tso_ctdna_main_bam_file)
+        logger.info(dragen_tso_ctdna_main_bam_file)
