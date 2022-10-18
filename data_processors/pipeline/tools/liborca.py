@@ -424,15 +424,26 @@ def parse_tso_ctdna_output_for_bam_file(workflow_output_json: str, deep_check: b
 
     results_by_sample = output_results_dir_by_sample[0]
 
-    basename = results_by_sample['basename']  # the main BAM is using <basename>.bam under this directory
-    location = results_by_sample['location']
+    listing: List = results_by_sample['listing']  # get listing of this directory
 
-    main_bam_path = f"{location}/{basename}.bam"
+    for listed_item in listing:
+        # Only interested in bam files
+        if not listed_item.get("nameext", None) == ".bam":
+            continue
 
-    # make a check that it really exists in GDS
-    matched_bam_files = gds.check_file(gds_path=main_bam_path)
+        # Collect the bam that isn't cleaned.stitched.bam OR the evidence bam
+        if listed_item.get("basename", "").startswith("evidence."):
+            continue
+        if listed_item.get("basename", "").endswith("cleaned.stitched.bam"):
+            continue
 
-    if not len(matched_bam_files) == 1:
-        raise ValueError(f"Couldn't get bam file from tso_ctdna_tumor_only output directory '{location}'")
+        # Found
+        main_bam_path = listed_item.get("location")
 
-    return main_bam_path
+        # Make a check that it really exists in GDS
+        matched_bam_files = gds.check_file(gds_path=main_bam_path)
+
+        if not len(matched_bam_files) == 1:
+            raise ValueError(f"Couldn't get bam file from tso_ctdna_tumor_only output directory '{main_bam_path}'")
+
+        return main_bam_path
