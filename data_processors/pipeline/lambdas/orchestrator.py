@@ -245,21 +245,24 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
 
         return results
 
-    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower() and \
-            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
-        logger.info("Received DRAGEN_TSO_CTDNA workflow notification")
-
-        WorkflowRule(this_workflow).must_have_output()
-
-        results = list()
-
-        if "SOMALIER_EXTRACT_STEP" in skiplist:
-            logger.info("Skip performing SOMALIER_EXTRACT_STEP")
-        else:
-            logger.info("Performing SOMALIER_EXTRACT_STEP")
-            results.append(somalier_extract_step.perform(this_workflow))
-
-        return results
+    # FIXME TSO500 ctDNA RUO bundle reference genome hg19
+    #   https://github.com/umccr/data-portal-apis/issues/509
+    #   https://github.com/umccr/cwl-ica/issues/153
+    # elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower() and \
+    #         this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+    #     logger.info("Received DRAGEN_TSO_CTDNA workflow notification")
+    #
+    #     WorkflowRule(this_workflow).must_have_output()
+    #
+    #     results = list()
+    #
+    #     if "SOMALIER_EXTRACT_STEP" in skiplist:
+    #         logger.info("Skip performing SOMALIER_EXTRACT_STEP")
+    #     else:
+    #         logger.info("Performing SOMALIER_EXTRACT_STEP")
+    #         results.append(somalier_extract_step.perform(this_workflow))
+    #
+    #     return results
 
     elif this_workflow.type_name.lower() == WorkflowType.TUMOR_NORMAL.value.lower() and \
             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
