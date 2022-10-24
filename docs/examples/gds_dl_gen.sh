@@ -79,7 +79,7 @@ curl -s -X GET -H "Authorization: Bearer $PORTAL_TOKEN" \
 # - then, using file name to pass-in curl output flag
 jq -cr '.results[] | "\(.id) \(.name)"' gds_records.json | while read -r id name; do
     url=$(curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "$ENDPOINT/$id/presign" | jq -r '.signed_url')
-    echo "curl -o '$name' '$url'"
+    echo "curl -o '$name' '$url'" >> gds_downloader.txt
     #break
 done
 
