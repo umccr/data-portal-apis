@@ -98,8 +98,8 @@ class HolmesPipeline(HolmesInterface):
         self.srv_discovery_client = aws.srv_discovery_client()
         self.stepfn_client = aws.stepfn_client()
 
-        self.service_id = self.__discover_service_id()
-        self.service_attributes = self.__discover_service_attributes()
+        self.service_id = self.discover_service_id()
+        self.service_attributes = self.discover_service_attributes()
 
         self.check_steps_arn = self.service_attributes[self.CHECK_STEPS_ARN_KEY]
         self.extract_steps_arn = self.service_attributes[self.EXTRACT_STEPS_ARN_KEY]
@@ -108,7 +108,7 @@ class HolmesPipeline(HolmesInterface):
         self.execution_instance = None
         self.execution_result = None
 
-    def __discover_service_id(self) -> str:
+    def discover_service_id(self) -> str:
         fingerprint_service_id_list = list(
             filter(
                 lambda x: x.get("Name") == self.SERVICE_NAME,
@@ -121,7 +121,7 @@ class HolmesPipeline(HolmesInterface):
 
         return fingerprint_service_id_list[0].get("Id")
 
-    def __discover_service_attributes(self) -> Dict:
+    def discover_service_attributes(self) -> Dict:
         instances: List = self.srv_discovery_client.list_instances(ServiceId=self.service_id).get("Instances", None)
 
         if instances is None or len(instances) == 0:

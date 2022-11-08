@@ -37,6 +37,13 @@ class SomalierCheckUnitTests(PipelineUnitTestCase):
         when(HolmesPipeline).check(...).thenReturn(mock_holmes_pipeline)
         when(mock_holmes_pipeline).poll().thenReturn(mock_holmes_pipeline)
 
+        # mockito to intercept Holmes pipeline service discovery and make it found
+        when(HolmesPipeline).discover_service_id().thenReturn("mock_holmes_fingerprint_service")
+        when(HolmesPipeline).discover_service_attributes().thenReturn({
+            "checkStepsArn": "checkStepsArn",
+            "extractStepsArn": "extractStepsArn",
+        })
+
         results = somalier_check.handler({
             "index": "gds://vol/fol/MDX00001.bam"
         }, None)
