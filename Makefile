@@ -49,9 +49,6 @@ test: load_localstack
 	@python manage.py migrate
 	@python manage.py test
 
-fastest: # fist run test!
-	@python manage.py test data_processors.reports
-
 sure:
 	@python manage.py test data_processors.pipeline
 

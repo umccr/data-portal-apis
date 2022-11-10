@@ -19,11 +19,11 @@ python -V
 Python 3.9.6
 
 node -v
-v14.17.3
+v16.15.0
 
 npm i -g yarn
 yarn -v
-1.22.10
+1.22.19
 ```
 
 then activate it:
@@ -76,7 +76,7 @@ make syncdata
 make loaddata
 ```
 
-#### Git Flow & Pre-commit Hook
+#### Pre-commit Hook
 
 > NOTE: We use [pre-commit](https://github.com/umccr/wiki/blob/master/computing/dev-environment/git-hooks.md). It will guard and enforce static code analysis such as `lint` and any security `audit` via pre-commit hook. You are encouraged to fix those. If you wish to skip this for good reason, you can by-pass [Git pre-commit hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) by using `git commit --no-verify` flag.
 
@@ -86,12 +86,30 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+#### GitOps
+
+> NOTE: We use [GitOps](https://www.google.com/search?q=GitOps) and, release to deployment environments are all tracked by _long-running_ Git branches as follows.
+
 - The default branch is `dev`. Any merges are CI/CD to `DEV` account environment.
+- The staging branch is `stg`. Any merges are CI/CD to `STG` account environment.
 - The `main` branch is production. Any merges are CI/CD to `PROD` account environment.
-- Merge to `main` should be fast-forward merge from `dev` to maintain sync and linearity as follows:
+
+#### Git Flow
+
+- Typically, make your feature branch out from `dev` to work on your story point. Then please submit PR to `dev`.
+- Upon finalising release, create PR using GitHub UI from `dev` to `stg` or; from `stg` to `main` accordingly.
+
+- Merge to `stg` should be fast-forward merge from `dev` to maintain sync and linearity as follows:
+```
+git checkout stg
+git merge --ff-only dev
+git push origin stg
+```
+
+- Merge to `main` should be fast-forward merge from `stg` to maintain sync and linearity as follows:
 ```
 git checkout main
-git merge --ff-only dev
+git merge --ff-only stg
 git push origin main
 ```
 

@@ -5,19 +5,20 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
-    "aws-sdk": "^2.1200.0",
+    "aws-sdk": "^2.1251.0",
     "aws4-axios": "^2.4.9",
-    "axios": "^0.27.2"
+    "axios": "^1.1.3"
   },
   "devDependencies": {
-    "serverless": "^3.22.0",
+    "serverless": "^3.24.1",
     "serverless-associate-waf": "^1.2.1",
-    "serverless-domain-manager": "^6.1.0",
+    "serverless-domain-manager": "^6.2.0",
     "serverless-prune-plugin": "^2.0.1",
-    "serverless-python-requirements": "^5.4.0",
+    "serverless-python-requirements": "^6.0.0",
     "serverless-wsgi": "^3.0.1"
   },
   "scripts": {},
   "resolutions": {
+    "minimatch": "^3.0.5"
   }
 }
