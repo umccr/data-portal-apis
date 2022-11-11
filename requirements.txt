@@ -17,4 +17,3 @@ sample-sheet==0.13.0
 requests==2.28.1
 pandas==1.5.1
 cachetools==5.2.0
-drf_yasg==1.21.4

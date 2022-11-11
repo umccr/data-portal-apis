@@ -20,6 +20,25 @@ DATABASES = {
     'default': db_conn_cfg
 }
 
-INSTALLED_APPS += ('django_extensions',)
+INSTALLED_APPS += ('django_extensions', 'drf_yasg',)
+
+ROOT_URLCONF = 'data_portal.urls.local'
 
 RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = sys.maxsize
+
+# --- drf_yasg swagger and redoc settings
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}
+
+REDOC_SETTINGS = {
+   'LAZY_RENDERING': False,
+}

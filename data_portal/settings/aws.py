@@ -29,8 +29,10 @@ CORS_ALLOW_CREDENTIALS = False
 
 CORS_ALLOWED_ORIGINS = [
     'https://data.umccr.org',
+    'https://data2.umccr.org',
     'https://data.prod.umccr.org',
     'https://data.dev.umccr.org',
+    'https://data.stg.umccr.org',
 ]
 
 CSRF_TRUSTED_ORIGINS = copy.deepcopy(CORS_ALLOWED_ORIGINS)

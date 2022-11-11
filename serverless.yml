@@ -11,6 +11,7 @@ plugins:
 
 provider:
   name: aws
+  deploymentMethod: direct
   runtime: python3.9
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
@@ -28,8 +29,10 @@ provider:
     cors:
       allowedOrigins:
         - https://data.umccr.org
+        - https://data2.umccr.org
         - https://data.prod.umccr.org
         - https://data.dev.umccr.org
+        - https://data.stg.umccr.org
         - https://status.data.umccr.org
         - https://status.data.prod.umccr.org
         - https://status.data.dev.umccr.org
@@ -365,8 +368,15 @@ custom:
     app: data_portal.wsgi.application
     packRequirements: false
   pythonRequirements:
-    # lambci don't seem to be updating their images so there is currently no python 3.9 without using custom
-    dockerImage: mlupin/docker-lambda:python3.9-build
+    #
+    # See https://github.com/serverless/serverless-python-requirements/pull/724
+    # It should auto discover and use appropriate SAM build image by default.
+    # If this is not working on your local OS/platform, adjust the `dockerImage`
+    # to try with difference build image. Please note that the actual CodeBuild
+    # environment does not require this. Only for local `sls deploy --stage dev`
+    # on macOS. e.g. direct push to DEV for debugging build convenience.
+    #
+    #dockerImage: public.ecr.aws/sam/build-python3.9
     dockerizePip: non-linux
     layer: true
     zip: false

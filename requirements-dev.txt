@@ -1,4 +1,5 @@
 -r requirements-test.txt
+drf_yasg==1.21.4
 pipdeptree==2.3.3
 django_extensions==3.2.1
 aws-requests-auth==0.4.3

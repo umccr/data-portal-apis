@@ -10,6 +10,15 @@ check:
 	@pre-commit run --all-files
 	@npx yarn audit
 
+info:
+	@npx serverless info --stage dev
+
+invoke:
+	@npx serverless invoke -f migrate --stage dev
+
+deploy:
+	@npx serverless deploy --stage dev --debug='*' --verbose
+
 up:
 	@docker compose up -d
 

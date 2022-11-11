@@ -18,7 +18,5 @@
     "serverless-wsgi": "^3.0.1"
   },
   "scripts": {},
-  "resolutions": {
-    "minimatch": "^3.0.5"
-  }
+  "resolutions": {}
 }

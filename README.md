@@ -140,7 +140,7 @@ aws sso login --profile dev && export AWS_PROFILE=dev
 npx serverless info --stage dev
 npx serverless invoke -f migrate --stage dev
 npx serverless invoke -f lims_scheduled_update_processor --stage dev
-npx serverless deploy --stage dev
+npx serverless deploy --stage dev --debug='*' --verbose
 ```
 
 ## Deployment
