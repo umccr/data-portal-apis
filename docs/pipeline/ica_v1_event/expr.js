@@ -23,8 +23,9 @@ let gds_dev_expr =
             }
         ]
     };
-
 console.log(JSON.stringify(JSON.stringify(gds_dev_expr)));
+
+// ---
 
 let gds_prod_expr =
     {
@@ -45,8 +46,32 @@ let gds_prod_expr =
             }
         ]
     };
-
 console.log(JSON.stringify(JSON.stringify(gds_prod_expr)));
+
+//---
+
+let gds_stg_expr =
+    {
+        "or": [
+            {"equal": [{"path": "$.volumeName"}, "umccr-primary-data-stg"]},
+            {"equal": [{"path": "$.volumeName"}, "umccr-run-data-stg"]},
+            {"equal": [{"path": "$.volumeName"}, "umccr-fastq-data-stg"]},
+            {
+                "and": [
+                    {"equal": [{"path": "$.volumeName"}, "staging"]},
+                    {
+                        "or": [
+                            {"startsWith":[{"path":"$.path"},"/analysis_data/"]},
+                            {"startsWith":[{"path":"$.path"},"/primary_data/"]}
+                        ]
+                    }
+                ]
+            }
+        ]
+    };
+console.log(JSON.stringify(JSON.stringify(gds_stg_expr)));
+
+// ---
 
 let wes_run_name_expr = {"startsWith":[{"path":"$.WorkflowRun.Name"},"umccr__automated"]};
 
