@@ -28,8 +28,12 @@ provider:
     payload: '2.0'
     cors:
       allowedOrigins:
+        # FIXME: https://github.com/umccr/infrastructure/issues/272
+        - https://portal.umccr.org
+        - https://portal.prod.umccr.org
+        - https://portal.stg.umccr.org
+        - https://portal.dev.umccr.org
         - https://data.umccr.org
-        - https://data2.umccr.org
         - https://data.prod.umccr.org
         - https://data.dev.umccr.org
         - https://data.stg.umccr.org
@@ -363,6 +367,7 @@ custom:
   enabled:
     dev: false
     prod: true
+    stg: true
     other: false
   wsgi:
     app: data_portal.wsgi.application
@@ -383,14 +388,24 @@ custom:
     slim: true
     slimPatternsAppendDefaults: true
     slimPatterns: ${file(slimpatterns.yml):slimPatterns}
-  customDomain:
-    domainName: ${ssm:/data_portal/backend/api_domain_name}
-    basePath: ''
-    stage: ${self:provider.stage}
-    createRoute53Record: true
-    certificateArn: ${ssm:/data_portal/backend/certificate_arn}
-    apiType: http
-    endpointType: regional
+  customDomains:
+    # FIXME: https://github.com/umccr/infrastructure/issues/272
+    - http:
+        domainName: ${ssm:/data_portal/backend/api_domain_name}
+        basePath: ''
+        stage: ${self:provider.stage}
+        createRoute53Record: true
+        certificateArn: ${ssm:/data_portal/backend/certificate_arn}
+        apiType: http
+        endpointType: regional
+    - http:
+        domainName: ${ssm:/data_portal/backend/api_domain_name2}
+        basePath: ''
+        stage: ${self:provider.stage}
+        createRoute53Record: true
+        certificateArn: ${ssm:/data_portal/backend/certificate_arn2}
+        apiType: http
+        endpointType: regional
   #associateWaf:
   #  name: ${ssm:/data_portal/backend/waf_name}
   prune:

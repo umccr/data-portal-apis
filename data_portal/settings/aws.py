@@ -27,9 +27,13 @@ DATABASES = {
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = False
 
+# FIXME: https://github.com/umccr/infrastructure/issues/272
 CORS_ALLOWED_ORIGINS = [
+    'https://portal.umccr.org',
+    'https://portal.prod.umccr.org',
+    'https://portal.stg.umccr.org',
+    'https://portal.dev.umccr.org',
     'https://data.umccr.org',
-    'https://data2.umccr.org',
     'https://data.prod.umccr.org',
     'https://data.dev.umccr.org',
     'https://data.stg.umccr.org',
