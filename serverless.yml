@@ -68,6 +68,7 @@ provider:
         audience:
           - ${ssm:/data_portal/client/cog_app_client_id_local}
           - ${ssm:/data_portal/client/cog_app_client_id_stage}
+          - ${ssm:/data_portal/client/data2/cog_app_client_id_stage}
           - ${ssm:/data_portal/status_page/cog_app_client_id_stage}
           - ${ssm:/sscheck/client/cog_app_client_id_stage}
   vpc:
