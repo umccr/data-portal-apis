@@ -79,11 +79,6 @@ class HolmesInterface(ABC):
     def check(self, **kwargs):
         pass
 
-    @abstractmethod
-    def diff_extract(self, **kwargs):
-        """difference_then_extract"""
-        pass
-
 
 class HolmesPipeline(HolmesInterface):
     """
@@ -148,19 +143,20 @@ class HolmesPipeline(HolmesInterface):
         self.execution_result = execution_dict
         return self
 
-    def extract(self, instance_name, gds_path):
+    def extract(self, instance_name, gds_path, reference = "hg38.rna"):
         """payload bound to holmes extract interface
         https://github.com/umccr/holmes#extract
+        Reference which defaults to hg38 has been added
+        ctTSO will need to call extract with alternative reference
         """
         step_function_instance_obj = self.stepfn_client.start_execution(
             stateMachineArn=self.extract_steps_arn,
             name=instance_name,
             input=libjson.dumps({
-                "needsFingerprinting": [
-                    [
-                        gds_path
-                    ]
-                ]
+                "indexes": [
+                    gds_path
+                ],
+                "reference": reference
             })
         )
 
@@ -177,7 +173,7 @@ class HolmesPipeline(HolmesInterface):
             name=instance_name,
             input=libjson.dumps(
                 {
-                    "index": index_path
+                    "indexes": [index_path]
                 }
             )
         )
@@ -187,9 +183,6 @@ class HolmesPipeline(HolmesInterface):
         return self
 
     def diff(self, **kwargs):
-        raise NotImplementedError
-
-    def diff_extract(self, **kwargs):
         raise NotImplementedError
 
 
@@ -213,9 +206,6 @@ class HolmesProxyImpl(HolmesInterface):
         from data_processors.pipeline.lambdas import somalier_check
         self._output = somalier_check.handler(self._input, context=None)
         return self
-
-    def diff_extract(self):
-        raise NotImplementedError
 
     @property
     def output(self):
