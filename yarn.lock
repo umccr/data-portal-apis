@@ -997,10 +997,10 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.yarnpkg.com/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz#92f95616501069d07d10edb2fc37d3e1c65123b7"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
-aws-sdk@^2.1261.0:
-  version "2.1271.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1271.0.tgz#a060fe65ff33afddb7385913200df4a26717f691"
-  integrity sha512-hQF+mjwe2FXFKOMNQGlfqn9InIL1bRp650ftctRqDo+VpnrYnKqF9eZa5Hk2kugs3/WUa4J2aqQa+foGWeH+Fg==
+aws-sdk@^2.1303.0:
+  version "2.1304.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1304.0.tgz#92a57d96394185fbeb790a85e71c47154c1cd150"
+  integrity sha512-9mf2uafa2M9yFC5IlMe85TIc7OUo1HSProCQWzpRmAAYhcSwmfbRyt02Wtr5YSVvJJPmcSgcyI92snsQR1c3nw==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -1013,10 +1013,10 @@ aws-sdk@^2.1261.0:
     uuid "8.0.0"
     xml2js "0.4.19"
 
-aws-sdk@^2.1303.0, aws-sdk@^2.1304.0:
-  version "2.1304.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1304.0.tgz#92a57d96394185fbeb790a85e71c47154c1cd150"
-  integrity sha512-9mf2uafa2M9yFC5IlMe85TIc7OUo1HSProCQWzpRmAAYhcSwmfbRyt02Wtr5YSVvJJPmcSgcyI92snsQR1c3nw==
+aws-sdk@^2.1308.0, aws-sdk@^2.1309.0:
+  version "2.1309.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1309.0.tgz#2bc6e25af6da39a6c9c48080a43b35596a58a2c5"
+  integrity sha512-EC/EtDDWDoJnovvmNlJqvojNJMbFZ78HESzgFiond5vzPS+FIWnWgGJ1ZVvIWU9O4X5I8cEMckwHCTfVYNcZxA==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -1050,10 +1050,10 @@ axios@^0.21.1:
   dependencies:
     follow-redirects "^1.14.0"
 
-axios@^1.2.6:
-  version "1.2.6"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.2.6.tgz#eacb6d065baa11bad5959e7ffa0cb6745c65f392"
-  integrity sha512-rC/7F08XxZwjMV4iuWv+JpD3E0Ksqg9nac4IIg6RwNuF0JTeWoCo/mBNG54+tNhhI11G3/VDRbdDQTs9hGp4pQ==
+axios@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.3.2.tgz#7ac517f0fa3ec46e0e636223fd973713a09c72b3"
+  integrity sha512-1M3O703bYqYuPhbHeya5bnhpYVsDDRyQSabNja04mZtboLNSuZ4YrltestrLXfHgmzua4TpUqRiVKbiQuo2epw==
   dependencies:
     follow-redirects "^1.15.0"
     form-data "^4.0.0"
@@ -1412,7 +1412,7 @@ content-disposition@^0.5.4:
   dependencies:
     safe-buffer "5.2.1"
 
-cookiejar@^2.1.3, cookiejar@^2.1.4:
+cookiejar@^2.1.3:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/cookiejar/-/cookiejar-2.1.4.tgz#ee669c1fea2cf42dc31585469d193fef0d65771b"
   integrity sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==
@@ -2118,10 +2118,10 @@ hexoid@1.0.0:
   resolved "https://registry.yarnpkg.com/hexoid/-/hexoid-1.0.0.tgz#ad10c6573fb907de23d9ec63a711267d9dc9bc18"
   integrity sha512-QFLV0taWQOZtvIRIAdBChesmogZrtuXvVWsFHZTk2SU+anspqZ2vMnoLg7IE1+Uk16N19APic1BuF8bC8c2m5g==
 
-http-cache-semantics@^4.0.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/http-cache-semantics/-/http-cache-semantics-4.1.0.tgz#49e91c5cbf36c9b94bcfcd71c23d5249ec74e390"
-  integrity sha512-carPklcUh7ROWRK7Cv27RPtdhYhUsela/ue5/jKzjegVvXDqM2ILE9Q2BGn9JZJh1g87cp56su/FgQSzcWS8cQ==
+http-cache-semantics@^4.0.0, http-cache-semantics@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/http-cache-semantics/-/http-cache-semantics-4.1.1.tgz#abe02fcb2985460bf0323be664436ec3476a6d5a"
+  integrity sha512-er295DKPVsV82j5kw1Gjt+ADA/XYHsajl82cGNQG2eyoPkvgUhX+nDIyelzhIWbbsXP39EHcI6l5tYs2FYqYXQ==
 
 http2-wrapper@^1.0.0-beta.5.2:
   version "1.0.3"
@@ -3186,12 +3186,12 @@ serverless-associate-waf@^1.2.1:
   dependencies:
     chalk "^2.4.2"
 
-serverless-domain-manager@^6.2.1:
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/serverless-domain-manager/-/serverless-domain-manager-6.2.1.tgz#43c81610a476dd03cce10f6f0eb6a67dc84e9480"
-  integrity sha512-xJ8bOW/e/MUB9twScTDGRlnS0yxW176+ikuR3SjAH4jW/uiZ/dXPdeGTeTFiPZdybzIE4fBZfeeW8CZAEG1OUg==
+serverless-domain-manager@^6.2.4:
+  version "6.2.4"
+  resolved "https://registry.yarnpkg.com/serverless-domain-manager/-/serverless-domain-manager-6.2.4.tgz#9b2861c9f103bf89db51d32bc47a8bb5248d5559"
+  integrity sha512-VP3hCQA7EjVrB9grIpD0NU7ylzJ9GqK9z2jV5siHHJbP+Ap9yBUyFyM3fz7otiaQxZy2yaQXXnqgoF1hznFO6Q==
   dependencies:
-    aws-sdk "^2.1261.0"
+    aws-sdk "^2.1308.0"
 
 serverless-prune-plugin@^2.0.1:
   version "2.0.1"
