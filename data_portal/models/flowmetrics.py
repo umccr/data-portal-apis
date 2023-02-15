@@ -1,0 +1,90 @@
+import logging
+import uuid
+
+from django.db import models
+from django.db.models import QuerySet
+
+from data_portal.fields import HashField, HashFieldHelper
+from data_portal.models.base import PortalBaseModel, PortalBaseManager
+from data_portal.models.gdsfile import GDSFile
+from data_portal.models.s3object import S3Object
+
+logger = logging.getLogger(__name__)
+
+
+class FlowMetricsPhenoType(models.TextChoices):
+    NORMAL = "normal"
+    TUMOR = "tumor"
+
+class FlowMetricsQCStatus(models.TextChoices):
+    PASS = "pass"
+    FAIL = "fail"
+    NA = "na"
+
+class FlowMetricsSex(models.TextChoices):
+    MALE = "male"
+    FEMALE = "female"
+    NA = "na"
+
+# class FlowMetricsTMB(models.TextChoices):
+#     #FLOAT
+#     NA = "na"
+
+class FlowMetricsManager(PortalBaseManager):
+
+    def get_by_unique_fields(
+            self,
+            subject_id: str,
+            sample_id: str,
+            #library_id: str,
+    ) -> QuerySet:
+
+        h = HashFieldHelper()
+        h.add(subject_id).add(sample_id)
+        #.add(library_id)
+
+        return self.filter(unique_hash__exact=h.calculate_hash())
+
+    def create_or_update_flowmetrics(
+            self,
+            subject_id: str,
+            sample_id: str,
+            #library_id: str,
+    ):
+        qs: QuerySet = self.get_by_unique_fields(
+            subject_id=subject_id,
+            sample_id=sample_id,
+            #library_id=library_id,
+        )
+
+    def get_by_keyword(self, **kwargs) -> QuerySet:
+        qs: QuerySet = super().get_queryset()
+        return self.get_model_fields_query(qs, **kwargs)
+
+
+class FlowMetrics(PortalBaseModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    timestamp = models.DateTimeField()
+    subject_id = models.CharField(max_length=255)
+    sample_id = models.CharField(max_length=255)
+    phenotype = models.CharField(max_length=255)						
+    cov_median_mosdepth = models.IntegerField()
+    cov_auto_median_dragen = models.FloatField()
+    reads_tot_input_dragen = models.BigIntegerField()
+    reads_mapped_pct_dragen = models.FloatField()
+    insert_len_median_dragen = models.IntegerField()
+    var_tot_dragen = models.BigIntegerField()
+    var_snp_dragen = models.FloatField()
+    ploidy = models.FloatField() # Encodes NA?
+    purity = models.FloatField()
+    qc_status_purple = models.BooleanField() # PASS || FAIL... should be text instead?
+    sex = models.BooleanField()
+    ms_status = models.CharField()
+    tmb = models.FloatField() # Can it encode NA?
+    s3_object_id = models.BigIntegerField(null=True, blank=True) # Should map to hash6???
+    gds_file_id = models.BigIntegerField(null=True, blank=True)  # Should map to hash6
+
+    objects = FlowMetricsManager()
+
+    def __str__(self):
+        return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}"
