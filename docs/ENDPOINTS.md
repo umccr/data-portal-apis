@@ -235,25 +235,6 @@ curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.or
 
 Similarly, you can filter request parameters on `run_id`, `lane`.
 
-### Reports Endpoint
-
-_(*potentially large JSON response)_
-
-_List Report entries:_
-```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports" | jq > reports.json
-```
-
-_Get a Report record by Subject:_
-```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject_id=SBJ01146" | jq > reports_SBJ01146.json
-```
-
-_Get a Report record by Subject, Report Type:_
-```
-curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/reports?subject_id=SBJ01146&type=hrd_hrdetect" | jq > reports_SBJ01146_hrd_hrdetect.json
-```
-
 ### Pairing Endpoint
 
 _Create T/N Pairing by SequenceRuns:_
