@@ -18,8 +18,9 @@ _Required:_ You will need [curl](https://curl.se/) and [jq](https://stedolan.git
 
 - [OpenAPI documentation available here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/umccr/data-portal-apis/dev/swagger/swagger.json)
 - API Base URLs are as follows:
-    - PROD: `https://api.data.prod.umccr.org`
-    - DEV: `https://api.data.dev.umccr.org`
+    - PROD: `https://api.portal.prod.umccr.org`
+    - STG: `https://api.portal.stg.umccr.org`
+    - DEV: `https://api.portal.dev.umccr.org`
 
 ## Authorization
 
@@ -44,7 +45,7 @@ Portal currently support 2 types of API authorization.
   - For service user, you will need to add appropriate permission to "assume-role" policy (see below).
 - Append Prefix: `/iam/` to the endpoint. For example:
 ```
-https://api.data.prod.umccr.org/iam/lims
+https://api.portal.prod.umccr.org/iam/lims
 ```
 - You will then need to make [AWS Signature v4 singed request](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) with AWS credentials to the Portal endpoints. There are readily available existing drop-in v4 signature signing library around. Some pointers are as follows.
 
@@ -114,12 +115,12 @@ resource-path-specifier = lims or metadata or ...             (depends on caller
 
 _GET_
 ```
-awscurl -H "Accept: application/json" --profile prodops --region ap-southeast-2 "https://api.data.prod.umccr.org/iam/lims" | jq
+awscurl -H "Accept: application/json" --profile prodops --region ap-southeast-2 "https://api.portal.prod.umccr.org/iam/lims" | jq
 ```
 
 _POST_
 ```
-awscurl -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.data.prod.umccr.org/iam/pairing" | jq
+awscurl -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.portal.prod.umccr.org/iam/pairing" | jq
 ```
 
 #### Python

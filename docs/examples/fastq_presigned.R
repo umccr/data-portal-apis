@@ -29,7 +29,7 @@ print_dash <- function (times = 64) {
 
 # --
 
-base_url <- "https://api.data.prod.umccr.org/"
+base_url <- "https://api.portal.prod.umccr.org/"
 
 endpoint_fastq <- "fastq"
 endpoint_presign <- "presign"

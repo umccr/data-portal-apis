@@ -24,7 +24,7 @@ order by subject_id;
 -- before going next with manually pairing them below
 -- you can payload these Subjects into POST "/pairing" endpoint for auto-pairing
 -- as follows
--- awscurl -X POST -d '["SBJ00951", "SBJ00987", "SBJ00994", "SBJ01004", "SBJ01005", "SBJ01007", "SBJ01008", "SBJ01009", "SBJ01010"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.data.prod.umccr.org/iam/pairing/by_subjects" | jq > pairing__176.json
+-- awscurl -X POST -d '["SBJ00951", "SBJ00987", "SBJ00994", "SBJ01004", "SBJ01005", "SBJ01007", "SBJ01008", "SBJ01009", "SBJ01010"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.portal.prod.umccr.org/iam/pairing/by_subjects" | jq > pairing__176.json
 
 
 -- subject normal libraries includes 'topup' and 'rerun' suffix

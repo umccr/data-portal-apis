@@ -11,7 +11,7 @@ import requests
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
 if __name__ == '__main__':
-    obj: ParseResult = urlparse("https://api.data.prod.umccr.org/iam/lims")
+    obj: ParseResult = urlparse("https://api.portal.prod.umccr.org/iam/lims")
 
     auth = BotoAWSRequestsAuth(
         aws_host=obj.hostname,

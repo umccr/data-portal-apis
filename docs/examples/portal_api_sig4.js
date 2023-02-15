@@ -22,6 +22,6 @@ const interceptor = aws4Interceptor(
 
 axios.interceptors.request.use(interceptor);
 
-axios.get('https://api.data.prod.umccr.org/iam/lims').then((res) => {
+axios.get('https://api.portal.prod.umccr.org/iam/lims').then((res) => {
   console.log(res.data)
 });

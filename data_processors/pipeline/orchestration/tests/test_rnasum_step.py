@@ -149,7 +149,7 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         """
 
         # Replaying https://data.umccr.org/subjects/SBJ01670
-        # awscurl --profile prodops --region ap-southeast-2 -H "Accept: application/json" "https://api.data.prod.umccr.org/iam/libraryrun?library_id=L2200320" | jq
+        # awscurl --profile prodops --region ap-southeast-2 -H "Accept: application/json" "https://api.portal.prod.umccr.org/iam/libraryrun?library_id=L2200320" | jq
 
         wgs_library_normal = LibraryRun.objects.create(
             library_id="L2200319",
@@ -238,7 +238,7 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         """
 
         # Replaying https://data.umccr.org/subjects/SBJ01285
-        # curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/libraryrun?library_id=L2101732&instrument_run_id=220121_A00130_0197_BHWJ2HDSX2" | jq
+        # curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/libraryrun?library_id=L2101732&instrument_run_id=220121_A00130_0197_BHWJ2HDSX2" | jq
 
         wgs_library_normal = LibraryRun.objects.create(
             library_id="L2101731",
@@ -323,7 +323,7 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         """
 
         # Replaying https://data.umccr.org/subjects/SBJ01625
-        # curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/libraryrun?library_id=L2200228&instrument_run_id=220224_A01052_0081_BHFCWJDSX3" | jq
+        # curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/libraryrun?library_id=L2200228&instrument_run_id=220224_A01052_0081_BHFCWJDSX3" | jq
 
         wgs_library_normal = LibraryRun.objects.create(
             library_id="L2200228",

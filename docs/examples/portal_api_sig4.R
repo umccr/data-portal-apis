@@ -47,7 +47,7 @@ authr <- py_awsauth$AWS4Auth(
   session_token = credentials$session_token
 )
 
-url <- "https://api.data.prod.umccr.org/iam/lims"  # using iam endpoint
+url <- "https://api.portal.prod.umccr.org/iam/lims"  # using iam endpoint
 
 params <- reticulate::py_dict(
   c("rowsPerPage", "subject_id"),

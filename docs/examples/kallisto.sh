@@ -11,9 +11,9 @@
 # NOTE: When you make GET API request, typically the query parameter must be URL encoded.
 #
 # e.g. The following won't work:
-# curl -s "https://api.data.prod.umccr.org/s3?search=wts kallisto .tsv$"
+# curl -s "https://api.portal.prod.umccr.org/s3?search=wts kallisto .tsv$"
 # Encode URL on your request parameter string such as
-# curl -s "https://api.data.prod.umccr.org/s3?search=wts%20kallisto%20.tsv%24"
+# curl -s "https://api.portal.prod.umccr.org/s3?search=wts%20kallisto%20.tsv%24"
 
 # There are multiple way to do URL encode. One quick way is as follows.
 # Goto:   https://www.urlencoder.io
@@ -29,7 +29,7 @@ SUBJECT="SBJ00816"
 
 curl -s -X GET -H "Authorization: Bearer $PORTAL_TOKEN" \
   -H "Content-Type: application/json" \
-  "https://api.data.prod.umccr.org/s3?rowsPerPage=1000&subject=$SUBJECT&search=$KEYWORDS" | jq > kallisto.json
+  "https://api.portal.prod.umccr.org/s3?rowsPerPage=1000&subject=$SUBJECT&search=$KEYWORDS" | jq > kallisto.json
 
 ##
 # Next
@@ -41,7 +41,7 @@ curl -s -X GET -H "Authorization: Bearer $PORTAL_TOKEN" \
 #   jq -c '.results[] | .id' kallisto.json
 
 # Then PreSigned request would be like:
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/s3/425025/presign" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/s3/425025/presign" | jq
 
 # Then piping them all together would be like:
-jq -c '.results[] | .id' kallisto.json | xargs -I % curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/s3/%/presign" | jq '.signed_url' > kallisto__presigned.json
+jq -c '.results[] | .id' kallisto.json | xargs -I % curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/s3/%/presign" | jq '.signed_url' > kallisto__presigned.json

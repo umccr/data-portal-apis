@@ -6,7 +6,7 @@
 # endpoint named "gds". This "gds" endpoint is the backing of Portal UI on browsable GDS tab.
 #
 # Pseudocode:
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds?rowsPerPage=1000&run=211014_A00130_0180_BHLGF7DSX2&search=.fastq.gz$" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/gds?rowsPerPage=1000&run=211014_A00130_0180_BHLGF7DSX2&search=.fastq.gz$" | jq
 #
 # Usage:
 #   export PORTAL_TOKEN=eyxxX<...>
@@ -20,7 +20,7 @@ library(jsonlite)
 
 # --
 
-base_url <- "https://api.data.prod.umccr.org/"
+base_url <- "https://api.portal.prod.umccr.org/"
 
 endpoint <- "gds"
 

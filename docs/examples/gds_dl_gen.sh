@@ -28,10 +28,10 @@
 # Note:
 # When you make GET API request, typically the query parameter must be URL encoded.
 # e.g. The following won't work:
-# curl -s 'https://api.data.prod.umccr.org/gds?search=wts .bam$'
+# curl -s 'https://api.portal.prod.umccr.org/gds?search=wts .bam$'
 #
 # Encode URL on your request parameter string such as
-# curl -s 'https://api.data.prod.umccr.org/gds?search=wts%20.bam%24'
+# curl -s 'https://api.portal.prod.umccr.org/gds?search=wts%20.bam%24'
 #
 # There are multiple way to do URL encode. One quick way is as follows.
 # Goto:   https://www.urlencoder.io
@@ -46,7 +46,7 @@
 ##
 # Config
 #
-ENDPOINT="https://api.data.prod.umccr.org/gds"
+ENDPOINT="https://api.portal.prod.umccr.org/gds"
 #KEYWORDS="wts%20.bam%24"
 KEYWORDS="wts%20fastqc_metrics%20.csv%24"
 SUBJECT="SBJ00816"
@@ -69,7 +69,7 @@ curl -s -X GET -H "Authorization: Bearer $PORTAL_TOKEN" \
 #   jq -c '.results[] | .id' gds_records.json
 #
 # Then PreSigned request would be like:
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/gds/425025/presign" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/gds/425025/presign" | jq
 
 # Then piping them all together would be like:
 #jq -c '.results[] | .id' gds_records.json | xargs -I % curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "$ENDPOINT/%/presign" | jq -r '.signed_url' > gds_records__presigned.txt

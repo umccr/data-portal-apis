@@ -15,8 +15,8 @@
 #
 # Pseudocode:
 # Call each run, e.g.
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rowsPerPage=1000&run=210708_A00130_0166_AH7KTJDSX2" | jq
-#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/fastq?rowsPerPage=1000&run=211014_A00130_0180_BHLGF7DSX2" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/fastq?rowsPerPage=1000&run=210708_A00130_0166_AH7KTJDSX2" | jq
+#   curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/fastq?rowsPerPage=1000&run=211014_A00130_0180_BHLGF7DSX2" | jq
 # And append the response into the list.
 # Then iterate the response list, parse JSON body content, extract results into dataframe and combine them.
 #
@@ -32,7 +32,7 @@ library(jsonlite)
 
 # --
 
-base_url <- "https://api.data.prod.umccr.org/"
+base_url <- "https://api.portal.prod.umccr.org/"
 
 endpoint <- "fastq"
 

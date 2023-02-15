@@ -18,7 +18,7 @@
 #
 # Pseudocode:
 # Call each run
-#   curl -s -X POST -d '["211206_A00130_0191_AHWKNJDSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.data.prod.umccr.org/pairing"
+#   curl -s -X POST -d '["211206_A00130_0191_AHWKNJDSX2"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/pairing"
 #
 # Then we will parse response text into JSON into dataframe. FastqListRow is in nested dataframe.
 #
@@ -39,7 +39,7 @@ print_dash <- function (times = 64) {
 
 # --
 
-base_url <- "https://api.data.prod.umccr.org/"
+base_url <- "https://api.portal.prod.umccr.org/"
 
 endpoint <- "pairing"
 
