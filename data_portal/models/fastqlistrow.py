@@ -42,6 +42,13 @@ class FastqListRowManager(PortalBaseManager):
             qs = qs.filter(rglb__in=qs_meta)
             kwargs.pop('type')
 
+        type_ = kwargs.get('subject_id', None)
+        if type_:
+            q = self.reduce_multi_values_qor('subject_id', type_)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
+            kwargs.pop('subject_id')
+
         return self.get_model_fields_query(qs, **kwargs)
 
 
