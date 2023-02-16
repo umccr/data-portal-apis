@@ -171,6 +171,7 @@ class PrimaryDataHelper(WorkflowHelper):
         """
         target_id = self._sanitize_target_id(target_id)
         return {
+            "workDirectory": self.construct_workdir(target_id=target_id),
             "outputDirectory": self.construct_outdir(target_id=target_id)
         }
 
