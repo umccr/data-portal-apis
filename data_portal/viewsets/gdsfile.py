@@ -37,7 +37,11 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
     @action(detail=True)
     def presign(self, request, pk=None):
         obj: GDSFile = self.get_object()
-        response = gds.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path)
+
+        presigned_url_mode = request.headers.get('Content-Disposition')
+        response = gds.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path,
+                                        presigned_url_mode=presigned_url_mode)
+
         if response[0]:
             return Response({'signed_url': response[1]})
         else:
