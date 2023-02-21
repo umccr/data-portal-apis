@@ -49,6 +49,20 @@ class FastqListRowManager(PortalBaseManager):
             qs = qs.filter(rglb__in=qs_meta)
             kwargs.pop('subject_id')
 
+        type_ = kwargs.get('phenotype', None)
+        if type_:
+            q = self.reduce_multi_values_qor('phenotype', type_)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
+            kwargs.pop('phenotype')
+
+        type_ = kwargs.get('workflow', None)
+        if type_:
+            q = self.reduce_multi_values_qor('workflow', type_)
+            qs_meta = LabMetadata.objects.filter(q).values("library_id")
+            qs = qs.filter(rglb__in=qs_meta)
+            kwargs.pop('workflow')
+
         return self.get_model_fields_query(qs, **kwargs)
 
 
