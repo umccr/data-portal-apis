@@ -56,3 +56,47 @@ class FastqListRowTests(TestCase):
         fqlr = results.get()
         logger.info(fqlr)
         self.assertEqual(fqlr.rglb, mock_lib_id)
+
+    def test_retrieve_by_subject_id(self):
+        """
+        python manage.py test data_portal.models.tests.test_fastqlistrow.FastqListRowTests.test_retrieve_by_subject_id
+        """
+
+        mock_lib_id = "L1234567"
+        mock_subject_id = "SBJ000001"
+
+        mock_meta: LabMetadata = LabMetadata(
+            subject_id=mock_subject_id,
+            library_id=mock_lib_id,
+            sample_id="foobar",
+            sample_name="foobar",
+            phenotype="tumor",
+            quality="good",
+            source="tissue",
+            type="WGS",
+            assay="TsqNano",
+            project_owner="foobar")
+        mock_meta.save()
+
+        mock_sequence_run: SequenceRun = SequenceRunFactory()
+
+        mock_fqlr = FastqListRow(
+            rgid=f"CTCAGAAG.AACTTGCC.4.210923_A00130_0001_BHH5JFDSX2.PRJ123456_{mock_lib_id}",
+            rgsm="PRJ123456",
+            rglb=mock_lib_id,
+            lane=1,
+            read_1="gds://volume/path_R1.fastq.gz",
+            read_2="gds://volume/path_R2.fastq.gz",
+            sequence_run=mock_sequence_run
+        )
+        mock_fqlr.save()
+
+        results = FastqListRow.objects.get_by_keyword(
+            subject_id=mock_subject_id
+        )
+
+        self.assertEqual(results.count(), 1)
+
+        fqlr = results.get()
+        logger.info(fqlr)
+        self.assertEqual(fqlr.rglb, mock_lib_id)
