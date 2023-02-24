@@ -12,10 +12,11 @@ django.setup()
 # ---
 
 import logging
+from typing import List
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import workflow_srv, libraryrun_srv
-from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper, WorkflowStatus
 from data_processors.pipeline.lambdas import wes_handler
 
 from libumccr import libjson, libdt
@@ -188,3 +189,116 @@ def handler(event, context) -> dict:
     logger.info(libjson.dumps(result))
 
     return result
+
+
+def _halt(error_msg, event_):
+    logger.warning(error_msg)
+    return {
+        "error": error_msg,
+        "event": event_
+    }
+
+
+def by_umccrise_handler(event, context) -> dict:
+    """event payload dict
+    {
+        "wfr_id": "wfr.<umccrise_wfr_id>",
+        "wfv_id": "wfv.<optional_skip_this_if_no_idea>",
+        "dataset": "BRCA"
+    }
+
+    Payload:
+    wfr_id  - mandatory, must be umccrise workflow run id
+    wfv_id  - optional, skip this if you have no idea
+    dataset - mandatory, must supply
+
+    NOTE:
+    This is implemented on the basis of need arise from complexity https://github.com/umccr/data-portal-apis/issues/417
+    whereas we need to re-trigger RNAsum with the required TCGA dataset.
+
+    :param event:
+    :param context:
+    :return:
+    """
+    from data_processors.pipeline.domain.config import SQS_RNASUM_QUEUE_ARN
+    from data_processors.pipeline.orchestration import rnasum_step
+    from libumccr.aws import libsqs, libssm
+
+    wfr_id = event['wfr_id']
+    wfv_id = event.get('wfv_id', None)
+    dataset = event['dataset']
+
+    umccrise_workflow: Workflow = workflow_srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
+
+    if not umccrise_workflow:
+        return _halt("Can not find umccrise workflow run event in Portal", event)
+
+    if not dataset:
+        return _halt("Dataset must not be null", event)
+
+    job_list = rnasum_step.prepare_rnasum_jobs(umccrise_workflow)
+
+    if job_list:
+        for job in job_list:
+            job['dataset'] = dataset  # override dataset
+
+        # now dispatch to rnasum job queue
+        _ = libsqs.dispatch_jobs(queue_arn=libssm.get_ssm_param(SQS_RNASUM_QUEUE_ARN), job_list=job_list)
+        msg = "Succeeded"
+
+    else:
+        msg = f"Calling to prepare_rnasum_jobs() return empty list, no job to dispatch..."
+        logger.warning(msg)
+
+    return {
+        "message": msg,
+        "job_list": job_list,
+        "event": event
+    }
+
+
+def by_subject_handler(event, context) -> dict:
+    """event payload dict
+    {
+        "subject_id": "SBJ00001",
+        "dataset": "BRCA"
+    }
+
+    Payload:
+    subject_id - mandatory, must supply
+    dataset    - mandatory, must supply
+
+    NOTE:
+    This is implemented on the basis of need arise from complexity https://github.com/umccr/data-portal-apis/issues/417
+    whereas we need to re-trigger RNAsum with the required TCGA dataset.
+
+    :param event:
+    :param context:
+    :return:
+    """
+
+    subject_id = event['subject_id']
+    dataset = event['dataset']
+
+    # Check if existing RNAsum workflows is running
+    rnasum_running_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+        subject_id=subject_id,
+        workflow_type=WorkflowType.RNASUM,
+        workflow_status=WorkflowStatus.RUNNING,
+    )
+
+    if len(rnasum_running_list) > 0:
+        return _halt(f"There exists ongoing RNAsum workflow run for subject {subject_id}", event)
+
+    umccrise_succeeded_list: List[Workflow] = workflow_srv.get_workflows_by_subject_id_and_workflow_type(
+        subject_id=subject_id,
+        workflow_type=WorkflowType.UMCCRISE,
+    )
+
+    if len(umccrise_succeeded_list) == 0:
+        return _halt(f"Can not trigger RNAsum workflow. No umccrise result found for subject {subject_id}", event)
+
+    return by_umccrise_handler({
+        'wfr_id': umccrise_succeeded_list[0].wfr_id,
+        'dataset': dataset
+    }, context)

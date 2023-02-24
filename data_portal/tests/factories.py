@@ -29,6 +29,9 @@ class TestConstant(Enum):
     umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
     umccrise_wfv_id = f"wfv.umccrisenVTCE8KhfXEurUfTCqSa6zVx"
     umccrise_wfl_id = f"wfl.umccrisejhzOf3NbqAYjSmzkE1oWKI9H"
+    rnasum_wfr_id = f"wfr.rnasumzB6yG25Zm6PsgSivJEoq4Ums"
+    rnasum_wfv_id = f"wfv.rnasumnVTCE8KhfXEurUfTCqSa6zVx"
+    rnasum_wfl_id = f"wfl.rnasumjhzOf3NbqAYjSmzkE1oWKI9H"
     version = "v1"
     instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
     sqr_name = instrument_run_id
@@ -323,6 +326,27 @@ class DragenWtsWorkflowFactory(factory.django.DjangoModelFactory):
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
     type_name = WorkflowType.DRAGEN_WTS.value
+    input = json.dumps({
+        "mock": "override me"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
+class RNAsumWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    wfr_id = TestConstant.rnasum_wfr_id.value
+    wfv_id = TestConstant.rnasum_wfv_id.value
+    wfl_id = TestConstant.rnasum_wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.RNASUM.value
     input = json.dumps({
         "mock": "override me"
     })

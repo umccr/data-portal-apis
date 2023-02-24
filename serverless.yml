@@ -83,7 +83,6 @@ provider:
   environment:
     DJANGO_SETTINGS_MODULE: data_portal.settings.aws
     LAB_METADATA_SYNC_LAMBDA: ${self:service}-${sls:stage}-labmetadata_scheduled_update_processor
-    MANOPS_LAMBDA: ${self:service}-${sls:stage}-manops
 
 functions:
 
@@ -286,8 +285,14 @@ functions:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
 
-  manops:
-    handler: data_processors.pipeline.lambdas.manops.handler
+  rnasum_by_umccrise:
+    handler: data_processors.pipeline.lambdas.rnasum.by_umccrise_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  rnasum_by_subject:
+    handler: data_processors.pipeline.lambdas.rnasum.by_subject_handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28

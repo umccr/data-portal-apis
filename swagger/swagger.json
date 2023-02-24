@@ -558,51 +558,6 @@
         }
       ]
     },
-    "/manops/": {
-      "get": {
-        "operationId": "manops_list",
-        "description": "You have hit GET /manops. This is placeholder only list endpoint. Nothing here yet.\nPlease use POST /manops endpoint and path with appropriate payload to run manual operations.",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "manops"
-        ]
-      },
-      "post": {
-        "operationId": "manops_create",
-        "description": "Need more specific path, POST /manops endpoint does not exist.\nPlease hit with the correct path with appropriate payload to run the /manops endpoint.",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "manops"
-        ]
-      },
-      "parameters": []
-    },
-    "/manops/rnasum/": {
-      "post": {
-        "operationId": "manops_rnasum",
-        "description": "Expected payload:\n{\n    \"wfr_id\": \"wfr.<umccrise_wfr_id>\",\n    \"subject_id\": \"SBJ00000\",\n    \"dataset\": \"BRCA\"  See: https://github.com/umccr/RNAsum/blob/master/TCGA_projects_summary.md#pan-cancer-dataset\n}\nwfr_id takes precedence over subject_id",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "manops"
-        ]
-      },
-      "parameters": []
-    },
     "/metadata/": {
       "get": {
         "operationId": "metadata_list",
