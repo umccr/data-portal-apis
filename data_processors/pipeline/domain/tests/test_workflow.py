@@ -45,8 +45,9 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         logger.info(helper.get_output_root())
         eng_params = helper.get_engine_parameters(target_id="200612_A01052_0017_BH5LYWDSXY")
         logger.info(eng_params)
-        self.assertNotIn("workDirectory", eng_params)
+        self.assertIn("workDirectory", eng_params)
         self.assertIn("outputDirectory", eng_params)
+        self.assertIn("200612_A01052_0017_BH5LYWDSXY", eng_params['workDirectory'])
         self.assertIn("200612_A01052_0017_BH5LYWDSXY", eng_params['outputDirectory'])
 
     def test_primary_data_helper_wrong_wf_type(self):
