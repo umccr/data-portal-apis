@@ -71,6 +71,8 @@ def build_mock():
 
     mock_umccrise_workflow: Workflow = UmccriseWorkflowFactory()
     mock_umccrise_workflow.output = mock_umccrise_output
+    mock_umccrise_workflow.libraryrun_set.add(mock_normal_wgs_library_run)
+    mock_umccrise_workflow.libraryrun_set.add(mock_tumor_wgs_library_run)
     mock_umccrise_workflow.save()
 
     mock_wts_workflow: Workflow = DragenWtsWorkflowFactory()

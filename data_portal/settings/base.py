@@ -145,6 +145,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-amz-security-token',
     'x-amz-date',
+    'Content-Disposition'
 ]
 
 XRAY_RECORDER = {

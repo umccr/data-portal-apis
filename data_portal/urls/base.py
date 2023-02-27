@@ -8,7 +8,6 @@ from data_portal.viewsets.gdsfile import GDSFileViewSet
 from data_portal.viewsets.labmetadata import LabMetadataViewSet
 from data_portal.viewsets.libraryrun import LibraryRunViewSet
 from data_portal.viewsets.limsrow import LIMSRowViewSet
-from data_portal.viewsets.manops import ManOpsViewSet
 from data_portal.viewsets.pairing import PairingViewSet
 from data_portal.viewsets.presignedurl import PresignedUrlViewSet
 from data_portal.viewsets.run import RunViewSet
@@ -37,7 +36,6 @@ router.register(r'libraryrun', LibraryRunViewSet, basename='libraryrun')
 router.register(r'workflows', WorkflowViewSet, basename='workflows')
 router.register(r'pairing', PairingViewSet, basename='pairing')
 router.register(r'somalier', SomalierViewSet, basename='somalier')
-router.register(r'manops', ManOpsViewSet, basename='manops')
 
 urlpatterns = [
     path('files', views.search_file, name='file-search'),  # FIXME to deprecate as part of #343
