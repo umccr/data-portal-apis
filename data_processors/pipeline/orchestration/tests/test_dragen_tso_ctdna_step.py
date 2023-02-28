@@ -132,6 +132,63 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
         tso_ctdna_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_TSO_CTDNA.value]
         self.assertTrue(tso_ctdna_batch_runs[0].running)
 
+    def test_dragen_tso_ctdna_ntc(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_dragen_tso_ctdna_ntc
+        """
+        self.verify_local()
+
+        mock_bcl_workflow: Workflow = WorkflowFactory()
+        mock_bcl_workflow.input = json.dumps({
+            'bcl_input_directory': {
+                "class": "Directory",
+                "location": "gds://bssh-path/Runs/210701_A01052_0055_AH7KWGDSX2_r.abc123456"
+            }
+        })
+        mock_bcl_workflow.save()
+
+        mock_wfl_run = libwes.WorkflowRun()
+        mock_wfl_run.id = TestConstant.wfr_id.value
+        mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
+        mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
+        mock_wfl_run.output = _mock_bcl_convert_output()
+
+        workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
+        workflow_version.id = TestConstant.wfv_id.value
+        mock_wfl_run.workflow_version = workflow_version
+        when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
+
+        # LPRJ200438
+        mock_labmetadata_tumor = LabMetadata()
+        mock_labmetadata_tumor.subject_id = tn_mock_subject_id
+        mock_labmetadata_tumor.library_id = mock_library_id
+        mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.N_CONTROL.value
+        mock_labmetadata_tumor.type = LabMetadataType.CT_DNA.value
+        mock_labmetadata_tumor.assay = LabMetadataAssay.CT_TSO.value
+        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CONTROL.value
+        mock_labmetadata_tumor.save()
+
+        # ignore step_skip_list
+        spy2(libssm.get_ssm_param)
+        when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps({}))
+
+        result = orchestrator.handler({
+            'wfr_id': TestConstant.wfr_id.value,
+            'wfv_id': TestConstant.wfv_id.value,
+        }, None)
+
+        logger.info("-" * 32)
+        self.assertIsNotNone(result)
+        logger.info(f"Orchestrator lambda call output: \n{json.dumps(result)}")
+
+        for b in Batch.objects.all():
+            logger.info(f"BATCH: {b}")
+        for br in BatchRun.objects.all():
+            logger.info(f"BATCH_RUN: {br}")
+
+        tso_ctdna_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_TSO_CTDNA.value]
+        self.assertTrue(tso_ctdna_batch_runs[0].running)
+
     def test_dragen_tso_ctdna_none(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepUnitTests.test_dragen_tso_ctdna_none
