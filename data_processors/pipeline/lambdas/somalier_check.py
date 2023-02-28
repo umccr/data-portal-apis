@@ -18,7 +18,7 @@ from datetime import datetime
 
 from libumccr import libjson
 
-from data_processors.pipeline.domain.somalier import HolmesPipeline
+from data_processors.pipeline.domain.somalier import HolmesPipeline, HolmesCheckDto
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,10 +27,10 @@ logger.setLevel(logging.INFO)
 def handler(event, context) -> dict:
     """event payload dict
     {
-        "index": "gds://path/to/volume"
+        "index": "gds://volume/path/to/this.bam"       (MANDATORY)
     }
 
-    Given a gds path, find the closest related samples
+    Given gds path, find the closest related samples
 
     :param event:
     :param context:
@@ -40,19 +40,24 @@ def handler(event, context) -> dict:
     logger.info(f"Start checking index")
     logger.info(libjson.dumps(event))
 
-    gds_path: str = event['index']
+    index: str = event['index']
 
     # Get name
     timestamp = int(datetime.now().replace(microsecond=0).timestamp())
     step_function_instance_name = "__".join([
         "somalier_check",
-        urlparse(gds_path).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
+        urlparse(index).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
         str(timestamp)
     ])
 
+    dto = HolmesCheckDto(
+        run_name=step_function_instance_name,
+        indexes=[index],
+    )
+
     holmes_pipeline = (
         HolmesPipeline()
-        .check(instance_name=step_function_instance_name, index_path=gds_path)
+        .check(dto)
         .poll()
     )
 

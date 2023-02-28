@@ -11,8 +11,10 @@ Using fluent interface pattern where applicable
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
+from dataclasses import dataclass, field
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from time import sleep
 from typing import List, Dict
 
@@ -57,6 +59,42 @@ class SomalierInterface(ABC):
         pass
 
 
+class SomalierReferenceSite(Enum):
+    HG38_RNA = "hg38.rna"
+    HG19_RNA = "hg19.rna"
+
+    @classmethod
+    def from_value(cls, value):
+        if value == cls.HG38_RNA.value:
+            return cls.HG38_RNA
+        elif value == cls.HG19_RNA.value:
+            return cls.HG19_RNA
+        else:
+            raise ValueError(f"No matching type found for {value}")
+
+
+@dataclass
+class HolmesDto(ABC):
+    """
+    HolmesDto - Holmes Data Transfer Object (DTO) i.e. just _plain old python object_ (POPO)
+    that model after Holmes payload data carrier
+    """
+    run_name: str
+    indexes: List = field(default_factory=list)
+    # fingerprint_folder: str = "fingerprints/"  # FIXME use Holmes default
+
+
+@dataclass
+class HolmesExtractDto(HolmesDto):
+    reference: SomalierReferenceSite = SomalierReferenceSite.HG38_RNA
+
+
+@dataclass
+class HolmesCheckDto(HolmesDto):
+    # relatedness_threshold: float = 0.4  # FIXME use Holmes default
+    pass
+
+
 class HolmesInterface(ABC):
     """Holmes Interface Contract
 
@@ -67,16 +105,11 @@ class HolmesInterface(ABC):
     """
 
     @abstractmethod
-    def diff(self, **kwargs):
-        """difference"""
+    def extract(self, dto: HolmesDto):
         pass
 
     @abstractmethod
-    def extract(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def check(self, **kwargs):
+    def check(self, dto: HolmesDto):
         pass
 
 
@@ -143,7 +176,7 @@ class HolmesPipeline(HolmesInterface):
         self.execution_result = execution_dict
         return self
 
-    def extract(self, instance_name, gds_path, reference = "hg38.rna"):
+    def extract(self, dto: HolmesExtractDto):
         """payload bound to holmes extract interface
         https://github.com/umccr/holmes#extract
         Reference which defaults to hg38 has been added
@@ -151,12 +184,11 @@ class HolmesPipeline(HolmesInterface):
         """
         step_function_instance_obj = self.stepfn_client.start_execution(
             stateMachineArn=self.extract_steps_arn,
-            name=instance_name,
+            name=dto.run_name,
             input=libjson.dumps({
-                "indexes": [
-                    gds_path
-                ],
-                "reference": reference
+                "indexes": dto.indexes,
+                "reference": dto.reference.value,
+                # "fingerprintFolder": dto.fingerprint_folder,  # FIXME use Holmes default
             })
         )
 
@@ -164,16 +196,18 @@ class HolmesPipeline(HolmesInterface):
         self.execution_arn = step_function_instance_obj['executionArn']
         return self
 
-    def check(self, instance_name, index_path):
+    def check(self, dto: HolmesCheckDto):
         """payload bound to holmes check interface
         https://github.com/umccr/holmes#check
         """
         step_function_instance_obj = self.stepfn_client.start_execution(
             stateMachineArn=self.check_steps_arn,
-            name=instance_name,
+            name=dto.run_name,
             input=libjson.dumps(
                 {
-                    "indexes": [index_path]
+                    "indexes": dto.indexes,
+                    # "relatednessThreshold": dto.relatedness_threshold,  # FIXME use Holmes default
+                    # "fingerprintFolder": dto.fingerprint_folder,  # FIXME use Holmes default
                 }
             )
         )
@@ -181,35 +215,6 @@ class HolmesPipeline(HolmesInterface):
         self.execution_instance = step_function_instance_obj
         self.execution_arn = step_function_instance_obj['executionArn']
         return self
-
-    def diff(self, **kwargs):
-        raise NotImplementedError
-
-
-class HolmesProxyImpl(HolmesInterface):
-    """Proxy for REST endpoints <> Lambdas"""
-
-    def __init__(self, payload=None):
-        super().__init__()
-        self._input = payload
-        self._output = {}
-
-    def diff(self):
-        raise NotImplementedError
-
-    def extract(self):
-        from data_processors.pipeline.lambdas import somalier_extract
-        self._output = somalier_extract.handler(self._input, context=None)
-        return self
-
-    def check(self):
-        from data_processors.pipeline.lambdas import somalier_check
-        self._output = somalier_check.handler(self._input, context=None)
-        return self
-
-    @property
-    def output(self):
-        return self._output.copy()
 
 
 class SomalierImpl(SomalierInterface):

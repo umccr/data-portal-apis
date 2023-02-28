@@ -18,7 +18,7 @@ from libumccr import libjson
 from datetime import datetime
 from urllib.parse import urlparse
 
-from data_processors.pipeline.domain.somalier import HolmesPipeline
+from data_processors.pipeline.domain.somalier import HolmesPipeline, HolmesExtractDto, SomalierReferenceSite
 from data_processors.pipeline.lambdas import somalier_check
 
 logger = logging.getLogger()
@@ -63,7 +63,8 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        "gds_path": "gds://path/to/bam/file"
+        "index": "gds://volume/path/to/this.bam",       (MANDATORY)
+        "reference": "hg38.rna"  (OR)  "hg19.rna"       (MANDATORY)
     }
 
     :param event:
@@ -74,11 +75,11 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing somalier extract")
     logger.info(libjson.dumps(event))
 
-    # Extract name of sample and the fastq list rows
-    gds_path = event['gds_path']
+    index: str = event['index']
+    reference_str: str = event['reference']
 
     # Do a Check call to determine whether fingerprint has been done before
-    execution_result = somalier_check.handler({'index': gds_path}, context)
+    execution_result = somalier_check.handler(event, context)
     if execution_result and 'output' in execution_result:
         # We have existing fingerprint somalier output
         return {
@@ -90,17 +91,23 @@ def handler(event, context) -> dict:
     timestamp = int(datetime.now().replace(microsecond=0).timestamp())
     step_function_instance_name = "__".join([
         "somalier_extract",
-        urlparse(gds_path).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
+        urlparse(index).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
         str(timestamp)
     ])
+
+    dto = HolmesExtractDto(
+        run_name=step_function_instance_name,
+        indexes=[index],
+        reference=SomalierReferenceSite.from_value(reference_str),
+    )
 
     # at the mo, it is 'fire & forget' for fingerprint extraction
     holmes_pipeline = (
         HolmesPipeline()
-        .extract(instance_name=step_function_instance_name, gds_path=gds_path)
+        .extract(dto)
     )
 
-    logger.info(f"Extracting fingerprint from '{gds_path}' with "
+    logger.info(f"Extracting fingerprint from '{index}' with "
                 f"step function instance of '{holmes_pipeline.execution_arn}'")
 
     # Return execution instance info as-is

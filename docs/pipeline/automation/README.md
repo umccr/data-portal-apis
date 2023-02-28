@@ -95,11 +95,13 @@ See [rnasum.md](rnasum.md)
 
 ### Somalier
 
+_Call Somalier through Holmes orchestration pipeline_
+
 ```
 aws lambda invoke --profile prodops \
   --function-name data-portal-api-prod-somalier_extract \
   --cli-binary-format raw-in-base64-out \
-  --payload '{"gds_path": "gds://production/analysis_data/SBJ02296/wgs_tumor_normal/20220605e40c7f62/L2200674_L2200673_dragen/PRJ221207_tumor.bam"}' \
+  --payload '{"reference": "hg38.rna", "index": "gds://production/analysis_data/SBJ02296/wgs_tumor_normal/20220605e40c7f62/L2200674_L2200673_dragen/PRJ221207_tumor.bam"}' \
   out_extract.json
 ```
 

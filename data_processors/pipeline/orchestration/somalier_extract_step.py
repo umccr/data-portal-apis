@@ -11,6 +11,7 @@ from libumccr.aws import libssm, libsqs
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_SOMALIER_EXTRACT_QUEUE_ARN
+from data_processors.pipeline.domain.somalier import SomalierReferenceSite
 from data_processors.pipeline.domain.workflow import WorkflowType
 from data_processors.pipeline.tools import liborca
 
@@ -42,6 +43,7 @@ def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
 
     job_list = []
     gds_bam_path = None
+    reference = SomalierReferenceSite.HG38_RNA.value
 
     if this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS.value.lower():
         gds_bam_path = liborca.parse_transcriptome_output_for_bam_file(this_workflow.output)
@@ -51,10 +53,12 @@ def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower():
         gds_bam_path = liborca.parse_tso_ctdna_output_for_bam_file(this_workflow.output)
+        reference = SomalierReferenceSite.HG19_RNA.value  # switch reference site to HG19 if ctTSO
 
     if gds_bam_path is not None:
         job_list.append({
-            "gds_path": gds_bam_path,
+            "index": gds_bam_path,
+            "reference": reference
         })
 
     return job_list
