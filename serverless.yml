@@ -45,6 +45,7 @@ provider:
         - https://sscheck.dev.umccr.org
       allowedHeaders:
         - Content-Type
+        - Content-Disposition
         - Authorization
         - X-Amz-Date
         - X-Api-Key
