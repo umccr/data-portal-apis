@@ -65,6 +65,64 @@ load_db_dump() {
     /bin/bash -c 'zcat data_portal.sql.gz | mysql -udata_portal data_portal'
 }
 
+## SQS Queue helper functions
+get_sqs_queue_from_ssm_parameter_name(){
+  : '
+  Get the sqs queue arn from the input ssm parameter
+  '
+  aws ssm get-parameter \
+      --output json \
+      --name "$1" \
+      --with-decryption | \
+  jq --raw-output '.Parameter.Value'
+}
+
+get_sqs_queue_name_from_arn(){
+  : '
+  From:
+    "arn:aws:sqs:ap-southeast-2:843407916570:data-portal-dragen-wgs-qc-queue.fifo"
+  To:
+    "data-portal-dragen-wgs-qc-queue.fifo"
+  '
+  echo "${1##*:}"
+}
+
+create_standard_sqs_queue(){
+  : '
+  Create a standard queue based on the queue name
+  '
+  eval \
+    '${aws_local_cmd} sqs create-queue' \
+    '--output json' \
+    '--queue-name "$1"'
+}
+
+create_fifo_sqs_queue(){
+  : '
+  Create a fifo queue based on the queue name
+  '
+  eval \
+    '${aws_local_cmd} sqs create-queue' \
+    '--output json' \
+    '--queue-name "$1"' \
+    '--attributes "FifoQueue=true,ContentBasedDeduplication=true"'
+}
+
+create_fifo_sqs_queue_from_ssm_parameter(){
+  : '
+  Create the sqs queue with the name based on the arn value of the ssm parameter
+  '
+  _sqs_arn_value="$( \
+    get_sqs_queue_from_ssm_parameter_name "${1}" \
+  )"
+
+  _sqs_queue_name="$( \
+    get_sqs_queue_name_from_arn "${_sqs_arn_value}"
+  )"
+
+  create_fifo_sqs_queue "${_sqs_queue_name}"
+}
+
 load_localstack() {
   echo "...Loading mock data to localstack container"
   aws_local_cmd="aws --endpoint-url=http://localhost:4566"
@@ -73,49 +131,26 @@ load_localstack() {
   if [ -z "$BUCKET_EXISTS" ]; then
     true
   else
-    eval "$aws_local_cmd s3 mb s3://test1"
+    eval "${aws_local_cmd} s3 mb s3://test1"
   fi
 
-  eval "$aws_local_cmd s3 cp ./README.md s3://test1"
-  eval "$aws_local_cmd s3 ls"
-  eval "$aws_local_cmd s3 ls s3://test1/"
+  eval "${aws_local_cmd} s3 cp ./README.md s3://test1"
+  eval "${aws_local_cmd} s3 ls"
+  eval "${aws_local_cmd} s3 ls s3://test1/"
 
-  eval "$aws_local_cmd sqs create-queue --queue-name StdQueue"
-  eval "$aws_local_cmd sqs create-queue --queue-name MyQueue.fifo --attributes FifoQueue=true,ContentBasedDeduplication=true"
+  create_standard_sqs_queue "StdQueue"
+  create_fifo_sqs_queue "MyQueue.fifo"
 
-  sqs_dragen_wgs_qc_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_dragen_wgs_qc_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_dragen_wgs_qc_queue_name=${sqs_dragen_wgs_qc_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_dragen_wgs_qc_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_dragen_wgs_qc_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_dragen_wts_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_dragen_tso_ctdna_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_tumor_normal_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_umccrise_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_rnasum_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_somalier_extract_queue_arn'
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_notification_queue_arn'
 
-  sqs_dragen_wts_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_dragen_wts_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_dragen_wts_queue_name=${sqs_dragen_wts_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_dragen_wts_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  sqs_dragen_tso_ctdna_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_dragen_tso_ctdna_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_dragen_tso_ctdna_queue_name=${sqs_dragen_tso_ctdna_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_dragen_tso_ctdna_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  sqs_tumor_normal_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_tumor_normal_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_tumor_normal_queue_name=${sqs_tumor_normal_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_tumor_normal_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  sqs_umccrise_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_umccrise_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_umccrise_queue_name=${sqs_umccrise_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_umccrise_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  sqs_rnasum_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_rnasum_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_rnasum_queue_name=${sqs_rnasum_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_rnasum_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  sqs_somalier_extract_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_somalier_extract_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_somalier_extract_queue_name=${sqs_somalier_extract_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_somalier_extract_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  sqs_notification_queue_arn=$(aws ssm get-parameter --name '/data_portal/backend/sqs_notification_queue_arn' --with-decryption | jq -r .Parameter.Value)
-  sqs_notification_queue_name=${sqs_notification_queue_arn##*:}
-  eval "$aws_local_cmd sqs create-queue --queue-name $sqs_notification_queue_name --attributes FifoQueue=true,ContentBasedDeduplication=true"
-
-  eval "$aws_local_cmd sqs list-queues"
+  eval '${aws_local_cmd} sqs list-queues --output json'
 }
 
 if [ -n "$1" ] && [ "$1" = "sync" ]; then
