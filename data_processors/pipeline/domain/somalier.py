@@ -11,14 +11,15 @@ Using fluent interface pattern where applicable
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
-from dataclasses import dataclass, field
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from enum import Enum
 from time import sleep
 from typing import List, Dict
+from urllib.parse import urlparse
 
-from libumccr import aws, libjson
+from libumccr import aws, libjson, libdt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -81,7 +82,6 @@ class HolmesDto(ABC):
     """
     run_name: str
     indexes: List = field(default_factory=list)
-    # fingerprint_folder: str = "fingerprints/"  # FIXME use Holmes default
 
 
 @dataclass
@@ -91,7 +91,6 @@ class HolmesExtractDto(HolmesDto):
 
 @dataclass
 class HolmesCheckDto(HolmesDto):
-    # relatedness_threshold: float = 0.4  # FIXME use Holmes default
     pass
 
 
@@ -188,7 +187,6 @@ class HolmesPipeline(HolmesInterface):
             input=libjson.dumps({
                 "indexes": dto.indexes,
                 "reference": dto.reference.value,
-                # "fingerprintFolder": dto.fingerprint_folder,  # FIXME use Holmes default
             })
         )
 
@@ -206,8 +204,6 @@ class HolmesPipeline(HolmesInterface):
             input=libjson.dumps(
                 {
                     "indexes": dto.indexes,
-                    # "relatednessThreshold": dto.relatedness_threshold,  # FIXME use Holmes default
-                    # "fingerprintFolder": dto.fingerprint_folder,  # FIXME use Holmes default
                 }
             )
         )
@@ -215,6 +211,35 @@ class HolmesPipeline(HolmesInterface):
         self.execution_instance = step_function_instance_obj
         self.execution_arn = step_function_instance_obj['executionArn']
         return self
+
+    @staticmethod
+    def get_step_function_instance_name(prefix: str, index: str):
+        """
+        At worst case, the step function run name can be just UUID.
+
+        Here we just scrape some last 40 characters from the bam path (i.e. pass-in index string).
+        Join with __ on pass-in prefix and timestamp suffix.
+
+        So this gives some random yet _partially_ meaningful scrambled text for step function run name.
+
+        See correspondant unit test case to try the outlook.
+
+        Must be 1–80 characters in length
+        Must be unique for your AWS account, region, and state machine for 90 days
+        See
+        https://docs.aws.amazon.com/step-functions/latest/dg/limits-overview.html
+        https://docs.aws.amazon.com/step-functions/latest/apireference/API_StartExecution.html
+        """
+        max_length = 80
+        timestamp = libdt.get_utc_now_ts()
+
+        step_function_instance_name = "__".join([
+            prefix,
+            urlparse(index).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],  # scraping right 40 char from path
+            str(timestamp)
+        ])
+
+        return step_function_instance_name[-max_length:]  # just to be extra pedantic for some bogus prefix
 
 
 class SomalierImpl(SomalierInterface):

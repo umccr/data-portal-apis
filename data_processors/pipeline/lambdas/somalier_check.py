@@ -13,8 +13,6 @@ django.setup()
 # ---
 
 import logging
-from urllib.parse import urlparse
-from datetime import datetime
 
 from libumccr import libjson
 
@@ -42,16 +40,8 @@ def handler(event, context) -> dict:
 
     index: str = event['index']
 
-    # Get name
-    timestamp = int(datetime.now().replace(microsecond=0).timestamp())
-    step_function_instance_name = "__".join([
-        "somalier_check",
-        urlparse(index).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
-        str(timestamp)
-    ])
-
     dto = HolmesCheckDto(
-        run_name=step_function_instance_name,
+        run_name=HolmesPipeline.get_step_function_instance_name(prefix="somalier_check", index=index),
         indexes=[index],
     )
 

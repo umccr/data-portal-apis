@@ -15,8 +15,6 @@ django.setup()
 import logging
 
 from libumccr import libjson
-from datetime import datetime
-from urllib.parse import urlparse
 
 from data_processors.pipeline.domain.somalier import HolmesPipeline, HolmesExtractDto, SomalierReferenceSite
 from data_processors.pipeline.lambdas import somalier_check
@@ -87,16 +85,8 @@ def handler(event, context) -> dict:
             'check': execution_result,
         }
 
-    # Get name
-    timestamp = int(datetime.now().replace(microsecond=0).timestamp())
-    step_function_instance_name = "__".join([
-        "somalier_extract",
-        urlparse(index).path.lstrip("/").replace("/", "_").rstrip(".bam")[-40:],
-        str(timestamp)
-    ])
-
     dto = HolmesExtractDto(
-        run_name=step_function_instance_name,
+        run_name=HolmesPipeline.get_step_function_instance_name(prefix="somalier_extract", index=index),
         indexes=[index],
         reference=SomalierReferenceSite.from_value(reference_str),
     )
