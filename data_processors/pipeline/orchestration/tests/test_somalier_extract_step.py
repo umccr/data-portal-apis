@@ -85,7 +85,8 @@ class SomalierExtractStepUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(results)
 
         logger.info(f"{json.dumps(results)}")
-        self.assertIn('gds_path', results['somalier_extract_step'][0])
+        self.assertIn('index', results['somalier_extract_step'][0])
+        self.assertIn('reference', results['somalier_extract_step'][0])
 
     def test_prepare_somalier_extract_jobs(self):
         """
@@ -99,7 +100,7 @@ class SomalierExtractStepUnitTests(PipelineUnitTestCase):
         for job in job_list:
             logger.info(f"{libjson.dumps(job)}")  # NOTE libjson is intentional and part of serde test
             self.assertIn("dragen_bam_out", json.loads(mock_wgs_qc_workflow.output).keys())
-            self.assertEqual(job['gds_path'], json.loads(mock_wgs_qc_workflow.output)['dragen_bam_out']['location'])
+            self.assertEqual(job['index'], json.loads(mock_wgs_qc_workflow.output)['dragen_bam_out']['location'])
 
     def test_prepare_somalier_extract_jobs_cond(self):
         """
@@ -119,7 +120,11 @@ class SomalierExtractStepUnitTests(PipelineUnitTestCase):
 
             for job in job_list:
                 logger.info(f"{libjson.dumps(job)}")  # NOTE libjson is intentional and part of serde test
-                self.assertIn(eval_me, job['gds_path'])
+                self.assertIn(eval_me, job['index'])
+
+                # assert that TSO bam went with hg19
+                if "tso.bam" in job['index']:
+                    self.assertIn("hg19.rna", job['reference'])
 
         badly_mutated_mockflow = build_wgs_qc_mock()
         trial_func("wgs.bam")

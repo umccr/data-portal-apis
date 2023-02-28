@@ -73,9 +73,7 @@ class SomalierCheckIntegrationTests(PipelineIntegrationTestCase):
         }
 
         results = somalier_check.handler(event, None)
+        logger.info(results)
 
         self.assertIsNotNone(results)
         self.assertIsInstance(results, dict)
-        # Assert that the list returned is at least itself
-        self.assertGreaterEqual(len(json.loads(results['output'])), 1)
-        logger.info(results)

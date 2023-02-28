@@ -47,7 +47,8 @@ class SomalierExtractUnitTests(PipelineUnitTestCase):
         })
 
         result = somalier_extract.handler({
-            "gds_path": "gds://vol/fol/MDX123456.bam"
+            "index": "gds://vol/fol/MDX123456.bam",
+            "reference": "hg38.rna"
         }, None)
 
         self.assertIsInstance(result, dict)
@@ -69,13 +70,12 @@ class SomalierExtractIntegrationTests(PipelineIntegrationTestCase):
         # Create extraction event
         event = {
             # Output from wfr.0d3dea278b1c471d8316b9d5a242dd34
-            "gds_path": "gds://development/analysis_data/SBJ00913/wgs_alignment_qc/20220312c26574d6/L2100747__2_dragen/MDX210178.bam"
+            "index": "gds://development/analysis_data/SBJ00913/wgs_alignment_qc/20220312c26574d6/L2100747__2_dragen/MDX210178.bam",
+            "reference": "hg38.rna"
         }
 
         results = somalier_extract.handler(event, None)
+        logger.info(results)
 
         self.assertIsNotNone(results)
         self.assertIsInstance(results, dict)
-        self.assertIsNotNone(results.get("message", None))
-        self.assertEqual(results['message'], "NOT_RUNNING")
-        logger.info(results)

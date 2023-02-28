@@ -271,23 +271,3 @@ _Create T/N Pairing by Workflows (WGS QC wfr_id):_
 ```
 curl -s -X POST -d '["wfr.7e52b7b957a140be9b11988355ab6fd1"]' -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/pairing/by_workflows" | jq
 ```
-
-### Somalier Endpoint
-
-_Extract fingerprint for a BAM in GDS_
-```
-curl -s -X POST -d '{"gds_path": "gds://production/analysis_data/SBJ02296/wgs_tumor_normal/20220605e40c7f62/L2200674_L2200673_dragen/PRJ221207_tumor.bam"}' \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $PORTAL_TOKEN" \
-    "https://api.portal.prod.umccr.org/somalier/extract" | jq
-```
-
-_Check fingerprint for a BAM in GDS_
-```
-curl -s -X POST -d '{"index": "gds://production/analysis_data/SBJ02296/wgs_tumor_normal/20220605e40c7f62/L2200674_L2200673_dragen/PRJ221207_tumor.bam"}' \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $PORTAL_TOKEN" \
-    "https://api.portal.prod.umccr.org/somalier/check" | jq
-```
-
-_*Caveat: The AWS API Gateway has at most 30s timeout limit (see [Integration Timeout](https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html)). Sometime somalier check might take beyond this limit. Hence, may receive `Internal Server Error`. For that, either try again (second time should be faster as warm-start) or, do try [Somalier Lambda](pipeline/automation/README.md#somalier) as alternate._
