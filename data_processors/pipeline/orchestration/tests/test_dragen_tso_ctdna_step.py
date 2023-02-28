@@ -165,7 +165,7 @@ class DragenTsoCtDnaStepUnitTests(PipelineUnitTestCase):
         mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.N_CONTROL.value
         mock_labmetadata_tumor.type = LabMetadataType.CT_DNA.value
         mock_labmetadata_tumor.assay = LabMetadataAssay.CT_TSO.value
-        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.RESEARCH.value
+        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CONTROL.value
         mock_labmetadata_tumor.save()
 
         # ignore step_skip_list
