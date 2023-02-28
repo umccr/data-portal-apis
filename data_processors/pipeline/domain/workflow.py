@@ -356,10 +356,12 @@ class LabMetadataRule:
     def must_be_tumor_or_ntc(self):
         """Sample Phenotype must be tumor"""
         from data_portal.models.labmetadata import LabMetadataPhenotype
-        if self.this_metadata.phenotype.lower() == LabMetadataPhenotype.TUMOR.value.lower() or self.this_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower():
-            return self
-        else:
-            raise LabMetadataRuleError(f"Not tumor sample.")
+        if not (
+                self.this_metadata.phenotype.lower() == LabMetadataPhenotype.TUMOR.value.lower() or
+                self.this_metadata.phenotype.lower() == LabMetadataPhenotype.N_CONTROL.value.lower()
+        ):
+            raise LabMetadataRuleError(f"Not tumor sample or NTC sample.")
+        return self
 
     def must_be_wgs(self):
         from data_portal.models.labmetadata import LabMetadataType
