@@ -31,7 +31,7 @@ class FlowMetricsSex(models.TextChoices):
 #     NA = "na"
 
 class FlowMetricsManager(PortalBaseManager):
-
+# TODO: Also introduce *run_id* so that we can JOIN and relate with other foreign keys
     def get_by_unique_fields(
             self,
             subject_id: str,
@@ -79,7 +79,7 @@ class FlowMetrics(PortalBaseModel):
     purity = models.FloatField()
     qc_status_purple = models.BooleanField() # PASS || FAIL... should be text instead?
     sex = models.BooleanField()
-    ms_status = models.CharField()
+    ms_status = models.CharField(max_length=255)
     tmb = models.FloatField() # Can it encode NA?
     s3_object_id = models.BigIntegerField(null=True, blank=True) # Should map to hash6???
     gds_file_id = models.BigIntegerField(null=True, blank=True)  # Should map to hash6
