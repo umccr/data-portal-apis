@@ -94,7 +94,7 @@ def prepare_dragen_tso_ctdna_jobs(batcher: Batcher) -> List[dict]:
                 .must_not_bcl() \
                 .must_not_qc() \
                 .must_be_cttso_ctdna() \
-                .must_be_tumor()
+                .must_be_tumor_or_ntc()
 
             BatchRule(
                 batcher=batcher,
