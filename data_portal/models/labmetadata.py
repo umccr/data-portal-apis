@@ -5,6 +5,7 @@ from django.db.models import QuerySet, Value
 from django.db.models.functions import Concat
 
 from data_portal.models.base import PortalBaseModel, PortalBaseManager
+from data_portal.models.libraryrun import LibraryRun
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +86,26 @@ class LabMetadataWorkflow(models.TextChoices):
     RESEARCH = "research"
 
 
+def remove_not_sequenced(qs: QuerySet) -> QuerySet:
+    # filter metadata to those entries that were sequenced, i.e. have a LibraryRun entry
+    inner_qs = LibraryRun.objects.values_list('library_id', flat=True)
+    qs = qs.filter(library_id__in=inner_qs)
+    return qs
+
+
 class LabMetadataManager(PortalBaseManager):
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = super().get_queryset()
-        return self.get_model_fields_query(qs, **kwargs)
+
+        sequenced = kwargs.pop('sequenced', False)  # take the special sequenced parameter out of the kwargs
+        qs = self.get_model_fields_query(qs, **kwargs)
+
+        # if only records for sequenced libs are requested, remove the ones that are not
+        if sequenced:
+            qs = remove_not_sequenced(qs)
+
+        return qs
 
     def get_by_keyword_in(self, **kwargs) -> QuerySet:
         qs: QuerySet = self.all()
@@ -126,18 +142,27 @@ class LabMetadataManager(PortalBaseManager):
         if project_owners:
             qs = qs.filter(project_owner__in=project_owners)
 
+        sequenced = kwargs.get('sequenced', False)
+        if sequenced:
+            qs = remove_not_sequenced(qs)
+
         return qs
 
-    def get_by_sample_library_name(self, sample_library_name) -> QuerySet:
+    def get_by_sample_library_name(self, sample_library_name, sequenced: bool = False) -> QuerySet:
         """
         Here we project (or annotate) virtual attribute called "sample_library_name" which is using database built-in
         concat function of two existing columns sample_id and library_id.
 
         :param sample_library_name:
+        :param sequenced: Boolean to indicate whether to only return metadata for sequenced libraries
         :return: QuerySet
         """
         qs: QuerySet = self.annotate(sample_library_name=Concat('sample_id', Value('_'), 'library_id'))
         qs = qs.filter(sample_library_name__iexact=sample_library_name)
+
+        if sequenced:
+            qs = remove_not_sequenced(qs)
+
         return qs
 
 
