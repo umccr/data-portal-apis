@@ -67,7 +67,7 @@ class FlowMetrics(PortalBaseModel):
     timestamp = models.DateTimeField()
     subject_id = models.CharField(max_length=255)
     sample_id = models.CharField(max_length=255)
-    phenotype = models.CharField(max_length=255)						
+    phenotype = models.CharField(choices=FlowMetricsPhenoType.choices, max_length=255)
     cov_median_mosdepth = models.IntegerField()
     cov_auto_median_dragen = models.FloatField()
     reads_tot_input_dragen = models.BigIntegerField()
@@ -77,12 +77,12 @@ class FlowMetrics(PortalBaseModel):
     var_snp_dragen = models.FloatField()
     ploidy = models.FloatField() # Encodes NA?
     purity = models.FloatField()
-    qc_status_purple = models.CharField(max_length=255)
-    sex = models.BooleanField()
+    qc_status_purple = models.CharField(choices=FlowMetricsQCStatus.choices, max_length=255)
+    sex = models.CharField(choices=FlowMetricsSex.choices, max_length=255)
     ms_status = models.CharField(max_length=255)
     tmb = models.FloatField() # Encode NA?
-    s3_object_id = models.BigIntegerField(null=True, blank=True) # Should map to hash6???
-    gds_file_id = models.BigIntegerField(null=True, blank=True)  # Should map to hash6
+    s3_object_id = models.CharField(max_length=255)
+    gds_file_id = models.CharField(max_length=255)
 
     objects = FlowMetricsManager()
 
