@@ -28,7 +28,7 @@ class LabMetadataTestCase(TestCase):
             logger.info(f"Raised ObjectDoesNotExist which is not expected")
 
     def test_get_by_keyword_not_sequenced(self):
-        # python manage.py test data_portal.models.tests.test_labmetadata.LabMetadataTestCase.test_get_by_keyword_not_requenced
+        # python manage.py test data_portal.models.tests.test_labmetadata.LabMetadataTestCase.test_get_by_keyword_not_sequenced
 
         logger.info("Test exclusion of metadata for unsequenced libraries")
         TumorLabMetadataFactory()  # does not have a LibraryRun entry, i.e. not sequenced (yet) (tumor sample)
@@ -51,7 +51,7 @@ class LabMetadataTestCase(TestCase):
         self.assertEqual(len(lib), 0, 'Did NOT expect metadat for tumor library (not sequenced yet)')
 
     def test_get_by_keyword_in_not_sequenced(self):
-        # python manage.py test data_portal.models.tests.test_labmetadata.LabMetadataTestCase.test_get_by_keyword_in_not_requenced
+        # python manage.py test data_portal.models.tests.test_labmetadata.LabMetadataTestCase.test_get_by_keyword_in_not_sequenced
 
         logger.info("Test exclusion of metadata for unsequenced libraries")
         TumorLabMetadataFactory()  # does not have a LibraryRun entry, i.e. not sequenced (yet) (tumor sample)
