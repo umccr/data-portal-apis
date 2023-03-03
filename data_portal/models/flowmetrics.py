@@ -77,10 +77,10 @@ class FlowMetrics(PortalBaseModel):
     var_snp_dragen = models.FloatField()
     ploidy = models.FloatField() # Encodes NA?
     purity = models.FloatField()
-    qc_status_purple = models.BooleanField() # PASS || FAIL... should be text instead?
+    qc_status_purple = models.CharField(max_length=255)
     sex = models.BooleanField()
     ms_status = models.CharField(max_length=255)
-    tmb = models.FloatField() # Can it encode NA?
+    tmb = models.FloatField() # Encode NA?
     s3_object_id = models.BigIntegerField(null=True, blank=True) # Should map to hash6???
     gds_file_id = models.BigIntegerField(null=True, blank=True)  # Should map to hash6
 

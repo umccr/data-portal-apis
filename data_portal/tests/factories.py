@@ -16,6 +16,7 @@ from data_portal.models.labmetadata import LabMetadata, LabMetadataType
 from data_portal.models.sequence import Sequence, SequenceStatus
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.labmetadata import LabMetadataPhenotype
+from data_portal.models.flowmetrics import FlowMetrics
 
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
@@ -294,6 +295,30 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
     )
 
+class FlowMetricsFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = FlowMetrics
+
+    id = 1 
+    timestamp = datetime.utcnow()
+    subject_id = TestConstant.subject_id
+    sample_id = TestConstant.sample_id
+    phenotype = 1
+    cov_median_mosdepth = 1.1
+    cov_auto_median_dragen = 1.1
+    reads_tot_input_dragen = 1
+    reads_mapped_pct_dragen = 100
+    insert_len_median_dragen = 10
+    var_tot_dragen = 10
+    var_snp_dragen = 10
+    ploidy = 1 
+    purity = 100
+    qc_status_purple = "foo" 
+    sex = True
+    ms_status = 11
+    tmb = 1.1
+    s3_object_id = 1
+    gds_file_id = 1
 
 class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
