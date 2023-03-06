@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import QuerySet
 
 from data_portal.fields import HashField, HashFieldHelper
+from data_portal.models.labmetadata import LabMetadataPhenotype
 from data_portal.models.base import PortalBaseModel, PortalBaseManager
 from data_portal.models.gdsfile import GDSFile
 from data_portal.models.s3object import S3Object
@@ -64,10 +65,9 @@ class FlowMetricsManager(PortalBaseManager):
 
 class FlowMetrics(PortalBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    portal_run_id = models.CharField(max_length=255, null=True)
     timestamp = models.DateTimeField()
-    subject_id = models.CharField(max_length=255)
-    sample_id = models.CharField(max_length=255)
-    phenotype = models.CharField(choices=FlowMetricsPhenoType.choices, max_length=255)
+    phenotype = models.CharField(choices=LabMetadataPhenotype.choices, max_length=255)
     cov_median_mosdepth = models.IntegerField()
     cov_auto_median_dragen = models.FloatField()
     reads_tot_input_dragen = models.BigIntegerField()
@@ -75,16 +75,16 @@ class FlowMetrics(PortalBaseModel):
     insert_len_median_dragen = models.IntegerField()
     var_tot_dragen = models.BigIntegerField()
     var_snp_dragen = models.FloatField()
-    ploidy = models.FloatField() # Encodes NA?
+    ploidy = models.FloatField(null=True) # Make sure NA is mapped to null at ORM level/ingestion
     purity = models.FloatField()
     qc_status_purple = models.CharField(choices=FlowMetricsQCStatus.choices, max_length=255)
     sex = models.CharField(choices=FlowMetricsSex.choices, max_length=255)
     ms_status = models.CharField(max_length=255)
     tmb = models.FloatField() # Encode NA?
-    s3_object_id = models.CharField(max_length=255)
-    gds_file_id = models.CharField(max_length=255)
+    s3_object_id = models.CharField(max_length=255, null=True)
+    gds_file_id = models.CharField(max_length=255, null=True)
 
     objects = FlowMetricsManager()
 
     def __str__(self):
-        return f"ID: {self.id}, SUBJECT_ID: {self.subject_id}, SAMPLE_ID: {self.sample_id}"
+        return f"ID: {self.id}"

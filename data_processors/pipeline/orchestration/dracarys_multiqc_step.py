@@ -14,6 +14,8 @@ logger.setLevel(logging.INFO)
 
 def perform(this_workflow: Workflow):
     output_json = this_workflow.output
+    run_id = this_workflow.portal_run_id
+    
     if output_json is None:
         raise RuntimeError('Missing workflow information')
     
