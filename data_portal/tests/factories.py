@@ -5,18 +5,17 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
-from data_portal.models.s3object import S3Object
-from data_portal.models.limsrow import LIMSRow, S3LIMS
-from data_portal.models.gdsfile import GDSFile
-from data_portal.models.sequencerun import SequenceRun
-from data_portal.models.workflow import Workflow
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
+from data_portal.models.gdsfile import GDSFile
 from data_portal.models.labmetadata import LabMetadata, LabMetadataType
-from data_portal.models.sequence import Sequence, SequenceStatus
-from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.labmetadata import LabMetadataPhenotype
-
+from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.limsrow import LIMSRow, S3LIMS
+from data_portal.models.s3object import S3Object
+from data_portal.models.sequence import Sequence, SequenceStatus
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
 
 utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
@@ -24,6 +23,7 @@ utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 
 class TestConstant(Enum):
     wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
+    wfr_id2 = f"wfr.Q5555aO8zB6yG25Zm6PsgSivGwDx_Uaa"
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
     umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
@@ -34,8 +34,10 @@ class TestConstant(Enum):
     rnasum_wfl_id = f"wfl.rnasumjhzOf3NbqAYjSmzkE1oWKI9H"
     version = "v1"
     instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
+    instrument_run_id2 = "220101_A01052_0002_XR5LY7TGCA"
     sqr_name = instrument_run_id
     run_id = "r.ACGTlKjDgEy099ioQOeOWg"
+    run_id2 = "r.GACTlKjDgEy099io_0000"
     override_cycles = "Y151;I8;I8;Y151"
     subject_id = "SBJ00001"
     library_id_normal = "L2100001"
@@ -46,6 +48,7 @@ class TestConstant(Enum):
     sample_name_normal = f"{sample_id}_{library_id_normal}"
     sample_name_tumor = f"{sample_id}_{library_id_tumor}"
     wts_library_id_tumor = "L2100003"
+    wts_library_id_tumor2 = "L2200001"
     wts_lane_tumor_library = 4
     wts_sample_id = "MDX210002"
 
@@ -104,6 +107,30 @@ class WtsTumorLabMetadataFactory(factory.django.DjangoModelFactory):
 
     library_id = TestConstant.wts_library_id_tumor.value
     sample_name = "Ambiguous WTS Sample"
+    sample_id = TestConstant.wts_sample_id.value
+    external_sample_id = "RNA123456"
+    subject_id = TestConstant.subject_id.value
+    external_subject_id = "PM1234567"
+    phenotype = LabMetadataPhenotype.TUMOR.value
+    quality = "good"
+    source = "blood"
+    project_name = "CUP"
+    project_owner = "UMCCR"
+    experiment_id = "TSqN123456LL"
+    type = LabMetadataType.WTS.value
+    assay = "NebRNA"
+    override_cycles = TestConstant.override_cycles.value
+    workflow = "clinical"
+    coverage = "40.0"
+    truseqindex = "A09"
+
+
+class WtsTumorLabMetadataFactory2(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LabMetadata
+
+    library_id = TestConstant.wts_library_id_tumor2.value
+    sample_name = "Ambiguous WTS Sample 2"
     sample_id = TestConstant.wts_sample_id.value
     external_sample_id = "RNA123456"
     subject_id = TestConstant.subject_id.value
@@ -234,6 +261,17 @@ class WtsTumorLibraryRunFactory(factory.django.DjangoModelFactory):
     override_cycles = TestConstant.override_cycles.value
 
 
+class WtsTumorLibraryRunFactory2(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LibraryRun
+
+    library_id = TestConstant.wts_library_id_tumor2.value
+    instrument_run_id = TestConstant.instrument_run_id2.value
+    run_id = TestConstant.run_id2.value
+    lane = TestConstant.wts_lane_tumor_library.value
+    override_cycles = TestConstant.override_cycles.value
+
+
 class SequenceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Sequence
@@ -270,6 +308,29 @@ class SequenceRunFactory(factory.django.DjangoModelFactory):
     msg_attr_action = "statuschanged"
     msg_attr_action_type = "bssh.runs"
     msg_attr_action_date = "2020-05-09T22:17:10.815Z"
+    msg_attr_produced_by = "BaseSpaceSequenceHub"
+
+
+class SequenceRunFactory2(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SequenceRun
+
+    run_id = TestConstant.run_id2.value
+    date_modified = make_aware(datetime.utcnow())
+    status = "PendingAnalysis"
+    instrument_run_id = TestConstant.instrument_run_id2.value
+    gds_folder_path = f"/Runs/{instrument_run_id}_{run_id}"
+    gds_volume_name = "bssh.acgtacgt498038ed99fa94fe79523959"
+    reagent_barcode = "RV9999999-SSSSS"
+    v1pre3_id = "999999"
+    acl = ["wid:acgtacgt-9999-38ed-99fa-94fe79523959"]
+    flowcell_barcode = "BARCODEEE"
+    sample_sheet_name = "SampleSheet.csv"
+    api_url = f"https://api.aps2.sh.basespace.illumina.com/v2/runs/{run_id}"
+    name = instrument_run_id
+    msg_attr_action = "statuschanged"
+    msg_attr_action_type = "bssh.runs"
+    msg_attr_action_date = "2022-10-09T22:17:10.815Z"
     msg_attr_produced_by = "BaseSpaceSequenceHub"
 
 
@@ -322,6 +383,27 @@ class DragenWtsWorkflowFactory(factory.django.DjangoModelFactory):
         model = Workflow
 
     wfr_id = TestConstant.wfr_id.value
+    wfv_id = TestConstant.wfv_id.value
+    wfl_id = TestConstant.wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.DRAGEN_WTS.value
+    input = json.dumps({
+        "mock": "override me"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
+class DragenWtsWorkflowFactory2(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    wfr_id = TestConstant.wfr_id2.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value

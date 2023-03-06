@@ -102,13 +102,20 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     wts_libraries_minted = _mint_libraries(wts_libraries)
 
     if len(wts_libraries_minted) > 1:
-        # again rare! but not impossible.
-        # if happen so, how should we handle if there are 2 (or more) WTS tumor samples/libraries in given Subject?
-        # skip for now as we don't support and/or the downstream RNAsum workflow won't take this input condition anyway.
-        logger.warning(f"[SKIP] Found multiple WTS tumor libraries {wts_libraries_minted} belong to {this_subject}")
-        return []
-
-    this_wts_tumor_library = wts_libraries_minted[0]
+        # somewhat rare condition!
+        # if happen so, how should we handle if there are 2 (or more) WTS tumor libraries for a given Subject?
+        # we will use latest WTS library output by its sequencing time
+        # see https://github.com/umccr/data-portal-apis/issues/547
+        this_wts_tumor_library = metadata_srv.get_sorted_library_id_by_sequencing_time(wts_libraries_minted)
+        if this_wts_tumor_library:
+            logger.info(f"Found multiple WTS tumor libraries {wts_libraries_minted} for {this_subject}. "
+                        f"Using most recent WTS tumor library base on sequencing time: {this_wts_tumor_library}")
+        else:
+            logger.warning(f"[SKIP] Found multiple WTS tumor libraries {wts_libraries_minted} belong to {this_subject}."
+                           f" Automation can not determine an appropriate WTS library by sequencing time.")
+            return []
+    else:
+        this_wts_tumor_library = wts_libraries_minted[0]
 
     # NOTE: Expect "over-fetching" wts_tumor_only (transcriptome) runs
     # At this point, we couldn't definitively infer which SequenceRun this is induced by; as we derive metadata ☝️

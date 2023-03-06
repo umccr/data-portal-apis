@@ -15,9 +15,10 @@ from typing import List
 from django.db import transaction
 from django.db.models import QuerySet
 
-from data_portal.models.workflow import Workflow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequencerun import SequenceRun
+from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import workflow_srv
 
 logger = logging.getLogger(__name__)
@@ -195,3 +196,65 @@ def get_metadata_for_library_runs(library_runs: List[LibraryRun]) -> List[LabMet
     for lib_run in library_runs:
         library_id_list.append(lib_run.library_id)
     return get_metadata_by_keywords_in(libraries=library_id_list)
+
+
+def get_sorted_library_id_by_sequencing_time(library_ids: List[str]) -> str:
+    """
+    Business logic:
+    For given library_id list, you'd like to get which library_id to use for triggering a workflow.
+    Using latest-greatest strategy -- such that
+
+        Check through LibraryRun > SequenceRun(PendingAnalysis)
+        Order library by SequenceRun date_modified descending
+        Return single library_id string; latest by their sequencing time
+
+    Example use case, see https://github.com/umccr/data-portal-apis/issues/547
+
+    :return: str library_id (latest by their sequencing time)  (OR) empty string on any fault condition and upto caller
+    to evaluate on returning empty string
+    """
+    recent_library_id = ""
+
+    lbr_qs: QuerySet = (
+        LibraryRun
+        .objects
+        .filter(library_id__in=library_ids)
+        .values("instrument_run_id", "library_id")
+        .distinct()
+    )
+
+    run_lib_pairs = []
+
+    if lbr_qs.exists():
+        for lbr in lbr_qs.all():
+            # run_lib_pairs data struct will be list of tuple pairs; an example as follows
+            # [('200508_A01052_0001_BH5LY7ACGT', 'L2100003'), ('200508_A01052_0001_BH5LY7ACGT', 'L2200001')]
+            run_lib_pairs.append((lbr['instrument_run_id'], lbr['library_id']))
+
+        instrument_run_ids = list(zip(*run_lib_pairs))[0]  # collect all instrument_run_id, left-hand side
+
+        # query SequenceRun table for all possible instrument_run_ids
+        # sort by date_modified in descending order
+        # we only interest to the most recent sequencing i.e. .first()
+        sqr: SequenceRun = (
+            SequenceRun
+            .objects
+            .filter(instrument_run_id__in=instrument_run_ids, status="PendingAnalysis")
+            .order_by("-date_modified")
+            .first()
+        )
+
+        if sqr is not None:
+            candidate_list = [item for item in run_lib_pairs if sqr.instrument_run_id in item]  # filter pairs with sqr
+
+            if len(candidate_list) > 1:
+                # extremely rare condition - again, something not impossible
+                # there could still be potentially 2 (or more) tumors of the same sample type
+                # within the same sequencing run for the same Subject
+                # if this happens then latest tumor library_id by their natural naming order; win!
+                library_ids = list(zip(*run_lib_pairs))[1]  # get all library_ids of the same SequenceRun
+                recent_library_id = sorted(library_ids, reverse=True)[0]  # sort natural and get top one
+            else:
+                recent_library_id = candidate_list[0][1]  # otherwise there shall only be 1 tuple run_lib_pairs
+
+    return recent_library_id
