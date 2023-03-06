@@ -106,9 +106,27 @@ def parse_somatic_workflow_output_directory(output_json: str, deep_check: bool =
     dragen_somatic_output_directory = parse_workflow_output(output_json, lookup_keys)
 
     if deep_check and dragen_somatic_output_directory is None:
-        raise ValueError("Could not find a dragen somatic output directory from the somatic workflow")
+        raise ValueError("Could not find a dragen somatic output directory from the somatic+germline workflow")
 
     return dragen_somatic_output_directory
+
+
+def parse_germline_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:
+    """
+    Parse the germline workflow run output and get the output directory of the germline workflow
+    :param output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return:
+    """
+
+    lookup_keys = ['main/dragen_germline_output_directory', 'dragen_germline_output_directory']
+
+    dragen_germline_output_directory = parse_workflow_output(output_json, lookup_keys)
+
+    if deep_check and dragen_germline_output_directory is None:
+        raise ValueError("Could not find a dragen germline output directory from the somatic+germline workflow")
+
+    return dragen_germline_output_directory
 
 
 def parse_transcriptome_workflow_output_directory(output_json: str, deep_check: bool = True) -> Dict:

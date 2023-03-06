@@ -22,6 +22,14 @@ mock_tn_output = json.dumps({
         "nameroot": "",
         "size": None
     },
+    "dragen_germline_output_directory": {
+        "basename": f"{TestConstant.library_id_normal.value}_{TestConstant.library_id_tumor.value}_dragen",
+        "class": "Directory",
+        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_normal.value}_{TestConstant.library_id_tumor.value}_dragen",
+        "nameext": "",
+        "nameroot": "",
+        "size": None
+    }
 })
 
 mock_tn_input = json.dumps({

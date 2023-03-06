@@ -56,13 +56,11 @@ def prepare_umccrise_jobs(this_workflow: Workflow) -> List[Dict]:
 
     # Get the dragen somatic output directory location
     dragen_somatic_directory = liborca.parse_somatic_workflow_output_directory(this_workflow.output)
+    dragen_germline_directory = liborca.parse_germline_workflow_output_directory(this_workflow.output)
 
     # Get fastq list rows for the germline sample
     # We also collect the fastq list rows for the tumor sample, so we can do some metadata checks
     fqlr_germline, fqlr_tumor = get_fastq_list_rows_from_somatic_workflow_input(this_workflow.input)
-
-    # Get normal sample name for naming germline outputs
-    normal_rgsm = fqlr_germline[0]['rgsm']
 
     # Get tumor and normal library names for umccrise outputs
     normal_rglb = fqlr_germline[0]['rglb']
@@ -81,10 +79,8 @@ def prepare_umccrise_jobs(this_workflow: Workflow) -> List[Dict]:
 
     job = {
         "dragen_somatic_directory": dragen_somatic_directory,
-        "fastq_list_rows_germline": fqlr_germline,
-        "output_directory_germline": normal_rgsm,
+        "dragen_germline_directory": dragen_germline_directory,
         "output_directory_umccrise": f"{tumor_rglb}__{normal_rglb}",
-        "output_file_prefix_germline": normal_rgsm,
         "subject_identifier_umccrise": meta_tumor.subject_id,
         "sample_name": meta_tumor.sample_id,
         "tumor_library_id": tumor_rglb,
