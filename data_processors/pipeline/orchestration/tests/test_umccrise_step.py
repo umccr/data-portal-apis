@@ -23,9 +23,9 @@ mock_tn_output = json.dumps({
         "size": None
     },
     "dragen_germline_output_directory": {
-        "basename": f"{TestConstant.library_id_normal.value}_{TestConstant.library_id_tumor.value}_dragen",
+        "basename": f"{TestConstant.library_id_normal.value}_{TestConstant.library_id_normal.value}_dragen",
         "class": "Directory",
-        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_normal.value}_{TestConstant.library_id_tumor.value}_dragen",
+        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_normal.value}_dragen",
         "nameext": "",
         "nameroot": "",
         "size": None
@@ -209,7 +209,8 @@ class UmccriseStepIntegrationTests(PipelineIntegrationTestCase):
         """
 
         # don't have a good wgs_tumor_normal run in DEV yet, this is from PROD
-        somatic_workflow_id = "wfr.f472a00d6f45421bb8637e87531e2c66"
+        # FIXME - added in a somatic+germline workflow run from dev
+        somatic_workflow_id = "wfr.5616c72c82e442f78f0f9f0d6441219e"
 
         #  ---
 
