@@ -122,7 +122,7 @@ class UmccriseStepUnitTests(PipelineUnitTestCase):
 
         for job in job_list:
             logger.info(f"\n{libjson.dumps(job)}")  # NOTE libjson is intentional and part of ser/deser test
-            self.assertIn("output_directory_umccrise", job.keys())
+            self.assertIn("output_directory_name", job.keys())
 
     def test_get_fastq_list_rows_from_somatic_workflow_input(self):
         """

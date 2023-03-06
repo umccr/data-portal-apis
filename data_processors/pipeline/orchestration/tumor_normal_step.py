@@ -238,6 +238,7 @@ def create_tn_job(tumor_fastq_list_rows: List[FastqListRow], normal_fastq_list_r
     tumor_library_id = tumor_fastq_list_rows[0].rglb
     tumor_sample_name = tumor_fastq_list_rows[0].rgsm
     normal_library_id = normal_fastq_list_rows[0].rglb
+    normal_sample_name = normal_fastq_list_rows[0].rgsm
     fqlr = pd.DataFrame([fq_list_row.to_dict() for fq_list_row in normal_fastq_list_rows]).to_dict(orient="records")
     t_fqlr = pd.DataFrame([fq_list_row.to_dict() for fq_list_row in tumor_fastq_list_rows]).to_dict(orient="records")
 
@@ -246,9 +247,12 @@ def create_tn_job(tumor_fastq_list_rows: List[FastqListRow], normal_fastq_list_r
         "subject_id": subject_id,
         "fastq_list_rows": fqlr,
         "tumor_fastq_list_rows": t_fqlr,
-        "output_file_prefix": f"{tumor_sample_name}",
-        "output_directory": f"{tumor_library_id}_{normal_library_id}",
-        "sample_name": tumor_library_id
+        "output_file_prefix_germline": f"{normal_sample_name}",
+        "output_file_prefix_somatic": f"{tumor_sample_name}",
+        "output_directory_germline": f"{normal_library_id}",
+        "output_directory_somatic": f"{tumor_library_id}_{normal_library_id}",
+        "sample_name_germline": normal_library_id,
+        "sample_name_somatic": tumor_library_id
     }
 
     return job_dict

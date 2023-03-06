@@ -65,9 +65,12 @@ def handler(event, context) -> dict:
     """event payload dict
     {
         "subject_id": "subjectId",
-        "sample_name": "tumorLibraryId",
-        "output_file_prefix": "tumorSampleId",
-        "output_directory": "tumorLibraryId_normalLibraryId",
+        "sample_name_germline": "normalLibraryId",
+        "sample_name_somatic": "tumorLibraryId",
+        "output_file_prefix_germline": "normalSampleId",
+        "output_file_prefix_somatic": "tumorSampleId",
+        "output_directory_germline": "normalLibraryId",
+        "output_directory_somatic": "tumorLibraryId_normalLibraryId",
         "fastq_list_rows": [{
             "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
             "rgsm": "sampleId",
@@ -112,11 +115,15 @@ def handler(event, context) -> dict:
 
     # Extract name of sample and the fastq list rows
     subject_id = event['subject_id']
-    output_file_prefix = event['output_file_prefix']
-    output_directory = event['output_directory']
+    sample_name_germline = event['sample_name_germline']
+    sample_name_somatic = event['sample_name_somatic']
+    output_file_prefix_germline = event['output_file_prefix_germline']
+    output_file_prefix_somatic = event['output_file_prefix_somatic']
+    output_directory_germline = event['output_directory_germline']
+    output_directory_somatic = event['output_directory_somatic']
     fastq_list_rows = event['fastq_list_rows']
     tumor_fastq_list_rows = event['tumor_fastq_list_rows']
-    sample_name = event['sample_name']
+
 
     normal_library_id = fastq_list_rows[0]['rglb']
     tumor_library_id = tumor_fastq_list_rows[0]['rglb']
@@ -125,8 +132,10 @@ def handler(event, context) -> dict:
     wfl_helper = SecondaryAnalysisHelper(WorkflowType.TUMOR_NORMAL)
 
     workflow_input: dict = wfl_helper.get_workflow_input()
-    workflow_input["output_file_prefix"] = f"{output_file_prefix}"
-    workflow_input["output_directory"] = f"{output_directory}_dragen"
+    workflow_input["output_file_prefix_germline"] = f"{output_file_prefix_germline}"
+    workflow_input["output_file_prefix_somatic"] = f"{output_file_prefix_somatic}"
+    workflow_input["output_directory_germline"] = f"{output_directory_germline}_dragen_germline"
+    workflow_input["output_directory_somatic"] = f"{output_directory_somatic}_dragen_somatic"
     workflow_input["fastq_list_rows"] = fastq_list_rows
     workflow_input["tumor_fastq_list_rows"] = tumor_fastq_list_rows
 
@@ -168,7 +177,7 @@ def handler(event, context) -> dict:
 
     result = {
         'subject_id': subject_id,
-        'sample_name': sample_name,
+        'sample_name': sample_name_somatic,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,

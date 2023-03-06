@@ -18,28 +18,17 @@ class UmccriseLambdaUnitTests(PipelineUnitTestCase):
         mock_tumor_library_run: LibraryRun = TumorLibraryRunFactory()
 
         workflow: dict = umccrise.handler({
-            "dragen_somatic_directory": {
+            "dragen_germline_directory": {
                 "class": "Directory",
                 "location": "gds://path/to/somatic/output/dir"
             },
-            "fastq_list_rows_germline": [{
-                "rgid": "index1.index2.lane",
-                "rgsm": "sample_name",
-                "rglb": "UnknownLibrary",
-                "lane": 1,
-                "read_1": {
-                    "class": "File",
-                    "location": "gds://path/to/read_1.fastq.gz"
-                },
-                "read_2": {
-                    "class": "File",
-                    "location": "gds://path/to/read_2.fastq.gz"
-                }
-            }],
-            "output_directory_germline": "PRJ1234567",
-            "output_directory_umccrise": "TumorRglb__NormalRglb",
-            "output_file_prefix_germline": "PRJ1234567",
-            "subject_identifier_umccrise": "SBJ01234",
+            "dragen_somatic_directory": {
+                "class": "Directory",
+                "location": "gds://path/to/germline/output/dir"
+            },
+            "output_directory_name": "PRJ1234567",
+            "output_file_prefix": "PRJ1234567",
+            "subject_identifier": "SBJ01234",
             "sample_name": "TUMOR_SAMPLE_ID",
             "tumor_library_id": f"{TestConstant.library_id_tumor.value}",
             "normal_library_id": f"{TestConstant.library_id_normal.value}"

@@ -19,7 +19,12 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
 
         workflow: dict = tumor_normal.handler({
             "subject_id": "SUBJECT_ID",
-            "sample_name": "SAMPLE_NAME",
+            "sample_name_germline": "SAMPLE_NAME_GERMLINE",
+            "sample_name_somatic": "SAMPLE_NAME_SOMATIC",
+            "output_file_prefix_germline": "SAMPLEID_LIBRARYID_GERMLINE",
+            "output_file_prefix_somatic": "SAMPLEID_LIBRARYID_SOMATIC",
+            "output_directory_germline": "SAMPLEID_LIBRARYID_GERMLINE",
+            "output_directory_somatic": "SAMPLEID_LIBRARYID_SOMATIC",
             "fastq_list_rows": [{
                 "rgid": "index1.index2.lane",
                 "rgsm": "sample_name",
@@ -47,9 +52,7 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
                     "class": "File",
                     "location": "gds://path/to/read_2.fastq.gz"
                 }
-            }],
-            "output_file_prefix": "SAMPLEID_LIBRARYID",
-            "output_directory": "SAMPLEID_LIBRARYID"
+            }]
         }, None)
 
         logger.info("-" * 32)
