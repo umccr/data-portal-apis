@@ -32,30 +32,22 @@ class FlowMetricsSex(models.TextChoices):
 #     NA = "na"
 
 class FlowMetricsManager(PortalBaseManager):
-# TODO: Also introduce *run_id* so that we can JOIN and relate with other foreign keys
     def get_by_unique_fields(
             self,
-            subject_id: str,
-            sample_id: str,
-            #library_id: str,
+            run_id: str,
     ) -> QuerySet:
 
         h = HashFieldHelper()
-        h.add(subject_id).add(sample_id)
-        #.add(library_id)
+        h.add(run_id)
 
         return self.filter(unique_hash__exact=h.calculate_hash())
 
     def create_or_update_flowmetrics(
             self,
-            subject_id: str,
-            sample_id: str,
-            #library_id: str,
+            portal_run_id: str,
     ):
         qs: QuerySet = self.get_by_unique_fields(
-            subject_id=subject_id,
-            sample_id=sample_id,
-            #library_id=library_id,
+            portal_run_id,
         )
 
     def get_by_keyword(self, **kwargs) -> QuerySet:
