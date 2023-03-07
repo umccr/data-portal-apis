@@ -27,10 +27,6 @@ class FlowMetricsSex(models.TextChoices):
     FEMALE = "female"
     NA = "na"
 
-# class FlowMetricsTMB(models.TextChoices):
-#     #FLOAT
-#     NA = "na"
-
 class FlowMetricsManager(PortalBaseManager):
     def get_by_unique_fields(
             self,
@@ -72,7 +68,7 @@ class FlowMetrics(PortalBaseModel):
     qc_status_purple = models.CharField(choices=FlowMetricsQCStatus.choices, max_length=255)
     sex = models.CharField(choices=FlowMetricsSex.choices, max_length=255)
     ms_status = models.CharField(max_length=255)
-    tmb = models.FloatField() # Encode NA?
+    tmb = models.FloatField(null=True) # Make sure NA is mapped to null at ORM level/ingestion
     s3_object_id = models.CharField(max_length=255, null=True)
     gds_file_id = models.CharField(max_length=255, null=True)
 
