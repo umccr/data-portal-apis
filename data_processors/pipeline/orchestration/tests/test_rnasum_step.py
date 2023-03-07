@@ -475,6 +475,8 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_prepare_rnasum_jobs_SBJ02060(self):
         """
+        unset ICA_ACCESS_TOKEN
+        export AWS_PROFILE=prod
         python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_prepare_rnasum_jobs_SBJ02060
 
         SBJ02060 is a good example for recurring sequencing sample. i.e. 2 tumor each for WGS, WTS and TSO

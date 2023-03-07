@@ -106,13 +106,14 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
         # if happen so, how should we handle if there are 2 (or more) WTS tumor libraries for a given Subject?
         # we will use latest WTS library output by its sequencing time
         # see https://github.com/umccr/data-portal-apis/issues/547
-        this_wts_tumor_library = metadata_srv.get_sorted_library_id_by_sequencing_time(wts_libraries_minted)
-        if this_wts_tumor_library:
+        try:
+            this_wts_tumor_library = metadata_srv.get_most_recent_library_id_by_sequencing_time(wts_libraries_minted)
             logger.info(f"Found multiple WTS tumor libraries {wts_libraries_minted} for {this_subject}. "
                         f"Using most recent WTS tumor library base on sequencing time: {this_wts_tumor_library}")
-        else:
+        except ValueError as e:
             logger.warning(f"[SKIP] Found multiple WTS tumor libraries {wts_libraries_minted} belong to {this_subject}."
                            f" Automation can not determine an appropriate WTS library by sequencing time.")
+            logger.warning(e)
             return []
     else:
         this_wts_tumor_library = wts_libraries_minted[0]
