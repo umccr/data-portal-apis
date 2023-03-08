@@ -2,6 +2,7 @@ from typing import List
 
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests import factories
 from data_portal.tests.factories import TestConstant, LibraryRunFactory, DragenWgsQcWorkflowFactory
 from data_processors.pipeline.services import metadata_srv, libraryrun_srv
@@ -72,3 +73,95 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         for meta in meta_list:
             logger.info(meta.library_id)
             self.assertEqual(meta.library_id, TestConstant.wts_library_id_tumor.value)
+
+    def test_get_most_recent_library_id_by_sequencing_time(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_most_recent_library_id_by_sequencing_time
+        """
+        mock_sqr: SequenceRun = factories.SequenceRunFactory()
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+        mock_wts_lbr: LibraryRun = factories.WtsTumorLibraryRunFactory()
+
+        recent_lib_id = metadata_srv.get_most_recent_library_id_by_sequencing_time([TestConstant.wts_library_id_tumor.value])
+        logger.info(recent_lib_id)
+        self.assertEqual(recent_lib_id, TestConstant.wts_library_id_tumor.value)
+
+    def test_get_most_recent_library_id_by_sequencing_time_no_lbr(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_most_recent_library_id_by_sequencing_time_no_lbr
+        """
+        mock_sqr: SequenceRun = factories.SequenceRunFactory()
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+
+        try:
+            _ = metadata_srv.get_most_recent_library_id_by_sequencing_time([TestConstant.wts_library_id_tumor.value])
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
+
+    def test_get_most_recent_library_id_by_sequencing_time_no_sqr(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_most_recent_library_id_by_sequencing_time_no_sqr
+        """
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+        mock_wts_lbr: LibraryRun = factories.WtsTumorLibraryRunFactory()
+
+        try:
+            _ = metadata_srv.get_most_recent_library_id_by_sequencing_time([TestConstant.wts_library_id_tumor.value])
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
+
+    def test_get_most_recent_library_id_by_sequencing_time_recurring_subject(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_most_recent_library_id_by_sequencing_time_recurring_subject
+        """
+        # first time sequencing
+        mock_sqr: SequenceRun = factories.SequenceRunFactory()
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+        mock_wts_lbr: LibraryRun = factories.WtsTumorLibraryRunFactory()
+
+        # second time sequencing (recurring subject)
+        mock_wts_meta_2: LabMetadata = factories.WtsTumorLabMetadataFactory2()
+        mock_wts_lbr_2: LibraryRun = factories.WtsTumorLibraryRunFactory2()
+        mock_sqr_2: SequenceRun = factories.SequenceRunFactory2()
+
+        # assert our test database has 2 mock instances
+        self.assertEqual(SequenceRun.objects.count(), 2)
+        self.assertEqual(LibraryRun.objects.count(), 2)
+        self.assertEqual(LabMetadata.objects.count(), 2)
+
+        eval_lib_ids = [TestConstant.wts_library_id_tumor.value, mock_wts_meta_2.library_id]
+
+        recent_lib_id = metadata_srv.get_most_recent_library_id_by_sequencing_time(eval_lib_ids)
+        logger.info(recent_lib_id)
+        self.assertEqual(recent_lib_id, mock_wts_meta_2.library_id)
+
+    def test_get_most_recent_library_id_by_sequencing_time_2in1(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_most_recent_library_id_by_sequencing_time_2in1
+
+        Scenario: what if 2 WTS tumors (of same Subject) in 1 sequencing!
+        """
+        # first tumor library
+        mock_sqr: SequenceRun = factories.SequenceRunFactory()
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+        mock_wts_lbr: LibraryRun = factories.WtsTumorLibraryRunFactory()
+
+        # second tumor library
+        mock_wts_meta_2: LabMetadata = factories.WtsTumorLabMetadataFactory2()
+        mock_wts_lbr_2: LibraryRun = factories.WtsTumorLibraryRunFactory2()
+        mock_wts_lbr_2.instrument_run_id = TestConstant.instrument_run_id.value
+        mock_wts_lbr_2.run_id = TestConstant.run_id.value
+        mock_wts_lbr_2.save()
+
+        # assert our test database has proper mock state
+        self.assertEqual(SequenceRun.objects.count(), 1)
+        self.assertEqual(LibraryRun.objects.count(), 2)
+        self.assertEqual(LabMetadata.objects.count(), 2)
+
+        eval_lib_ids = [TestConstant.wts_library_id_tumor.value, mock_wts_meta_2.library_id]
+
+        recent_lib_id = metadata_srv.get_most_recent_library_id_by_sequencing_time(eval_lib_ids)
+        logger.info(recent_lib_id)
+        self.assertEqual(recent_lib_id, mock_wts_meta_2.library_id)

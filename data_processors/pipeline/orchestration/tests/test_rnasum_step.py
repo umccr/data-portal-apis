@@ -1,18 +1,21 @@
 import json
+from datetime import datetime
 from typing import List, Dict
 from unittest import skip
 
-from django.utils.timezone import now
+from django.utils.timezone import now, make_aware
 from libica.app import wes
 from libumccr import libjson
 from mockito import when
 
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import UmccriseWorkflowFactory, LibraryRunFactory, \
     TumorLibraryRunFactory, LabMetadataFactory, TumorLabMetadataFactory, DragenWtsWorkflowFactory, \
-    WtsTumorLabMetadataFactory, WtsTumorLibraryRunFactory, TestConstant
+    WtsTumorLabMetadataFactory, WtsTumorLibraryRunFactory, TestConstant, DragenWtsWorkflowFactory2, SequenceRunFactory, \
+    SequenceRunFactory2
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.orchestration import rnasum_step
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
@@ -468,6 +471,133 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), 1)
+
+    @skip
+    def test_prepare_rnasum_jobs_SBJ02060(self):
+        """
+        unset ICA_ACCESS_TOKEN
+        export AWS_PROFILE=prod
+        python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_prepare_rnasum_jobs_SBJ02060
+
+        SBJ02060 is a good example for recurring sequencing sample. i.e. 2 tumor each for WGS, WTS and TSO
+        See https://github.com/umccr/data-portal-apis/issues/547
+        """
+
+        # Replaying https://portal.umccr.org/subjects/SBJ02060
+
+        # Populate test db with 2 SequenceRun
+        sqr_93: SequenceRun = SequenceRunFactory()
+        sqr_93.run_id = "r.93"
+        sqr_93.name = "220414_A01052_0093_BH7L55DMXY"
+        sqr_93.instrument_run_id = "220414_A01052_0093_BH7L55DMXY"
+        sqr_93.status = "PendingAnalysis"
+        sqr_93.date_modified = make_aware(datetime.strptime("2022-04-16 00:38:21", "%Y-%m-%d %H:%M:%S"))
+        sqr_93.save()
+
+        sqr_233: SequenceRun = SequenceRunFactory2()
+        sqr_233.run_id = "r.233"
+        sqr_233.name = "221019_A00130_0233_BH53K5DSX5"
+        sqr_233.instrument_run_id = "221019_A00130_0233_BH53K5DSX5"
+        sqr_233.status = "PendingAnalysis"
+        sqr_233.date_modified = make_aware(datetime.strptime("2022-10-20 18:11:00", "%Y-%m-%d %H:%M:%S"))
+        sqr_233.save()
+
+        # Populate test db with LibraryRun records for WGS and WTS libraries
+        wgs_library_normal = LibraryRun.objects.create(
+            library_id="L2200460",
+            instrument_run_id="220414_A01052_0093_BH7L55DMXY",
+            run_id="r.93",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wgs_library_tumor = LibraryRun.objects.create(
+            library_id="L2201539",
+            instrument_run_id="221019_A00130_0233_BH53K5DSX5",
+            run_id="r.233",
+            lane=3,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wts_library_tumor_1 = LibraryRun.objects.create(
+            library_id="L2200449",
+            instrument_run_id="220414_A01052_0093_BH7L55DMXY",
+            run_id="r.93",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wts_library_tumor_2 = LibraryRun.objects.create(
+            library_id="L2201545",
+            instrument_run_id="221019_A00130_0233_BH53K5DSX5",
+            run_id="r.233",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        # Populate test db with LabMetadata from Sheet 2022
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2022"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # Populate test db with the actual WorkflowRun for WGS and WTS libraries from PROD
+        # We will use wes.get_run(...) to sync from ICA to test db
+        umccrise_workflow_id = "wfr.e3b09354992f4e99b3c8a99f8a68f74e"  # in PROD for L2201539
+        wts_workflow_id_1 = "wfr.a11d74a3daf447aa82c66c902f4d10de"  # in PROD for L2200449
+        wts_workflow_id_2 = "wfr.d4367786b1b0469ca090bda4a887bb57"  # in PROD for L2201545
+
+        mock_umccrise_workflow: Workflow = UmccriseWorkflowFactory()
+        mock_wts_workflow_1: Workflow = DragenWtsWorkflowFactory()
+        mock_wts_workflow_2: Workflow = DragenWtsWorkflowFactory2()
+
+        umccrise_wfl_run = wes.get_run(umccrise_workflow_id, to_dict=True)
+        mock_umccrise_workflow.wfr_id = umccrise_workflow_id
+        mock_umccrise_workflow.input = json.dumps(umccrise_wfl_run['input'])
+        mock_umccrise_workflow.output = json.dumps(umccrise_wfl_run['output'])
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_normal)
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_tumor)
+        mock_umccrise_workflow.end = now()
+        mock_umccrise_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_umccrise_workflow.save()
+
+        wts_wfl_run_1 = wes.get_run(wts_workflow_id_1, to_dict=True)
+        mock_wts_workflow_1.wfr_id = wts_workflow_id_1
+        mock_wts_workflow_1.input = json.dumps(wts_wfl_run_1['input'])
+        mock_wts_workflow_1.output = json.dumps(wts_wfl_run_1['output'])
+        mock_wts_workflow_1.libraryrun_set.add(wts_library_tumor_1)
+        mock_wts_workflow_1.end = now()
+        mock_wts_workflow_1.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_wts_workflow_1.save()
+
+        wts_wfl_run_2 = wes.get_run(wts_workflow_id_2, to_dict=True)
+        mock_wts_workflow_2.wfr_id = wts_workflow_id_2
+        mock_wts_workflow_2.input = json.dumps(wts_wfl_run_2['input'])
+        mock_wts_workflow_2.output = json.dumps(wts_wfl_run_2['output'])
+        mock_wts_workflow_2.libraryrun_set.add(wts_library_tumor_2)
+        mock_wts_workflow_2.end = now()
+        mock_wts_workflow_2.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_wts_workflow_2.save()
+
+        # At this point, we have replayed Pipeline the state such that
+        # We have 2 tumor libraries candidate for WTS.
+        # We have done umccrise run for the Subject.
+        # And the correspondent transcriptome workflow runs have done as well.
+        # Now. At this point in orchestration;
+        # if we prepare runnable RNAsum job with latest-greatest strategy,
+        # this should go with L2201545
+
+        job_list = rnasum_step.prepare_rnasum_jobs(this_workflow=mock_umccrise_workflow)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(f"\n{json.dumps(job_list)}")
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), 1)
+        self.assertEqual(job_list[0]['tumor_library_id'], "L2201545")
 
     @skip
     def test_lookup_tcga_dataset(self):
