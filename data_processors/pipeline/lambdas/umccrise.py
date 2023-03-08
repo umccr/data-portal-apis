@@ -74,7 +74,9 @@ def handler(event, context) -> dict:
         "subject_identifier": "SBJ01234",
         "sample_name": "TUMOR_SAMPLE_ID",
         "tumor_library_id": "tumor_rglb",
-        "normal_library_id": "normal_rglb"
+        "normal_library_id": "normal_rglb",
+        "dragen_tumor_id": "tumor_rgsm",
+        "dragen_normal_id": "normal_rgsm"
     }
 
     :param event:
@@ -98,8 +100,9 @@ def handler(event, context) -> dict:
     workflow_input['dragen_somatic_directory'] = event['dragen_somatic_directory']
     workflow_input['dragen_germline_directory'] = event['dragen_germline_directory']
     workflow_input['output_directory_name'] = event['output_directory_name']
-    workflow_input['output_file_prefix'] = event['output_file_prefix']
     workflow_input['subject_identifier'] = subject_id
+    workflow_input['dragen_normal_id'] = event['dragen_normal_id']
+    workflow_input['dragen_tumor_id'] = event['dragen_tumor_id']
 
     # read workflow id and version from parameter store
     workflow_id = wfl_helper.get_workflow_id()

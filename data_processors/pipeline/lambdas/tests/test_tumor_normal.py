@@ -18,13 +18,13 @@ class TumorNormalUnitTests(PipelineUnitTestCase):
         mock_tumor_library_run: LibraryRun = TumorLibraryRunFactory()
 
         workflow: dict = tumor_normal.handler({
-            "subject_id": "SUBJECT_ID",
-            "sample_name_germline": "SAMPLE_NAME_GERMLINE",
-            "sample_name_somatic": "SAMPLE_NAME_SOMATIC",
-            "output_file_prefix_germline": "SAMPLEID_LIBRARYID_GERMLINE",
-            "output_file_prefix_somatic": "SAMPLEID_LIBRARYID_SOMATIC",
-            "output_directory_germline": "SAMPLEID_LIBRARYID_GERMLINE",
-            "output_directory_somatic": "SAMPLEID_LIBRARYID_SOMATIC",
+            "subject_id": "subjectId",
+            "sample_name_germline": "normalLibraryId",
+            "sample_name_somatic": "tumorLibraryId",
+            "output_file_prefix_germline": "normalSampleId",
+            "output_file_prefix_somatic": "tumorSampleId",
+            "output_directory_germline": "normalLibraryId",
+            "output_directory_somatic": "tumorLibraryId_normalLibraryId",
             "fastq_list_rows": [{
                 "rgid": "index1.index2.lane",
                 "rgsm": "sample_name",

@@ -64,7 +64,10 @@ def prepare_umccrise_jobs(this_workflow: Workflow) -> List[Dict]:
 
     # Get tumor and normal library names for umccrise outputs
     normal_rglb = fqlr_germline[0]['rglb']
+    normal_rgsm = fqlr_germline[0]['rgsm']
+
     tumor_rglb = fqlr_tumor[0]['rglb']
+    tumor_rgsm = fqlr_tumor[0]['rgsm']
 
     # Get metadata for both tumor and normal libraries
     meta_normal: LabMetadata = metadata_srv.get_metadata_by_library_id(normal_rglb)
@@ -84,7 +87,9 @@ def prepare_umccrise_jobs(this_workflow: Workflow) -> List[Dict]:
         "subject_identifier": meta_tumor.subject_id,
         "sample_name": meta_tumor.sample_id,
         "tumor_library_id": tumor_rglb,
-        "normal_library_id": normal_rglb
+        "normal_library_id": normal_rglb,
+        "dragen_tumor_id": tumor_rgsm,
+        "dragen_normal_id": normal_rgsm,
     }
 
     return [job]

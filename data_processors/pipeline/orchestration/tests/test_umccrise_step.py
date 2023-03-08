@@ -15,17 +15,17 @@ mock_tn_subject_id = "SBJ00001"
 
 mock_tn_output = json.dumps({
     "dragen_somatic_output_directory": {
-        "basename": f"{TestConstant.library_id_normal.value}_{TestConstant.library_id_tumor.value}_dragen",
+        "basename": f"{TestConstant.library_id_tumor.value}_{TestConstant.library_id_normal.value}_dragen_somatic",
         "class": "Directory",
-        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_normal.value}_{TestConstant.library_id_tumor.value}_dragen",
+        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_tumor.value}_{TestConstant.library_id_normal.value}_dragen_somatic",
         "nameext": "",
         "nameroot": "",
         "size": None
     },
     "dragen_germline_output_directory": {
-        "basename": f"{TestConstant.library_id_normal.value}_{TestConstant.library_id_normal.value}_dragen",
+        "basename": f"{TestConstant.library_id_normal.value}_dragen_germline",
         "class": "Directory",
-        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_normal.value}_dragen",
+        "location": f"gds://vol/analysis_data/{mock_tn_subject_id}/wgs_tumor_normal/20310102aa4f9099/{TestConstant.library_id_normal.value}_dragen_germline",
         "nameext": "",
         "nameroot": "",
         "size": None
@@ -53,7 +53,7 @@ mock_tn_input = json.dumps({
         {
             "rgid": f"ATGAGGCC.CAATTAAC.4.310101_A00130_0001_BHWLGFDSX2.PRJ310197_{TestConstant.library_id_tumor.value}",
             "rglb": f"{TestConstant.library_id_tumor.value}",
-            "rgsm": "PRJ310197",
+            "rgsm": f"{TestConstant.sample_id.value}",
             "lane": 4,
             "read_1": {
                 "class": "File",
@@ -205,11 +205,12 @@ class UmccriseStepIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_prepare_umccrise_jobs(self):
         """
+        unset ICA_ACCESS_TOKEN
+        export AWS_PROFILE=dev
         python manage.py test data_processors.pipeline.orchestration.tests.test_umccrise_step.UmccriseStepIntegrationTests.test_prepare_umccrise_jobs
         """
 
-        # don't have a good wgs_tumor_normal run in DEV yet, this is from PROD
-        # FIXME - added in a somatic+germline workflow run from dev
+        # a somatic+germline workflow run from DEV
         somatic_workflow_id = "wfr.5616c72c82e442f78f0f9f0d6441219e"
 
         #  ---

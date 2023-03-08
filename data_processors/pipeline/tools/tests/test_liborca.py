@@ -120,9 +120,9 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         """
         mock_tn_output = json.dumps({
             "dragen_somatic_output_directory": {
-                "basename": "L0000001_L0000002_dragen",
+                "basename": "L0000002_L0000001_dragen_somatic",
                 "class": "Directory",
-                "location": "gds://vol/analysis_data/SBJ00001/wgs_tumor_normal/20211208aa4f9099/L0000001_L0000002_dragen",
+                "location": "gds://vol/analysis_data/SBJ00001/wgs_tumor_normal/20211208aa4f9099/L0000002_L0000001_dragen_somatic",
                 "nameext": "",
                 "nameroot": "",
                 "size": None
@@ -133,7 +133,7 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         logger.info("-" * 32)
         logger.info(f"parse_somatic_workflow_output_directory: {json.dumps(result)}")
 
-        self.assertEqual(result['basename'], "L0000001_L0000002_dragen")
+        self.assertEqual(result['basename'], "L0000002_L0000001_dragen_somatic")
         self.assertEqual(result['class'], "Directory")
 
     def test_parse_somatic_workflow_output_directory_none(self):
@@ -148,6 +148,28 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         except Exception as e:
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(ValueError)
+
+    def test_parse_germline_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_germline_workflow_output_directory
+        """
+        mock_tn_output = json.dumps({
+            "dragen_germline_output_directory": {
+                "basename": "L0000001_dragen_germline",
+                "class": "Directory",
+                "location": "gds://vol/analysis_data/SBJ00001/wgs_tumor_normal/20211208aa4f9099/L0000001_dragen_germline",
+                "nameext": "",
+                "nameroot": "",
+                "size": None
+            },
+        })
+        result: dict = liborca.parse_germline_workflow_output_directory(mock_tn_output)
+
+        logger.info("-" * 32)
+        logger.info(f"parse_germline_workflow_output_directory: {json.dumps(result)}")
+
+        self.assertEqual(result['basename'], "L0000001_dragen_germline")
+        self.assertEqual(result['class'], "Directory")
 
     def test_parse_bcl_convert_output(self):
         """
@@ -540,6 +562,8 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
     @skip
     def test_parse_somatic_workflow_output_directory(self):
         """
+        unset ICA_ACCESS_TOKEN
+        export AWS_PROFILE=prod
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_somatic_workflow_output_directory
         """
 
@@ -554,6 +578,25 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
 
         self.assertIn("class", dragen_somatic_output_directory.keys())
         self.assertEqual(dragen_somatic_output_directory['class'], "Directory")
+
+    @skip
+    def test_parse_germline_workflow_output_directory(self):
+        """
+        unset ICA_ACCESS_TOKEN
+        export AWS_PROFILE=dev
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_germline_workflow_output_directory
+        """
+
+        wfr_id = "wfr.5616c72c82e442f78f0f9f0d6441219e"  # in DEV
+
+        wfl_run = wes.get_run(wfr_id)
+
+        dragen_germline_output_directory = liborca.parse_germline_workflow_output_directory(json.dumps(wfl_run.output))
+
+        logger.info(f"\n{dragen_germline_output_directory}")
+
+        self.assertIn("class", dragen_germline_output_directory.keys())
+        self.assertEqual(dragen_germline_output_directory['class'], "Directory")
 
     @skip
     def test_parse_umccrise_workflow_output_directory(self):

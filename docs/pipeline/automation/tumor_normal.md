@@ -5,7 +5,7 @@
 We can re-enter the Pipeline from _some_ Tumor Normal step as follows.
 
 _Step 1)_
-- To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/tumor_normal.py#L64-L104)
+- To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/tumor_normal.py#L64-L102)
   - _Attached [tumor_normal_payload.json](tumor_normal_payload.json) here for convenience_
 
 _Step 2)_

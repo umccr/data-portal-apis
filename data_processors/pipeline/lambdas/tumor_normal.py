@@ -124,7 +124,6 @@ def handler(event, context) -> dict:
     fastq_list_rows = event['fastq_list_rows']
     tumor_fastq_list_rows = event['tumor_fastq_list_rows']
 
-
     normal_library_id = fastq_list_rows[0]['rglb']
     tumor_library_id = tumor_fastq_list_rows[0]['rglb']
 

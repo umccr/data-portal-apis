@@ -18,20 +18,21 @@ class UmccriseLambdaUnitTests(PipelineUnitTestCase):
         mock_tumor_library_run: LibraryRun = TumorLibraryRunFactory()
 
         workflow: dict = umccrise.handler({
-            "dragen_germline_directory": {
-                "class": "Directory",
-                "location": "gds://path/to/somatic/output/dir"
-            },
             "dragen_somatic_directory": {
                 "class": "Directory",
                 "location": "gds://path/to/germline/output/dir"
             },
-            "output_directory_name": "PRJ1234567",
-            "output_file_prefix": "PRJ1234567",
+            "dragen_germline_directory": {
+                "class": "Directory",
+                "location": "gds://path/to/somatic/output/dir"
+            },
+            "output_directory_name": f"{TestConstant.library_id_tumor.value}__{TestConstant.library_id_normal.value}",
             "subject_identifier": "SBJ01234",
-            "sample_name": "TUMOR_SAMPLE_ID",
+            "sample_name": "PRJ1234567",
             "tumor_library_id": f"{TestConstant.library_id_tumor.value}",
-            "normal_library_id": f"{TestConstant.library_id_normal.value}"
+            "normal_library_id": f"{TestConstant.library_id_normal.value}",
+            "dragen_tumor_id": "PRJ1234567",
+            "dragen_normal_id": "PRJ1234566",
         }, None)
 
         logger.info("-" * 32)

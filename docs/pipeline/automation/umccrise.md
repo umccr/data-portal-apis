@@ -7,7 +7,7 @@ _a.k.a. umccr cancer report workflow_
 We can re-enter the Pipeline from _some_ umccrise step as follows.
 
 _Step 1)_
-- To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/umccrise.py#L63-L90)
+- To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/umccrise.py#L63-L80)
   - _Attached [umccrise_payload.json](umccrise_payload.json) here for convenience_
 
 _Step 2)_
