@@ -1,8 +1,11 @@
 {
   "subject_id": "subjectId",
-  "sample_name": "tumorLibraryId",
-  "output_file_prefix": "tumorSampleId",
-  "output_directory": "tumorLibraryId_normalLibraryId",
+  "sample_name_germline": "normalLibraryId",
+  "sample_name_somatic": "tumorLibraryId",
+  "output_file_prefix_germline": "normalSampleId",
+  "output_file_prefix_somatic": "tumorSampleId",
+  "output_directory_germline": "normalLibraryId",
+  "output_directory_somatic": "tumorLibraryId_normalLibraryId",
   "fastq_list_rows": [
     {
       "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",

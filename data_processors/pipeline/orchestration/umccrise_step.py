@@ -31,7 +31,7 @@ def perform(this_workflow: Workflow):
 
     submitting_subjects = []
     for job in job_list:
-        submitting_subjects.append(job['subject_identifier_umccrise'])
+        submitting_subjects.append(job['subject_identifier'])
 
     return {
         "submitting_subjects": submitting_subjects
@@ -56,17 +56,18 @@ def prepare_umccrise_jobs(this_workflow: Workflow) -> List[Dict]:
 
     # Get the dragen somatic output directory location
     dragen_somatic_directory = liborca.parse_somatic_workflow_output_directory(this_workflow.output)
+    dragen_germline_directory = liborca.parse_germline_workflow_output_directory(this_workflow.output)
 
     # Get fastq list rows for the germline sample
     # We also collect the fastq list rows for the tumor sample, so we can do some metadata checks
     fqlr_germline, fqlr_tumor = get_fastq_list_rows_from_somatic_workflow_input(this_workflow.input)
 
-    # Get normal sample name for naming germline outputs
-    normal_rgsm = fqlr_germline[0]['rgsm']
-
     # Get tumor and normal library names for umccrise outputs
     normal_rglb = fqlr_germline[0]['rglb']
+    normal_rgsm = fqlr_germline[0]['rgsm']
+
     tumor_rglb = fqlr_tumor[0]['rglb']
+    tumor_rgsm = fqlr_tumor[0]['rgsm']
 
     # Get metadata for both tumor and normal libraries
     meta_normal: LabMetadata = metadata_srv.get_metadata_by_library_id(normal_rglb)
@@ -81,14 +82,14 @@ def prepare_umccrise_jobs(this_workflow: Workflow) -> List[Dict]:
 
     job = {
         "dragen_somatic_directory": dragen_somatic_directory,
-        "fastq_list_rows_germline": fqlr_germline,
-        "output_directory_germline": normal_rgsm,
-        "output_directory_umccrise": f"{tumor_rglb}__{normal_rglb}",
-        "output_file_prefix_germline": normal_rgsm,
-        "subject_identifier_umccrise": meta_tumor.subject_id,
+        "dragen_germline_directory": dragen_germline_directory,
+        "output_directory_name": f"{tumor_rglb}__{normal_rglb}",
+        "subject_identifier": meta_tumor.subject_id,
         "sample_name": meta_tumor.sample_id,
         "tumor_library_id": tumor_rglb,
-        "normal_library_id": normal_rglb
+        "normal_library_id": normal_rglb,
+        "dragen_tumor_id": tumor_rgsm,
+        "dragen_normal_id": normal_rgsm,
     }
 
     return [job]

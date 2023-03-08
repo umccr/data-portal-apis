@@ -66,27 +66,17 @@ def handler(event, context) -> dict:
             "class": "Directory",
             "location": "gds://path/to/somatic/output/dir"
         },
-        "fastq_list_rows_germline": [{
-            "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
-            "rgsm": "sampleId",
-            "rglb": "libraryId",
-            "lane": int,
-            "read_1": {
-              "class": "File",
-              "location": "gds://path/to/read_1.fastq.gz"
-            },
-            "read_2": {
-              "class": "File",
-              "location": "gds://path/to/read_2.fastq.gz"
-            }
-        }],
-        "output_directory_germline": "PRJ1234567",
-        "output_directory_umccrise": "TumorRglb__NormalRglb",
-        "output_file_prefix_germline": "PRJ1234567",
-        "subject_identifier_umccrise": "SBJ01234",
+        "dragen_germline_directory": {
+            "class": "Directory",
+            "location": "gds://path/to/germline/output/dir"
+        },
+        "output_directory_name": "TumorRglb__NormalRglb",
+        "subject_identifier": "SBJ01234",
         "sample_name": "TUMOR_SAMPLE_ID",
         "tumor_library_id": "tumor_rglb",
-        "normal_library_id": "normal_rglb"
+        "normal_library_id": "normal_rglb",
+        "dragen_tumor_id": "tumor_rgsm",
+        "dragen_normal_id": "normal_rgsm"
     }
 
     :param event:
@@ -97,7 +87,7 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.UMCCRISE.name} event")
     logger.info(libjson.dumps(event))
 
-    subject_id = event['subject_identifier_umccrise']
+    subject_id = event['subject_identifier']
     sample_name = event['sample_name']  # TUMOR_SAMPLE_ID
     tumor_library_id = event['tumor_library_id']
     normal_library_id = event['normal_library_id']
@@ -108,11 +98,11 @@ def handler(event, context) -> dict:
     # Read input template from parameter store
     workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input['dragen_somatic_directory'] = event['dragen_somatic_directory']
-    workflow_input['fastq_list_rows_germline'] = event['fastq_list_rows_germline']
-    workflow_input['output_directory_germline'] = event['output_directory_germline']
-    workflow_input['output_directory_umccrise'] = event['output_directory_umccrise']
-    workflow_input['output_file_prefix_germline'] = event['output_file_prefix_germline']
-    workflow_input['subject_identifier_umccrise'] = subject_id
+    workflow_input['dragen_germline_directory'] = event['dragen_germline_directory']
+    workflow_input['output_directory_name'] = event['output_directory_name']
+    workflow_input['subject_identifier'] = subject_id
+    workflow_input['dragen_normal_id'] = event['dragen_normal_id']
+    workflow_input['dragen_tumor_id'] = event['dragen_tumor_id']
 
     # read workflow id and version from parameter store
     workflow_id = wfl_helper.get_workflow_id()

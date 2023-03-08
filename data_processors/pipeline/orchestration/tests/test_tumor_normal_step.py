@@ -54,7 +54,7 @@ def build_tn_mock():
     mock_flr_normal = FastqListRow()
     mock_flr_normal.lane = 1
     mock_flr_normal.rglb = TestConstant.library_id_normal.value
-    mock_flr_normal.rgsm = TestConstant.sample_id.value
+    mock_flr_normal.rgsm = "PRJ210000"
     mock_flr_normal.rgid = f"AACTCACC.1.350702_A00130_0137_AH5KMHDSXY.{mock_flr_normal.rgsm}_{mock_flr_normal.rglb}"
     mock_flr_normal.read_1 = tn_mock_normal_read_1
     mock_flr_normal.save()
@@ -147,6 +147,9 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         self.assertEqual(job_dict['subject_id'], tn_mock_subject_id)
         self.assertEqual(job_dict['fastq_list_rows'][0]['rglb'], TestConstant.library_id_normal.value)
         self.assertEqual(job_dict['fastq_list_rows'][0]['read_1']['location'], tn_mock_normal_read_1)
+        # strongly assert the following keys present to detect workflow input binding contract changes
+        self.assertIn("output_directory_somatic", job_dict.keys())
+        self.assertIn("output_directory_germline", job_dict.keys())
 
     def test_prepare_tumor_normal_jobs_issue_475_no_skip(self):
         """
