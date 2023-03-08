@@ -11,7 +11,7 @@ import pandas as pd
 from libumccr.aws import libssm, libsqs
 
 from data_portal.models.fastqlistrow import FastqListRow
-from data_portal.models.labmetadata import LabMetadata, LabMetadataType, LabMetadataPhenotype
+from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
@@ -57,7 +57,7 @@ def perform(this_workflow):
         else:
             logger.warning(f"Calling to prepare_tumor_normal_jobs() return empty list, no job to dispatch...")
     else:
-        logger.debug(f"DRAGEN_WGS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
+        logger.warning(f"DRAGEN_WGS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
 
     return {
         "subjects": subjects,
@@ -117,28 +117,24 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
             # step 5
             # get all libraries (includes 'topup' and 'rerun' suffix) for this subject, phenotype, type and workflow
             # also includes libraries from other runs
-            subject_normal_libraries: List[str] = metadata_srv.get_all_libraries_by_keywords(
+            subject_normal_libraries: List[str] = metadata_srv.get_wgs_normal_libraries_by_subject(
                 subject_id=subject,
-                phenotype=LabMetadataPhenotype.NORMAL.value,
-                type=LabMetadataType.WGS.value,
-                workflow=workflow
+                meta_workflow=str(workflow)
             )
 
             # step 6a
             if len(subject_normal_libraries) == 0:
-                logging.debug(f"Skipping, since we can't find a normal for this subject {subject}")
+                logging.warning(f"Skipping, since we can't find a normal for this subject {subject}")
                 continue
 
-            subject_tumor_libraries: List[str] = metadata_srv.get_all_libraries_by_keywords(
+            subject_tumor_libraries: List[str] = metadata_srv.get_wgs_tumor_libraries_by_subject(
                 subject_id=subject,
-                phenotype=LabMetadataPhenotype.TUMOR.value,
-                type=LabMetadataType.WGS.value,
-                workflow=workflow
+                meta_workflow=str(workflow)
             )
 
             # step 6b
             if len(subject_tumor_libraries) == 0:
-                logging.debug(f"Skipping, since we can't find a tumor for this subject {subject}")
+                logging.warning(f"Skipping, since we can't find a tumor for this subject {subject}")
                 continue
 
             # ---

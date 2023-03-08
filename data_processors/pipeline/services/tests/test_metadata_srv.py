@@ -4,7 +4,8 @@ from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests import factories
-from data_portal.tests.factories import TestConstant, LibraryRunFactory, DragenWgsQcWorkflowFactory
+from data_portal.tests.factories import TestConstant, LibraryRunFactory, DragenWgsQcWorkflowFactory, LabMetadataFactory, \
+    TumorLabMetadataFactory, TumorLibraryRunFactory
 from data_processors.pipeline.services import metadata_srv, libraryrun_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 
@@ -69,10 +70,84 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wts_metadata_by_subject
         """
         mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()
+        mock_wts_lbr: LibraryRun = factories.WtsTumorLibraryRunFactory()
         meta_list: List[LabMetadata] = metadata_srv.get_wts_metadata_by_subject(TestConstant.subject_id.value)
+        self.assertTrue(len(meta_list) > 0)
         for meta in meta_list:
             logger.info(meta.library_id)
             self.assertEqual(meta.library_id, TestConstant.wts_library_id_tumor.value)
+
+    def test_get_wts_metadata_by_subject_not_sequenced(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wts_metadata_by_subject_not_sequenced
+        """
+        mock_wts_meta: LabMetadata = factories.WtsTumorLabMetadataFactory()  # no matching LibraryRun record
+        meta_list: List[LabMetadata] = metadata_srv.get_wts_metadata_by_subject(TestConstant.subject_id.value)
+        self.assertTrue(len(meta_list) == 0)
+
+    def test_get_wgs_normal_libraries_by_subject(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_normal_libraries_by_subject
+        """
+        mock_wgs_meta: LabMetadata = LabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = LibraryRunFactory()
+        library_id_list: List[str] = metadata_srv.get_wgs_normal_libraries_by_subject(TestConstant.subject_id.value, "clinical")
+        self.assertTrue(len(library_id_list) > 0)
+        for library_id in library_id_list:
+            logger.info(library_id)
+            self.assertEqual(library_id, TestConstant.library_id_normal.value)
+
+    def test_get_wgs_normal_libraries_by_subject_not_sequenced(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_normal_libraries_by_subject_not_sequenced
+        """
+        mock_wgs_meta: LabMetadata = LabMetadataFactory()  # no matching LibraryRun record
+        library_id_list: List[str] = metadata_srv.get_wgs_normal_libraries_by_subject(TestConstant.subject_id.value, "clinical")
+        self.assertTrue(len(library_id_list) == 0)
+
+    def test_get_wgs_normal_libraries_by_subject_not_clinical_research(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_normal_libraries_by_subject_not_clinical_research
+        """
+        mock_wgs_meta: LabMetadata = LabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = LibraryRunFactory()
+        try:
+            _ = metadata_srv.get_wgs_normal_libraries_by_subject(TestConstant.subject_id.value, "external")
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
+
+    def test_get_wgs_tumor_libraries_by_subject(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_tumor_libraries_by_subject
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = TumorLibraryRunFactory()
+        library_id_list: List[str] = metadata_srv.get_wgs_tumor_libraries_by_subject(TestConstant.subject_id.value, "clinical")
+        self.assertTrue(len(library_id_list) > 0)
+        for library_id in library_id_list:
+            logger.info(library_id)
+            self.assertEqual(library_id, TestConstant.library_id_tumor.value)
+
+    def test_test_get_wgs_tumor_libraries_by_subject_not_sequenced(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_test_get_wgs_tumor_libraries_by_subject_not_sequenced
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()  # no matching LibraryRun record
+        library_id_list: List[str] = metadata_srv.get_wgs_tumor_libraries_by_subject(TestConstant.subject_id.value, "clinical")
+        self.assertTrue(len(library_id_list) == 0)
+
+    def test_get_wgs_tumor_libraries_by_subject_not_clinical_research(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_tumor_libraries_by_subject_not_clinical_research
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = TumorLibraryRunFactory()
+        try:
+            _ = metadata_srv.get_wgs_tumor_libraries_by_subject(TestConstant.subject_id.value, "external")
+        except Exception as e:
+            logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
+        self.assertRaises(ValueError)
 
     def test_get_most_recent_library_id_by_sequencing_time(self):
         """
