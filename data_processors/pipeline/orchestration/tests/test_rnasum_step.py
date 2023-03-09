@@ -600,6 +600,106 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         self.assertEqual(job_list[0]['tumor_library_id'], "L2201545")
 
     @skip
+    def test_prepare_rnasum_jobs_SBJ02569(self):
+        """
+        unset ICA_ACCESS_TOKEN
+        export AWS_PROFILE=prod
+        python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_prepare_rnasum_jobs_SBJ02569
+
+        SBJ02569 has 2 WTS libraries -- L2201035 is sequenced, L2200955 is not.
+        See https://github.com/umccr/data-portal-apis/issues/548
+        """
+
+        # Replaying https://portal.umccr.org/subjects/SBJ02569
+
+        # Populate test db with SequenceRun
+        sqr_111: SequenceRun = SequenceRunFactory()
+        sqr_111.run_id = "r.111"
+        sqr_111.name = "220729_A01052_0111_AHVJCYDSX3"
+        sqr_111.instrument_run_id = "220729_A01052_0111_AHVJCYDSX3"
+        sqr_111.status = "PendingAnalysis"
+        sqr_111.date_modified = make_aware(datetime.strptime("2022-07-30 19:22:04", "%Y-%m-%d %H:%M:%S"))
+        sqr_111.save()
+
+        # Populate test db with LibraryRun records for WGS and WTS libraries
+        wgs_library_normal = LibraryRun.objects.create(
+            library_id="L2200967",
+            instrument_run_id="220722_A01052_0110_AHVGVFDSX3",
+            run_id="r.110",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wgs_library_tumor = LibraryRun.objects.create(
+            library_id="L2200985",
+            instrument_run_id="220722_A01052_0109_BHVHJJDSX3",
+            run_id="r.109",
+            lane=3,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        wts_library_tumor = LibraryRun.objects.create(
+            library_id="L2201035",
+            instrument_run_id="220729_A01052_0111_AHVJCYDSX3",
+            run_id="r.111",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151",
+        )
+
+        # Populate test db with LabMetadata from Sheet 2022
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2022"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # Populate test db with the actual WorkflowRun for WGS and WTS libraries from PROD
+        # We will use wes.get_run(...) to sync from ICA to test db
+        umccrise_workflow_id = "wfr.194a9c82d0904426950a36e70be34ad9"  # in PROD for L2200985
+        wts_workflow_id = "wfr.60c79a70f5f3419eb7ba95bdfa194681"  # in PROD for L2201035
+
+        mock_umccrise_workflow: Workflow = UmccriseWorkflowFactory()
+        mock_wts_workflow: Workflow = DragenWtsWorkflowFactory()
+
+        umccrise_wfl_run = wes.get_run(umccrise_workflow_id, to_dict=True)
+        mock_umccrise_workflow.wfr_id = umccrise_workflow_id
+        mock_umccrise_workflow.input = json.dumps(umccrise_wfl_run['input'])
+        mock_umccrise_workflow.output = json.dumps(umccrise_wfl_run['output'])
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_normal)
+        mock_umccrise_workflow.libraryrun_set.add(wgs_library_tumor)
+        mock_umccrise_workflow.end = now()
+        mock_umccrise_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_umccrise_workflow.save()
+
+        wts_wfl_run_1 = wes.get_run(wts_workflow_id, to_dict=True)
+        mock_wts_workflow.wfr_id = wts_workflow_id
+        mock_wts_workflow.input = json.dumps(wts_wfl_run_1['input'])
+        mock_wts_workflow.output = json.dumps(wts_wfl_run_1['output'])
+        mock_wts_workflow.libraryrun_set.add(wts_library_tumor)
+        mock_wts_workflow.end = now()
+        mock_wts_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_wts_workflow.save()
+
+        # At this point, we have replayed Pipeline the state such that
+        # We have 2022 LabMetadata state; that include 2 WTS libraries for ths Subject. One sequenced, another is not.
+        # We have 1 WTS tumor library completed for transcriptome workflow.
+        # We have done umccrise run for the Subject.
+        # Now. At this point in orchestration;
+        # if we prepare runnable RNAsum job,
+        # this should _still_ go with L2201035
+
+        job_list = rnasum_step.prepare_rnasum_jobs(this_workflow=mock_umccrise_workflow)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(f"\n{json.dumps(job_list)}")
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), 1)
+        self.assertEqual(job_list[0]['tumor_library_id'], "L2201035")
+
+    @skip
     def test_lookup_tcga_dataset(self):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_rnasum_step.RNAsumStepIntegrationTests.test_lookup_tcga_dataset

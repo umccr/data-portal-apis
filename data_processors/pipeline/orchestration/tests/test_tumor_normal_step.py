@@ -10,7 +10,8 @@ from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory, LibraryRunFactory
+from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory, LibraryRunFactory, \
+    TumorLibraryRunFactory
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
@@ -82,6 +83,8 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         """
         self.verify_local()
 
+        build_tn_mock()
+
         mock_dragen_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
         mock_dragen_wgs_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
         mock_dragen_wgs_qc_workflow.end = now()
@@ -100,22 +103,20 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         })
         mock_dragen_wgs_qc_workflow.save()
 
-        mock_normal_library_run: LibraryRun = LibraryRunFactory()
+        mock_lbr_normal: LibraryRun = LibraryRunFactory()
+        mock_lbr_tumor: LibraryRun = TumorLibraryRunFactory()
+
         _ = libraryrun_srv.link_library_run_with_workflow(
-            library_id=mock_normal_library_run.library_id,
-            lane=mock_normal_library_run.lane,
+            library_id=mock_lbr_normal.library_id,
+            lane=mock_lbr_normal.lane,
             workflow=mock_dragen_wgs_qc_workflow,
         )
-
-        build_tn_mock()
 
         when(google_lims_update_step).perform(any).thenReturn(True)
 
         # ignore step_skip_list
         spy2(libssm.get_ssm_param)
         when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/step_skip_list").thenReturn(json.dumps({}))
-
-        logger.info("-" * 32)
 
         result = orchestrator.handler({
             'wfr_id': TestConstant.wfr_id.value,
@@ -128,6 +129,7 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
 
         self.assertEqual(2, len(result))
         self.assertEqual(tn_mock_subject_id, result[1]['subjects'][0])
+        self.assertEqual(tn_mock_subject_id, result[1]['submitting_subjects'][0])
 
     def test_create_tn_job(self):
         """
@@ -157,6 +159,9 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         """
         build_tn_mock()
 
+        mock_lbr_normal: LibraryRun = LibraryRunFactory()
+        mock_lbr_tumor: LibraryRun = TumorLibraryRunFactory()
+
         meta_list = LabMetadata.objects.all()
 
         job_list, subjects, submitting_subjects = tumor_normal_step.prepare_tumor_normal_jobs(meta_list)
@@ -172,19 +177,21 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.orchestration.tests.test_tumor_normal_step.TumorNormalStepUnitTests.test_prepare_tumor_normal_jobs_issue_475_skip
         """
+        build_tn_mock()
+
         mock_dragen_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
         mock_dragen_wgs_qc_workflow.end_status = WorkflowStatus.RUNNING.value  # mock normal library QC is still running
         mock_dragen_wgs_qc_workflow.end = now()
         mock_dragen_wgs_qc_workflow.save()
 
-        mock_normal_library_run: LibraryRun = LibraryRunFactory()
+        mock_lbr_normal: LibraryRun = LibraryRunFactory()
+        mock_lbr_tumor: LibraryRun = TumorLibraryRunFactory()
+
         _ = libraryrun_srv.link_library_run_with_workflow(
-            library_id=mock_normal_library_run.library_id,
-            lane=mock_normal_library_run.lane,
+            library_id=mock_lbr_normal.library_id,
+            lane=mock_lbr_normal.lane,
             workflow=mock_dragen_wgs_qc_workflow,
         )
-
-        build_tn_mock()
 
         meta_list = LabMetadata.objects.all()
 

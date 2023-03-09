@@ -99,24 +99,59 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
 
 
 @transaction.atomic
-def get_wts_metadata_by_subject(subject_id) -> List[LabMetadata]:
+def get_wts_metadata_by_subject(subject_id: str) -> List[LabMetadata]:
     """
+    Business logic:
     Find clinical or research grade, WTS tumor sample library metadata by given subject
+    Only those that are sequenced
     """
-    meta_list = list()
-
-    qs: QuerySet = LabMetadata.objects.filter(
-        subject_id=subject_id,
-        phenotype__in=[LabMetadataPhenotype.TUMOR.value, ],
-        type__in=[LabMetadataType.WTS.value, ],
-        workflow__in=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+    return get_metadata_by_keywords_in(
+        subjects=[subject_id],
+        phenotypes=[LabMetadataPhenotype.TUMOR.value, ],
+        types=[LabMetadataType.WTS.value, ],
+        workflows=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+        sequenced=True,
     )
 
-    if qs.exists():
-        for meta in qs.all():
-            meta_list.append(meta)
 
-    return meta_list
+@transaction.atomic
+def get_wgs_normal_libraries_by_subject(subject_id: str, meta_workflow: str, strict: bool = True) -> List[str]:
+    """
+    Business logic:
+    Find WGS _NORMAL_ sample library metadata by given subject
+    Meta-workflow must be either clinical or research grade, if strict (business rule) is True
+    Only those that are sequenced
+    """
+    if strict and meta_workflow not in [LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value]:
+        raise ValueError(f"{subject_id} is not clinical or research grade. Found: {meta_workflow}")
+
+    return get_all_libraries_by_keywords(
+        subject_id=subject_id,
+        phenotype=LabMetadataPhenotype.NORMAL.value,
+        type=LabMetadataType.WGS.value,
+        workflow=meta_workflow,
+        sequenced=True,
+    )
+
+
+@transaction.atomic
+def get_wgs_tumor_libraries_by_subject(subject_id: str, meta_workflow: str, strict: bool = True) -> List[str]:
+    """
+    Business logic:
+    Find WGS _TUMOR_ sample library metadata by given subject
+    Meta-workflow must be either clinical or research grade, if strict (business rule) is True
+    Only those that are sequenced
+    """
+    if strict and meta_workflow not in [LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value]:
+        raise ValueError(f"{subject_id} is not clinical or research grade. Found: {meta_workflow}")
+
+    return get_all_libraries_by_keywords(
+        subject_id=subject_id,
+        phenotype=LabMetadataPhenotype.TUMOR.value,
+        type=LabMetadataType.WGS.value,
+        workflow=meta_workflow,
+        sequenced=True,
+    )
 
 
 @transaction.atomic
@@ -198,6 +233,7 @@ def get_metadata_for_library_runs(library_runs: List[LibraryRun]) -> List[LabMet
     return get_metadata_by_keywords_in(libraries=library_id_list)
 
 
+@transaction.atomic
 def get_most_recent_library_id_by_sequencing_time(library_ids: List[str]) -> str:
     """
     Business logic:
