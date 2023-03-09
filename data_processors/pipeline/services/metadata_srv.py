@@ -115,6 +115,54 @@ def get_wts_metadata_by_subject(subject_id: str) -> List[LabMetadata]:
 
 
 @transaction.atomic
+def get_wgs_metadata_by_subjects(subjects: List[str]) -> List[LabMetadata]:
+    """
+    Business logic:
+    Find clinical or research grade, WGS sample libraries metadata by given subject_id list
+    Only those that are sequenced
+    """
+    return get_metadata_by_keywords_in(
+        subjects=subjects,
+        phenotypes=[LabMetadataPhenotype.TUMOR.value, LabMetadataPhenotype.NORMAL.value],
+        types=[LabMetadataType.WGS.value],
+        workflows=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+        sequenced=True,
+    )
+
+
+@transaction.atomic
+def get_wgs_metadata_by_libraries(libraries: List[str]) -> List[LabMetadata]:
+    """
+    Business logic:
+    Find clinical or research grade, WGS sample libraries metadata by given library_id list
+    Only those that are sequenced
+    """
+    return get_metadata_by_keywords_in(
+        libraries=libraries,
+        phenotypes=[LabMetadataPhenotype.TUMOR.value, LabMetadataPhenotype.NORMAL.value],
+        types=[LabMetadataType.WGS.value],
+        workflows=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+        sequenced=True,
+    )
+
+
+@transaction.atomic
+def get_wgs_metadata_by_samples(samples: List[str]) -> List[LabMetadata]:
+    """
+    Business logic:
+    Find clinical or research grade, WGS sample libraries metadata by given sample_id list
+    Only those that are sequenced
+    """
+    return get_metadata_by_keywords_in(
+        samples=samples,
+        phenotypes=[LabMetadataPhenotype.TUMOR.value, LabMetadataPhenotype.NORMAL.value],
+        types=[LabMetadataType.WGS.value],
+        workflows=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+        sequenced=True,
+    )
+
+
+@transaction.atomic
 def get_wgs_normal_libraries_by_subject(subject_id: str, meta_workflow: str, strict: bool = True) -> List[str]:
     """
     Business logic:
