@@ -149,6 +149,75 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
             logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{e}")
         self.assertRaises(ValueError)
 
+    def test_get_wgs_metadata_by_subjects(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_metadata_by_subjects
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = TumorLibraryRunFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wgs_metadata_by_subjects([TestConstant.subject_id.value])
+        self.assertTrue(len(meta_list) > 0)
+        for meta in meta_list:
+            logger.info(meta)
+            self.assertEqual(meta.library_id, TestConstant.library_id_tumor.value)
+
+    def test_get_wgs_metadata_by_subjects_not_clinical_research(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_metadata_by_subjects_not_clinical_research
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_meta.workflow = "external"
+        mock_wgs_meta.save()
+        _ = TumorLibraryRunFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wgs_metadata_by_subjects([TestConstant.subject_id.value])
+        self.assertTrue(len(meta_list) == 0)
+
+    def test_get_wgs_metadata_by_libraries(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_metadata_by_libraries
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = TumorLibraryRunFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wgs_metadata_by_libraries([TestConstant.library_id_tumor.value])
+        self.assertTrue(len(meta_list) > 0)
+        for meta in meta_list:
+            logger.info(meta)
+            self.assertEqual(meta.library_id, TestConstant.library_id_tumor.value)
+
+    def test_get_wgs_metadata_by_libraries_not_clinical_research(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_metadata_by_libraries_not_clinical_research
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_meta.workflow = "external"
+        mock_wgs_meta.save()
+        _ = TumorLibraryRunFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wgs_metadata_by_libraries([TestConstant.library_id_tumor.value])
+        self.assertTrue(len(meta_list) == 0)
+
+    def test_get_wgs_metadata_by_samples(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_metadata_by_samples
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_lbr: LibraryRun = TumorLibraryRunFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wgs_metadata_by_samples([TestConstant.sample_id.value])
+        self.assertTrue(len(meta_list) > 0)
+        for meta in meta_list:
+            logger.info(meta)
+            self.assertEqual(meta.sample_id, TestConstant.sample_id.value)
+
+    def test_get_wgs_metadata_by_samples_not_clinical_research(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_wgs_metadata_by_samples_not_clinical_research
+        """
+        mock_wgs_meta: LabMetadata = TumorLabMetadataFactory()
+        mock_wgs_meta.workflow = "external"
+        mock_wgs_meta.save()
+        _ = TumorLibraryRunFactory()
+        meta_list: List[LabMetadata] = metadata_srv.get_wgs_metadata_by_samples([TestConstant.sample_id.value])
+        self.assertTrue(len(meta_list) == 0)
+
     def test_get_most_recent_library_id_by_sequencing_time(self):
         """
         python manage.py test data_processors.pipeline.services.tests.test_metadata_srv.MetadataSrvUnitTests.test_get_most_recent_library_id_by_sequencing_time

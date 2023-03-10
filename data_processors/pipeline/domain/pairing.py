@@ -128,16 +128,16 @@ class TNPairing(Pairing, CollectionBasedFluentImpl):
         self._build()
 
     def by_subjects(self):
-        meta_list = metadata_srv.get_metadata_by_keywords_in(subjects=self.subjects)
+        meta_list = metadata_srv.get_wgs_metadata_by_subjects(subjects=self.subjects)
         self._meta_list = meta_list
         self._build()
 
     def by_libraries(self):
-        meta_list = metadata_srv.get_metadata_by_keywords_in(libraries=self.libraries)
+        meta_list = metadata_srv.get_wgs_metadata_by_libraries(libraries=self.libraries)
         self._meta_list = meta_list
         self._build()
 
     def by_samples(self):
-        meta_list = metadata_srv.get_metadata_by_keywords_in(samples=self.samples)
+        meta_list = metadata_srv.get_wgs_metadata_by_samples(samples=self.samples)
         self._meta_list = meta_list
         self._build()
