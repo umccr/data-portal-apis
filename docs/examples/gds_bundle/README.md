@@ -6,19 +6,56 @@ Create GDS folders as bundle downloader while retaining folder structure.
 
 Generator scripts will use `ica` command. Hence, we will need valid login session context. Use either options below.
 
-### ica-lazy
+### Using ica-lazy
 
 ```
 ica-add-access-token --scope read-only --project-name production
 ica-context-switcher --scope read-only --project-name production
 ```
 
-### standard
+### Using standard
 
 ```
 ica login
 ica projects enter production
 ```
+
+### Check token details
+
+```
+ica tokens details
+```
+
+## Export scripts
+
+_OPTIONAL_
+
+You may export scripts under this directory as follows. 
+
+- Install `svn` client, if any
+```
+brew install svn
+```
+
+- Just export out `gds_bundle` scripts (e.g. for staging a bundle for some data sharing task)
+```
+cd ~/tmp
+svn export https://github.com/umccr/data-portal-apis.git/trunk/docs/examples/gds_bundle tothill_cup_tso_bundle_20230311
+cd tothill_cup_tso_bundle_20230311
+tree -a
+.
+├── .gitignore
+├── README.md
+├── gds_folders.txt
+├── gen_bundle.sh
+└── gen_downloader.sh
+
+1 directory, 5 files
+```
+
+This is optional. You may wish to directly download the scripts and prepare the data staging whichever way you prefer.
+
+Note that [.gitignore](.gitignore) exclusion. If those exclusion is not applicable to your case, make adjustment accordingly or simply remove it. 
 
 ## Generate Bundle
 
@@ -34,13 +71,13 @@ gds_folders.txt
 GDS folders bundle will be represented as [ndjson](http://ndjson.org/)
 
 ```
-bash gen_gds_bundle.sh <my_bundle_prefix>
+bash gen_bundle.sh <my_bundle_prefix>
 ```
 
 e.g.
 
 ```
-bash gen_gds_bundle.sh tothill_cup
+bash gen_bundle.sh tothill_cup
 ```
 
 This should produce `tothill_cup_bundle.ndjson`
@@ -68,7 +105,7 @@ We could distribute this ndjson bundle to end user; assuming the user know how t
 
 ## Generate Downloader
 
-Knowing Bundle Format; the generator script will prepare downloader script; to use with `curl` for PreSigned URLs. Files will be downloaded as in the path structure.
+Knowing _Bundle Format_; the generator script will prepare downloader script; to use with `curl` for PreSigned URLs. Files will be downloaded as in the path structure.
 
 Pass-in the bundle ndjson from previous section as first argument to the generator script.
 
@@ -92,7 +129,7 @@ This `tothill_cup_bundle.downloader` contains just shell commands in the script.
 sh tothill_cup_bundle.downloader
 ```
 
-It will start `curl` download of files.
+It will start `curl` download of files. For most part, it is recommended to run the downloader script in `screen` or `tmux` session; or some form of OS background task; if applicable.
 
 For simpler; we could rather distribute this `tothill_cup_bundle.downloader` script to end user; who would just simply run it.
 
@@ -125,13 +162,4 @@ less xaa
 less xab
 ```
 
-Or, consider GNU Parallel to wrap around; if you are on local workstation with multiple cores avail.
-
-## Export scripts
-
-You may export scripts under this directory as follows. 
-
-```
-brew install svn
-svn export https://github.com/umccr/data-portal-apis.git/trunk/docs/examples/gds_bundle
-```
+Or, consider using [GNU Parallel](https://www.gnu.org/software/parallel/) to wrap around as see fit.

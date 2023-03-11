@@ -2,7 +2,7 @@
 
 ###
 # Usage:
-#   bash gen_gds_bundle.sh tothill_cup
+#   bash gen_bundle.sh tothill_cup
 #
 
 # ---
