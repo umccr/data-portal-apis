@@ -38,7 +38,7 @@ class FlowMetricsManager(PortalBaseManager):
 
         return self.filter(unique_hash__exact=h.calculate_hash())
 
-    def create_or_update_flowmetrics(
+    def update_or_create(
             self,
             portal_run_id: str,
     ):
