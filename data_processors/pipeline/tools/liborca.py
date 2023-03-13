@@ -175,7 +175,7 @@ def parse_umccrise_workflow_output_directory(output_json: str, deep_check: bool 
 
     lookup_keys = [
         # Old keys < 2023.01
-        'main/umccrise_output_directory', 'output_directory'
+        'main/umccrise_output_directory', 'umccrise_output_directory',
         # New keys > 2023.01
         'main/output_directory', 'output_directory'
     ]
