@@ -2,7 +2,10 @@
 import logging
 from typing import List, Dict
 
+from libumccr import libjson
+
 import awswrangler as wr
+import pandas as pd
 
 from data_portal.models.workflow import Workflow
 from data_portal.models.flowmetrics import FlowMetrics
@@ -37,11 +40,23 @@ def perform(this_workflow: Workflow):
         return {}
 
 
+def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
+        # Cleanup and match attrs on the model
+        df = df.drop(columns = ['sample_id', 'sbj_id']) \
+               .rename(columns = {'date': 'datetime', 'hash6': 'gds_file_id'})
+
+        return df
+
+
 def persist_dracarys_data(multiqc_dir: str, portal_run_id: str):
     ''' Takes Dracarys output files from S3 and turns them into a Dataframe,
         ready to be consumed by the portal DB
     '''
     multiqc_files = wr.s3.list_objects(multiqc_dir)
+
+    rows_created = list()
+    rows_updated = list()
+    rows_invalid = list()
 
     df = None
     for multiqc_file in multiqc_files:
@@ -62,12 +77,29 @@ def persist_dracarys_data(multiqc_dir: str, portal_run_id: str):
         #
         # https://www.laurivan.com/save-pandas-dataframe-as-django-model/
 
-        # Cleanup and match attrs on the model
-        df = df.drop(columns=['sample_id', 'sbj_id']) \
-               .rename(columns={'date': 'datetime', 'hash6': 'gds_file_id'})
+        df = clean_columns(df)
 
         # Serialise the data into the DB
-        obj, created = FlowMetrics.objects.update_or_create(
-            portal_run_id=portal_run_id,
-            defaults=df.to_dict('records')
-        )
+        for record in df.to_dict('records'):
+            try:
+                obj, created = FlowMetrics.objects.update_or_create(
+                    portal_run_id = portal_run_id,
+                    defaults = record
+                )
+
+                if created:
+                    rows_created.append(obj)
+                else:
+                    rows_updated.append(obj)
+
+            except Exception as e:
+                if any(record.values()):  # silent off iff blank row
+                    logger.warning(f"Invalid record: {libjson.dumps(record)} Exception: {e}")
+                    rows_invalid.append(record)
+                continue
+
+    return {
+        'flowmetrics_row_update_count': len(rows_updated),
+        'flowmetrics_row_new_count': len(rows_created),
+        'flowmetrics_row_invalid_count': len(rows_invalid),
+    }

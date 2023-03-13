@@ -67,4 +67,4 @@ class FlowMetrics(PortalBaseModel):
     objects = FlowMetricsManager()
 
     def __str__(self):
-        return f"ID: {self.id}"
+        return f"ID: {self.id}, TIMESTAMP: {self.timestamp}, PORTAL_RUN_ID: {self.portal_run_id}, GDS_FILE_ID: {self.gds_file_id}"
