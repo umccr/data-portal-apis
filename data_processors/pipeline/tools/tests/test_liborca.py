@@ -39,7 +39,7 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_umccrise_workflow_output_directory
         """
         mock_umccrise_output = json.dumps({
-            "umccrise_output_directory": {
+            "output_directory": {
                 "location": "gds://vol/analysis_data/SBJ00001/umccrise/2022012324bd4c96/L3200003__L3200004",
                 "basename": "L3200003__L3200004",
                 "nameroot": "",

@@ -173,7 +173,7 @@ def parse_umccrise_workflow_output_directory(output_json: str, deep_check: bool 
     :return:
     """
 
-    lookup_keys = ['main/umccrise_output_directory', 'umccrise_output_directory']
+    lookup_keys = ['main/output_directory', 'output_directory']
 
     umccrise_output_directory = parse_workflow_output(output_json, lookup_keys)
 

@@ -21,7 +21,7 @@ from data_processors.pipeline.orchestration import rnasum_step
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, PipelineIntegrationTestCase, logger
 
 mock_umccrise_output = json.dumps({
-    "umccrise_output_directory": {
+    "output_directory": {
         "location": "gds://vol/analysis_data/SBJ00001/umccrise/2022012324bd4c96/L3200003__L3200004",
         "basename": "L3200003__L3200004",
         "nameroot": "",
