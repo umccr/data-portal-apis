@@ -38,14 +38,6 @@ class FlowMetricsManager(PortalBaseManager):
 
         return self.filter(unique_hash__exact=h.calculate_hash())
 
-    def update_or_create(
-            self,
-            portal_run_id: str,
-    ):
-        qs: QuerySet = self.get_by_unique_fields(
-            portal_run_id,
-        )
-
     def get_by_keyword(self, **kwargs) -> QuerySet:
         qs: QuerySet = super().get_queryset()
         return self.get_model_fields_query(qs, **kwargs)

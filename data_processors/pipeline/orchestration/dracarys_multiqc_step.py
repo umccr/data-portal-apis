@@ -63,28 +63,11 @@ def persist_dracarys_data(multiqc_dir: str, portal_run_id: str):
         # https://www.laurivan.com/save-pandas-dataframe-as-django-model/
 
         # Cleanup and match attrs on the model
-        df.drop(columns=['sample_id', 'sbj_id']) \
-          .rename(columns={'date': 'datetime', 'hash6': 'gds_file_id'})
+        df = df.drop(columns=['sample_id', 'sbj_id']) \
+               .rename(columns={'date': 'datetime', 'hash6': 'gds_file_id'})
 
+        # Serialise the data into the DB
         obj, created = FlowMetrics.objects.update_or_create(
             portal_run_id=portal_run_id,
-            defaults={
-                'timestamp': df['timestamp'],
-                # 'phenotype': df['phenotype'],
-                # 'cov_median_mosdepth': df['cov_median_mosdepth'],
-                # 'cov_auto_median_dragen': df['cov_auto_median_dragen'],
-                # 'reads_tot_input_dragen': df['reads_tot_input_dragen'],
-                # 'reads_mapped_pct_dragen': df['reads_mapped_pct_dragen'],
-                # 'insert_len_median_dragen': df['insert_len_median_dragen'],
-                # 'var_tot_dragen': df['var_tot_dragen'],
-                # 'var_snp_dragen': df['var_snp_dragen'],
-                # 'ploidy': df['ploidy'],
-                # 'purity': df['purity'],
-                # 'qc_status_purple': df['qc_status_purple'],
-                # 'sex': df['sex'],
-                # 'ms_status': df['ms_status'],
-                # 'tmb': df['tmb'],
-                # 's3_object_id': df['s3_object_id'],
-                # 'gds_file_id': df['gds_file_id']
-            }
+            defaults=df.to_dict('records')
         )
