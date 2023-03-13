@@ -49,7 +49,7 @@ def persist_dracarys_data(multiqc_dir: str, portal_run_id: str):
 
         # Test sample for this at: s3://umccr-research-dev/portal/multiqc/creation_date=2023-02-13/multiqc_results_subset.tsv
         if 'tsv' or 'csv' in multiqc_file:
-            df = wr.s3.read_csv(multiqc_file, sep = ' ')
+            df = wr.s3.read_csv(multiqc_file, sep = '\t')
         elif 'parquet' in multiqc_file:
             df = wr.s3.read_parquet(multiqc_file)
 
@@ -61,6 +61,11 @@ def persist_dracarys_data(multiqc_dir: str, portal_run_id: str):
         # going explicit with the attributes of the ORM model vs Dataframe.
         #
         # https://www.laurivan.com/save-pandas-dataframe-as-django-model/
+
+        # Cleanup and match attrs on the model
+        df.drop(columns=['sample_id', 'sbj_id']) \
+          .rename(columns={'date': 'datetime', 'hash6': 'gds_file_id'})
+
         obj, created = FlowMetrics.objects.update_or_create(
             portal_run_id=portal_run_id,
             defaults={
