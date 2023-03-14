@@ -19,10 +19,10 @@ logger.setLevel(logging.INFO)
 def perform(this_workflow: Workflow):
     output_json = this_workflow.output
     run_id = this_workflow.portal_run_id
-    
+
     if output_json is None:
         raise RuntimeError('Missing workflow information')
-    
+
     if run_id is None:
         raise RuntimeError('This is not the RunID you are looking for :wave_hand:')
 
@@ -32,8 +32,13 @@ def perform(this_workflow: Workflow):
         outprefix = multiqc_output_directory['nameroot']
         # TODO: Make sure that outprefix matches the destination test object in S3 (see "Test sample comment below")
         multiqc_dir = S3_DRACARYS_BUCKET_NAME/outprefix
-        persist_dracarys_data(multiqc_dir, run_id)
-        # report_dracarys_data_ingested()
+        # call_dracarys_lambda(multiqc_dir) # report to a SQS
+        # TODO: Link up workflows like so, but with Django ORM:
+        # select * from data_portal_workflow as wfl
+        #     join data_portal_libraryrun_workflows as linker on linker.workflow_id = wfl.id
+        #     join data_portal_libraryrun as lbr on linker.libraryrun_id = lbr.id
+        # where portal_run_id = '202303130fddc446';
+        persist_dracarys_data(multiqc_dir, run_id) # TODO: Should not be here, calling dracarys lambda should be last thing
 
     except KeyError as e:
         logging.info("Dracarys multiqc step didn't find expected multiqc output data. Exiting.")
@@ -47,7 +52,7 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
 
         return df
 
-
+# TODO: Put this on another lambda
 def persist_dracarys_data(multiqc_dir: str, portal_run_id: str):
     ''' Takes Dracarys output files from S3 and turns them into a Dataframe,
         ready to be consumed by the portal DB
