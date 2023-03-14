@@ -18,12 +18,12 @@ logger.setLevel(logging.INFO)
 
 def perform(this_workflow: Workflow):
     output_json = this_workflow.output
-    run_id = this_workflow.portal_run_id
+    portal_run_id = this_workflow.portal_run_id
 
     if output_json is None:
         raise RuntimeError('Missing workflow information')
 
-    if run_id is None:
+    if portal_run_id is None:
         raise RuntimeError('This is not the RunID you are looking for :wave_hand:')
 
     try:
@@ -38,7 +38,19 @@ def perform(this_workflow: Workflow):
         #     join data_portal_libraryrun_workflows as linker on linker.workflow_id = wfl.id
         #     join data_portal_libraryrun as lbr on linker.libraryrun_id = lbr.id
         # where portal_run_id = '202303130fddc446';
-        persist_dracarys_data(multiqc_dir, run_id) # TODO: Should not be here, calling dracarys lambda should be last thing
+
+        # workflows = Workflow.objects.filter(
+        #     portal_run_id = run_id
+        # ).select_related(
+        #     'datalibraryrun',
+        #     'datalibraryrunworkflows'
+        # ).all()
+
+        # workflows = Workflow.objects.filter(portal_run_id = run_id)
+        # lib_workflows = LibraryRun.workflows
+        # 
+
+        persist_dracarys_data(multiqc_dir, portal_run_id) # TODO: Should not be here, calling dracarys lambda should be last thing in this lambda
 
     except KeyError as e:
         logging.info("Dracarys multiqc step didn't find expected multiqc output data. Exiting.")
@@ -48,7 +60,7 @@ def perform(this_workflow: Workflow):
 def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
         # Cleanup and match attrs on the model
         df = df.drop(columns = ['sample_id', 'sbj_id']) \
-               .rename(columns = {'date': 'datetime', 'hash6': 'gds_file_id'})
+               .rename(columns = {'date': 'datetime', 'hash6': 'athena_job_id'})
 
         return df
 

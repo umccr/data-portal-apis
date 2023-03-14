@@ -33,6 +33,7 @@ class TestConstant(Enum):
     rnasum_wfr_id = f"wfr.rnasumzB6yG25Zm6PsgSivJEoq4Ums"
     rnasum_wfv_id = f"wfv.rnasumnVTCE8KhfXEurUfTCqSa6zVx"
     rnasum_wfl_id = f"wfl.rnasumjhzOf3NbqAYjSmzkE1oWKI9H"
+    portal_run_id = f"20230226cfd47328"
     version = "v1"
     instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
     sqr_name = instrument_run_id
@@ -313,7 +314,7 @@ class FlowMetricsFactory(factory.django.DjangoModelFactory):
     var_snp_dragen = 10
     ploidy = 1 
     purity = 100
-    qc_status_purple = "foo" 
+    qc_status_purple = "PASS" 
     sex = True
     ms_status = 11
     tmb = 1.1

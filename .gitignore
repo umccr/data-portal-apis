@@ -39,3 +39,8 @@ data/
 .terraform/
 *.tfstate
 *.tfstate.backup
+
+# Data files
+*.parquet
+*.tsv
+*.csv

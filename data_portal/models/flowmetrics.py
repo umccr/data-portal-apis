@@ -61,8 +61,7 @@ class FlowMetrics(PortalBaseModel):
     sex = models.CharField(choices=FlowMetricsSex.choices, max_length=255)
     ms_status = models.CharField(max_length=255)
     tmb = models.FloatField(null=True) # Make sure NA is mapped to null at ORM level/ingestion
-    s3_object_id = models.CharField(max_length=255, null=True)
-    gds_file_id = models.CharField(max_length=255, null=True)
+    athena_job_id = models.CharField(max_length=255, null=True)
 
     objects = FlowMetricsManager()
 
