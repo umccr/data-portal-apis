@@ -49,9 +49,10 @@ class GDSFileManager(models.Manager):
 
         tso_ctdna_bam = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.bam$')
         tso_ctdna_vcf = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.vcf.gz$')
+        tso_ctdna_tsv = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.tsv$')
 
         q_results: Q = (bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | rnasum | gpl
-                        | tso_ctdna_bam | tso_ctdna_vcf)
+                        | tso_ctdna_bam | tso_ctdna_vcf | tso_ctdna_tsv)
 
         qs = qs.filter(q_results)
 
