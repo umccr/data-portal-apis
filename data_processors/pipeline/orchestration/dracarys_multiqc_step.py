@@ -8,6 +8,7 @@ import awswrangler as wr
 import pandas as pd
 
 from data_portal.models.workflow import Workflow
+from data.portal.models.libraryrun import LibraryRun
 from data_portal.models.flowmetrics import FlowMetrics
 from data_processors.pipeline.domain.config import SQS_DRACARYS_QUEUE_ARN, S3_DRACARYS_BUCKET_NAME
 from data_processors.pipeline.tools import liborca
@@ -33,22 +34,9 @@ def perform(this_workflow: Workflow):
         # TODO: Make sure that outprefix matches the destination test object in S3 (see "Test sample comment below")
         multiqc_dir = S3_DRACARYS_BUCKET_NAME/outprefix
         # call_dracarys_lambda(multiqc_dir) # report to a SQS
-        # TODO: Link up workflows like so, but with Django ORM:
-        # select * from data_portal_workflow as wfl
-        #     join data_portal_libraryrun_workflows as linker on linker.workflow_id = wfl.id
-        #     join data_portal_libraryrun as lbr on linker.libraryrun_id = lbr.id
-        # where portal_run_id = '202303130fddc446';
 
-        # workflows = Workflow.objects.filter(
-        #     portal_run_id = run_id
-        # ).select_related(
-        #     'datalibraryrun',
-        #     'datalibraryrunworkflows'
-        # ).all()
-
-        # workflows = Workflow.objects.filter(portal_run_id = run_id)
-        # lib_workflows = LibraryRun.workflows
-        # 
+        library_run = LibraryRun.objects.filter(workflows__portal_run_id=portal_run_id)
+        assert(library_run.count() == 1) # TODO: Handle multiple libraries case
 
         persist_dracarys_data(multiqc_dir, portal_run_id) # TODO: Should not be here, calling dracarys lambda should be last thing in this lambda
 
