@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Originally authored by @andrei-seleznev in https://github.com/umccr/dracarys-to-s3-cdk
+
 import logging
 from typing import List, Dict
 
