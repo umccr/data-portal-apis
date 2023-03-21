@@ -11,6 +11,7 @@ import pandas as pd
 
 from data_portal.models.workflow import Workflow
 from data.portal.models.libraryrun import LibraryRun
+from data.portal.models.limsrow import LIMSRow
 from data_portal.models.flowmetrics import FlowMetrics
 from data_processors.pipeline.domain.config import SQS_DRACARYS_QUEUE_ARN, S3_DRACARYS_BUCKET_NAME
 from data_processors.pipeline.tools import liborca
@@ -39,6 +40,11 @@ def perform(this_workflow: Workflow):
 
         library_run = LibraryRun.objects.filter(workflows__portal_run_id=portal_run_id)
         assert(library_run.count() == 1) # TODO: Handle multiple libraries case
+        library_id = library_run.first().library_id
+
+        subject_id = LIMSRow.objects.filter(library_id=library_id)
+
+        # TODO: Join with supplied Dracarys TSV DF's SBJ_ID?
 
         persist_dracarys_data(multiqc_dir, portal_run_id) # TODO: Should not be here, calling dracarys lambda should be last thing in this lambda
 
