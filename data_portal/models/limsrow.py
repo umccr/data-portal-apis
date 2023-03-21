@@ -3,6 +3,7 @@ from typing import Union
 
 from django.db import models
 from django.db.models import QuerySet
+from django.db.models.aggregates import Count
 
 from data_portal.models.base import PortalBaseManager, PortalBaseModel
 from data_portal.models.s3object import S3Object
@@ -26,6 +27,12 @@ class LIMSRowManager(PortalBaseManager):
             kwargs.pop('run')
 
         return self.get_model_fields_query(qs, **kwargs)
+
+    def get_by_aggregate_count(self, field):
+        return self.values(field).annotate(count=Count(field)).order_by(field)
+
+    def get_by_cube(self, field_left, field_right, field_sort):
+        return self.values(field_left, field_right).annotate(count=Count(1)).order_by(field_sort)
 
 
 class LIMSRow(PortalBaseModel):
