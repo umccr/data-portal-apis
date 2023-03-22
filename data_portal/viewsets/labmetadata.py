@@ -20,6 +20,8 @@ from data_portal.serializers import LabMetadataModelSerializer, LabMetadataSyncS
 
 logger = logging.getLogger(__name__)
 
+allowed_fields = ['project_name', 'project_owner', 'workflow', 'source', 'assay', 'type', 'phenotype']
+
 
 class LabMetadataViewSet(ReadOnlyModelViewSet):
     serializer_class = LabMetadataModelSerializer
@@ -66,3 +68,38 @@ class LabMetadataViewSet(ReadOnlyModelViewSet):
         except Exception as e:
             logger.error(e)
             return Response(data={'message': "INTERNAL_SERVER_ERROR"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def by_aggregate_count(self, request):
+        fields = self.request.query_params.getlist('fields', None)
+
+        if fields is None or not fields:
+            return Response(data={})
+
+        if 'all' in fields:
+            fields.clear()
+            fields.extend(allowed_fields)
+
+        fields = list(set(fields) & set(allowed_fields))  # intersect
+
+        data = {}
+        for f in fields:
+            data.update({
+                str(f): LabMetadata.objects.get_by_aggregate_count(str(f))
+            })
+
+        return Response(data=data)
+
+    @action(detail=False, methods=['get'])
+    def by_cube(self, request):
+        fields = self.request.query_params.getlist('fields', None)
+
+        if fields is None or not fields or len(fields) < 2:
+            return Response(data={})
+
+        if not all(item in allowed_fields for item in fields):
+            return Response(data={})
+
+        data = LabMetadata.objects.get_by_cube(field_left=fields[0], field_right=fields[1], field_sort=fields[0])
+
+        return Response(data=data)

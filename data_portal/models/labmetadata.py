@@ -2,6 +2,7 @@ import logging
 
 from django.db import models, connection
 from django.db.models import QuerySet, Value
+from django.db.models.aggregates import Count
 from django.db.models.functions import Concat
 
 from data_portal.models.base import PortalBaseModel, PortalBaseManager
@@ -164,6 +165,12 @@ class LabMetadataManager(PortalBaseManager):
             qs = remove_not_sequenced(qs)
 
         return qs
+
+    def get_by_aggregate_count(self, field):
+        return self.values(field).annotate(count=Count(field)).order_by(field)
+
+    def get_by_cube(self, field_left, field_right, field_sort):
+        return self.values(field_left, field_right).annotate(count=Count(1)).order_by(field_sort)
 
 
 class LabMetadata(PortalBaseModel):
