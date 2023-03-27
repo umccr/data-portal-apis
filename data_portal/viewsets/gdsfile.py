@@ -5,6 +5,7 @@ NOTE:
      This is DRF based Portal API impls.
 """
 import logging
+import mimetypes
 
 from django.db import InternalError
 from libica.app import gds
@@ -39,8 +40,26 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
         obj: GDSFile = self.get_object()
 
         presigned_url_mode = request.headers.get('Content-Disposition')
-        response = gds.presign_gds_file(file_id=obj.file_id, volume_name=obj.volume_name, path_=obj.path,
-                                        presigned_url_mode=presigned_url_mode)
+        if not presigned_url_mode:
+            presigned_url_mode = 'attachment'
+
+        content_type, encoding = mimetypes.guess_type(obj.path, strict=False)
+
+        if content_type:
+            response = gds.presign_gds_file_with_override(
+                file_id=obj.file_id,
+                response_content_type=str(content_type),
+                response_content_disposition=presigned_url_mode,
+            )
+        else:
+            # fallback to last resort; whereas let the content server decide through content negotiation protocol
+            # i.e. let it response as however it gets stored in S3
+            response = gds.presign_gds_file(
+                file_id=obj.file_id,
+                volume_name=obj.volume_name,
+                path_=obj.path,
+                presigned_url_mode=presigned_url_mode
+            )
 
         if response[0]:
             return Response({'signed_url': response[1]})

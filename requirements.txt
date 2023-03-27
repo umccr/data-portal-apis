@@ -9,7 +9,7 @@ pymysql==1.0.2
 python-dateutil==2.8.2
 google-auth==2.16.0
 Werkzeug==2.2.3
-libica==2.2.0rc1
+libica==2.2.1
 libumccr==0.3.0
 gspread==5.7.2
 gspread-pandas==3.2.2
