@@ -1,4 +1,4 @@
 -r requirements.txt
 factory_boy==3.2.1
-pytz==2022.7.1
+pytz==2023.2
 mockito==1.4.0
