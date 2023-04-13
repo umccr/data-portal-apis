@@ -6,12 +6,13 @@ See orchestration package __init__.py doc string.
 """
 import logging
 from typing import List
+import json
 
 import pandas as pd
 from libumccr.aws import libssm, libsqs
 
 from data_portal.models.fastqlistrow import FastqListRow
-from data_portal.models.labmetadata import LabMetadata
+from data_portal.models.labmetadata import LabMetadata, LabMetadataWorkflow
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_TN_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
@@ -112,8 +113,10 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
         subject_tn_fqlr_pairs: List[tuple] = []
 
         # step 4 - iterate over meta-workflow aggregate as we don't want to match clinical with research samples
+        # ...sort of
+        # We are happy for a research tumor to match with a clinical normal
+        # But we do NOT want a clinical tumor to match with a research normal
         for workflow, meta_list_by_wfl_df in meta_list_df.groupby("workflow"):
-
             # step 5
             # get all libraries (includes 'topup' and 'rerun' suffix) for this subject, phenotype, type and workflow
             # also includes libraries from other runs
@@ -122,20 +125,10 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 meta_workflow=str(workflow)
             )
 
-            # step 6a
-            if len(subject_normal_libraries) == 0:
-                logging.warning(f"Skipping, since we can't find a normal for this subject {subject}")
-                continue
-
             subject_tumor_libraries: List[str] = metadata_srv.get_wgs_tumor_libraries_by_subject(
                 subject_id=subject,
                 meta_workflow=str(workflow)
             )
-
-            # step 6b
-            if len(subject_tumor_libraries) == 0:
-                logging.warning(f"Skipping, since we can't find a tumor for this subject {subject}")
-                continue
 
             # ---
             # We have _some_ normal and tumor for this subject from metadata store.
@@ -157,6 +150,34 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 # Don't really know how we got here
                 continue
 
+            # Make exception for research tumor and clinical normal
+            if tumor_in_run and len(subject_normal_libraries_stripped) == 0 and workflow == LabMetadataWorkflow.RESEARCH.value:
+                # Re collect clinical normal libraries
+                subject_normal_libraries: List[str] = metadata_srv.get_wgs_normal_libraries_by_subject(
+                    subject_id=subject,
+                    meta_workflow=str(LabMetadataWorkflow.CLINICAL.value)
+                )
+                subject_normal_libraries_stripped = _mint_libraries(subject_normal_libraries)
+            if normal_in_run and len(subject_tumor_libraries_stripped) == 0 and workflow == LabMetadataWorkflow.CLINICAL.value:
+                # Re collect research tumor libraries
+                subject_tumor_libraries: List[str] = metadata_srv.get_wgs_tumor_libraries_by_subject(
+                    subject_id=subject,
+                    meta_workflow=str(LabMetadataWorkflow.RESEARCH.value)
+                )
+                subject_tumor_libraries_stripped = _mint_libraries(subject_tumor_libraries)
+
+            # step 6a
+            # if the normal libraries are empty skip
+            if len(subject_normal_libraries) == 0:
+                logging.warning(f"Skipping, since we can't find a normal for this subject {subject}")
+                continue
+
+            # step 6b
+            # if the tumor libraries are empty skip
+            if len(subject_tumor_libraries) == 0:
+                logging.warning(f"Skipping, since we can't find a tumor for this subject {subject}")
+                continue
+
             # step 7a - check only one normal exists
             if not len(list(set(subject_normal_libraries_stripped))) == 1:
                 logger.warning(f"We have multiple normals {subject_normal_libraries_stripped} for this "
@@ -168,6 +189,7 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 subject_id=subject,
                 workflow_type=WorkflowType.DRAGEN_WGS_QC,
                 workflow_status=WorkflowStatus.RUNNING,
+                library_ids=subject_tumor_libraries_stripped + subject_normal_libraries_stripped
             )
             if len(subject_qc_across_sequencing) > 0:
                 logger.warning(f"We still have QC workflow running for this {subject}/{workflow}. Skipping!")
@@ -225,6 +247,26 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
         for (tumor_fastq_list_rows, normal_fastq_list_rows) in subject_tn_fqlr_pairs:
             job_list.append(create_tn_job(tumor_fastq_list_rows, normal_fastq_list_rows, subject_id=subject))
             submitting_subjects.append(subject)
+
+    # Get unique list of job list
+    # In the event that if a clinical normal and research tumor are on the same run
+    # Job list
+    # Get a unique list of dicts
+    # https://stackoverflow.com/a/11092607/6946787
+    job_list = list(
+        map(
+            lambda x: json.loads(x),
+            set(
+                map(
+                    lambda x: json.dumps(x),
+                    job_list
+                )
+            )
+        )
+    )
+
+    # Get unique list of submitting subjects
+    submitting_subjects = list(set(submitting_subjects))
 
     return job_list, subjects, submitting_subjects
 
