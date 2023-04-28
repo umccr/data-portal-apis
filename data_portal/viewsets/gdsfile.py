@@ -39,17 +39,17 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
     def presign(self, request, pk=None):
         obj: GDSFile = self.get_object()
 
-        presigned_url_mode = request.headers.get('Content-Disposition')
-        if not presigned_url_mode:
-            presigned_url_mode = 'attachment'
+        content_disposition = request.headers.get('Content-Disposition', 'attachment')
+        content_type = request.headers.get('Content-Type', None)
 
-        content_type, encoding = mimetypes.guess_type(obj.path, strict=False)
+        # Let's better not guessing work at MIME at server side, but client must explicitly define
+        # content_type, encoding = mimetypes.guess_type(obj.path, strict=False)
 
         if content_type:
             response = gds.presign_gds_file_with_override(
                 file_id=obj.file_id,
                 response_content_type=str(content_type),
-                response_content_disposition=presigned_url_mode,
+                response_content_disposition=content_disposition,
             )
         else:
             # fallback to last resort; whereas let the content server decide through content negotiation protocol
@@ -58,7 +58,7 @@ class GDSFileViewSet(ReadOnlyModelViewSet):
                 file_id=obj.file_id,
                 volume_name=obj.volume_name,
                 path_=obj.path,
-                presigned_url_mode=presigned_url_mode
+                presigned_url_mode=content_disposition
             )
 
         if response[0]:
