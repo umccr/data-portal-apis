@@ -14,7 +14,7 @@ import logging
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequencerun_srv, batch_srv, workflow_srv, metadata_srv, libraryrun_srv
-from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
+from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper, ICAResourceOverridesStep
 from data_processors.pipeline.lambdas import wes_handler
 from libumccr import libjson, libdt
 
@@ -75,6 +75,7 @@ def handler(event, context) -> dict:
               "location": "gds://path/to/read_2.fastq.gz"
             }
         }],
+        "arriba_large_mem": true,
         "seq_run_id": "sequence run id",
         "seq_name": "sequence run name",
         "batch_run_id": "batch run id",
@@ -120,6 +121,16 @@ def handler(event, context) -> dict:
         sample_name=library_id,
         subject_id=subject_id)
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
+
+    if event.get('arriba_large_mem', False):
+        arriba_overrides = ICAResourceOverridesStep("#arriba_fusion_step", "standardHiMem", "medium")
+        if not "overrides" in workflow_engine_parameters.keys():
+            workflow_engine_parameters["overrides"] = {}
+        if not arriba_overrides.step_id in workflow_engine_parameters["overrides"].keys():
+            workflow_engine_parameters["overrides"][arriba_overrides.step_id] = {}
+        if not "requirements" in workflow_engine_parameters["overrides"][arriba_overrides.step_id].keys():
+            workflow_engine_parameters["overrides"][arriba_overrides.step_id]["requirements"] = {}
+        workflow_engine_parameters["overrides"][arriba_overrides.step_id]["requirements"].update(arriba_overrides.get_resource_requirement_overrides())
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,

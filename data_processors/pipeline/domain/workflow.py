@@ -416,3 +416,19 @@ class LibraryRunRule:
     def must_be_valid_for_analysis(self):
         # TODO
         return self
+
+
+class ICAResourceOverridesStep:
+    def __init__(self, step_id, resource_type, resource_size):
+        self.step_id = step_id
+        self.resource_type = resource_type
+        self.resource_size = resource_size
+    def get_resource_requirement_overrides(self):
+        return {
+            "ResourceRequirement": {
+                "https://platform.illumina.com/rdf/ica/resources": {
+                    "size": self.resource_size,
+                    "type": self.resource_type
+                }
+            }
+        }
