@@ -40,6 +40,8 @@ data/
 *.tfstate
 *.tfstate.backup
 
+.cache_ggshield
+
 # https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
 .pnp.*
 .yarn/*

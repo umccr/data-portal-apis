@@ -27,6 +27,14 @@ repos:
 #        language: system
 #        pass_filenames: false
 
+#  - repo: local
+#    hooks:
+#      - id: trufflehog-git
+#        name: trufflehog git
+#        entry: trufflehog --debug git file://.
+#        language: system
+#        pass_filenames: false
+
 #  - repo: https://github.com/psf/black
 #    rev: 22.1.0
 #    hooks:

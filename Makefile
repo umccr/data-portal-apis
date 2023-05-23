@@ -10,6 +10,12 @@ check:
 	@pre-commit run --all-files
 	@npx yarn audit
 
+scan:
+	@trufflehog --debug --only-verified git file://./ --since-commit main --branch HEAD --fail
+
+deep: scan
+	@ggshield secret scan repo .
+
 info:
 	@npx serverless info --stage dev
 
