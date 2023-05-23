@@ -32,3 +32,6 @@ services:
 
   console:
     image: quay.io/victorskl/prism:4
+
+  v2:
+    image: quay.io/victorskl/prism:4
