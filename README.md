@@ -19,11 +19,11 @@ python -V
 Python 3.9.6
 
 node -v
-v16.15.0
+v18.16.0
 
 npm i -g yarn
 yarn -v
-1.22.19
+3.5.1
 ```
 
 then activate it:
@@ -123,14 +123,13 @@ aws lambda invoke --function-name data-portal-api-dev-migrate output.json
 
 ## Serverless
 
-> 🙋‍♂️ Above ☝️ sections are good enough for up and running Portal backend for local development purpose. You can take on Serverless and Deployment sections below for, when you want to extend some aspect of Portal backend REST API or lambda functions and, deploying of those features.
+> Above sections are good enough for up and running Portal backend for local development purpose. You can take on Serverless and Deployment sections below for, when you want to extend some aspect of Portal backend REST API or lambda functions and, deploying of those features.
 
 - First, install `serverless` CLI and its plugins dependencies:
 ```
 yarn install
+npx serverless --version
 ```
-
-> NOTE: if you want to install serverless cli globally, make sure to install specific version defined in `package.json` for example `yarn global add serverless@2.60.3`. Otherwise, highly recommend to use local _locked version_ through `npx` as follows.
 
 - You can `serverless` invoke or deploy from local. However, we favour [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
 - Serverless deployment targets only to AWS. AWS account specific variables will be loaded from SSM Parameter Store of respective login session:
@@ -162,7 +161,7 @@ npx serverless remove --stage dev
 
 ## X-Ray
 
-> 🙋‍♂️ X-Ray SDK is disabled by default!
+> X-Ray SDK is disabled by default!
 
 - Portal API backend and data processing functions can be traced with [X-Ray instrumentation](https://docs.aws.amazon.com/lambda/latest/dg/services-xray.html).
 - You can enable X-Ray SDK by setting the [Lambda Configuration Environment variable](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) in **each** Portal Lambda function, e.g.
