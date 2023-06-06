@@ -238,9 +238,10 @@ def get_workflows_by_subject_id_and_workflow_type(subject_id: str,
     # Get all library_id from subject_id
     matching_library_id_qs: QuerySet = LabMetadata.objects.values_list('library_id', named=False).filter(
         subject_id=subject_id).distinct()
+
     if library_ids is not None:
         matching_library_id_qs = matching_library_id_qs.filter(
-            libraryrun__library_id__in=library_ids
+            library_id__in=library_ids
         )
     # Find the latest workflows from given libraryrun
     workflow_qs: QuerySet = Workflow.objects.filter(
