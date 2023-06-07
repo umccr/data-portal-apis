@@ -1,5 +1,3 @@
-from data_portal.models.labmetadata import LabMetadataType
-
 try:
     import unzip_requirements
 except ImportError:
@@ -17,6 +15,7 @@ import logging
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequencerun_srv, batch_srv, workflow_srv, metadata_srv, libraryrun_srv
+from data_portal.models.labmetadata import LabMetadataType
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 from libumccr import libjson, libdt

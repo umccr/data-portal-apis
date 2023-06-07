@@ -53,7 +53,7 @@ def handler(event, context):
                 "UPDATE_STEP",
                 "FASTQ_UPDATE_STEP",
                 "GOOGLE_LIMS_UPDATE_STEP",
-                "DRAGEN_WGS_QC_STEP",
+                "DRAGEN_WGTS_QC_STEP",
                 "DRAGEN_TSO_CTDNA_STEP",
                 "DRAGEN_WTS_STEP",
                 "TUMOR_NORMAL_STEP",
@@ -65,7 +65,7 @@ def handler(event, context):
                 '220524_A01010_0998_ABCF2HDSYX': [
                     "FASTQ_UPDATE_STEP",
                     "GOOGLE_LIMS_UPDATE_STEP",
-                    "DRAGEN_WGS_QC_STEP",
+                    "DRAGEN_WGTS_QC_STEP",
                     "DRAGEN_TSO_CTDNA_STEP",
                     "DRAGEN_WTS_STEP",
                 ],
@@ -73,7 +73,7 @@ def handler(event, context):
                     "UPDATE_STEP",
                     "FASTQ_UPDATE_STEP",
                     "GOOGLE_LIMS_UPDATE_STEP",
-                    "DRAGEN_WGS_QC_STEP",
+                    "DRAGEN_WGTS_QC_STEP",
                     "DRAGEN_TSO_CTDNA_STEP",
                     "DRAGEN_WTS_STEP",
                 ]
@@ -217,11 +217,9 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
 
         return results
 
-    elif (
-            this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() or
-            this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower()
-    ) and this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
-        logger.info(f"Received DRAGEN_WGTS_QC workflow notification")
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        logger.info(f"Received DRAGEN_WGS_QC workflow notification")
 
         WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
 
@@ -238,6 +236,13 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing TUMOR_NORMAL_STEP")
             results.append(tumor_normal_step.perform(this_workflow))
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower() and \
+             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        logger.info(f"Received DRAGEN_WTS_QC workflow notification")
+
+        WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
+
+        results = list()
 
         if "DRAGEN_WTS_STEP" in skiplist:
             logger.info("Skip performing DRAGEN_WTS_STEP")

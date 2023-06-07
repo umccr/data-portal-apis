@@ -42,8 +42,12 @@ class WorkflowType(Enum):
     def from_value(cls, value):
         if value == cls.BCL_CONVERT.value:
             return cls.BCL_CONVERT
+        elif value == cls.DRAGEN_WGTS_QC.value:
+            return cls.DRAGEN_WGTS_QC
         elif value == cls.DRAGEN_WGS_QC.value:
             return cls.DRAGEN_WGS_QC
+        elif value == cls.DRAGEN_WTS_QC.value:
+            return cls.DRAGEN_WTS_QC
         elif value == cls.TUMOR_NORMAL.value:
             return cls.TUMOR_NORMAL
         elif value == cls.DRAGEN_TSO_CTDNA.value:
