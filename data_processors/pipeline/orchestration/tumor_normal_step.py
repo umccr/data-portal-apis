@@ -159,8 +159,8 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 )
                 subject_normal_libraries_stripped = _mint_libraries(subject_normal_libraries)
                 if len(subject_normal_libraries_stripped) > 0:
-                    logger.info(f"Pairing clinical tumors(s) in run '{', '.join(subject_tumor_libraries_stripped)}' "
-                                f"with research normal(s) '{', '.join(subject_normal_libraries_stripped)}'")
+                    logger.info(f"Pairing research tumors(s) in run '{', '.join(subject_tumor_libraries_stripped)}' "
+                                f"with clinical normal(s) '{', '.join(subject_normal_libraries_stripped)}'")
             if normal_in_run and len(subject_tumor_libraries_stripped) == 0 and workflow == LabMetadataWorkflow.CLINICAL.value:
                 # Re collect research tumor libraries
                 subject_tumor_libraries: List[str] = metadata_srv.get_wgs_tumor_libraries_by_subject(
@@ -170,7 +170,7 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
                 subject_tumor_libraries_stripped = _mint_libraries(subject_tumor_libraries)
                 if len(subject_tumor_libraries_stripped) > 0:
                     logger.info(f"Pairing clinical normal(s) in run '{', '.join(subject_normal_libraries_stripped)}' "
-                                f"with research tumour(s) '{', '.join(subject_tumor_libraries_stripped)}'")
+                                f"with research tumor(s) '{', '.join(subject_tumor_libraries_stripped)}'")
 
             # step 6a
             # if the normal libraries are empty skip

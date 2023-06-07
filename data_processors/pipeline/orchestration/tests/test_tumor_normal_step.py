@@ -337,6 +337,7 @@ class TumorNormalStepUnitTests(PipelineUnitTestCase):
         job_list, subjects, submitting_subjects = tumor_normal_step.prepare_tumor_normal_jobs(meta_list)
 
         logger.info(f"job_list: {json.dumps(job_list)}")
+        self.assertEqual(len(job_list), 0)
 
 
 class TumorNormalStepIntegrationTests(PipelineIntegrationTestCase):
