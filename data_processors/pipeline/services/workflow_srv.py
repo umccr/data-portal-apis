@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import QuerySet
@@ -225,7 +225,8 @@ def get_labmetadata_by_wfr_id(wfr_id: str) -> List[LabMetadata]:
 @transaction.atomic
 def get_workflows_by_subject_id_and_workflow_type(subject_id: str,
                                                   workflow_type: WorkflowType,
-                                                  workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED
+                                                  workflow_status: WorkflowStatus = WorkflowStatus.SUCCEEDED,
+                                                  library_ids: Optional[List[str]] = None
                                                   ) -> List[Workflow]:
     """
     Get all workflow runs related to this subject_id and WorkflowType. It will join call between LabMetadata,
@@ -237,6 +238,11 @@ def get_workflows_by_subject_id_and_workflow_type(subject_id: str,
     # Get all library_id from subject_id
     matching_library_id_qs: QuerySet = LabMetadata.objects.values_list('library_id', named=False).filter(
         subject_id=subject_id).distinct()
+
+    if library_ids is not None:
+        matching_library_id_qs = matching_library_id_qs.filter(
+            library_id__in=library_ids
+        )
     # Find the latest workflows from given libraryrun
     workflow_qs: QuerySet = Workflow.objects.filter(
         type_name=workflow_type.value,
