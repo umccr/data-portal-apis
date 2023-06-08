@@ -1,3 +1,4 @@
+
 try:
     import unzip_requirements
 except ImportError:
@@ -11,15 +12,20 @@ django.setup()
 
 # ---
 import logging
+from typing import Dict
+from copy import copy
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequencerun_srv, batch_srv, workflow_srv, metadata_srv, libraryrun_srv
-from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper, ICAResourceOverridesStep
+from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper, ICAResourceOverridesStep, \
+    ICAResourceType, ICAResourceSize
 from data_processors.pipeline.lambdas import wes_handler
 from libumccr import libjson, libdt
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+ARRIBA_FUSION_STEP_KEY_ID = "#arriba_fusion_step"
 
 
 def sqs_handler(event, context):
@@ -123,14 +129,7 @@ def handler(event, context) -> dict:
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
     if event.get('arriba_large_mem', False):
-        arriba_overrides = ICAResourceOverridesStep("#arriba_fusion_step", "standardHiMem", "medium")
-        if not "overrides" in workflow_engine_parameters.keys():
-            workflow_engine_parameters["overrides"] = {}
-        if not arriba_overrides.step_id in workflow_engine_parameters["overrides"].keys():
-            workflow_engine_parameters["overrides"][arriba_overrides.step_id] = {}
-        if not "requirements" in workflow_engine_parameters["overrides"][arriba_overrides.step_id].keys():
-            workflow_engine_parameters["overrides"][arriba_overrides.step_id]["requirements"] = {}
-        workflow_engine_parameters["overrides"][arriba_overrides.step_id]["requirements"].update(arriba_overrides.get_resource_requirement_overrides())
+        workflow_engine_parameters = override_arriba_fusion_step_resources(workflow_engine_parameters)
 
     wfl_run = wes_handler.launch({
         'workflow_id': workflow_id,
@@ -175,3 +174,29 @@ def handler(event, context) -> dict:
     logger.info(libjson.dumps(result))
 
     return result
+
+
+def override_arriba_fusion_step_resources(workflow_engine_parameters: Dict) -> Dict:
+    """
+    Update the workflow engine parameters such that the resource requirements for arriba
+    use the standardHiMem:medium over the standard:xxlarge.
+    :param workflow_engine_parameters:
+    :return:
+    """
+    # Dont want to edit input dict
+    workflow_engine_parameters = copy(workflow_engine_parameters)
+
+    # Create arriba overrides dict
+    arriba_overrides = ICAResourceOverridesStep(ARRIBA_FUSION_STEP_KEY_ID, ICAResourceType.HI_MEM, ICAResourceSize.MEDIUM)
+
+    # Add overrides dict to workflow engine parameters
+    if "overrides" not in workflow_engine_parameters.keys():
+        workflow_engine_parameters["overrides"] = {}
+    if arriba_overrides.step_id not in workflow_engine_parameters["overrides"].keys():
+        workflow_engine_parameters["overrides"][arriba_overrides.step_id] = {}
+    if "requirements" not in workflow_engine_parameters["overrides"][arriba_overrides.step_id].keys():
+        workflow_engine_parameters["overrides"][arriba_overrides.step_id]["requirements"] = {}
+    workflow_engine_parameters["overrides"][arriba_overrides.step_id]["requirements"].update(
+        arriba_overrides.get_resource_requirement_overrides())
+
+    return workflow_engine_parameters

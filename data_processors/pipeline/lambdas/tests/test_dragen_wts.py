@@ -10,8 +10,9 @@ from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
-from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
+from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import dragen_wts
+from data_processors.pipeline.lambdas.dragen_wts import override_arriba_fusion_step_resources, ARRIBA_FUSION_STEP_KEY_ID
 from data_processors.pipeline.services import metadata_srv, workflow_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, PipelineIntegrationTestCase
 
@@ -161,6 +162,33 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
         logger.info(json.dumps(results))
 
         self.assertEqual(len(results), 1)
+
+    def test_override_arriba_fusion_step_resources(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wts.DragenWtsUnitTests.test_override_arriba_fusion_step_resources
+        :return:
+        """
+        helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WTS)
+        eng_params = helper.get_engine_parameters(target_id="SBJ0002", secondary_target_id=None)
+
+        eng_params = override_arriba_fusion_step_resources(eng_params)
+
+        logger.info("New engine parameters are as follows:")
+        logger.info("\n" + json.dumps(eng_params, indent=2))
+
+        self.assertIn("overrides", eng_params)
+        self.assertIn(ARRIBA_FUSION_STEP_KEY_ID, eng_params.get("overrides"))
+        self.assertIn("requirements", eng_params.get("overrides").get(ARRIBA_FUSION_STEP_KEY_ID))
+        self.assertIn("ResourceRequirement", eng_params.get("overrides").get(ARRIBA_FUSION_STEP_KEY_ID).get("requirements"))
+        self.assertEqual(
+            {
+                "https://platform.illumina.com/rdf/ica/resources": {
+                    "size": "medium",
+                    "type": "standardHiMem"
+                }
+            },
+            eng_params.get("overrides").get(ARRIBA_FUSION_STEP_KEY_ID).get("requirements").get("ResourceRequirement")
+        )
 
 
 class DragenWtsIntegrationTests(PipelineIntegrationTestCase):
