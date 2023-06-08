@@ -60,6 +60,7 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
+        "subject_id": "subject_id",
         "library_id": "library_id (usually rglb)",
         "fastq_list_rows": [{
             "rgid": "index1.index2.lane",
@@ -74,10 +75,7 @@ def handler(event, context) -> dict:
               "class": "File",
               "location": "gds://path/to/read_2.fastq.gz"
             }
-        }],
-        "seq_run_id": "sequence run id",
-        "seq_name": "sequence run name",
-        "batch_run_id": "batch run id",
+        }]
     }
 
     :param event:
@@ -89,15 +87,11 @@ def handler(event, context) -> dict:
     logger.info(libjson.dumps(event))
 
     # Extract name of sample and the fastq list rows
+    subject_id = event['subject_id']
     library_id = event['library_id']
     fastq_list_rows = event['fastq_list_rows']
 
-    # Set sequence run id
-    seq_run_id = event.get('seq_run_id', None)
-    seq_name = event.get('seq_name', None)
-    # Set batch run id
-    batch_run_id = event.get('batch_run_id', None)
-
+    # Set sample name
     sample_name = fastq_list_rows[0]['rgsm']
 
     # Set workflow helper
@@ -111,14 +105,11 @@ def handler(event, context) -> dict:
     workflow_id = wfl_helper.get_workflow_id()
     workflow_version = wfl_helper.get_workflow_version()
 
-    sqr = sequencerun_srv.get_sequence_run_by_run_id(seq_run_id) if seq_run_id else None
-    batch_run = batch_srv.get_batch_run(batch_run_id=batch_run_id) if batch_run_id else None
-
     # construct and format workflow run name convention
-    subject_id = metadata_srv.get_subject_id_from_library_id(library_id)
     workflow_run_name = wfl_helper.construct_workflow_name(
         sample_name=library_id,
-        subject_id=subject_id)
+        subject_id=subject_id
+    )
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
     wfl_run = wes_handler.launch({
@@ -141,8 +132,6 @@ def handler(event, context) -> dict:
             'input': workflow_input,
             'start': wfl_run.get('time_started'),
             'end_status': wfl_run.get('status'),
-            'sequence_run': sqr,
-            'batch_run': batch_run,
         }
     )
 
@@ -152,13 +141,13 @@ def handler(event, context) -> dict:
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
     result = {
+        'subject_id': subject_id,
         'library_id': library_id,
         'id': workflow.id,
         'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
         'start': libdt.serializable_datetime(workflow.start),
-        'batch_run_id': workflow.batch_run.id if batch_run else None,
     }
 
     logger.info(libjson.dumps(result))

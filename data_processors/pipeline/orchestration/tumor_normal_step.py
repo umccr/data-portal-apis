@@ -19,6 +19,7 @@ from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, 
     _mint_libraries
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 from data_processors.pipeline.tools import liborca
+from data_processors.pipeline.tools.liborca import _handle_rerun
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -71,17 +72,6 @@ def _is_tn_in_run(meta_list_df, subject_libraries_stripped):
     return False if len(l_set.intersection(r_set)) == 0 else True
 
 
-def _handle_rerun(fastq_list_rows: List[FastqListRow], library_id):
-    for fastq_list_row in fastq_list_rows:
-        full_sample_library_id = fastq_list_row.rgid.rsplit(".", 1)[-1]
-        if liborca.sample_library_id_has_rerun(full_sample_library_id):
-            logger.warning(f"We found a rerun for library id {library_id} in {full_sample_library_id}. "
-                           f"Please run this sample manually")
-            # Reset fastq list rows - we don't know what to do with reruns
-            return []
-    return fastq_list_rows
-
-
 def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
     """
     See https://github.com/umccr/data-portal-apis/pull/262 for T/N paring algorithm
@@ -92,7 +82,7 @@ def prepare_tumor_normal_jobs(meta_list: List[LabMetadata]) -> (List, List, List
     Oh, btw, you need "CCR Greatest Hits" playlist in the background, if you go through this! -victor
 
     :param meta_list:
-    :return: job_list, subject_list
+    :return: job_list, subjects, submitting_subjects
     """
     job_list = list()
     submitting_subjects = list()

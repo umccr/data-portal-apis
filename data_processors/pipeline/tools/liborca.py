@@ -470,3 +470,14 @@ def parse_tso_ctdna_output_for_bam_file(workflow_output_json: str, deep_check: b
             raise ValueError(f"Couldn't get bam file from tso_ctdna_tumor_only output directory '{main_bam_path}'")
 
         return main_bam_path
+
+
+def _handle_rerun(fastq_list_rows: List[FastqListRow], library_id):
+    for fastq_list_row in fastq_list_rows:
+        full_sample_library_id = fastq_list_row.rgid.rsplit(".", 1)[-1]
+        if liborca.sample_library_id_has_rerun(full_sample_library_id):
+            logger.warning(f"We found a rerun for library id {library_id} in {full_sample_library_id}. "
+                           f"Please run this sample manually")
+            # Reset fastq list rows - we don't know what to do with reruns
+            return []
+    return fastq_list_rows
