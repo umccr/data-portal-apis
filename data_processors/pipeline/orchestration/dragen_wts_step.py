@@ -15,9 +15,8 @@ from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WTS_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
-from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, _extract_unique_subjects
+from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, _extract_unique_subjects, _handle_rerun
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
-from data_processors.pipeline.tools.liborca import _handle_rerun
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,7 +29,7 @@ def perform(this_workflow: Workflow):
 
     # Check if all other DRAGEN_WTS_QC workflows for this run have finished
     # If yes we continue to the DRAGEN WTS Workflow
-    # If not we wait (until all DRAGEN_WTS_QC worklfows for this run have finished
+    # If not we wait (until all DRAGEN_WTS_QC workflows for this run have finished
     running: List[Workflow] = workflow_srv.get_running_by_sequence_run(
         sequence_run=this_sqr,
         workflow_type=WorkflowType.DRAGEN_WTS_QC
@@ -58,7 +57,7 @@ def perform(this_workflow: Workflow):
         else:
             logger.warning(f"Calling to prepare_tumor_normal_jobs() return empty list, no job to dispatch...")
     else:
-        logger.warning(f"DRAGEN_WGS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
+        logger.warning(f"DRAGEN_WTS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
 
     return {
         "subjects": subjects,

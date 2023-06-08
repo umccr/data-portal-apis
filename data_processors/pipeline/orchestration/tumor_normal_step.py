@@ -19,7 +19,7 @@ from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, 
     _mint_libraries
 from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 from data_processors.pipeline.tools import liborca
-from data_processors.pipeline.tools.liborca import _handle_rerun
+from data_processors.pipeline.orchestration import _handle_rerun
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
