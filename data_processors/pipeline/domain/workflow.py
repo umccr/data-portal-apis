@@ -416,3 +416,37 @@ class LibraryRunRule:
     def must_be_valid_for_analysis(self):
         # TODO
         return self
+
+
+class ICAResourceType(Enum):
+    # See https://illumina.gitbook.io/ica-v1/analysis/a-taskexecution#type-and-size for more information
+    STANDARD = "standard"
+    HI_CPU = "standardHiCpu"
+    HI_MEM = "standardHiMem"
+    FPGA = "fpga"
+
+
+class ICAResourceSize(Enum):
+    # See https://illumina.gitbook.io/ica-v1/analysis/a-taskexecution#type-and-size for more information
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE = "large"
+    XLARGE = "xlarge"
+    XXLARGE = "xxlarge"
+
+
+class ICAResourceOverridesStep:
+    def __init__(self, step_id, resource_type: ICAResourceType, resource_size: ICAResourceSize):
+        self.step_id = step_id
+        self.resource_type = resource_type.value
+        self.resource_size = resource_size.value
+
+    def get_resource_requirement_overrides(self):
+        return {
+            "ResourceRequirement": {
+                "https://platform.illumina.com/rdf/ica/resources": {
+                    "size": self.resource_size,
+                    "type": self.resource_type
+                }
+            }
+        }
