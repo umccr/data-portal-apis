@@ -43,6 +43,7 @@ class GDSFileManager(models.Manager):
 
         wts_bam = Q(path__iregex='wts') & Q(path__iregex='tumor') & Q(path__iregex='.bam$')
         wts_qc = Q(path__iregex='wts') & Q(path__iregex='tumor') & Q(path__iregex='multiqc') & Q(path__iregex='.html$')
+        wts_fusions = Q(path__iregex='wts') & Q(path__iregex='fusions') & Q(path__iregex='.pdf$')
         rnasum = Q(path__iregex='rnasum') & Q(path__iregex='RNAseq_report.html$')
 
         gpl = Q(path__iregex='gridss_purple_linx') & Q(path__iregex='linx.html$')
@@ -51,8 +52,8 @@ class GDSFileManager(models.Manager):
         tso_ctdna_vcf = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.vcf.gz$')
         tso_ctdna_tsv = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.tsv$')
 
-        q_results: Q = (bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | rnasum | gpl
-                        | tso_ctdna_bam | tso_ctdna_vcf | tso_ctdna_tsv)
+        q_results: Q = (bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | wts_fusions | rnasum
+                        | gpl | tso_ctdna_bam | tso_ctdna_vcf | tso_ctdna_tsv)
 
         qs = qs.filter(q_results)
 
