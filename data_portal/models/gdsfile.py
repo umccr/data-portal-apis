@@ -34,6 +34,12 @@ class GDSFileManager(models.Manager):
         vcf = (Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^(work)*]')
                & Q(path__iregex='small_variants/[^\/]*(.vcf.gz$|.maf$)'))
 
+        vcf_germline = (
+                Q(path__iregex='[umccrise|wgs_tumor_normal]')
+                & Q(path__iregex='dragen_germline')
+                & Q(path__iregex='.vcf.gz$')
+        )
+
         cancer = Q(path__iregex='umccrise') & Q(path__iregex='cancer_report.html$')
         qc = Q(path__iregex='umccrise') & Q(path__iregex='multiqc_report.html$')
         pcgr = Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^\/]*/[^\/]*(pcgr|cpsr).html$')
@@ -52,8 +58,8 @@ class GDSFileManager(models.Manager):
         tso_ctdna_vcf = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.vcf.gz$')
         tso_ctdna_tsv = Q(path__iregex='tso') & Q(path__iregex='ctdna') & Q(path__iregex='.tsv$')
 
-        q_results: Q = (bam | vcf | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc | wts_fusions | rnasum
-                        | gpl | tso_ctdna_bam | tso_ctdna_vcf | tso_ctdna_tsv)
+        q_results: Q = (bam | vcf | vcf_germline | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc
+                        | wts_fusions | rnasum | gpl | tso_ctdna_bam | tso_ctdna_vcf | tso_ctdna_tsv)
 
         qs = qs.filter(q_results)
 
