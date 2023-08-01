@@ -236,6 +236,8 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing TUMOR_NORMAL_STEP")
             results.append(tumor_normal_step.perform(this_workflow))
+
+        return results
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower() and \
              this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received DRAGEN_WTS_QC workflow notification")

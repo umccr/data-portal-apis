@@ -191,6 +191,8 @@ class SecondaryAnalysisHelper(WorkflowHelper):
     def __init__(self, type_: WorkflowType):
         allowed_workflow_types = [
             WorkflowType.DRAGEN_WGS_QC,
+            WorkflowType.DRAGEN_WGTS_QC,
+            WorkflowType.DRAGEN_WTS_QC,
             WorkflowType.DRAGEN_TSO_CTDNA,
             WorkflowType.DRAGEN_WTS,
             WorkflowType.TUMOR_NORMAL,
