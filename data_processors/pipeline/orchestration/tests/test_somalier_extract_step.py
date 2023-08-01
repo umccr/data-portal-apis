@@ -6,7 +6,7 @@ from libumccr import libjson
 from mockito import when
 
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import DragenWgsQcWorkflowFactory
+from data_portal.tests.factories import DragenWgtsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.orchestration import somalier_extract_step
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
@@ -64,7 +64,7 @@ mock_wgs_output = json.dumps({
 
 
 def build_wgs_qc_mock():
-    mock_wgc_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+    mock_wgc_qc_workflow: Workflow = DragenWgtsQcWorkflowFactory()
     mock_wgc_qc_workflow.wfr_id = mock_wgs_workflow_id
     mock_wgc_qc_workflow.output = mock_wgs_output
     mock_wgc_qc_workflow.end = now()

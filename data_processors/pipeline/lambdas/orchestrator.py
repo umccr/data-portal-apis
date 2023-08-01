@@ -187,7 +187,7 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
             logger.info("Updating Google LIMS")
             google_lims_update_step.perform(this_workflow)
 
-        if "DRAGEN_WGTS_QC_STEP" in skiplist:
+        if any([step in skiplist for step in ["DRAGEN_WGTS_QC_STEP", "DRAGEN_WGS_QC_STEP", "DRAGEN_WTS_QC_STEP"]]):
             logger.info("Skip performing DRAGEN_WGTS_QC_STEP")
         else:
             logger.info("Performing DRAGEN_WGTS_QC_STEP")

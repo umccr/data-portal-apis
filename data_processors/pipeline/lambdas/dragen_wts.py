@@ -83,9 +83,6 @@ def handler(event, context) -> dict:
             }
         }],
         "arriba_large_mem": true,
-        "seq_run_id": "sequence run id",
-        "seq_name": "sequence run name",
-        "batch_run_id": "batch run id",
     }
 
     :param event:
@@ -149,7 +146,7 @@ def handler(event, context) -> dict:
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_workflow(library_id, workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([library_id], workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 

@@ -28,6 +28,7 @@ import pandas as pd
 from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
 from data_processors.pipeline.tools import liborca
+import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

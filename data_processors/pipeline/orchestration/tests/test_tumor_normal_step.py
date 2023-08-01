@@ -10,7 +10,7 @@ from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import TestConstant, DragenWgsQcWorkflowFactory, LibraryRunFactory, \
+from data_portal.tests.factories import TestConstant, DragenWgtsQcWorkflowFactory, DragenWgsQcWorkflowFactory, LibraryRunFactory, \
     TumorLibraryRunFactory
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowStatus

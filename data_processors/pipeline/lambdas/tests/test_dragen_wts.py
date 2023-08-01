@@ -9,7 +9,7 @@ from mockito import when
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, WtsTumorLibraryRunFactory, LibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import dragen_wts
 from data_processors.pipeline.lambdas.dragen_wts import override_arriba_fusion_step_resources, ARRIBA_FUSION_STEP_KEY_ID
@@ -24,10 +24,12 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wts.DragenWtsUnitTests.test_handler
         """
         mock_library_run: LibraryRun = LibraryRunFactory()
+        mock_tumor_library_run: LibraryRun = WtsTumorLibraryRunFactory()
         mock_sqr: SequenceRun = SequenceRunFactory()
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
         workflow: dict = dragen_wts.handler({
+            "subject_id": TestConstant.subject_id.value,
             "library_id": TestConstant.library_id_normal.value,
             "fastq_list_rows": [
                 {
@@ -44,9 +46,7 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
                       "location": "gds://path/to/read_2.fastq.gz"
                     }
                 }
-            ],
-            "seq_run_id": mock_sqr.run_id,
-            "seq_name": mock_sqr.name,
+            ]
         }, None)
 
         logger.info("-" * 32)
@@ -83,7 +83,8 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
         workflow: dict = dragen_wts.handler({
-            "library_id": "SAMPLE_NAME",
+            "subject_id": TestConstant.subject_id.value,
+            "library_id": TestConstant.library_id_normal.value,
             "fastq_list_rows": [
                 {
                     "rgid": "index1.index2.lane",
@@ -121,6 +122,7 @@ class DragenWtsUnitTests(PipelineUnitTestCase):
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
         mock_job = {
+            "subject_id": "SUBJECT_ID",
             "library_id": "SAMPLE_NAME",
             "fastq_list_rows": [
                 {

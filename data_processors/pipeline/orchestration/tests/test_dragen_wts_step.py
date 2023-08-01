@@ -2,24 +2,60 @@ import json
 from datetime import datetime
 from unittest import skip
 
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, now
 from libica.app import wes
+from libica.openapi import libwes
+from mockito import when
 
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
+from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
+from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import WorkflowFactory
+from data_portal.tests.factories import WorkflowFactory, TestConstant, DragenWtsQcWorkflowFactory, \
+    WtsTumorLibraryRunFactory, LibraryRunFactory
 from data_processors.pipeline.domain.batch import Batcher
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.orchestration import fastq_update_step, dragen_wts_step
 from data_processors.pipeline.services import batch_srv, fastq_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
-tn_mock_subject_id = "SBJ00001"
+wts_mock_subject_id = "SBJ00001"
 mock_library_id = "LPRJ200438"
 mock_sample_id = "PRJ200438"
 mock_sample_name = f"{mock_sample_id}_{mock_library_id}"
+tumor_fastq_list_rows = []
+
+
+def build_wts_mock():
+    mock_wfl_run = libwes.WorkflowRun()
+    mock_wfl_run.id = TestConstant.wfr_id.value
+    mock_wfl_run.status = WorkflowStatus.SUCCEEDED.value
+    mock_wfl_run.time_stopped = make_aware(datetime.utcnow())
+    mock_wfl_run.output = {}
+    workflow_version: libwes.WorkflowVersion = libwes.WorkflowVersion()
+    workflow_version.id = TestConstant.wfv_id.value
+    mock_wfl_run.workflow_version = workflow_version
+    when(libwes.WorkflowRunsApi).get_workflow_run(...).thenReturn(mock_wfl_run)
+
+    mock_labmetadata_tumor = LabMetadata()
+    mock_labmetadata_tumor.subject_id = wts_mock_subject_id
+    mock_labmetadata_tumor.library_id = mock_library_id
+    mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
+    mock_labmetadata_tumor.type = LabMetadataType.WTS.value
+    mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CLINICAL.value
+    mock_labmetadata_tumor.save()
+
+    mock_flr_tumor = FastqListRow()
+    mock_flr_tumor.lane = 2
+    mock_flr_tumor.rglb = TestConstant.library_id_tumor.value
+    mock_flr_tumor.rgsm = TestConstant.sample_id.value
+    mock_flr_tumor.rgid = f"AACTCACC.2.350702_A00130_0137_AH5KMHDSXY.{mock_flr_tumor.rgsm}_{mock_flr_tumor.rglb}"
+    mock_flr_tumor.read_1 = "gds://volume/path/tumor_read_1.fastq.gz"
+    mock_flr_tumor.read_2 = "gds://volume/path/tumor_read_2.fastq.gz"
+    mock_flr_tumor.save()
+    tumor_fastq_list_rows.append(mock_flr_tumor)
 
 
 class DragenWtsStepUnitTests(PipelineUnitTestCase):
@@ -30,81 +66,33 @@ class DragenWtsStepUnitTests(PipelineUnitTestCase):
         """
         self.verify_local()
 
-        mock_bcl_workflow: Workflow = WorkflowFactory()
-        mock_bcl_workflow.input = json.dumps({
-            'bcl_input_directory': {
+        build_wts_mock()
+
+        mock_dragen_wts_qc_workflow: Workflow = DragenWtsQcWorkflowFactory()
+        mock_dragen_wts_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_dragen_wts_qc_workflow.end = now()
+        mock_dragen_wts_qc_workflow.output = json.dumps({
+            "dragen_alignment_output_directory": {
+                "location": "gds://vol/analysis_data/SBJ00001/wts_alignment_qc/2022052276d4397b/LPRJ200438__3_dragen",
                 "class": "Directory",
-                "location": "gds://bssh-path/Runs/210701_A01052_0055_AH7KWGDSX2_r.abc123456"
+            },
+            "dragen_bam_out": {
+                "location": "gds://vol/analysis_data/SBJ00001/wts_alignment_qc/2022052276d4397b/LPRJ200438__3_dragen/PRJ200438.bam",
+                "basename": "PRJ200438.bam",
+                "nameroot": "PRJ200438",
+                "nameext": ".bam",
+                "class": "File",
             }
         })
-        mock_bcl_workflow.status = WorkflowStatus.SUCCEEDED.value
-        mock_bcl_workflow.time_stopped = make_aware(datetime.utcnow())
-        mock_bcl_workflow.output = json.dumps(
-            {
-                "main/fastq_list_rows": [
-                    {
-                        "rgid": "CATGCGAT.4",
-                        "rglb": "UnknownLibrary",
-                        "rgsm": mock_sample_name,
-                        "lane": 4,
-                        "read_1": {
-                            "class": "File",
-                            "basename": f"{mock_sample_name}_S1_L004_R1_001.fastq.gz",
-                            "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R1_001.fastq.gz",
-                            "nameroot": f"{mock_sample_name}_S1_L004_R1_001.fastq",
-                            "nameext": ".gz",
-                            "http://commonwl.org/cwltool#generation": 0,
-                            "size": 16698849950
-                        },
-                        "read_2": {
-                            "class": "File",
-                            "basename": f"{mock_sample_name}_S1_L004_R2_001.fastq.gz",
-                            "location": f"gds://fastqvol/bcl-convert-test/outputs/10X/{mock_sample_name}_S1_L004_R2_001.fastq.gz",
-                            "nameroot": f"{mock_sample_name}_S1_L004_R2_001.fastq",
-                            "nameext": ".gz",
-                            "http://commonwl.org/cwltool#generation": 0,
-                            "size": 38716143739
-                        }
-                    }
-                ],
-                "split_sheets": [
-                    {
-                        "location": "gds://umccr-fastq-data-prod/210701_A01052_0055_AH7KWGDSX2/SampleSheet.ctDNA_ctTSO.csv",
-                        "basename": "SampleSheet.ctDNA_ctTSO.csv",
-                        "nameroot": "SampleSheet.ctDNA_ctTSO",
-                        "nameext": ".csv",
-                        "class": "File",
-                        "size": 1804,
-                        "http://commonwl.org/cwltool#generation": 0
-                    }
-                ]
-            }
-        )
-        mock_bcl_workflow.save()
+        mock_dragen_wts_qc_workflow.save()
+        mock_lbr_normal: LibraryRun = LibraryRunFactory()
+        mock_lbr_tumor: LibraryRun = WtsTumorLibraryRunFactory()
 
-        fastq_update_step.perform(mock_bcl_workflow)  # prerequisites step - we must have FastqListRows
+        results = dragen_wts_step.perform(this_workflow=mock_dragen_wts_qc_workflow)
+        self.assertIsNotNone(results)
 
-        mock_labmetadata_tumor = LabMetadata()
-        mock_labmetadata_tumor.subject_id = tn_mock_subject_id
-        mock_labmetadata_tumor.library_id = mock_library_id
-        mock_labmetadata_tumor.phenotype = LabMetadataPhenotype.TUMOR.value
-        mock_labmetadata_tumor.type = LabMetadataType.WTS.value
-        mock_labmetadata_tumor.workflow = LabMetadataWorkflow.CLINICAL.value
-        mock_labmetadata_tumor.save()
-
-        result = dragen_wts_step.perform(mock_bcl_workflow)
-
-        logger.info("-" * 32)
-        self.assertIsNotNone(result)
-        logger.info(f"dragen_wts_step perform output: \n{json.dumps(result)}")
-
-        for b in Batch.objects.all():
-            logger.info(f"BATCH: {b}")
-        for br in BatchRun.objects.all():
-            logger.info(f"BATCH_RUN: {br}")
-
-        wts_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WTS.value]
-        self.assertTrue(wts_batch_runs[0].running)
+        logger.info(f"{json.dumps(results)}")
+        self.assertEqual(results['submitting_subjects'][0], wts_mock_subject_id)
 
 
 class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):

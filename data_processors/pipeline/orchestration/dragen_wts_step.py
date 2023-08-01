@@ -45,6 +45,7 @@ def perform(this_workflow: Workflow):
         logger.info("All QC workflows finished, proceeding to dragen wts preparation")
 
         meta_list, run_libraries = metadata_srv.get_wts_metadata_by_wts_qc_runs(succeeded)
+
         if not meta_list:
             logger.warning(f"No dragen wts metadata found for given run libraries: {run_libraries}")
 

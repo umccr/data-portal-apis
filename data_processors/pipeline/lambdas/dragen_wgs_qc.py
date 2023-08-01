@@ -107,6 +107,11 @@ def handler(event, context) -> dict:
     # Get metadata by library id
     library_lab_metadata = metadata_srv.get_metadata_by_library_id(library_id)
 
+    # Check type is not None
+    if library_lab_metadata is None:
+        logger.error(f"Expected to retrieve metadata for library '{library_id}' but no metadata was returned")
+        raise ValueError
+
     # We set the RNA flag and set the workflow type based on the library lab metadata
     if library_lab_metadata.type == LabMetadataType.WTS:
         workflow_type = WorkflowType.DRAGEN_WTS_QC

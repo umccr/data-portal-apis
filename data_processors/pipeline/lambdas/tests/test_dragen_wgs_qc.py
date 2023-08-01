@@ -9,7 +9,7 @@ from mockito import when
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory, LabMetadataFactory
 from data_processors.pipeline.domain.workflow import SecondaryAnalysisHelper
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import dragen_wgs_qc
@@ -23,8 +23,10 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler
         """
+        mock_normal_library = LabMetadataFactory()
         mock_library_run: LibraryRun = LibraryRunFactory()
         mock_sqr: SequenceRun = SequenceRunFactory()
+
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
         workflow: dict = dragen_wgs_qc.handler({
@@ -70,6 +72,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_alt
         """
+        mock_normal_library = LabMetadataFactory()
         mock_sqr: SequenceRun = SequenceRunFactory()
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
 
@@ -83,7 +86,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         when(libwes.WorkflowVersionsApi).launch_workflow_version(...).thenReturn(mock_wfr)
 
         workflow: dict = dragen_wgs_qc.handler({
-            "library_id": "SAMPLE_NAME",
+            "library_id": TestConstant.library_id_normal.value,
             "lane": 1,
             "fastq_list_rows": [
                 {
@@ -116,12 +119,12 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_sqs_handler
         """
-
+        mock_normal_library = LabMetadataFactory()
         mock_sqr: SequenceRun = SequenceRunFactory()
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ0001")
 
         mock_job = {
-            "library_id": "SAMPLE_NAME",
+            "library_id": TestConstant.library_id_normal.value,
             "lane": 1,
             "fastq_list_rows": [
                 {
@@ -169,6 +172,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_portal_run_id
         """
         mock_portal_run_id = "20211101a1b2c3d4"
+        mock_normal_library = LabMetadataFactory()
         LibraryRunFactory()
         mock_sqr: SequenceRun = SequenceRunFactory()
         when(metadata_srv).get_subject_id_from_library_id(...).thenReturn("SBJ00001")
