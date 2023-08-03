@@ -40,7 +40,8 @@ def perform(this_workflow: Workflow):
     )
 
     subjects = list()
-    submitting_subjects = list()
+    job_list = list()
+
     if len(running) == 0:
         logger.info("All QC workflows finished, proceeding to dragen wts preparation")
 
@@ -49,10 +50,10 @@ def perform(this_workflow: Workflow):
         if not meta_list:
             logger.warning(f"No dragen wts metadata found for given run libraries: {run_libraries}")
 
-        job_list, subjects, submitting_subjects = prepare_dragen_wts_jobs(meta_list)
+        job_list, subjects = prepare_dragen_wts_jobs(meta_list)
 
         if job_list:
-            logger.info(f"Submitting {len(job_list)} WTS jobs for {submitting_subjects}.")
+            logger.info(f"Submitting {len(job_list)} WTS jobs for {subjects}")
             queue_arn = libssm.get_ssm_param(SQS_DRAGEN_WTS_QUEUE_ARN)
             libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
         else:
@@ -62,7 +63,7 @@ def perform(this_workflow: Workflow):
 
     return {
         "subjects": subjects,
-        "submitting_subjects": submitting_subjects
+        "job_list": job_list,
     }
 
 
@@ -79,7 +80,6 @@ def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
     :return: job_list, subjects, submitting_subjects
     """
     job_list = list()
-    submitting_subjects = list()
 
     # step 1 and 3
     if not meta_list:
@@ -105,9 +105,8 @@ def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
         fastq_list_rows = _handle_rerun(fastq_list_rows, row.library_id)
 
         job_list.append(create_wts_job(fastq_list_rows, subject_id=row.subject_id, library_id=row.library_id))
-        submitting_subjects.append(job_list)
 
-    return job_list, subjects, submitting_subjects
+    return job_list, subjects
 
 
 def create_wts_job(fastq_list_rows: List[FastqListRow], subject_id: str, library_id: str) -> Dict:
