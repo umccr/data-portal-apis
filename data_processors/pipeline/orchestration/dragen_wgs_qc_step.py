@@ -24,11 +24,11 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_workflow: Workflow):
-    logger.info(f"Preparing {WorkflowType.DRAGEN_WGS_QC.value} workflows")
+    logger.info(f"Preparing {WorkflowType.DRAGEN_WGTS_QC.value} workflows")
 
     batcher = Batcher(
         workflow=this_workflow,
-        run_step=WorkflowType.DRAGEN_WGS_QC.value,
+        run_step=WorkflowType.DRAGEN_WGTS_QC.value,
         batch_srv=batch_srv,
         fastq_srv=fastq_srv,
         logger=logger,
@@ -41,6 +41,7 @@ def perform(this_workflow: Workflow):
     job_list = prepare_dragen_wgs_qc_jobs(batcher)
     if job_list:
         libsqs.dispatch_jobs(
+            # Used for both WGS and WTS
             queue_arn=libssm.get_ssm_param(SQS_DRAGEN_WGS_QC_QUEUE_ARN),
             job_list=job_list
         )
@@ -78,7 +79,7 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
                 .must_set_workflow() \
                 .must_not_manual() \
                 .must_not_bcl() \
-                .must_be_wgs()
+                .must_be_wgts()
 
             BatchRule(
                 batcher=batcher,
@@ -87,7 +88,7 @@ def prepare_dragen_wgs_qc_jobs(batcher: Batcher) -> List[dict]:
             ).must_not_have_succeeded_runs()
 
         except LabMetadataRuleError as me:
-            logger.warning(f"SKIP {WorkflowType.DRAGEN_WGS_QC.value} workflow for '{rgsm}_{rglb}' in lane {lane}. {me}")
+            logger.warning(f"SKIP {WorkflowType.DRAGEN_WGTS_QC.value} workflow for '{rgsm}_{rglb}' in lane {lane}. {me}")
             continue
 
         except BatchRuleError as be:

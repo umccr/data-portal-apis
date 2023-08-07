@@ -356,6 +356,28 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     )
 
 
+class DragenWgtsQcWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    sequence_run = factory.SubFactory(SequenceRunFactory)
+    wfr_id = TestConstant.wfr_id.value
+    wfv_id = TestConstant.wfv_id.value
+    wfl_id = TestConstant.wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.DRAGEN_WGTS_QC.value
+    input = json.dumps({
+        "mock": "must load template from ssm parameter store"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
+    )
+
+
 class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
@@ -366,6 +388,28 @@ class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     wfl_id = TestConstant.wfl_id.value
     version = TestConstant.version.value
     type_name = WorkflowType.DRAGEN_WGS_QC.value
+    input = json.dumps({
+        "mock": "must load template from ssm parameter store"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
+    )
+
+
+class DragenWtsQcWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    sequence_run = factory.SubFactory(SequenceRunFactory)
+    wfr_id = TestConstant.wfr_id.value
+    wfv_id = TestConstant.wfv_id.value
+    wfl_id = TestConstant.wfl_id.value
+    version = TestConstant.version.value
+    type_name = WorkflowType.DRAGEN_WTS_QC.value
     input = json.dumps({
         "mock": "must load template from ssm parameter store"
     })

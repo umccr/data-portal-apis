@@ -53,7 +53,7 @@ def handler(event, context):
                 "UPDATE_STEP",
                 "FASTQ_UPDATE_STEP",
                 "GOOGLE_LIMS_UPDATE_STEP",
-                "DRAGEN_WGS_QC_STEP",
+                "DRAGEN_WGTS_QC_STEP",
                 "DRAGEN_TSO_CTDNA_STEP",
                 "DRAGEN_WTS_STEP",
                 "TUMOR_NORMAL_STEP",
@@ -65,7 +65,7 @@ def handler(event, context):
                 '220524_A01010_0998_ABCF2HDSYX': [
                     "FASTQ_UPDATE_STEP",
                     "GOOGLE_LIMS_UPDATE_STEP",
-                    "DRAGEN_WGS_QC_STEP",
+                    "DRAGEN_WGTS_QC_STEP",
                     "DRAGEN_TSO_CTDNA_STEP",
                     "DRAGEN_WTS_STEP",
                 ],
@@ -73,7 +73,7 @@ def handler(event, context):
                     "UPDATE_STEP",
                     "FASTQ_UPDATE_STEP",
                     "GOOGLE_LIMS_UPDATE_STEP",
-                    "DRAGEN_WGS_QC_STEP",
+                    "DRAGEN_WGTS_QC_STEP",
                     "DRAGEN_TSO_CTDNA_STEP",
                     "DRAGEN_WTS_STEP",
                 ]
@@ -187,10 +187,10 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
             logger.info("Updating Google LIMS")
             google_lims_update_step.perform(this_workflow)
 
-        if "DRAGEN_WGS_QC_STEP" in skiplist:
-            logger.info("Skip performing DRAGEN_WGS_QC_STEP")
+        if any([step in skiplist for step in ["DRAGEN_WGTS_QC_STEP", "DRAGEN_WGS_QC_STEP", "DRAGEN_WTS_QC_STEP"]]):
+            logger.info("Skip performing DRAGEN_WGTS_QC_STEP")
         else:
-            logger.info("Performing DRAGEN_WGS_QC_STEP")
+            logger.info("Performing DRAGEN_WGTS_QC_STEP")
             results.append(dragen_wgs_qc_step.perform(this_workflow))
 
         if "DRAGEN_TSO_CTDNA_STEP" in skiplist:
@@ -198,12 +198,6 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing DRAGEN_TSO_CTDNA_STEP")
             results.append(dragen_tso_ctdna_step.perform(this_workflow))
-
-        if "DRAGEN_WTS_STEP" in skiplist:
-            logger.info("Skip performing DRAGEN_WTS_STEP")
-        else:
-            logger.info("Performing DRAGEN_WTS_STEP")
-            results.append(dragen_wts_step.perform(this_workflow))
 
         return results
 
@@ -242,6 +236,21 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing TUMOR_NORMAL_STEP")
             results.append(tumor_normal_step.perform(this_workflow))
+
+        return results
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower() and \
+             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+        logger.info(f"Received DRAGEN_WTS_QC workflow notification")
+
+        WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
+
+        results = list()
+
+        if "DRAGEN_WTS_STEP" in skiplist:
+            logger.info("Skip performing DRAGEN_WTS_STEP")
+        else:
+            logger.info("Performing DRAGEN_WTS_STEP")
+            results.append(dragen_wts_step.perform(this_workflow))
 
         return results
 

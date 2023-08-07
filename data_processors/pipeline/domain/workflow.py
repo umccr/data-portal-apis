@@ -29,7 +29,9 @@ class SampleSheetCSV(Enum):
 
 class WorkflowType(Enum):
     BCL_CONVERT = "bcl_convert"
+    DRAGEN_WGTS_QC = "wgts_alignment_qc"  # Placeholder workflow type
     DRAGEN_WGS_QC = "wgs_alignment_qc"
+    DRAGEN_WTS_QC = "wts_alignment_qc"
     TUMOR_NORMAL = "wgs_tumor_normal"
     DRAGEN_TSO_CTDNA = "tso_ctdna_tumor_only"
     DRAGEN_WTS = "wts_tumor_only"
@@ -40,8 +42,12 @@ class WorkflowType(Enum):
     def from_value(cls, value):
         if value == cls.BCL_CONVERT.value:
             return cls.BCL_CONVERT
+        elif value == cls.DRAGEN_WGTS_QC.value:
+            return cls.DRAGEN_WGTS_QC
         elif value == cls.DRAGEN_WGS_QC.value:
             return cls.DRAGEN_WGS_QC
+        elif value == cls.DRAGEN_WTS_QC.value:
+            return cls.DRAGEN_WTS_QC
         elif value == cls.TUMOR_NORMAL.value:
             return cls.TUMOR_NORMAL
         elif value == cls.DRAGEN_TSO_CTDNA.value:
@@ -185,6 +191,8 @@ class SecondaryAnalysisHelper(WorkflowHelper):
     def __init__(self, type_: WorkflowType):
         allowed_workflow_types = [
             WorkflowType.DRAGEN_WGS_QC,
+            WorkflowType.DRAGEN_WGTS_QC,
+            WorkflowType.DRAGEN_WTS_QC,
             WorkflowType.DRAGEN_TSO_CTDNA,
             WorkflowType.DRAGEN_WTS,
             WorkflowType.TUMOR_NORMAL,
@@ -368,6 +376,13 @@ class LabMetadataRule:
         from data_portal.models.labmetadata import LabMetadataType
         if self.this_metadata.type.lower() != LabMetadataType.WGS.value.lower():
             raise LabMetadataRuleError(f"'WGS' != '{self.this_metadata.type}'.")
+        return self
+
+    def must_be_wgts(self):
+        from data_portal.models.labmetadata import LabMetadataType
+        wgts_values = [ LabMetadataType.WGS.value.lower(), LabMetadataType.WTS.value.lower() ]
+        if self.this_metadata.type.lower() not in wgts_values:
+            raise LabMetadataRuleError(f"'WGS' or 'WTS' != '{self.this_metadata.type}'.")
         return self
 
     def must_be_wts(self):

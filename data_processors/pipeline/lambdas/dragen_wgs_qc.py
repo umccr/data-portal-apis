@@ -15,6 +15,7 @@ import logging
 
 from data_portal.models.workflow import Workflow
 from data_processors.pipeline.services import sequencerun_srv, batch_srv, workflow_srv, metadata_srv, libraryrun_srv
+from data_portal.models.labmetadata import LabMetadataType
 from data_processors.pipeline.domain.workflow import WorkflowType, SecondaryAnalysisHelper
 from data_processors.pipeline.lambdas import wes_handler
 from libumccr import libjson, libdt
@@ -87,7 +88,7 @@ def handler(event, context) -> dict:
     :return: workflow db record id, wfr_id, sample_name in JSON string
     """
 
-    logger.info(f"Start processing {WorkflowType.DRAGEN_WGS_QC.value} event")
+    logger.info(f"Start processing {WorkflowType.DRAGEN_WGTS_QC.value} event")
     logger.info(libjson.dumps(event))
 
     # Extract name of sample and the fastq list rows
@@ -103,13 +104,33 @@ def handler(event, context) -> dict:
 
     sample_name = fastq_list_rows[0]['rgsm']
 
-    # Set workflow helper
-    wfl_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WGS_QC)
+    # Get metadata by library id
+    library_lab_metadata = metadata_srv.get_metadata_by_library_id(library_id)
 
+    # Check type is not None
+    if library_lab_metadata is None:
+        logger.error(f"Expected to retrieve metadata for library '{library_id}' but no metadata was returned")
+        raise ValueError
+
+    # We set the RNA flag and set the workflow type based on the library lab metadata
+    if library_lab_metadata.type == LabMetadataType.WTS:
+        workflow_type = WorkflowType.DRAGEN_WTS_QC
+        enable_rna = True
+    elif library_lab_metadata.type == LabMetadataType.WGS:
+        workflow_type = WorkflowType.DRAGEN_WGS_QC
+        enable_rna = False
+    else:
+        logger.error(f"Expected metadata type for library id '{library_id}' to be one of WGS or WTS")
+        raise ValueError
+
+    wfl_helper = SecondaryAnalysisHelper(workflow_type)
+
+    # Set workflow helper
     workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input["output_file_prefix"] = f"{sample_name}"
     workflow_input["output_directory"] = f"{library_id}__{lane}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
+    workflow_input["enable_rna"] = enable_rna
 
     # read workflow id and version from parameter store
     workflow_id = wfl_helper.get_workflow_id()
@@ -125,13 +146,16 @@ def handler(event, context) -> dict:
 
     workflow_engine_parameters = wfl_helper.get_engine_parameters(target_id=subject_id, secondary_target_id=None)
 
-    wfl_run = wes_handler.launch({
-        'workflow_id': workflow_id,
-        'workflow_version': workflow_version,
-        'workflow_run_name': workflow_run_name,
-        'workflow_input': workflow_input,
-        'workflow_engine_parameters': workflow_engine_parameters
-    }, context)
+    wfl_run = wes_handler.launch(
+        {
+            'workflow_id': workflow_id,
+            'workflow_version': workflow_version,
+            'workflow_run_name': workflow_run_name,
+            'workflow_input': workflow_input,
+            'workflow_engine_parameters': workflow_engine_parameters
+        },
+        context
+    )
 
     workflow: Workflow = workflow_srv.create_or_update_workflow(
         {

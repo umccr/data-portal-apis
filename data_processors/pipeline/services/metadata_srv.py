@@ -99,6 +99,30 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
 
 
 @transaction.atomic
+def get_wts_metadata_by_wts_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadata], List[str]):
+    meta_list = list()
+
+    libraries = []
+    for qc_workflow in qc_workflows:
+        for lib_run in workflow_srv.get_all_library_runs_by_workflow(qc_workflow):
+            libraries.append(lib_run.library_id)
+
+    qs: QuerySet = LabMetadata.objects.filter(
+        library_id__in=libraries,
+        phenotype__in=[LabMetadataPhenotype.TUMOR.value],
+        type__in=[LabMetadataType.WTS.value],
+        workflow__in=[LabMetadataWorkflow.CLINICAL.value, LabMetadataWorkflow.RESEARCH.value],
+    )
+
+    if qs.exists():
+        for meta in qs.all():
+            meta_list.append(meta)
+
+    return meta_list, libraries
+
+
+
+@transaction.atomic
 def get_wts_metadata_by_subject(subject_id: str) -> List[LabMetadata]:
     """
     Business logic:
