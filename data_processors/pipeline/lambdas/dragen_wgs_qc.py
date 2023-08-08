@@ -116,9 +116,11 @@ def handler(event, context) -> dict:
     if library_lab_metadata.type == LabMetadataType.WTS:
         workflow_type = WorkflowType.DRAGEN_WTS_QC
         enable_rna = True
+        enable_duplicate_marking = False
     elif library_lab_metadata.type == LabMetadataType.WGS:
         workflow_type = WorkflowType.DRAGEN_WGS_QC
         enable_rna = False
+        enable_duplicate_marking = True
     else:
         logger.error(f"Expected metadata type for library id '{library_id}' to be one of WGS or WTS")
         raise ValueError
@@ -131,6 +133,7 @@ def handler(event, context) -> dict:
     workflow_input["output_directory"] = f"{library_id}__{lane}_dragen"
     workflow_input["fastq_list_rows"] = fastq_list_rows
     workflow_input["enable_rna"] = enable_rna
+    workflow_input["enable_duplicate_marking"] = enable_duplicate_marking
 
     # read workflow id and version from parameter store
     workflow_id = wfl_helper.get_workflow_id()
