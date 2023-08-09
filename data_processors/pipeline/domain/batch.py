@@ -55,7 +55,7 @@ class Batcher:
     def _prepare_batch_context(self):
         if self.batch.context_data is None:
             # cache batch context data in db
-            fastq_list_rows = self.fastq_srv.get_fastq_list_row_by_sequence_name(self.sqr.name)
+            fastq_list_rows = self.fastq_srv.get_fastq_list_row_by_sequence_run(self.sqr)
             self.batch = self.batch_srv.update_batch(self.batch.id, context_data=fastq_list_rows)
 
     # --- external behaviours
