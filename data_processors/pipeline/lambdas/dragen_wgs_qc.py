@@ -134,9 +134,9 @@ def handler(event, context) -> dict:
         workflow_input["enable_duplicate_marking"] = True
         workflow_input["enable_rna"] = False
         # Drop rna specific parameters
-        _ = workflow_input.pop("enable_rna_quantification")
-        _ = workflow_input.pop("enable_rrna_filter")
-        _ = workflow_input.pop("annotation_file")
+        _ = workflow_input.pop("enable_rna_quantification", None)
+        _ = workflow_input.pop("enable_rrna_filter", None)
+        _ = workflow_input.pop("annotation_file", None)
 
     # Set workflow helper
     workflow_input["output_file_prefix"] = f"{sample_name}"
