@@ -2,6 +2,11 @@ import json
 from datetime import datetime
 from unittest import skip
 
+import boto3
+from botocore import stub
+from botocore.stub import Stubber
+from botocore.client import BaseClient
+from libumccr import aws
 from mockito import when, mock
 
 from data_processors.pipeline.domain.somalier import HolmesPipeline
@@ -38,11 +43,25 @@ class SomalierExtractUnitTests(PipelineUnitTestCase):
 
         when(HolmesPipeline).extract(...).thenReturn(mock_holmes_pipeline)
 
-        # mockito to intercept Holmes pipeline service discovery and make it found
-        when(HolmesPipeline).discover_service_id().thenReturn("mock_holmes_fingerprint_service")
-        when(HolmesPipeline).discover_service_attributes().thenReturn({
-            "extractStepsArn": "extractStepsArn",
-        })
+        # we create a valid boto3 client and then stub it out to return a mock response
+        client = boto3.client('servicediscovery')
+        stubber = Stubber(client)
+        stubber.add_response('discover_instances', {
+            "Instances": [
+                {
+                    "Attributes": {
+                        "extractStepsArn": "arn:fake:extract"
+                    }
+                }
+            ]
+        }, {
+                                 "NamespaceName": stub.ANY,
+                                 "ServiceName": stub.ANY
+                             })
+        stubber.activate()
+
+        # return the mocked service discovery client
+        when(aws).srv_discovery_client(...).thenReturn(client)
 
         result = somalier_extract.handler({
             "index": "gds://vol/fol/MDX123456.bam",

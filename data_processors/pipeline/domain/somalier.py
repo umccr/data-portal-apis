@@ -126,11 +126,19 @@ class HolmesPipeline(HolmesInterface):
             ServiceName=self.SERVICE_NAME
         )
 
-        if len(discovery_result.Instances) != 1:
+        discovery_instances = discovery_result.get("Instances", None)
+
+        if not discovery_instances or len(discovery_instances) != 1:
             raise RuntimeError(f"We need to discover exactly one instance of "
                                f"service {self.SERVICE_NAME} in namespace {self.NAMESPACE_NAME}")
 
-        self.extract_steps_arn = discovery_result.Instances[0].Attributes[self.EXTRACT_STEPS_ARN_KEY]
+        discovery_attributes = discovery_instances[0].get("Attributes", None)
+
+        if not discovery_attributes or self.EXTRACT_STEPS_ARN_KEY not in discovery_attributes:
+            raise RuntimeError(f"We need to find an attribute {self.EXTRACT_STEPS_ARN_KEY} "
+                               f"in the discovered service {self.SERVICE_NAME} in namespace {self.NAMESPACE_NAME}")
+
+        self.extract_steps_arn = discovery_attributes[self.EXTRACT_STEPS_ARN_KEY]
 
         self.execution_arn = None
         self.execution_instance = None
