@@ -5,7 +5,6 @@ from unittest import skip
 import boto3
 from botocore import stub
 from botocore.stub import Stubber
-from botocore.client import BaseClient
 from libumccr import aws
 from mockito import when, mock
 
@@ -44,6 +43,7 @@ class SomalierExtractUnitTests(PipelineUnitTestCase):
         when(HolmesPipeline).extract(...).thenReturn(mock_holmes_pipeline)
 
         # we create a valid boto3 client and then stub it out to return a mock response
+        # for the calls we know we will make in this test
         client = boto3.client('servicediscovery')
         stubber = Stubber(client)
         stubber.add_response('discover_instances', {
