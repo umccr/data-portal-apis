@@ -17,7 +17,6 @@ import logging
 from libumccr import libjson
 
 from data_processors.pipeline.domain.somalier import HolmesPipeline, HolmesExtractDto, SomalierReferenceSite
-from data_processors.pipeline.lambdas import somalier_check
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -75,15 +74,6 @@ def handler(event, context) -> dict:
 
     index: str = event['index']
     reference_str: str = event['reference']
-
-    # Do a Check call to determine whether fingerprint has been done before
-    execution_result = somalier_check.handler(event, context)
-    if execution_result and 'output' in execution_result:
-        # We have existing fingerprint somalier output
-        return {
-            'message': "NOT_RUNNING",
-            'check': execution_result,
-        }
 
     dto = HolmesExtractDto(
         run_name=HolmesPipeline.get_step_function_instance_name(prefix="somalier_extract", index=index),

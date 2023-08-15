@@ -107,59 +107,42 @@ class HolmesInterface(ABC):
     def extract(self, dto: HolmesDto):
         pass
 
-    @abstractmethod
-    def check(self, dto: HolmesDto):
-        pass
-
 
 class HolmesPipeline(HolmesInterface):
     """
     A wrapper impl using Boto3.
     """
 
+    NAMESPACE_NAME = "umccr"
     SERVICE_NAME = "fingerprint"
-    CHECK_STEPS_ARN_KEY = "checkStepsArn"
     EXTRACT_STEPS_ARN_KEY = "extractStepsArn"
 
     def __init__(self):
         self.srv_discovery_client = aws.srv_discovery_client()
         self.stepfn_client = aws.stepfn_client()
 
-        self.service_id = self.discover_service_id()
-        self.service_attributes = self.discover_service_attributes()
+        discovery_result = self.srv_discovery_client.discover_instances(
+            NamespaceName=self.NAMESPACE_NAME,
+            ServiceName=self.SERVICE_NAME
+        )
 
-        self.check_steps_arn = self.service_attributes[self.CHECK_STEPS_ARN_KEY]
-        self.extract_steps_arn = self.service_attributes[self.EXTRACT_STEPS_ARN_KEY]
+        discovery_instances = discovery_result.get("Instances", None)
+
+        if not discovery_instances or len(discovery_instances) != 1:
+            raise RuntimeError(f"We need to discover exactly one instance of "
+                               f"service {self.SERVICE_NAME} in namespace {self.NAMESPACE_NAME}")
+
+        discovery_attributes = discovery_instances[0].get("Attributes", None)
+
+        if not discovery_attributes or self.EXTRACT_STEPS_ARN_KEY not in discovery_attributes:
+            raise RuntimeError(f"We need to find an attribute {self.EXTRACT_STEPS_ARN_KEY} "
+                               f"in the discovered service {self.SERVICE_NAME} in namespace {self.NAMESPACE_NAME}")
+
+        self.extract_steps_arn = discovery_attributes[self.EXTRACT_STEPS_ARN_KEY]
 
         self.execution_arn = None
         self.execution_instance = None
         self.execution_result = None
-
-    def discover_service_id(self) -> str:
-        fingerprint_service_id_list = list(
-            filter(
-                lambda x: x.get("Name") == self.SERVICE_NAME,
-                self.srv_discovery_client.list_services().get("Services")
-            )
-        )
-
-        if len(fingerprint_service_id_list) == 0:
-            raise RuntimeError("Could not find the fingerprint services")
-
-        return fingerprint_service_id_list[0].get("Id")
-
-    def discover_service_attributes(self) -> Dict:
-        instances: List = self.srv_discovery_client.list_instances(ServiceId=self.service_id).get("Instances", None)
-
-        if instances is None or len(instances) == 0:
-            raise RuntimeError(f"Could not list-instances for service-id: {self.service_id}")
-
-        attributes_dict: Dict = instances[0].get("Attributes", None)
-
-        if attributes_dict is None:
-            raise RuntimeError("Could not get attributes list")
-
-        return attributes_dict
 
     def poll(self):
         """start polling step function execution_arn
@@ -188,24 +171,6 @@ class HolmesPipeline(HolmesInterface):
                 "indexes": dto.indexes,
                 "reference": dto.reference.value,
             })
-        )
-
-        self.execution_instance = step_function_instance_obj
-        self.execution_arn = step_function_instance_obj['executionArn']
-        return self
-
-    def check(self, dto: HolmesCheckDto):
-        """payload bound to holmes check interface
-        https://github.com/umccr/holmes#check
-        """
-        step_function_instance_obj = self.stepfn_client.start_execution(
-            stateMachineArn=self.check_steps_arn,
-            name=dto.run_name,
-            input=libjson.dumps(
-                {
-                    "indexes": dto.indexes,
-                }
-            )
         )
 
         self.execution_instance = step_function_instance_obj
