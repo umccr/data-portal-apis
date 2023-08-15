@@ -107,10 +107,6 @@ class HolmesInterface(ABC):
     def extract(self, dto: HolmesDto):
         pass
 
-    @abstractmethod
-    def check(self, dto: HolmesDto):
-        pass
-
 
 class HolmesPipeline(HolmesInterface):
     """
@@ -119,7 +115,6 @@ class HolmesPipeline(HolmesInterface):
 
     NAMESPACE_NAME = "umccr"
     SERVICE_NAME = "fingerprint"
-    CHECK_LAMBDA_ARN_KEY = "checkLambdaArn"
     EXTRACT_STEPS_ARN_KEY = "extractStepsArn"
 
     def __init__(self):
@@ -135,7 +130,6 @@ class HolmesPipeline(HolmesInterface):
             raise RuntimeError(f"We need to discover exactly one instance of "
                                f"service {self.SERVICE_NAME} in namespace {self.NAMESPACE_NAME}")
 
-        self.check_steps_arn = discovery_result.Instances[0].Attributes[self.CHECK_LAMBDA_ARN_KEY]
         self.extract_steps_arn = discovery_result.Instances[0].Attributes[self.EXTRACT_STEPS_ARN_KEY]
 
         self.execution_arn = None
@@ -169,24 +163,6 @@ class HolmesPipeline(HolmesInterface):
                 "indexes": dto.indexes,
                 "reference": dto.reference.value,
             })
-        )
-
-        self.execution_instance = step_function_instance_obj
-        self.execution_arn = step_function_instance_obj['executionArn']
-        return self
-
-    def check(self, dto: HolmesCheckDto):
-        """payload bound to holmes check interface
-        https://github.com/umccr/holmes#check
-        """
-        step_function_instance_obj = self.stepfn_client.start_execution(
-            stateMachineArn=self.check_steps_arn,
-            name=dto.run_name,
-            input=libjson.dumps(
-                {
-                    "indexes": dto.indexes,
-                }
-            )
         )
 
         self.execution_instance = step_function_instance_obj

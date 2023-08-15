@@ -5,7 +5,7 @@ from unittest import skip
 from mockito import when, mock
 
 from data_processors.pipeline.domain.somalier import HolmesPipeline
-from data_processors.pipeline.lambdas import somalier_extract, somalier_check
+from data_processors.pipeline.lambdas import somalier_extract
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 
@@ -37,12 +37,10 @@ class SomalierExtractUnitTests(PipelineUnitTestCase):
         mock_holmes_pipeline.execution_arn = mock_execution_instance['executionArn']
 
         when(HolmesPipeline).extract(...).thenReturn(mock_holmes_pipeline)
-        when(somalier_check).handler(...).thenReturn(None)
 
         # mockito to intercept Holmes pipeline service discovery and make it found
         when(HolmesPipeline).discover_service_id().thenReturn("mock_holmes_fingerprint_service")
         when(HolmesPipeline).discover_service_attributes().thenReturn({
-            "checkStepsArn": "checkStepsArn",
             "extractStepsArn": "extractStepsArn",
         })
 

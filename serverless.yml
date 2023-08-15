@@ -364,12 +364,6 @@ functions:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 60
 
-  somalier_check:
-    handler: data_processors.pipeline.lambdas.somalier_check.handler
-    layers:
-      - { Ref: PythonRequirementsLambdaLayer }
-    timeout: 28
-
 custom:
   enabled:
     dev: false
