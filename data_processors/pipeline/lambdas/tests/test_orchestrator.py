@@ -158,7 +158,7 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
         self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
-        self.assertTrue('DRAGEN_WTS_STEP' in results)
+        self.assertFalse('DRAGEN_WTS_STEP' in results)
 
     def test_skip_list_run_skip(self):
         """
@@ -176,16 +176,16 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
         when(fastq_update_step).perform(...).thenReturn("FASTQ_UPDATE_STEP")
         when(google_lims_update_step).perform(...).thenReturn('GOOGLE_LIMS_UPDATE_STEP')
-        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGS_QC_STEP')
+        when(dragen_wgs_qc_step).perform(...).thenReturn('DRAGEN_WGTS_QC_STEP')
         when(dragen_tso_ctdna_step).perform(...).thenReturn('DRAGEN_TSO_CTDNA_STEP')
-        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_STEP')
+        when(dragen_wts_step).perform(...).thenReturn('DRAGEN_WTS_QC_STEP')
 
         run_id = TestConstant.instrument_run_id.value
         skiplist = {
             'global': [],
             'by_run': {
                 run_id: [
-                    "DRAGEN_WGS_QC_STEP"
+                    "DRAGEN_WGTS_QC_STEP"
                 ]
             }
         }
@@ -193,9 +193,8 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         results = orchestrator.next_step(mock_workflow, skiplist, None)
         logger.info(results)
 
-        self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
+        self.assertFalse('DRAGEN_WGTS_QC_STEP' in results)
         self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
-        self.assertTrue('DRAGEN_WTS_STEP' in results)
 
         skiplist = {
             'global': ["DRAGEN_WGS_QC_STEP"],
@@ -250,14 +249,13 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         # by_run skip list should not apply, since run id mismatch, so all workflows should be listed
         self.assertTrue('DRAGEN_WGS_QC_STEP' in results)
         self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
-        self.assertTrue('DRAGEN_WTS_STEP' in results)
+        self.assertFalse('DRAGEN_WTS_STEP' in results)
 
         skiplist = {
             'global': ["DRAGEN_WGS_QC_STEP"],
             'by_run': {
                 run_id: [
                     "DRAGEN_TSO_CTDNA_STEP",
-                    "DRAGEN_WTS_STEP"
                 ]
             }
         }
@@ -268,7 +266,6 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         # only global skip list should apply, due to run ID mismatch
         self.assertFalse('DRAGEN_WGS_QC_STEP' in results)
         self.assertTrue('DRAGEN_TSO_CTDNA_STEP' in results)
-        self.assertTrue('DRAGEN_WTS_STEP' in results)
 
 
 class OrchestratorIntegrationTests(PipelineIntegrationTestCase):

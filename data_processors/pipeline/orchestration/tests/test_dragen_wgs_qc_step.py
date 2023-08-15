@@ -123,7 +123,7 @@ class DragenWgsQcStepUnitTests(PipelineUnitTestCase):
         for br in BatchRun.objects.all():
             logger.info(f"BATCH_RUN: {br}")
 
-        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.value]
+        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGTS_QC.value]
 
         self.assertTrue(wgs_qc_batch_runs[0].running)
 

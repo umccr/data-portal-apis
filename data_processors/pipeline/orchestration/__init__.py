@@ -25,8 +25,13 @@ from typing import List
 
 import pandas as pd
 
+from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType
 from data_processors.pipeline.tools import liborca
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def _reduce_and_transform_to_df(meta_list: List[LabMetadata]) -> pd.DataFrame:
@@ -72,3 +77,14 @@ def _mint_libraries(libraries):
     for lib in libraries:
         s.add(liborca.strip_topup_rerun_from_library_id(lib))
     return list(s)
+
+
+def _handle_rerun(fastq_list_rows: List[FastqListRow], library_id):
+    for fastq_list_row in fastq_list_rows:
+        full_sample_library_id = fastq_list_row.rgid.rsplit(".", 1)[-1]
+        if liborca.sample_library_id_has_rerun(full_sample_library_id):
+            logger.warning(f"We found a rerun for library id {library_id} in {full_sample_library_id}. "
+                           f"Please run this sample manually")
+            # Reset fastq list rows - we don't know what to do with reruns
+            return []
+    return fastq_list_rows

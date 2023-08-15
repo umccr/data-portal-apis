@@ -5,19 +5,18 @@ See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
 import logging
-from typing import List
+from typing import List, Dict
 
 import pandas as pd
-from libumccr import libjson
 from libumccr.aws import libssm, libsqs
 
+from data_portal.models.fastqlistrow import FastqListRow
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.workflow import Workflow
-from data_processors.pipeline.domain.batch import Batcher, BatchRule, BatchRuleError
 from data_processors.pipeline.domain.config import SQS_DRAGEN_WTS_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import WorkflowType, LabMetadataRule, LabMetadataRuleError
-from data_processors.pipeline.services import batch_srv, fastq_srv, metadata_srv, libraryrun_srv
-from data_processors.pipeline.tools import liborca
+from data_processors.pipeline.domain.workflow import WorkflowType
+from data_processors.pipeline.orchestration import _reduce_and_transform_to_df, _extract_unique_subjects, _handle_rerun
+from data_processors.pipeline.services import workflow_srv, metadata_srv, fastq_srv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,90 +25,99 @@ logger.setLevel(logging.INFO)
 def perform(this_workflow: Workflow):
     logger.info(f"Preparing {WorkflowType.DRAGEN_WTS.value} workflows")
 
-    batcher = Batcher(
-        workflow=this_workflow,
-        run_step=WorkflowType.DRAGEN_WTS.value,
-        batch_srv=batch_srv,
-        fastq_srv=fastq_srv,
-        logger=logger,
+    this_sqr = this_workflow.sequence_run
+
+    # Check if all other DRAGEN_WTS_QC workflows for this run have finished
+    # If yes we continue to the DRAGEN WTS Workflow
+    # If not we wait (until all DRAGEN_WTS_QC workflows for this run have finished
+    running: List[Workflow] = workflow_srv.get_running_by_sequence_run(
+        sequence_run=this_sqr,
+        workflow_type=WorkflowType.DRAGEN_WTS_QC
+    )
+    succeeded: List[Workflow] = workflow_srv.get_succeeded_by_sequence_run(
+        sequence_run=this_sqr,
+        workflow_type=WorkflowType.DRAGEN_WTS_QC
     )
 
-    if batcher.batch_run is None:
-        return batcher.get_skip_message()
+    subjects = list()
+    job_list = list()
 
-    # prepare job list and dispatch to job queue
-    job_list = prepare_dragen_wts_jobs(batcher)
-    if job_list:
-        libsqs.dispatch_jobs(
-            queue_arn=libssm.get_ssm_param(SQS_DRAGEN_WTS_QUEUE_ARN),
-            job_list=job_list
-        )
+    if len(running) == 0:
+        logger.info("All QC workflows finished, proceeding to dragen wts preparation")
+
+        meta_list, run_libraries = metadata_srv.get_wts_metadata_by_wts_qc_runs(succeeded)
+
+        if not meta_list:
+            logger.warning(f"No dragen wts metadata found for given run libraries: {run_libraries}")
+
+        job_list, subjects = prepare_dragen_wts_jobs(meta_list)
+
+        if job_list:
+            logger.info(f"Submitting {len(job_list)} WTS jobs for {subjects}")
+            queue_arn = libssm.get_ssm_param(SQS_DRAGEN_WTS_QUEUE_ARN)
+            libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=job_list)
+        else:
+            logger.warning(f"Calling to prepare_tumor_normal_jobs() return empty list, no job to dispatch...")
     else:
-        batcher.reset_batch_run()  # reset running if job_list is empty
+        logger.warning(f"DRAGEN_WTS_QC workflow finished, but {len(running)} still running. Wait for them to finish...")
 
-    return batcher.get_status()
+    return {
+        "subjects": subjects,
+        "job_list": job_list,
+    }
 
 
-def prepare_dragen_wts_jobs(batcher: Batcher) -> List[dict]:
+def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
     """
-    NOTE: like DRAGEN_WGS_QC CWL workflow, DRAGEN_WTS also uses fastq_list_rows format
+    NOTE: like TN Workflow dragen wts now uses the metadata list format
     See ICA catalogue
-    https://github.com/umccr/cwl-ica/blob/main/.github/catalogue/docs/workflows/dragen-transcriptome-pipeline/3.8.4/dragen-transcriptome-pipeline__3.8.4.md
+    https://github.com/umccr/cwl-ica/blob/main/.github/catalogue/docs/workflows/dragen-transcriptome-pipeline/3.9.3/dragen-transcriptome-pipeline__3.9.3.md
 
     DRAGEN_WTS job preparation is at _pure_ Library level.
     Here "Pure" Library ID means we don't need to worry about _topup(N) or _rerun(N) suffixes.
 
-    :param batcher:
-    :return:
+    :param meta_list:
+    :return: job_list, subjects, submitting_subjects
     """
-    job_list = []
-    fastq_list_rows: List[dict] = libjson.loads(batcher.batch.context_data)
+    job_list = list()
 
-    # iterate through each sample group by rglb
-    for rglb, rglb_df in pd.DataFrame(fastq_list_rows).groupby("rglb"):
-        # Check rgsm is identical
-        # .item() will raise error if there exists more than one sample name for a given library
-        rgsm = rglb_df['rgsm'].unique().item()
+    # step 1 and 3
+    if not meta_list:
+        return [], [], []
 
-        # Get the metadata for the library
-        # NOTE: this will use the library base ID (i.e. without topup/rerun extension), as the metadata is the same
-        this_metadata: LabMetadata = metadata_srv.get_metadata_by_library_id(rglb)
+    meta_list_df = _reduce_and_transform_to_df(meta_list)
 
-        try:
-            LabMetadataRule(this_metadata) \
-                .must_set_workflow() \
-                .must_not_manual() \
-                .must_not_bcl() \
-                .must_not_qc() \
-                .must_be_wts() \
-                .must_be_tumor()
+    if meta_list_df.shape[0] == 0:
+        return [], [], []
 
-            BatchRule(
-                batcher=batcher,
-                this_library=str(rglb),
-                libraryrun_srv=libraryrun_srv
-            ).must_not_have_succeeded_runs()
+    subjects = _extract_unique_subjects(meta_list_df)
 
-        except LabMetadataRuleError as me:
-            logger.warning(f"SKIP {WorkflowType.DRAGEN_WTS.value} workflow for '{rgsm}_{rglb}'. {me}")
-            continue
+    logger.info(f"Preparing Dragen WTS for subjects {subjects}")
 
-        except BatchRuleError as be:
-            logger.warning(f"SKIP {be}")
-            continue
+    # iterate through each sample group by the library id
+    # we use the drop_duplicates so that if there are libraries split across multiple lanes,
+    # the get_metadata_by_library_id will collect this.
+    for index, row in meta_list_df[["subject_id", "library_id"]].drop_duplicates().iterrows():
 
-        # Update read 1 and read 2 strings to cwl file paths
-        rglb_df["read_1"] = rglb_df["read_1"].apply(liborca.cwl_file_path_as_string_to_dict)
-        rglb_df["read_2"] = rglb_df["read_2"].apply(liborca.cwl_file_path_as_string_to_dict)
+        fastq_list_rows = fastq_srv.get_fastq_list_row_by_rglb(row.library_id)
 
-        job = {
-            "library_id": f"{rglb}",
-            "fastq_list_rows": rglb_df.to_dict(orient="records"),
-            "seq_run_id": batcher.sqr.run_id if batcher.sqr else None,
-            "seq_name": batcher.sqr.name if batcher.sqr else None,
-            "batch_run_id": int(batcher.batch_run.id)
-        }
+        # Check library id for rerun
+        fastq_list_rows = _handle_rerun(fastq_list_rows, row.library_id)
 
-        job_list.append(job)
+        job_list.append(create_wts_job(fastq_list_rows, subject_id=row.subject_id, library_id=row.library_id))
 
-    return job_list
+    return job_list, subjects
+
+
+def create_wts_job(fastq_list_rows: List[FastqListRow], subject_id: str, library_id: str) -> Dict:
+    # Get fastq list rows into dict format
+    fqlr = pd.DataFrame([fq_list_row.to_dict() for fq_list_row in fastq_list_rows]).to_dict(orient="records")
+
+    # create WTS job definition
+    job_dict = {
+        "subject_id": subject_id,
+        "library_id": library_id,
+        "fastq_list_rows": fqlr
+    }
+
+    return job_dict

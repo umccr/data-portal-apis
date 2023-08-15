@@ -387,7 +387,7 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
 
         self.assertEqual(1, Workflow.objects.count())
 
-        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGS_QC.value]
+        wgs_qc_batch_runs = [br for br in BatchRun.objects.all() if br.step == WorkflowType.DRAGEN_WGTS_QC.value]
 
         self.assertTrue(BatchRun.objects.count() > 1)
         self.assertTrue(wgs_qc_batch_runs[0].running)

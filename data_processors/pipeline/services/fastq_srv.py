@@ -64,8 +64,17 @@ def create_or_update_fastq_list_row(fastq_list_row: dict, sequence_run: Sequence
 
 
 @transaction.atomic
-def get_fastq_list_row_by_sequence_name(sequence_name):
-    qs = FastqListRow.objects.filter(sequence_run__name__iexact=sequence_name)
+def get_fastq_list_row_by_sequence_run(sqr: SequenceRun):
+    """
+    Business logic:
+    Find FastqListRow records by linked SequenceRun instance
+    Note, it is safer to perform lookup filter by specific SequenceRun instance
+    as there can be multiple SequenceRun entries of the same instrument_run_id or sequence name (i.e. event replay)
+
+    This is particularly important in a case re-run with "subset" of BCL Convert output only, such as follows.
+    https://umccr.slack.com/archives/C8CG6K76W/p1690351136620419
+    """
+    qs = FastqListRow.objects.filter(sequence_run=sqr)
     if qs.exists():
         fqlr_list = []
         for fqlr in qs.all():
