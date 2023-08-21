@@ -393,6 +393,29 @@ def parse_wgs_alignment_qc_output_for_bam_file(workflow_output_json: str, deep_c
     return dragen_bam_out['location']
 
 
+def parse_wts_alignment_qc_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
+    """
+    Parse the bam file out of the DRAGEN_WTS_QC (wts_alignment_qc) workflow
+
+    :param workflow_output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return:
+    """
+
+    lookup_keys = ["dragen_bam_out"]
+
+    dragen_bam_out: Dict = parse_workflow_output(workflow_output_json, lookup_keys)
+
+    if deep_check:
+        if dragen_bam_out is None:
+            raise ValueError(f"Unexpected wts_alignment_qc output. The dragen_bam_out is {dragen_bam_out}")
+
+        if 'location' not in dragen_bam_out.keys():
+            raise ValueError(f"Unexpected wts_alignment_qc output. The dragen_bam_out has no location to BAM file")
+
+    return dragen_bam_out['location']
+
+
 def parse_transcriptome_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
     """
     Parse the bam file out of the transcriptome (DRAGEN_WTS or wts_tumor_only) workflow

@@ -238,6 +238,7 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
             results.append(tumor_normal_step.perform(this_workflow))
 
         return results
+
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower() and \
              this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received DRAGEN_WTS_QC workflow notification")
@@ -245,6 +246,12 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
 
         results = list()
+
+        if "SOMALIER_EXTRACT_STEP" in skiplist:
+            logger.info("Skip performing SOMALIER_EXTRACT_STEP")
+        else:
+            logger.info("Performing SOMALIER_EXTRACT_STEP")
+            results.append(somalier_extract_step.perform(this_workflow))
 
         if "DRAGEN_WTS_STEP" in skiplist:
             logger.info("Skip performing DRAGEN_WTS_STEP")

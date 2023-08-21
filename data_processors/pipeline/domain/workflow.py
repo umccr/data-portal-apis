@@ -380,7 +380,7 @@ class LabMetadataRule:
 
     def must_be_wgts(self):
         from data_portal.models.labmetadata import LabMetadataType
-        wgts_values = [ LabMetadataType.WGS.value.lower(), LabMetadataType.WTS.value.lower() ]
+        wgts_values = [LabMetadataType.WGS.value.lower(), LabMetadataType.WTS.value.lower()]
         if self.this_metadata.type.lower() not in wgts_values:
             raise LabMetadataRuleError(f"'WGS' or 'WTS' != '{self.this_metadata.type}'.")
         return self
