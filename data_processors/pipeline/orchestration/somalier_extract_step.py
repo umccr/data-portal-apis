@@ -51,6 +51,9 @@ def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
         gds_bam_path = liborca.parse_wgs_alignment_qc_output_for_bam_file(this_workflow.output)
 
+    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower():
+        gds_bam_path = liborca.parse_wts_alignment_qc_output_for_bam_file(this_workflow.output)
+
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_TSO_CTDNA.value.lower():
         gds_bam_path = liborca.parse_tso_ctdna_output_for_bam_file(this_workflow.output)
         reference = SomalierReferenceSite.HG19_RNA.value  # switch reference site to HG19 if ctTSO

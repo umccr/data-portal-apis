@@ -384,6 +384,55 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         self.assertRegex(dragen_bam_out, r"^gds:\/\/\S+\.bam$")
         logger.info(dragen_bam_out)
 
+    def test_parse_wts_alignment_qc_output_for_bam_file(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_wts_alignment_qc_output_for_bam_file
+        """
+        dragen_bam_out = liborca.parse_wgs_alignment_qc_output_for_bam_file(json.dumps(
+            {
+                "dragen_alignment_output_directory": {
+                    "basename": "L4100001__1_dragen",
+                    "class": "Directory",
+                    "location": "gds://development/temp/dragen_alignment_4_2_4/output/20230808_170056/L4100001__1_dragen",
+                    "nameext": "",
+                    "nameroot": "L4100001__1_dragen",
+                    "size": None
+                },
+                "dragen_bam_out": {
+                    "basename": "PTC_NebRNA111111.bam",
+                    "class": "File",
+                    "http://commonwl.org/cwltool#generation": 0,
+                    "location": "gds://development/temp/dragen_alignment_4_2_4/output/20230808_170056/L4100001__1_dragen/PTC_NebRNA111111.bam",
+                    "nameext": ".bam",
+                    "nameroot": "PTC_NebRNA111111",
+                    "secondaryFiles": [
+                        {
+                            "basename": "PTC_NebRNA111111.bam.bai",
+                            "class": "File",
+                            "http://commonwl.org/cwltool#generation": 0,
+                            "location": "gds://development/temp/dragen_alignment_4_2_4/output/20230808_170056/L4100001__1_dragen/PTC_NebRNA111111.bam.bai",
+                            "nameext": ".bai",
+                            "nameroot": "PTC_NebRNA111111.bam"
+                        }
+                    ],
+                    "size": 1439711974
+                },
+                "multiqc_output_directory": {
+                    "basename": "PTC_NebRNA111111_dragen_alignment_multiqc",
+                    "class": "Directory",
+                    "location": "gds://development/temp/dragen_alignment_4_2_4/output/20230808_170056/PTC_NebRNA111111_dragen_alignment_multiqc",
+                    "nameext": "",
+                    "nameroot": "PTC_NebRNA111111_dragen_alignment_multiqc",
+                    "size": None
+                },
+                "output_dir_gds_folder_id": "fol.123",
+                "output_dir_gds_session_id": "ssn.321"
+            }
+        ))
+
+        self.assertRegex(dragen_bam_out, r"^gds:\/\/\S+\.bam$")
+        logger.info(dragen_bam_out)
+
     def test_parse_transcriptome_output_for_bam_file(self):
         """
         python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_transcriptome_output_for_bam_file

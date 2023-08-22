@@ -112,6 +112,10 @@ def handler(event, context) -> dict:
         logger.error(f"Expected to retrieve metadata for library '{library_id}' but no metadata was returned")
         raise ValueError
 
+    # ###
+    # Read the following step module doc string about workflow typing
+    # `data_processors.pipeline.orchestration.dragen_wgs_qc_step`
+    # ###
     # Get workflow helper
     if library_lab_metadata.type == LabMetadataType.WTS:
         workflow_type = WorkflowType.DRAGEN_WTS_QC
@@ -125,6 +129,7 @@ def handler(event, context) -> dict:
     workflow_input: dict = wfl_helper.get_workflow_input()
 
     # Set flags based on workflow type
+    # See https://github.com/umccr/data-portal-apis/pull/611
     if library_lab_metadata.type == LabMetadataType.WTS:
         workflow_input["enable_duplicate_marking"] = False
         workflow_input["enable_rna"] = True

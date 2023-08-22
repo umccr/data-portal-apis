@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 """wgs_qc_step module
 
+Since Portal 2.2 release[1] "Ocicat", this module handles creating jobs for both WGS and WTS; "DRAGEN Alignment" QC
+workflow, see discussion[2]. The CWL workflow side has no distinction between WGS and WTS; except input parameter
+differences. Prior; we have already typed `wgs_alignment_qc` within Portal Workflow table. To follow this pattern at
+Portal side, created `wts_alignment_qc`. Plus, a placeholder type `wgts_alignment_qc` for handling both sample meta.
+
+[1]: https://github.com/umccr/data-portal-apis/milestones?state=closed
+[2]: https://github.com/umccr/infrastructure/pull/334
+
+
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
