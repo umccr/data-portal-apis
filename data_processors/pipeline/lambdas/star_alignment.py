@@ -5,6 +5,7 @@ except ImportError:
 
 import os
 import django
+from libumccr import libjson
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -43,8 +44,14 @@ def sqs_handler(event, context):
     """
     messages = event['Records']
 
-    # todo loop through messages and call handler
-    handler(None, None)
+    results = []
+    for message in messages:
+        job = libjson.loads(message['body'])
+        results.append(handler(job, context))
+
+    return {
+        'results': results
+    }
 
 
 def handler(event, context) -> dict:

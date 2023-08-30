@@ -237,6 +237,29 @@ class SecondaryAnalysisHelper(WorkflowHelper):
         return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{self.portal_run_id}"
 
 
+class ExternalWorkflowHelper(WorkflowHelper):
+
+    def __init__(self, type_: WorkflowType):
+        allowed_workflow_types = [
+            WorkflowType.STAR_ALIGNMENT
+        ]
+        if type_ not in allowed_workflow_types:
+            raise ValueError(f"Unsupported WorkflowType for external analysis: {type_}")
+        self.type = type_
+        self.date_time = datetime.utcnow()
+        self.portal_run_id = f"{self.date_time.strftime('%Y%m%d')}{str(uuid4())[:8]}"
+
+    def get_mid_path(self, target_id: str, secondary_target_id: str = None) -> str:
+        raise NotImplementedError
+
+    def get_engine_parameters(self, **kwargs) -> dict:
+        raise NotImplementedError
+
+    def construct_workflow_name(self, **kwargs):
+        raise NotImplementedError
+
+
+
 class SequenceRuleError(ValueError):
     pass
 

@@ -149,7 +149,7 @@ load_localstack() {
   create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_rnasum_queue_arn'
   create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_somalier_extract_queue_arn'
   create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_notification_queue_arn'
-  # todo create star_alignment Q
+  create_fifo_sqs_queue_from_ssm_parameter '/data_portal/backend/sqs_star_alignment_queue_arn'
 
   eval '${aws_local_cmd} sqs list-queues --output json'
 }
