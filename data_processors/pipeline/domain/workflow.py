@@ -80,14 +80,24 @@ class WorkflowRunEventType(Enum):
 
 
 class WorkflowHelper(ABC):
-    prefix = "umccr__automated"
-    workdir_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/workdir_root")
-    output_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/output_root")
 
     def __init__(self, type_: WorkflowType):
         self.type = type_
         self.date_time = datetime.utcnow()
         self.portal_run_id = f"{self.date_time.strftime('%Y%m%d')}{str(uuid4())[:8]}"
+
+    def get_portal_run_id(self) -> str:
+        return self.portal_run_id
+
+
+
+class IcaWorkflowHelper(WorkflowHelper):
+    prefix = "umccr__automated"
+    workdir_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/workdir_root")
+    output_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/output_root")
+
+    def __init__(self, type_: WorkflowType):
+        super().__init__(type_)
         self.workflow_id = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id")
         self.workflow_version = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/version")
         input_template = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input")
@@ -107,11 +117,11 @@ class WorkflowHelper(ABC):
 
     @staticmethod
     def get_workdir_root():
-        return WorkflowHelper.workdir_root
+        return IcaWorkflowHelper.workdir_root
 
     @staticmethod
     def get_output_root():
-        return WorkflowHelper.output_root
+        return IcaWorkflowHelper.output_root
 
     def get_workflow_id(self) -> str:
         return self.workflow_id
@@ -121,9 +131,6 @@ class WorkflowHelper(ABC):
 
     def get_workflow_input(self) -> dict:
         return self.workflow_input
-
-    def get_portal_run_id(self) -> str:
-        return self.portal_run_id
 
     def construct_workdir(self, target_id, secondary_target_id: str = None):
         """
@@ -161,7 +168,7 @@ class WorkflowHelper(ABC):
         raise NotImplementedError
 
 
-class PrimaryDataHelper(WorkflowHelper):
+class PrimaryDataHelper(IcaWorkflowHelper):
 
     def __init__(self, type_: WorkflowType):
         if type_ != WorkflowType.BCL_CONVERT:
@@ -186,10 +193,10 @@ class PrimaryDataHelper(WorkflowHelper):
 
     def construct_workflow_name(self, seq_name: str):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[PORTAL_RUN_ID]
-        return f"{WorkflowHelper.prefix}__{self.type.value}__{seq_name}__{self.portal_run_id}"
+        return f"{IcaWorkflowHelper.prefix}__{self.type.value}__{seq_name}__{self.portal_run_id}"
 
 
-class SecondaryAnalysisHelper(WorkflowHelper):
+class SecondaryAnalysisHelper(IcaWorkflowHelper):
 
     def __init__(self, type_: WorkflowType):
         allowed_workflow_types = [
@@ -234,7 +241,7 @@ class SecondaryAnalysisHelper(WorkflowHelper):
 
     def construct_workflow_name(self, subject_id: str, sample_name: str):
         # pattern: [AUTOMATION_PREFIX]__[WORKFLOW_TYPE]__[WORKFLOW_SPECIFIC_PART]__[PORTAL_RUN_ID]
-        return f"{WorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{self.portal_run_id}"
+        return f"{IcaWorkflowHelper.prefix}__{self.type.value}__{subject_id}__{sample_name}__{self.portal_run_id}"
 
 
 class ExternalWorkflowHelper(WorkflowHelper):
@@ -245,18 +252,7 @@ class ExternalWorkflowHelper(WorkflowHelper):
         ]
         if type_ not in allowed_workflow_types:
             raise ValueError(f"Unsupported WorkflowType for external analysis: {type_}")
-        self.type = type_
-        self.date_time = datetime.utcnow()
-        self.portal_run_id = f"{self.date_time.strftime('%Y%m%d')}{str(uuid4())[:8]}"
-
-    def get_mid_path(self, target_id: str, secondary_target_id: str = None) -> str:
-        raise NotImplementedError
-
-    def get_engine_parameters(self, **kwargs) -> dict:
-        raise NotImplementedError
-
-    def construct_workflow_name(self, **kwargs):
-        raise NotImplementedError
+        super().__init__(type_)
 
 
 
