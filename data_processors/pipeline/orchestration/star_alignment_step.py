@@ -91,11 +91,11 @@ def prepare_star_alignment_job(library_id, subject_id, sqr: SequenceRun) -> dict
     assert len(fastq_list_rows) == 1  # We expect a single record
     fastq_list_row = fastq_list_rows[0]
 
-    helper = ExternalWorkflowHelper(WorkflowType.STAR_ALIGNMENT)
+    # helper = ExternalWorkflowHelper(WorkflowType.STAR_ALIGNMENT)
 
     assert fastq_list_row.rglb == library_id
     return {
-        "portal_run_id": helper.get_portal_run_id(),
+        # "portal_run_id": helper.get_portal_run_id(),
         "subject_id": subject_id,
         "sample_id": fastq_list_row.rgsm,
         "library_id": library_id,

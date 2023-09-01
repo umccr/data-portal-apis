@@ -1,3 +1,7 @@
+from data_portal.models import Workflow
+from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
+from data_processors.pipeline.services import workflow_srv, libraryrun_srv
+
 try:
     import unzip_requirements
 except ImportError:
@@ -5,7 +9,8 @@ except ImportError:
 
 import os
 import django
-from libumccr import libjson
+from datetime import datetime
+from libumccr import libjson, libdt
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -57,15 +62,73 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        ...
+        "subject_id": subject_id,
+        "sample_id": fastq_list_row.rgsm,
+        "library_id": library_id,
+        "fastq_fwd": fastq_list_row.read_1,
+        "fastq_rev": fastq_list_row.read_2,
     }
     """
 
-    # todo WorkflowHelper()
-    #  create new Workflow entry to database
-    #  establish link between Workflow and LibraryRun
-    #  parse job JSON from event for upstream Lambda payload
-    #  call upstream Lambda with Event invocation
-    #  ref impl -->  data_processors.pipeline.lambdas.dragen_wts.handler
+    logger.info(f"Start processing {WorkflowType.DRAGEN_WTS.value} event")
+    logger.info(libjson.dumps(event))
 
-    pass
+    helper = ExternalWorkflowHelper(WorkflowType.STAR_ALIGNMENT)
+
+    # prepare job input
+    portal_run_id = helper.get_portal_run_id()
+    # check essential information is present
+    library_id = event['library_id']
+    sample_id = event['sample_id']
+    subject_id = event['subject_id']
+    fastq_fwd = event['fastq_fwd']
+    fastq_rev = event['fastq_rev']
+    assert library_id is not None
+    assert sample_id is not None
+    assert fastq_fwd is not None
+    assert fastq_rev is not None
+    job = {
+        "portal_run_id": portal_run_id,
+        "subject_id": subject_id,
+        "sample_id": sample_id,
+        "library_id": library_id,
+        "fastq_fwd": fastq_fwd,
+        "fastq_rev": fastq_rev,
+    }
+
+    # submit job
+    # TODO: call star alignment lambda
+
+    # register workflow in workflow table
+    # ToDo: find sensible values for workflow attributes
+    workflow: Workflow = workflow_srv.create_or_update_workflow(
+        {
+            'wfr_name': "",
+            'wfl_id': "",
+            'portal_run_id': portal_run_id,
+            'wfr_id': "",
+            'wfv_id': "",
+            'type': WorkflowType.STAR_ALIGNMENT,
+            'version': "",
+            'input': job,
+            'start': datetime.utcnow().strftime('%Y%m%d'),
+            'end_status': "",
+        }
+    )
+
+    # establish link between Workflow and LibraryRun
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([job['library_id']], workflow)
+
+    result = {
+        'subject_id': subject_id,
+        'library_id': library_id,
+        'id': workflow.id,
+        'wfr_id': workflow.wfr_id,
+        'wfr_name': workflow.wfr_name,
+        'status': workflow.end_status,
+        'start': libdt.serializable_datetime(workflow.start),
+    }
+
+    logger.info(libjson.dumps(result))
+
+    return result
