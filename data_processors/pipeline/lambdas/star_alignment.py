@@ -1,4 +1,7 @@
+from libumccr.aws.liblambda import LambdaInvocationType
+
 from data_portal.models import Workflow
+from data_processors.pipeline.domain.config import STAR_ALIGNMENT_LAMBDA_ARN
 from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
 from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 
@@ -10,7 +13,8 @@ except ImportError:
 import os
 import django
 from datetime import datetime
-from libumccr import libjson, libdt
+from libumccr import libjson, libdt, aws
+from libumccr.aws import libssm
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
@@ -18,8 +22,16 @@ django.setup()
 # ---
 import logging
 
+# TODO: need to find sensible data for those. Could be blank to start with and updated once we receive workflow events?
+WFL_ID = "N/A"
+WFV_ID = "N/A"
+WF_VERSION = "N/A"
+WF_STATUS = "SUBMITTED"
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+lambda_client = aws.lambda_client()
+submission_lambda = libssm.get_ssm_param(STAR_ALIGNMENT_LAMBDA_ARN)
 
 
 def sqs_handler(event, context):
@@ -96,23 +108,27 @@ def handler(event, context) -> dict:
         "fastq_rev": fastq_rev,
     }
 
-    # submit job
-    # TODO: call star alignment lambda
+    # submit job: call star alignment lambda
+    lmbda_response = lambda_client.invoke(
+        FunctionName=submission_lambda,
+        InvocationType=LambdaInvocationType.EVENT.value,
+        Payload=job,
+    )
+    logger.info(f"Submission lambda response: {lmbda_response}")
 
     # register workflow in workflow table
-    # ToDo: find sensible values for workflow attributes
     workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
-            'wfr_name': "",
-            'wfl_id': "",
             'portal_run_id': portal_run_id,
-            'wfr_id': "",
-            'wfv_id': "",
+            'wfr_name': f"star_alignment_{portal_run_id}",  # TODO: do we want to use a "portal_automated" prefix?
+            'wfr_id': f"star.{portal_run_id}",
+            'wfl_id': WFL_ID,
+            'wfv_id': WFV_ID,
+            'version': WF_VERSION,
             'type': WorkflowType.STAR_ALIGNMENT,
-            'version': "",
             'input': job,
             'start': datetime.utcnow().strftime('%Y%m%d'),
-            'end_status': "",
+            'end_status': WF_STATUS,
         }
     )
 

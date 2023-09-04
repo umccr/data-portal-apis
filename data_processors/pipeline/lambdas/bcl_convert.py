@@ -15,7 +15,7 @@ import logging
 from typing import List
 
 import pandas as pd
-from data_portal.models.workflow import Workflow 
+from data_portal.models.workflow import Workflow
 from data_portal.models.labmetadata import LabMetadata
 from data_processors.pipeline.services import notification_srv, sequencerun_srv, workflow_srv, metadata_srv, \
     libraryrun_srv
