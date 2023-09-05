@@ -3,6 +3,7 @@ import logging
 from django.test import TestCase
 from django.utils.timezone import now
 
+from data_portal.fields import IdHelper
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
 
@@ -50,13 +51,15 @@ class LibraryRunTestCase(TestCase):
             type_name="TUMOR_NORMAL",
             wfr_id="wfr.1234fd2222222222222222222222",
             start=now(),
-            end_status='Failed'
+            end_status='Failed',
+            portal_run_id=IdHelper.generate_portal_run_id()
         )
         workflow_3 = Workflow.objects.create(
             type_name="TUMOR_NORMAL",
             wfr_id="wfr.1234fd3333333333333333333333",
             start=now(),
-            end_status='Succeeded'
+            end_status='Succeeded',
+            portal_run_id=IdHelper.generate_portal_run_id()
         )
         library_run_3.workflows.add(workflow_3, workflow_2)
         library_run_2.workflows.add(workflow_2)

@@ -2,14 +2,14 @@ from django.test import TestCase
 
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import DragenWgtsQcWorkflowFactory, TestConstant
+from data_portal.tests.factories import DragenWgsQcWorkflowFactory, TestConstant
 from data_portal.viewsets.tests import _logger
 
 
 class LibraryRunViewSetTestCase(TestCase):
 
     def setUp(self):
-        self.mock_qc_wfl: Workflow = DragenWgtsQcWorkflowFactory()
+        self.mock_qc_wfl: Workflow = DragenWgsQcWorkflowFactory()
 
         self.mock_lib_run = LibraryRun.objects.create(
             library_id=TestConstant.library_id_tumor.value,

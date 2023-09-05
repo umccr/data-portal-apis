@@ -22,13 +22,17 @@ utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 
 
 class TestConstant(Enum):
+    portal_run_id = "20230101abcdefgh"
+    portal_run_id2 = "20230102abcdefgh"
     wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
     wfr_id2 = f"wfr.Q5555aO8zB6yG25Zm6PsgSivGwDx_Uaa"
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
+    umccrise_portal_run_id = "20230103abcdefgh"
     umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
     umccrise_wfv_id = f"wfv.umccrisenVTCE8KhfXEurUfTCqSa6zVx"
     umccrise_wfl_id = f"wfl.umccrisejhzOf3NbqAYjSmzkE1oWKI9H"
+    rnasum_portal_run_id = "20230104abcdefgh"
     rnasum_wfr_id = f"wfr.rnasumzB6yG25Zm6PsgSivJEoq4Ums"
     rnasum_wfv_id = f"wfv.rnasumnVTCE8KhfXEurUfTCqSa6zVx"
     rnasum_wfl_id = f"wfl.rnasumjhzOf3NbqAYjSmzkE1oWKI9H"
@@ -339,6 +343,7 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
         model = Workflow
 
     sequence_run = factory.SubFactory(SequenceRunFactory)
+    portal_run_id = TestConstant.portal_run_id.value
     wfr_id = TestConstant.wfr_id.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -356,33 +361,12 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     )
 
 
-class DragenWgtsQcWorkflowFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Workflow
-
-    sequence_run = factory.SubFactory(SequenceRunFactory)
-    wfr_id = TestConstant.wfr_id.value
-    wfv_id = TestConstant.wfv_id.value
-    wfl_id = TestConstant.wfl_id.value
-    version = TestConstant.version.value
-    type_name = WorkflowType.DRAGEN_WGTS_QC.value
-    input = json.dumps({
-        "mock": "must load template from ssm parameter store"
-    })
-    start = make_aware(datetime.now())
-    end_status = WorkflowStatus.RUNNING.value
-    notified = True
-
-    wfr_name = factory.LazyAttribute(
-        lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
-    )
-
-
 class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
     sequence_run = factory.SubFactory(SequenceRunFactory)
+    portal_run_id = TestConstant.portal_run_id.value
     wfr_id = TestConstant.wfr_id.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -405,6 +389,7 @@ class DragenWtsQcWorkflowFactory(factory.django.DjangoModelFactory):
         model = Workflow
 
     sequence_run = factory.SubFactory(SequenceRunFactory)
+    portal_run_id = TestConstant.portal_run_id.value
     wfr_id = TestConstant.wfr_id.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -426,6 +411,7 @@ class DragenWtsWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
+    portal_run_id = TestConstant.portal_run_id.value
     wfr_id = TestConstant.wfr_id.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -447,6 +433,7 @@ class DragenWtsWorkflowFactory2(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
+    portal_run_id = TestConstant.portal_run_id2.value
     wfr_id = TestConstant.wfr_id2.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -468,6 +455,7 @@ class RNAsumWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
+    portal_run_id = TestConstant.rnasum_portal_run_id.value
     wfr_id = TestConstant.rnasum_wfr_id.value
     wfv_id = TestConstant.rnasum_wfv_id.value
     wfl_id = TestConstant.rnasum_wfl_id.value
@@ -489,6 +477,7 @@ class TumorNormalWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
+    portal_run_id = TestConstant.portal_run_id.value
     wfr_id = TestConstant.wfr_id.value
     wfv_id = TestConstant.wfv_id.value
     wfl_id = TestConstant.wfl_id.value
@@ -510,6 +499,7 @@ class UmccriseWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
+    portal_run_id = TestConstant.umccrise_portal_run_id.value
     wfr_id = TestConstant.umccrise_wfr_id.value
     wfv_id = TestConstant.umccrise_wfv_id.value
     wfl_id = TestConstant.umccrise_wfl_id.value

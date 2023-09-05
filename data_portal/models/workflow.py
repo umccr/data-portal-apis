@@ -62,28 +62,39 @@ class WorkflowManager(PortalBaseManager):
 
 
 class Workflow(PortalBaseModel):
-    class Meta:
-        unique_together = ['wfr_id', 'wfl_id', 'wfv_id']
-
+    # primary key - keep this `id` internal and, internal data linking purpose only
+    # advertise that, not to rely on this ID; except only when context is cleared i.e. List table then Get by `id`
+    # see note https://github.com/umccr/data-portal-apis/tree/dev/docs#notes
     id = models.BigAutoField(primary_key=True)
-    wfr_name = models.TextField(null=True, blank=True)
-    sample_name = models.CharField(max_length=255, null=True, blank=True)  # TODO deprecated, will be removed, see #244
+
+    # model baseline
+    portal_run_id = models.CharField(max_length=255, unique=True)  # business logic unique key
+
+    # delegating its values to domain logic enum, see `data_processors.pipeline.domain.workflow.WorkflowType`
     type_name = models.CharField(max_length=255)
-    wfr_id = models.CharField(max_length=255)
-    portal_run_id = models.CharField(max_length=255, null=True)
-    wfl_id = models.CharField(max_length=255)
-    wfv_id = models.CharField(max_length=255)
-    version = models.CharField(max_length=255)
+
+    # secondary fields for tracking ICA v1 WES specific workflows
+    wfr_id = models.CharField(max_length=255, null=True, blank=True)
+    wfl_id = models.CharField(max_length=255, null=True, blank=True)
+    wfv_id = models.CharField(max_length=255, null=True, blank=True)
+    version = models.CharField(max_length=255, null=True, blank=True)
+
+    # mandatory fields at Workflow initialisation
     input = models.TextField()
     start = models.DateTimeField()
+
+    # secondary optional fields, once Workflow has been initialised
+    wfr_name = models.TextField(null=True, blank=True)
     output = models.TextField(null=True, blank=True)
     end = models.DateTimeField(null=True, blank=True)
     end_status = models.CharField(max_length=255, null=True, blank=True)
     notified = models.BooleanField(null=True, blank=True)
+
+    # optional FK fields to link them other upstream or peer models
     sequence_run = models.ForeignKey(SequenceRun, on_delete=models.SET_NULL, null=True, blank=True)
     batch_run = models.ForeignKey(BatchRun, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = WorkflowManager()
 
     def __str__(self):
-        return f"WORKFLOW_RUN_ID: {self.wfr_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"
+        return f"PORTAL_RUN_ID: {self.portal_run_id}, WORKFLOW_TYPE: {self.type_name}, WORKFLOW_START: {self.start}"

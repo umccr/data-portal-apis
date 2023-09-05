@@ -1,4 +1,6 @@
 import hashlib
+from datetime import datetime
+from uuid import uuid4
 
 from django.db import models
 
@@ -45,3 +47,10 @@ class HashFieldHelper(object):
 
     def calculate_hash(self):
         return self.__sha256.hexdigest()
+
+
+class IdHelper(object):
+
+    @staticmethod
+    def generate_portal_run_id():
+        return f"{datetime.utcnow().strftime('%Y%m%d')}{str(uuid4())[:8]}"

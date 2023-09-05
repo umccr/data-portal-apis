@@ -4,7 +4,7 @@ from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.tests import factories
-from data_portal.tests.factories import TestConstant, LibraryRunFactory, DragenWgtsQcWorkflowFactory, LabMetadataFactory, \
+from data_portal.tests.factories import TestConstant, LibraryRunFactory, DragenWgsQcWorkflowFactory, LabMetadataFactory, \
     TumorLabMetadataFactory, TumorLibraryRunFactory
 from data_processors.pipeline.services import metadata_srv, libraryrun_srv
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
@@ -55,7 +55,7 @@ class MetadataSrvUnitTests(PipelineUnitTestCase):
         """
         mock_meta: LabMetadata = factories.LabMetadataFactory()
         mock_library_run: LibraryRun = LibraryRunFactory()
-        mock_workflow = DragenWgtsQcWorkflowFactory()
+        mock_workflow = DragenWgsQcWorkflowFactory()
         _ = libraryrun_srv.link_library_runs_with_x_seq_workflow(
             library_id_list=[mock_library_run.library_id],
             workflow=mock_workflow
