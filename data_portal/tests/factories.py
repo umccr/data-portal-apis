@@ -28,6 +28,7 @@ class TestConstant(Enum):
     wfr_id2 = f"wfr.Q5555aO8zB6yG25Zm6PsgSivGwDx_Uaa"
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
+    oncoanalyser_wgs_portal_run_id = "20230911wgsaaaaa"
     umccrise_portal_run_id = "20230103abcdefgh"
     umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
     umccrise_wfv_id = f"wfv.umccrisenVTCE8KhfXEurUfTCqSa6zVx"
@@ -359,6 +360,19 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     wfr_name = factory.LazyAttribute(
         lambda w: f"umccr__{w.type_name}__{w.sequence_run.name}__{w.sequence_run.run_id}__{utc_now_ts}"
     )
+
+
+class OncoanalyserWgsWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    portal_run_id = TestConstant.oncoanalyser_wgs_portal_run_id.value
+    type_name = WorkflowType.ONCOANALYSER_WGS.value
+    input = json.dumps({
+        "mock": "must override me, after factory init call"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
 
 
 class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):

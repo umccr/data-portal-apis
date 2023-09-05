@@ -6,14 +6,14 @@ from django.utils.timezone import make_aware
 from libica.openapi import libwes
 from libumccr import libjson
 from libumccr.aws import libssm
-from mockito import when
+from mockito import when, verify
 
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, SequenceRunFactory
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus
-from data_processors.pipeline.lambdas import orchestrator
+from data_processors.pipeline.lambdas import orchestrator, workflow_update
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, google_lims_update_step, \
     dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step
 from data_processors.pipeline.tests import _rand
@@ -24,6 +24,43 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
         super(OrchestratorUnitTests, self).setUp()
+
+    def test_handler(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_handler
+        """
+        _ = WorkflowFactory()
+        when(workflow_update).handler(...).thenReturn({
+            'wfr_id': TestConstant.wfr_id.value,
+            'wfv_id': TestConstant.wfv_id.value,
+        })
+        when(orchestrator).next_step(...).thenReturn({})
+
+        _ = orchestrator.handler(event={
+            'wfr_id': TestConstant.wfr_id.value,
+            'wfv_id': TestConstant.wfv_id.value,
+        }, context=None)
+
+        self.assertEqual(Workflow.objects.count(), 1)
+        verify(workflow_update, times=1).handler(...)
+        verify(orchestrator, times=1).next_step(...)
+
+    def test_handler_ng(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_orchestrator.OrchestratorUnitTests.test_handler_ng
+        """
+        _ = WorkflowFactory()
+        when(workflow_update).handler_ng(...).thenReturn({'portal_run_id': TestConstant.portal_run_id.value})
+        when(orchestrator).next_step(...).thenReturn({})
+
+        _ = orchestrator.handler_ng(event={
+            'portal_run_id': TestConstant.portal_run_id.value,
+            'wfr_event': {}
+        }, context=None)
+
+        self.assertEqual(Workflow.objects.count(), 1)
+        verify(workflow_update, times=1).handler_ng(...)
+        verify(orchestrator, times=1).next_step(...)
 
     def test_bcl_convert_workflow_output_not_json(self):
         """
@@ -103,7 +140,6 @@ class OrchestratorUnitTests(PipelineUnitTestCase):
         when(dragen_wgs_qc_step).perform(...).thenRaise(ValueError("DRAGEN_WGS_QC_STEP should not be called"))
         when(dragen_tso_ctdna_step).perform(...).thenRaise(ValueError("DRAGEN_TSO_CTDNA_STEP should not be called"))
         when(dragen_wts_step).perform(...).thenRaise(ValueError("DRAGEN_WTS_STEP should not be called"))
-        when(orchestrator).update_step(...).thenRaise(ValueError("UPDATE_STEP should not be called"))
 
         skiplist = {
             'global': [
