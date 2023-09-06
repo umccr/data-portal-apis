@@ -103,6 +103,16 @@ def get_fastq_list_row_by_rglb(rglb) -> List[FastqListRow]:
     return fqlr_list
 
 
+@transaction.atomic
+def get_fastq_list_row_by_rglb_and_sequence_run(rglb, sqr: SequenceRun) -> List[FastqListRow]:
+    fqlr_list = list()
+    qs: QuerySet = FastqListRow.objects.filter(rglb__exact=rglb, sequence_run=sqr)
+    if qs.exists():
+        for fqlr in qs.all():
+            fqlr_list.append(fqlr)
+    return fqlr_list
+
+
 def extract_sample_library_ids(fastq_list_rows: List[FastqListRow]):
     samples = set()
     libraries = set()

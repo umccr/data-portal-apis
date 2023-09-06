@@ -28,7 +28,8 @@ from data_portal.models.workflow import Workflow
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
-    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step, somalier_extract_step
+    dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step, somalier_extract_step, \
+    star_alignment_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from libumccr import libjson
@@ -59,7 +60,8 @@ def handler(event, context):
                 "TUMOR_NORMAL_STEP",
                 "UMCCRISE_STEP",
                 "RNASUM_STEP",
-                "SOMALIER_EXTRACT_STEP"
+                "SOMALIER_EXTRACT_STEP",
+                "STAR_ALIGNMENT_STEP"
             ],
             'by_run': {
                 '220524_A01010_0998_ABCF2HDSYX': [
@@ -258,6 +260,12 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing DRAGEN_WTS_STEP")
             results.append(dragen_wts_step.perform(this_workflow))
+
+        if "STAR_ALIGNMENT_STEP" in skiplist:
+            logger.info("Skip performing STAR_ALIGNMENT_STEP")
+        else:
+            logger.info("Performing STAR_ALIGNMENT_STEP")
+            results.append(star_alignment_step.perform(this_workflow))
 
         return results
 

@@ -190,6 +190,15 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_dragen_wts_queue_arn}
     timeout: 28
 
+  sqs_star_alignment_event_processor:
+    handler: data_processors.pipeline.lambdas.star_alignment.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_star_alignment_queue_arn}
+    timeout: 28
+
   sqs_dragen_tso_ctdna_event_processor:
     handler: data_processors.pipeline.lambdas.dragen_tso_ctdna.sqs_handler
     layers:
@@ -258,6 +267,12 @@ functions:
 
   dragen_wts:
     handler: data_processors.pipeline.lambdas.dragen_wts.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  star_alignment:
+    handler: data_processors.pipeline.lambdas.star_alignment.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
