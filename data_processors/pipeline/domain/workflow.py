@@ -90,14 +90,13 @@ class WorkflowHelper(ABC):
         return self.portal_run_id
 
 
-
 class IcaWorkflowHelper(WorkflowHelper):
     prefix = "umccr__automated"
-    workdir_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/workdir_root")
-    output_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/output_root")
 
     def __init__(self, type_: WorkflowType):
         super().__init__(type_)
+        self.workdir_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/workdir_root")
+        self.output_root = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/output_root")
         self.workflow_id = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/id")
         self.workflow_version = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/version")
         input_template = libssm.get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{self.type.value}/input")
@@ -115,13 +114,11 @@ class IcaWorkflowHelper(WorkflowHelper):
             raise ValueError("target_id must not be none")
         return target_id
 
-    @staticmethod
-    def get_workdir_root():
-        return IcaWorkflowHelper.workdir_root
+    def get_workdir_root(self):
+        return self.workdir_root
 
-    @staticmethod
-    def get_output_root():
-        return IcaWorkflowHelper.output_root
+    def get_output_root(self):
+        return self.output_root
 
     def get_workflow_id(self) -> str:
         return self.workflow_id
