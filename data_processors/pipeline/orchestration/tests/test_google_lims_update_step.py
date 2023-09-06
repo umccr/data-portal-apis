@@ -5,6 +5,7 @@ from unittest import skip
 from django.utils.timezone import make_aware
 from libica.app import wes
 
+from data_portal.fields import IdHelper
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.limsrow import LIMSRow
 from data_portal.models.sequencerun import SequenceRun
@@ -53,6 +54,7 @@ def create_mock_lims_row() -> LIMSRow:
 
 def create_mock_workflow(id_: str, rgms_1=mock_rgms_1, rgms_2=mock_rgms_2) -> Workflow:
     mock_workflow = Workflow()
+    mock_workflow.portal_run_id = IdHelper.generate_portal_run_id()
     mock_workflow.wfr_id = id_
     mock_workflow.type_name = WorkflowType.BCL_CONVERT.value
     mock_workflow.end_status = WorkflowStatus.SUCCEEDED.value

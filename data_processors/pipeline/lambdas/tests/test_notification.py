@@ -4,6 +4,7 @@ from django.utils.timezone import make_aware
 from libumccr import libslack
 from mockito import verify
 
+from data_portal.fields import IdHelper
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
@@ -30,6 +31,8 @@ class NotificationUnitTests(PipelineUnitTestCase):
             mock_workflow = Workflow()
             mock_workflow.sequence_run = self.mock_sqr
             mock_workflow.batch_run = self.mock_batch_run
+
+            mock_workflow.portal_run_id = IdHelper.generate_portal_run_id()
 
             mock_workflow.type_name = workflow_type.value
             mock_workflow.version = "1.0.1-8e3c687"
