@@ -217,13 +217,6 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
             logger.info("Performing SOMALIER_EXTRACT_STEP")
             results.append(somalier_extract_step.perform(this_workflow))
 
-        # ToDo
-        if "STAR_ALIGNMENT_STEP" in skiplist:
-            logger.info("Skip performing STAR_ALIGNMENT_STEP")
-        else:
-            logger.info("Performing STAR_ALIGNMENT_STEP")
-            results.append(star_alignment_step.perform(this_workflow))
-
         return results
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower() and \
@@ -268,7 +261,6 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
             logger.info("Performing DRAGEN_WTS_STEP")
             results.append(dragen_wts_step.perform(this_workflow))
 
-        # FIXME decide here or after bcl_convert
         if "STAR_ALIGNMENT_STEP" in skiplist:
             logger.info("Skip performing STAR_ALIGNMENT_STEP")
         else:

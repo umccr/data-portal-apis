@@ -20,16 +20,11 @@ logger.setLevel(logging.INFO)
 
 
 def perform(this_workflow: Workflow):
-    # todo implement
-    #  0)
-    #  this_workflow is an instance of succeeded wts_alignment_qc Workflow from database
-    #  we won't need to use Batcher
-    #  integration pattern:
-    #    create correspondant SQS Q, star_alignment.py processing consumer Lambda (i.e. follow existing pattern)
-    #         see https://github.com/umccr/infrastructure/tree/master/terraform/stacks/umccr_data_portal/pipeline
-    #  1)
-    #    retrieve FATSQs from WTS QC workflow
-    #  2)
+    """
+
+    :param this_workflow: by convention this should be 'wts_alignment_qc' workflow with succeeded status
+    :return: a dict with the subject, library and job payload for a star alignment call
+    """
     #  see Star Alignment payload for preparing job JSON structure
     #  https://github.com/umccr/nextflow-stack/pull/29
     #  e.g.
@@ -55,8 +50,6 @@ def perform(this_workflow: Workflow):
     logger.info(f"Submitting Star-Alignment job for {lib_id}.")
     queue_arn = libssm.get_ssm_param(SQS_STAR_ALIGNMENT_QUEUE_ARN)
     libsqs.dispatch_jobs(queue_arn=queue_arn, job_list=[job])
-
-    # todo finally, couple with few unittest on those functions implemented
 
     return {
         "subject_id": subject_id,
@@ -91,11 +84,8 @@ def prepare_star_alignment_job(library_id, subject_id, sqr: SequenceRun) -> dict
     assert len(fastq_list_rows) == 1  # We expect a single record
     fastq_list_row = fastq_list_rows[0]
 
-    # helper = ExternalWorkflowHelper(WorkflowType.STAR_ALIGNMENT)
-
     assert fastq_list_row.rglb == library_id
     return {
-        # "portal_run_id": helper.get_portal_run_id(),
         "subject_id": subject_id,
         "sample_id": fastq_list_row.rgsm,
         "library_id": library_id,
