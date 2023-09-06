@@ -1,9 +1,4 @@
-from libumccr.aws.liblambda import LambdaInvocationType
-
-from data_portal.models import Workflow
-from data_processors.pipeline.domain.config import STAR_ALIGNMENT_LAMBDA_ARN
-from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
-from data_processors.pipeline.services import workflow_srv, libraryrun_srv
+import json
 
 try:
     import unzip_requirements
@@ -12,26 +7,29 @@ except ImportError:
 
 import os
 import django
-from datetime import datetime
-from libumccr import libjson, libdt, aws
-from libumccr.aws import libssm
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
 
 # ---
 import logging
+from libumccr import libjson, libdt, aws
+from libumccr.aws import libssm
+from libumccr.aws.liblambda import LambdaInvocationType
+
+from data_portal.models import Workflow
+from data_processors.pipeline.domain.config import STAR_ALIGNMENT_LAMBDA_ARN
+from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
+from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 
 # TODO: need to find sensible data for those. Could be blank to start with and updated once we receive workflow events?
 WFL_ID = "N/A"
 WFV_ID = "N/A"
 WF_VERSION = "N/A"
-WF_STATUS = "SUBMITTED"
+WF_STATUS = "CREATED"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-lambda_client = aws.lambda_client()
-submission_lambda = libssm.get_ssm_param(STAR_ALIGNMENT_LAMBDA_ARN)
 
 
 def sqs_handler(event, context):
@@ -81,6 +79,8 @@ def handler(event, context) -> dict:
         "fastq_rev": fastq_list_row.read_2,
     }
     """
+    lambda_client = aws.lambda_client()
+    submission_lambda = libssm.get_ssm_param(STAR_ALIGNMENT_LAMBDA_ARN)
 
     logger.info(f"Start processing {WorkflowType.DRAGEN_WTS.value} event")
     logger.info(libjson.dumps(event))
@@ -108,32 +108,33 @@ def handler(event, context) -> dict:
         "fastq_rev": fastq_rev,
     }
 
-    # submit job: call star alignment lambda
-    lmbda_response = lambda_client.invoke(
-        FunctionName=submission_lambda,
-        InvocationType=LambdaInvocationType.EVENT.value,
-        Payload=job,
-    )
-    logger.info(f"Submission lambda response: {lmbda_response}")
-
     # register workflow in workflow table
     workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'portal_run_id': portal_run_id,
-            'wfr_name': f"star_alignment_{portal_run_id}",  # TODO: do we want to use a "portal_automated" prefix?
+            'wfr_name': f"star_alignment_{portal_run_id}",
             'wfr_id': f"star.{portal_run_id}",
             'wfl_id': WFL_ID,
             'wfv_id': WFV_ID,
             'version': WF_VERSION,
             'type': WorkflowType.STAR_ALIGNMENT,
             'input': job,
-            'start': datetime.utcnow().strftime('%Y%m%d'),
+            # 'start': datetime.utcnow().strftime('%Y%m%d'),
             'end_status': WF_STATUS,
         }
     )
 
     # establish link between Workflow and LibraryRun
     _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([job['library_id']], workflow)
+
+    # submit job: call star alignment lambda
+    logger.info(f"Lamdba: {submission_lambda}")
+    lmbda_response = lambda_client.invoke(
+        FunctionName=submission_lambda,
+        InvocationType=LambdaInvocationType.EVENT.value,
+        Payload=json.dumps(job),
+    )
+    logger.info(f"Submission lambda response: {lmbda_response}")
 
     result = {
         'subject_id': subject_id,
