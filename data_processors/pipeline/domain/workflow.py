@@ -8,14 +8,13 @@ See orchestration package __init__.py doc string.
 import copy
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from uuid import uuid4
 
 from libumccr import libjson
 from libumccr.aws import libssm
 
+from data_portal.fields import IdHelper
 from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 
 logger = logging.getLogger(__name__)
@@ -83,8 +82,7 @@ class WorkflowHelper(ABC):
 
     def __init__(self, type_: WorkflowType):
         self.type = type_
-        self.date_time = datetime.utcnow()
-        self.portal_run_id = f"{self.date_time.strftime('%Y%m%d')}{str(uuid4())[:8]}"
+        self.portal_run_id = IdHelper.generate_portal_run_id()
 
     def get_portal_run_id(self) -> str:
         return self.portal_run_id
@@ -250,7 +248,6 @@ class ExternalWorkflowHelper(WorkflowHelper):
         if type_ not in allowed_workflow_types:
             raise ValueError(f"Unsupported WorkflowType for external analysis: {type_}")
         super().__init__(type_)
-
 
 
 class SequenceRuleError(ValueError):
