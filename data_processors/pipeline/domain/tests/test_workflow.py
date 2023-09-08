@@ -21,10 +21,12 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_portal_run_id
         """
         helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
-        logger.info(helper.get_portal_run_id())
+        helper2 = WorkflowHelper(WorkflowType.TUMOR_NORMAL)
+        logger.info(f"{helper.get_portal_run_id()} != {helper2.get_portal_run_id()}")
         self.assertIsNotNone(helper.portal_run_id)
         self.assertEqual(len(helper.portal_run_id), 16)
         self.assertEqual(helper.get_portal_run_id(), helper.portal_run_id)
+        self.assertNotEquals(helper.portal_run_id, helper2.portal_run_id)
 
     def test_secondary_analysis_helper(self):
         """
