@@ -7,7 +7,7 @@ from data_portal.models.workflow import Workflow
 from data_portal.tests import factories
 from data_portal.tests.factories import SequenceFactory, TestConstant
 from data_processors.pipeline.domain.workflow import WorkflowRule, WorkflowType, SecondaryAnalysisHelper, \
-    PrimaryDataHelper, SequenceRule, SequenceRuleError
+    PrimaryDataHelper, SequenceRule, SequenceRuleError, WorkflowHelper
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
 
 
@@ -15,6 +15,18 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
 
     def setUp(self) -> None:
         super(WorkflowDomainUnitTests, self).setUp()
+
+    def test_portal_run_id(self):
+        """
+        python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_portal_run_id
+        """
+        helper = WorkflowHelper(WorkflowType.BCL_CONVERT)
+        helper2 = WorkflowHelper(WorkflowType.TUMOR_NORMAL)
+        logger.info(f"{helper.get_portal_run_id()} != {helper2.get_portal_run_id()}")
+        self.assertIsNotNone(helper.portal_run_id)
+        self.assertEqual(len(helper.portal_run_id), 16)
+        self.assertEqual(helper.get_portal_run_id(), helper.portal_run_id)
+        self.assertNotEquals(helper.portal_run_id, helper2.portal_run_id)
 
     def test_secondary_analysis_helper(self):
         """
