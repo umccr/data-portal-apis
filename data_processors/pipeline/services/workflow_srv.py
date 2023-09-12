@@ -129,6 +129,16 @@ def get_workflow_by_ids(wfr_id, wfv_id=None):
 
 
 @transaction.atomic
+def get_workflow_by_portal_run_id(portal_run_id: str):
+    workflow = None
+    try:
+        workflow = Workflow.objects.get(portal_run_id=portal_run_id)
+    except Workflow.DoesNotExist as e:
+        logger.debug(e)  # silent unless debug
+    return workflow
+
+
+@transaction.atomic
 def get_workflows_by_wfr_ids(wfr_id_list: List[str]) -> List[Workflow]:
     workflows = list()
     qs: QuerySet = Workflow.objects.filter(wfr_id__in=wfr_id_list)

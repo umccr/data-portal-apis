@@ -4,7 +4,6 @@
 See domain package __init__.py doc string.
 See orchestration package __init__.py doc string.
 """
-import json
 import logging
 from typing import List
 
@@ -12,8 +11,8 @@ from libumccr.aws import libssm, libsqs
 
 from data_portal.models import Workflow, FastqListRow, LabMetadata, SequenceRun
 from data_processors.pipeline.domain.config import SQS_STAR_ALIGNMENT_QUEUE_ARN
-from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
-from data_processors.pipeline.services import workflow_srv, fastq_srv, metadata_srv, libraryrun_srv
+from data_processors.pipeline.domain.workflow import WorkflowType
+from data_processors.pipeline.services import workflow_srv, fastq_srv, metadata_srv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,7 +29,7 @@ def perform(this_workflow: Workflow):
     #  e.g.
 
     # This workflow has to be of type "wts_alignment_qc"
-    if this_workflow.type_name != "wts_alignment_qc":
+    if this_workflow.type_name != WorkflowType.STAR_ALIGNMENT.value:
         logger.error(f"Wrong workflow type {this_workflow.type_name} for {this_workflow.wfr_id}, expected 'wts_alignment_qc'.")
         return {}
 

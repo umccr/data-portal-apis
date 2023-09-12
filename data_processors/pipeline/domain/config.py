@@ -21,6 +21,7 @@ SQS_STAR_ALIGNMENT_QUEUE_ARN = "/data_portal/backend/sqs_star_alignment_queue_ar
 SQS_ONCOANALYSER_WTS_QUEUE_ARN = "/data_portal/backend/sqs_oncoanalyser_wts_queue_arn"
 SQS_ONCOANALYSER_WGS_QUEUE_ARN = "/data_portal/backend/sqs_oncoanalyser_wgs_queue_arn"
 SQS_ONCOANALYSER_WGTS_QUEUE_ARN = "/data_portal/backend/sqs_oncoanalyser_wgts_queue_arn"
+SQS_SASH_QUEUE_ARN = "/data_portal/backend/sqs_sash_queue_arn"
 
 # SSM parameter names for external submission lambdas
 STAR_ALIGNMENT_LAMBDA_ARN = "/nextflow_stack/star-align-nf/submission_lambda_arn"
@@ -28,3 +29,4 @@ STAR_ALIGNMENT_LAMBDA_ARN = "/nextflow_stack/star-align-nf/submission_lambda_arn
 ONCOANALYSER_WTS_LAMBDA_ARN = "/nextflow_stack/oncoanalyser/submission_lambda_arn"
 ONCOANALYSER_WGS_LAMBDA_ARN = "/nextflow_stack/oncoanalyser/submission_lambda_arn"
 ONCOANALYSER_WGTS_LAMBDA_ARN = "/nextflow_stack/oncoanalyser/submission_lambda_arn"
+SASH_LAMBDA_ARN = "/nextflow_stack/sash/submission_lambda_arn"
