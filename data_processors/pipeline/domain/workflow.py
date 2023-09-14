@@ -70,6 +70,8 @@ class WorkflowType(Enum):
             return cls.ONCOANALYSER_WGS
         elif value == cls.ONCOANALYSER_WGTS_EXISTING_BOTH.value:
             return cls.ONCOANALYSER_WGTS_EXISTING_BOTH
+        elif value == cls.SASH.value:
+            return cls.SASH
         else:
             raise ValueError(f"No matching type found for {value}")
 
