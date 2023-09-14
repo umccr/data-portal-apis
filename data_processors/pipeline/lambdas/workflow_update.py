@@ -18,6 +18,7 @@ from data_processors.pipeline.services import workflow_srv, notification_srv
 from data_processors.pipeline.lambdas import wes_handler
 from data_processors.pipeline.domain.config import SQS_NOTIFICATION_QUEUE_ARN
 from data_processors.pipeline.domain.workflow import WorkflowType
+from data_processors.pipeline.domain.event.wrsc import WorkflowRunStateChangeEnvelope, WorkflowRunStateChange
 from libumccr import libjson
 from libumccr.aws import libssm, libsqs
 
@@ -82,6 +83,7 @@ def handler(event, context):
     # update db record
     updated_workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
+            'portal_run_id': wfl_in_db.portal_run_id,
             'wfr_id': wfr_id,
             'wfv_id': wfv_id,
             'wfl_id': wfl_in_db.wfl_id,
@@ -111,6 +113,75 @@ def handler(event, context):
 
     result = {
         'id': updated_workflow.id,
+        'portal_run_id': updated_workflow.portal_run_id,
+        'wfr_id': updated_workflow.wfr_id,
+        'wfv_id': updated_workflow.wfv_id,
+        'wfl_id': updated_workflow.wfl_id,
+        'end_status': updated_workflow.end_status,
+        'type_name': updated_workflow.type_name,
+        'seq_run_id': updated_workflow.sequence_run.run_id if updated_workflow.sequence_run else None,
+        'seq_name': updated_workflow.sequence_run.name if updated_workflow.sequence_run else None,
+    }
+
+    logger.info(libjson.dumps(result))
+
+    # return some useful workflow attributes for lambda caller
+    return result
+
+
+def handler_ng(event, context):
+    """event payload dict
+    {
+        a dict instance of WorkflowRunStateChange.schema.json; See more in docs/schemas
+    }
+
+    :param event:
+    :param context:
+    :return: workflow record from db in JSON string or None
+    """
+
+    logger.info(f"Start processing workflow update (NG) event")
+    logger.info(libjson.dumps(event))
+
+    wrsc_envelope = WorkflowRunStateChangeEnvelope.model_validate(event)  # validate and deserialize
+    wrsc: WorkflowRunStateChange = wrsc_envelope.detail
+
+    # --- make sure this `portal_run_id` record is already existed in db
+
+    wfl_in_db: Workflow = workflow_srv.get_workflow_by_portal_run_id(portal_run_id=wrsc.portal_run_id)
+
+    if not wfl_in_db:
+        msg = f"Portal Run ID '{wrsc.portal_run_id}' is not yet recorded in Portal Workflow table."
+        logger.error(msg)
+        # Raising exception makes Lambda execution in crash loop; it in-turn will attempt retry with some backoff
+        # measure automatically. As a last resort, the event message will be DLQ in side channel for further checking.
+        raise ValueError(msg)
+
+    # --- update db record, we will update corresponding Workflow record directly from `wfr_event` payload
+
+    updated_workflow: Workflow = workflow_srv.create_or_update_workflow(
+        {
+            'portal_run_id': wrsc.portal_run_id,
+            'type': WorkflowType.from_value(wrsc.type_name),
+            'wfl_id': wrsc.wfl_id,
+            'wfv_id': wrsc.wfv_id,
+            'wfr_id': wrsc.wfr_id,
+            'wfr_name': wrsc.wfr_name,
+            'version': wrsc.version,
+            'end_status': wrsc.end_status,
+            'output': wrsc.output,
+            'end': wrsc.end,
+        }
+    )
+
+    # --- notification phase
+    # At the mo, notification is handled by External stack such as `NextFlow Stack`
+    # As such, Portal doesn't need to take any action
+    # For that, `Workflow.notified` will always be NULL
+
+    result = {
+        'id': updated_workflow.id,
+        'portal_run_id': updated_workflow.portal_run_id,
         'wfr_id': updated_workflow.wfr_id,
         'wfv_id': updated_workflow.wfv_id,
         'wfl_id': updated_workflow.wfl_id,

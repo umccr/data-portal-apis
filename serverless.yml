@@ -163,6 +163,15 @@ functions:
     timeout: 120
     reservedConcurrency: 20
 
+  sqs_batch_event_processor:
+    handler: data_processors.pipeline.lambdas.sqs_batch_event.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/batch_event_sqs_arn}
+    timeout: 120
+
   sqs_iap_event_processor:
     handler: data_processors.pipeline.lambdas.sqs_iap_event.handler
     layers:
@@ -333,6 +342,18 @@ functions:
 
   workflow_update:
     handler: data_processors.pipeline.lambdas.workflow_update.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  orchestrator_ng:
+    handler: data_processors.pipeline.lambdas.orchestrator.handler_ng
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  workflow_update_ng:
+    handler: data_processors.pipeline.lambdas.workflow_update.handler_ng
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28

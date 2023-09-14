@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/umccr/data-portal-apis/dev/docs/schemas/WorkflowRunStateChange.schema.json",
+  "description": "Portal orchestration domain event with envelope for Workflow Run State Change",
+  "title": "Workflow Run State Change Envelope",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "detail-type": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "time": {
+      "type": "string"
+    },
+    "detail": {
+      "$ref": "#/definitions/WorkflowRunStateChange"
+    }
+  },
+  "required": [
+    "id",
+    "detail-type",
+    "source",
+    "time",
+    "detail"
+  ],
+  "definitions": {
+    "WorkflowRunStateChange": {
+      "type": "object",
+      "properties": {
+        "portal_run_id": {
+          "type": "string"
+        },
+        "type_name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string"
+        },
+        "end_status": {
+          "type": "string"
+        },
+        "wfr_name": {
+          "type": "string"
+        },
+        "wfr_id": {
+          "type": "string"
+        },
+        "wfv_id": {
+          "type": "string"
+        },
+        "wfl_id": {
+          "type": "string"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "portal_run_id",
+        "type_name",
+        "version",
+        "output",
+        "end_status"
+      ]
+    }
+  }
+}

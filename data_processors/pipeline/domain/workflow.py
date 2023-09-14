@@ -37,6 +37,10 @@ class WorkflowType(Enum):
     UMCCRISE = "umccrise"
     RNASUM = "rnasum"
     STAR_ALIGNMENT = "star_alignment"
+    ONCOANALYSER_WTS = "oncoanalyser_wts"
+    ONCOANALYSER_WGS = "oncoanalyser_wgs"
+    ONCOANALYSER_WGTS = "oncoanalyser_wgts"
+    ONCOANALYSER_WGTS_EXISTING_BOTH = "oncoanalyser_wgts_existing_both"
 
     @classmethod
     def from_value(cls, value):
@@ -60,6 +64,14 @@ class WorkflowType(Enum):
             return cls.RNASUM
         elif value == cls.STAR_ALIGNMENT.value:
             return cls.STAR_ALIGNMENT
+        elif value == cls.ONCOANALYSER_WTS.value:
+            return cls.ONCOANALYSER_WTS
+        elif value == cls.ONCOANALYSER_WGS.value:
+            return cls.ONCOANALYSER_WGS
+        elif value == cls.ONCOANALYSER_WGTS.value:
+            return cls.ONCOANALYSER_WGTS
+        elif value == cls.ONCOANALYSER_WGTS_EXISTING_BOTH.value:
+            return cls.ONCOANALYSER_WGTS_EXISTING_BOTH
         else:
             raise ValueError(f"No matching type found for {value}")
 

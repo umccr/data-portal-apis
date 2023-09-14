@@ -17,3 +17,4 @@ sample-sheet==0.13.0
 requests==2.31.0
 pandas==2.0.3
 cachetools==5.3.1
+pydantic==2.3.0

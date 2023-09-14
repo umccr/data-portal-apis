@@ -2,10 +2,11 @@
 """orchestrator module
 
 Orchestrator (lambda) module is the key actor (controller) of Portal Workflow Automation.
-Typically, this module has 3 simple interfaces:
-    1. handler()        -- for SQS event
-    2. update_step()    -- update some workflow
-    3. next_step()      -- determine next workflow, if any
+This module has 4 interfaces:
+    1. init_skip()      -- initialise orchestration STEP skip list
+    2. handler()        -- the original workflow orchestration handler      i.e. driven by (wfr_id, wfv_id)
+    3. handler_ng()     -- next generation workflow orchestration handler   i.e. driven by (portal_run_id)
+    4. next_step()      -- determine next workflow, if any
 
 See "orchestration" package for _steps_ modules that compliment Genomic workflow core orchestration domain logic.
 """
@@ -39,16 +40,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def handler(event, context):
-    """event payload dict
+def init_skip(event):
+    """
     {
-        'wfr_id': "wfr.xxx",
-        'wfv_id': "wfv.xxx",
-        'wfr_event': {
-            'event_type': "RunSucceeded",
-            'event_details': {},
-            'timestamp': "2020-06-24T11:27:35.1268588Z"
-        },
         'skip': {
             'global' : [
                 "UPDATE_STEP",
@@ -94,19 +88,14 @@ def handler(event, context):
           --profile dev
 
     :param event:
-    :param context:
-    :return: None
+    :return: dict
     """
 
-    logger.info(f"Start processing workflow orchestrator event")
-    logger.info(libjson.dumps(event))
+    skip = event.get('skip', dict())  # skip is optional
 
-    wfr_id = event['wfr_id']
-    wfv_id = event['wfv_id']
-    wfr_event = event.get('wfr_event')  # wfr_event is optional
-    skip = event.get('skip', dict())    # skip is optional
     if 'global' not in skip:
         skip['global'] = list()
+
     if 'by_run' not in skip:
         skip['by_run'] = dict()
 
@@ -117,34 +106,103 @@ def handler(event, context):
         # If any exception found, log warning and proceed
         logger.warning(f"Cannot read step_skip_list from SSM param. Exception: {e}")
         ssm_skip = {}
+
     skip['global'].extend(ssm_skip.get('global', []))
     skip['by_run'].update(ssm_skip.get('by_run', dict()))
 
+    return skip
+
+
+def handler(event, context):
+    """event payload dict
+    {
+        'wfr_id': "wfr.xxx",
+        'wfv_id': "wfv.xxx",
+        'wfr_event': {
+            'event_type': "RunSucceeded",
+            'event_details': {},
+            'timestamp': "2020-06-24T11:27:35.1268588Z"
+        },
+        'skip': { `optional; see above ^^^ init_skip() docstring` }
+    }
+
+    :param event:
+    :param context:
+    :return: dict
+    """
+
+    logger.info(f"Start processing workflow orchestrator event")
+    logger.info(libjson.dumps(event))
+
+    wfr_id = event['wfr_id']
+    wfv_id = event['wfv_id']
+    wfr_event = event.get('wfr_event')  # wfr_event is optional
+
+    # --- initialise skip list
+
+    skip = init_skip(event)
+
+    # --- update step
+
+    this_workflow = None
+
     if "UPDATE_STEP" in skip['global']:
         # i.e. do not sync Workflow output from WES. Instead, just use the Workflow output in Portal DB
-        this_workflow: Workflow = workflow_srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
+        this_workflow = workflow_srv.get_workflow_by_ids(wfr_id=wfr_id, wfv_id=wfv_id)
     else:
-        this_workflow = update_step(wfr_id, wfv_id, wfr_event, context)
+        # eagerly sync & update Workflow run output, end time, end status from WES and notify if necessary
+        updated_workflow: dict = workflow_update.handler({
+            'wfr_id': wfr_id,
+            'wfv_id': wfv_id,
+            'wfr_event': wfr_event,
+        }, context)
+
+        if updated_workflow:
+            this_workflow = workflow_srv.get_workflow_by_ids(
+                wfr_id=updated_workflow['wfr_id'],
+                wfv_id=updated_workflow['wfv_id']
+            )
 
     return next_step(this_workflow, skip, context)
 
 
-def update_step(wfr_id, wfv_id, wfr_event, context):
-    # eagerly sync update Workflow run output, end time, end status from WES and notify if necessary
-    updated_workflow: dict = workflow_update.handler({
-        'wfr_id': wfr_id,
-        'wfv_id': wfv_id,
-        'wfr_event': wfr_event,
-    }, context)
+def handler_ng(event, context):
+    """event payload dict
+    {
+        'portal_run_id': "20231231abcdefgh",
+        'wfr_event': { `mandatory; see WorkflowRunStateChange.schema.json in docs/schemas` },
+        'skip': { `optional; see above ^^^ init_skip() docstring` }
+    }
 
-    if updated_workflow:
-        this_workflow: Workflow = workflow_srv.get_workflow_by_ids(
-            wfr_id=updated_workflow['wfr_id'],
-            wfv_id=updated_workflow['wfv_id']
-        )
-        return this_workflow
+    :param event:
+    :param context:
+    :return: dict
+    """
 
-    return None
+    logger.info(f"Start processing workflow orchestrator (NG) event")
+    logger.info(libjson.dumps(event))
+
+    portal_run_id = event['portal_run_id']  # portal_run_id is mandatory
+    wfr_event = event['wfr_event']  # wfr_event is mandatory
+
+    # --- initialise skip list
+
+    skip = init_skip(event)
+
+    # --- update step
+
+    this_workflow = None
+
+    if "UPDATE_STEP" in skip['global']:
+        # just use the Workflow state as-is from Portal DB
+        this_workflow = workflow_srv.get_workflow_by_portal_run_id(portal_run_id=portal_run_id)
+    else:
+        # update Workflow run from wfr_event
+        updated_workflow: dict = workflow_update.handler_ng(wfr_event, context)
+        if updated_workflow:
+            this_workflow = workflow_srv.get_workflow_by_portal_run_id(portal_run_id=updated_workflow['portal_run_id'])
+
+    return next_step(this_workflow, skip, context)
 
 
 def next_step(this_workflow: Workflow, skip: dict, context=None):
@@ -242,7 +300,7 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         return results
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower() and \
-             this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
         logger.info(f"Received DRAGEN_WTS_QC workflow notification")
 
         WorkflowRule(this_workflow).must_associate_sequence_run().must_have_output()
