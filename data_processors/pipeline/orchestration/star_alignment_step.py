@@ -29,7 +29,7 @@ def perform(this_workflow: Workflow):
     #  e.g.
 
     # This workflow has to be of type "wts_alignment_qc"
-    if this_workflow.type_name != WorkflowType.STAR_ALIGNMENT.value:
+    if this_workflow.type_name != WorkflowType.DRAGEN_WTS_QC.value:
         logger.error(f"Wrong workflow type {this_workflow.type_name} for {this_workflow.wfr_id}, expected 'wts_alignment_qc'.")
         return {}
 
