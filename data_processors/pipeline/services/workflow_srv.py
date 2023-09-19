@@ -246,6 +246,22 @@ def get_labmetadata_by_wfr_id(wfr_id: str) -> List[LabMetadata]:
     return list(matching_labmetadata)
 
 
+def get_labmetadata_by_workflow(workflow: Workflow) -> List[LabMetadata]:
+    """
+    Get LabMetadata from given wfr_id
+    """
+
+    # Get library_id(s) linked to this workflow
+    matching_library_id: QuerySet = LibraryRun.objects.values_list('library_id', named=False).filter(
+        workflows__portal_run_id=workflow.portal_run_id)
+
+    # find metadata records for library_id(s)
+    matching_labmetadata: QuerySet = LabMetadata.objects.filter(
+        library_id__in=matching_library_id).distinct()
+
+    return list(matching_labmetadata)
+
+
 @transaction.atomic
 def get_workflows_by_subject_id_and_workflow_type(subject_id: str,
                                                   workflow_type: WorkflowType,
