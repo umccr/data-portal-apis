@@ -20,9 +20,11 @@ SQS_SOMALIER_EXTRACT_QUEUE_ARN = "/data_portal/backend/sqs_somalier_extract_queu
 SQS_STAR_ALIGNMENT_QUEUE_ARN = "/data_portal/backend/sqs_star_alignment_queue_arn"
 SQS_ONCOANALYSER_WTS_QUEUE_ARN = "/data_portal/backend/sqs_oncoanalyser_wts_queue_arn"
 SQS_ONCOANALYSER_WGS_QUEUE_ARN = "/data_portal/backend/sqs_oncoanalyser_wgs_queue_arn"
+SQS_ONCOANALYSER_WGTS_QUEUE_ARN = "/data_portal/backend/sqs_oncoanalyser_wgts_queue_arn"
 
 # SSM parameter names for external submission lambdas
 STAR_ALIGNMENT_LAMBDA_ARN = "/nextflow_stack/star-align-nf/submission_lambda_arn"
 # oncoanalyser submission lambda is the same, just with different mode in payload
 ONCOANALYSER_WTS_LAMBDA_ARN = "/nextflow_stack/oncoanalyser/submission_lambda_arn"
 ONCOANALYSER_WGS_LAMBDA_ARN = "/nextflow_stack/oncoanalyser/submission_lambda_arn"
+ONCOANALYSER_WGTS_LAMBDA_ARN = "/nextflow_stack/oncoanalyser/submission_lambda_arn"
