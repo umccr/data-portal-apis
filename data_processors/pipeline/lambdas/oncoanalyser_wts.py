@@ -77,13 +77,9 @@ def handler(event, context) -> dict:
 
     # check expected information is present
     subject_id = event['subject_id']
-    tumor_sample_id = event['tumor_sample_id']
-    tumor_library_id = event['tumor_library_id']
-    tumor_wts_bam = event['tumor_wgs_bam']
-    assert subject_id is not None
-    assert tumor_sample_id is not None
-    assert tumor_library_id is not None
-    assert tumor_wts_bam is not None
+    tumor_wts_sample_id = event['tumor_wts_sample_id']
+    tumor_wts_library_id = event['tumor_wts_library_id']
+    tumor_wts_bam = event['tumor_wts_bam']
 
     # see oncoanalyser (wts) submission lambda payload for preparing job JSON structure
     # NOTE: WTS only requires a subset of parameters
@@ -104,8 +100,8 @@ def handler(event, context) -> dict:
         "mode": "wts",  # hard coded for the WTS use case
         "portal_run_id": portal_run_id,
         "subject_id": subject_id,
-        "tumor_wts_sample_id": tumor_sample_id,
-        "tumor_wts_library_id": tumor_library_id,
+        "tumor_wts_sample_id": tumor_wts_sample_id,
+        "tumor_wts_library_id": tumor_wts_library_id,
         "tumor_wts_bam": tumor_wts_bam,
     }
 
@@ -121,7 +117,7 @@ def handler(event, context) -> dict:
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_library_id], workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_wts_library_id], workflow)
 
     # submit job: call oncoanalyser (wts) submission lambda
     # NOTE: lambda_client and SSM parameter "should" be loaded statically on class initialisation instead of here
@@ -140,7 +136,7 @@ def handler(event, context) -> dict:
     result = {
         'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
-        "tumor_library_id": tumor_library_id,
+        "tumor_library_id": tumor_wts_library_id,
         'id': workflow.id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,

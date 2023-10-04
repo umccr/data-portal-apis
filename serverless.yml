@@ -208,15 +208,6 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_star_alignment_queue_arn}
     timeout: 28
 
-  sqs_oncoanalyser_wgs_event_processor:
-    handler: data_processors.pipeline.lambdas.oncoanalyser_wgs.sqs_handler
-    layers:
-      - { Ref: PythonRequirementsLambdaLayer }
-    events:
-      - sqs:
-          arn: ${ssm:/data_portal/backend/sqs_oncoanalyser_wgs_queue_arn}
-    timeout: 28
-
   sqs_oncoanalyser_wts_event_processor:
     handler: data_processors.pipeline.lambdas.oncoanalyser_wts.sqs_handler
     layers:
@@ -300,12 +291,6 @@ functions:
 
   star_alignment:
     handler: data_processors.pipeline.lambdas.star_alignment.handler
-    layers:
-      - { Ref: PythonRequirementsLambdaLayer }
-    timeout: 28
-
-  oncoanalyser_wgs:
-    handler: data_processors.pipeline.lambdas.oncoanalyser_wgs.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
