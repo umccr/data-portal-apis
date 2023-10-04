@@ -531,6 +531,24 @@ class UmccriseWorkflowFactory(factory.django.DjangoModelFactory):
     )
 
 
+class StarAlignmentWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    portal_run_id = TestConstant.portal_run_id.value
+    type_name = WorkflowType.STAR_ALIGNMENT.value
+    input = json.dumps({
+        "mock": "override me"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
 class BatchFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Batch

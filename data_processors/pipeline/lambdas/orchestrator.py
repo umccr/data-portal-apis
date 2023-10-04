@@ -30,7 +30,7 @@ from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.orchestration import dragen_wgs_qc_step, tumor_normal_step, google_lims_update_step, \
     dragen_tso_ctdna_step, fastq_update_step, dragen_wts_step, umccrise_step, rnasum_step, somalier_extract_step, \
-    star_alignment_step
+    star_alignment_step, oncoanalyser_wts_step
 from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatus, WorkflowRule
 from data_processors.pipeline.lambdas import workflow_update
 from libumccr import libjson
@@ -55,7 +55,8 @@ def init_skip(event):
                 "UMCCRISE_STEP",
                 "RNASUM_STEP",
                 "SOMALIER_EXTRACT_STEP",
-                "STAR_ALIGNMENT_STEP"
+                "STAR_ALIGNMENT_STEP",
+                "ONCOANALYSER_WTS_STEP"
             ],
             'by_run': {
                 '220524_A01010_0998_ABCF2HDSYX': [
@@ -372,5 +373,20 @@ def next_step(this_workflow: Workflow, skip: dict, context=None):
         else:
             logger.info("Performing RNASUM_STEP")
             results.append(rnasum_step.perform(this_workflow))
+
+        return results
+
+    elif this_workflow.type_name.lower() == WorkflowType.STAR_ALIGNMENT.value.lower() and \
+            this_workflow.end_status.lower() == WorkflowStatus.SUCCEEDED.value.lower():
+
+        WorkflowRule(this_workflow).must_have_output()
+
+        results = list()
+
+        if "ONCOANALYSER_WTS_STEP" in skiplist:
+            logger.info("Skip performing ONCOANALYSER_WTS_STEP")
+        else:
+            logger.info("Performing ONCOANALYSER_WTS_STEP")
+            results.append(oncoanalyser_wts_step.perform(this_workflow))
 
         return results
