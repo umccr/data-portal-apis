@@ -63,11 +63,8 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """
-    oncoanalyser (wgs) submission lambda payload dict
+    """event payload dict for oncoanalyser wgs submission lambda
     {
-        "mode": "wgs",
-        "portal_run_id": "20230915wgsaaaaa",
         "subject_id": "SBJ00910",
         "tumor_wgs_sample_id": "MDX210176",
         "tumor_wgs_library_id": "L2100746",
@@ -82,19 +79,12 @@ def handler(event, context) -> dict:
 
     # check expected information is present
     subject_id = event['subject_id']
-    tumor_sample_id = event['tumor_sample_id']
-    tumor_library_id = event['tumor_library_id']
+    tumor_wgs_sample_id = event['tumor_wgs_sample_id']
+    tumor_wgs_library_id = event['tumor_wgs_library_id']
     tumor_wgs_bam = event['tumor_wgs_bam']
-    normal_sample_id = event['normal_sample_id']
-    normal_library_id = event['normal_library_id']
+    normal_wgs_sample_id = event['normal_wgs_sample_id']
+    normal_wgs_library_id = event['normal_wgs_library_id']
     normal_wgs_bam = event['normal_wgs_bam']
-    assert subject_id is not None
-    assert tumor_sample_id is not None
-    assert tumor_library_id is not None
-    assert tumor_wgs_bam is not None
-    assert normal_sample_id is not None
-    assert normal_library_id is not None
-    assert normal_wgs_bam is not None
 
     # see oncoanalyser (wgs) submission lambda payload for preparing job JSON structure
     # NOTE: WGS only requires only a subset of parameters
@@ -102,15 +92,15 @@ def handler(event, context) -> dict:
     helper = ExternalWorkflowHelper(WorkflowType.ONCOANALYSER_WGS)
     portal_run_id = helper.get_portal_run_id()
     job = {
-        "mode": "wgs",  # hard coded for the WGS use case
-        "portal_run_id": portal_run_id,
-        "subject_id": subject_id,
-        "tumor_wgs_sample_id": tumor_sample_id,
-        "tumor_wgs_library_id": tumor_library_id,
-        "tumor_wgs_bam": tumor_wgs_bam,
-        "normal_wgs_sample_id": normal_sample_id,
-        "normal_wgs_library_id": normal_library_id,
-        "normal_wgs_bam": normal_wgs_bam
+        'mode': "wgs",  # hard coded for the WGS use case
+        'portal_run_id': portal_run_id,
+        'subject_id': subject_id,
+        'tumor_wgs_sample_id': tumor_wgs_sample_id,
+        'tumor_wgs_library_id': tumor_wgs_library_id,
+        'tumor_wgs_bam': tumor_wgs_bam,
+        'normal_wgs_sample_id': normal_wgs_sample_id,
+        'normal_wgs_library_id': normal_wgs_library_id,
+        'normal_wgs_bam': normal_wgs_bam
     }
 
     # register workflow in workflow table
@@ -125,7 +115,7 @@ def handler(event, context) -> dict:
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_library_id, normal_library_id], workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_wgs_library_id, normal_wgs_library_id], workflow)
 
     # submit job: call oncoanalyser (wgs) submission lambda
     # NOTE: lambda_client and SSM parameter "should" be loaded statically on class initialisation instead of here
@@ -144,8 +134,8 @@ def handler(event, context) -> dict:
     result = {
         'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
-        "tumor_library_id": tumor_library_id,
-        "normal_library_id": normal_library_id,
+        'tumor_library_id': tumor_wgs_library_id,
+        'normal_library_id': normal_wgs_library_id,
         'id': workflow.id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,

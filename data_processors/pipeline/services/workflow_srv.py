@@ -248,7 +248,7 @@ def get_labmetadata_by_wfr_id(wfr_id: str) -> List[LabMetadata]:
 
 def get_labmetadata_by_workflow(workflow: Workflow) -> List[LabMetadata]:
     """
-    Get LabMetadata from given wfr_id
+    Get LabMetadata from given workflow
     """
 
     # Get library_id(s) linked to this workflow

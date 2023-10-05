@@ -12,11 +12,11 @@ from data_processors.pipeline.services import workflow_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
 
 
-class StarAlignmentUnitTests(PipelineUnitTestCase):
+class OncoanalyserWtsUnitTests(PipelineUnitTestCase):
 
     def test_handler(self):
         """
-        python manage.py test data_processors.pipeline.lambdas.tests.test_oncoanalyser_wts.StarAlignmentUnitTests.test_handler
+        python manage.py test data_processors.pipeline.lambdas.tests.test_oncoanalyser_wts.OncoanalyserWtsUnitTests
         """
 
         mock_meta_wts_tumor: LabMetadata = WtsTumorLabMetadataFactory()
@@ -36,7 +36,7 @@ class StarAlignmentUnitTests(PipelineUnitTestCase):
         }, None)
 
         logger.info("-" * 32)
-        logger.info("Example star_alignment.handler lambda output:")
+        logger.info("Example oncoanalyser_wts.handler lambda output:")
         logger.info(json.dumps(result))
 
         # assert oncoanalyser_wts workflow launch success and save workflow run in db

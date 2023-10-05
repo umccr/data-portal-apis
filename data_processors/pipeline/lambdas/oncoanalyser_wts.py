@@ -63,8 +63,7 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """
-    expected payload
+    """event payload dict
     {
         "subject_id": "SBJ00910",
         "tumor_wts_sample_id": "MDX210176",
@@ -97,12 +96,12 @@ def handler(event, context) -> dict:
     helper = ExternalWorkflowHelper(WorkflowType.ONCOANALYSER_WTS)
     portal_run_id = helper.get_portal_run_id()
     job = {
-        "mode": "wts",  # hard coded for the WTS use case
-        "portal_run_id": portal_run_id,
-        "subject_id": subject_id,
-        "tumor_wts_sample_id": tumor_wts_sample_id,
-        "tumor_wts_library_id": tumor_wts_library_id,
-        "tumor_wts_bam": tumor_wts_bam,
+        'mode': "wts",  # hard coded for the WTS use case
+        'portal_run_id': portal_run_id,
+        'subject_id': subject_id,
+        'tumor_wts_sample_id': tumor_wts_sample_id,
+        'tumor_wts_library_id': tumor_wts_library_id,
+        'tumor_wts_bam': tumor_wts_bam,
     }
 
     # register workflow in workflow table
@@ -136,7 +135,7 @@ def handler(event, context) -> dict:
     result = {
         'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
-        "tumor_library_id": tumor_wts_library_id,
+        'tumor_library_id': tumor_wts_library_id,
         'id': workflow.id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,

@@ -9,6 +9,9 @@ Oh yah, impls are like "killer whale" yosh!! 💪
 
 NOTE: Please retain function into their _stateless_ as much as possible. i.e. in > Fn() > out
 Input and output arguments are typically their _Primitive_ forms such as str, int, list, dict, etc..
+
+Impls/Design Notes:
+- For output parsing routines, do not remove old lookup key(s). If there are changes, just keep append to lookup list.
 """
 import json
 import logging
@@ -368,6 +371,38 @@ def get_number_of_lanes_from_runinfo(gds_volume, runinfo_path) -> int:
     fcl = root.find('Run/FlowcellLayout')
     lane_cnt = fcl.get('LaneCount')
     return int(lane_cnt)
+
+
+def parse_wgs_tumor_normal_output_for_bam_files(workflow_output_json: str, deep_check: bool = True) -> (str, str):
+    """
+    Parse the Tumor and Normal bam files output location of the TUMOR_NORMAL (wgs_tumor_normal) workflow
+
+    :param workflow_output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return: tuple(tumor_bam_uri, normal_bam_uri)
+    """
+
+    # Impl note: do not remove old lookup keys. If there are changes in the future, just keep append them here.
+    tumor_lookup_keys = ["tumor_bam_out"]
+    normal_lookup_keys = ["normal_bam_out"]
+
+    tumor_bam_out: Dict = parse_workflow_output(workflow_output_json, tumor_lookup_keys)
+    normal_bam_out: Dict = parse_workflow_output(workflow_output_json, normal_lookup_keys)
+
+    if deep_check:
+        if tumor_bam_out is None:
+            raise ValueError(f"Unexpected wgs_tumor_normal output. The tumor_bam_out is {tumor_bam_out}")
+
+        if 'location' not in tumor_bam_out.keys():
+            raise ValueError(f"Unexpected wgs_tumor_normal output. The tumor_bam_out has no location to BAM file")
+
+        if normal_bam_out is None:
+            raise ValueError(f"Unexpected wgs_tumor_normal output. The normal_bam_out is {normal_bam_out}")
+
+        if 'location' not in normal_bam_out.keys():
+            raise ValueError(f"Unexpected wgs_tumor_normal output. The normal_bam_out has no location to BAM file")
+
+    return tumor_bam_out['location'], normal_bam_out['location']
 
 
 def parse_wgs_alignment_qc_output_for_bam_file(workflow_output_json: str, deep_check: bool = True) -> str:
