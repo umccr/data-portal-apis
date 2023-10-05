@@ -520,6 +520,58 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         self.assertRegex(tso_ctdna_bam, r"^gds:\/\/\S+\.bam$")
         logger.info(tso_ctdna_bam)
 
+    def test_parse_wgs_tumor_normal_output_for_bam_files(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_wgs_tumor_normal_output_for_bam_files
+        """
+        wgs_tumor_normal_output = {
+            "normal_bam_out": {
+                "location": "gds://volume/path/normal.bam",
+                "basename": "normal.bam",
+                "nameroot": "normal",
+                "nameext": ".bam",
+                "class": "File",
+                "size": 98432974542,
+                "secondaryFiles": [
+                    {
+                        "basename": "normal.bam.bai",
+                        "location": "gds://volume/path/normal.bam.bai",
+                        "class": "File",
+                        "nameroot": "normal.bam",
+                        "nameext": ".bai",
+                        "http://commonwl.org/cwltool#generation": 0,
+                        "size": 9892168
+                    }
+                ],
+                "http://commonwl.org/cwltool#generation": 0
+            },
+            "tumor_bam_out": {
+                "location": "gds://volume/path/tumor.bam",
+                "basename": "tumor.bam",
+                "nameroot": "tumor",
+                "nameext": ".bam",
+                "class": "File",
+                "size": 183053246790,
+                "secondaryFiles": [
+                    {
+                        "basename": "tumor.bam.bai",
+                        "location": "gds://volume/path/tumor.bam.bai",
+                        "class": "File",
+                        "nameroot": "tumor.bam",
+                        "nameext": ".bai",
+                        "http://commonwl.org/cwltool#generation": 0
+                    }
+                ],
+                "http://commonwl.org/cwltool#generation": 0
+            }
+        }
+
+        tumor_bam_out, normal_bam_out = liborca.parse_wgs_tumor_normal_output_for_bam_files(json.dumps(wgs_tumor_normal_output))
+        self.assertRegex(tumor_bam_out, r"^gds:\/\/\S+\.bam$")
+        self.assertRegex(normal_bam_out, r"^gds:\/\/\S+\.bam$")
+        logger.info(tumor_bam_out)
+        logger.info(normal_bam_out)
+
 
 class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip
@@ -763,3 +815,24 @@ class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
         self.assertRegex(dragen_tso_ctdna_main_bam_file, r"^gds:\/\/\S+\.bam$")
         self.assertIn("SBJ02873", dragen_tso_ctdna_main_bam_file)
         logger.info(dragen_tso_ctdna_main_bam_file)
+
+    @skip
+    def test_parse_wgs_tumor_normal_output_for_bam_files(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaIntegrationTests.test_parse_wgs_tumor_normal_output_for_bam_files
+        """
+
+        wfr_id = "wfr.22ed619250e14a449fff8ac7bc9d41c0"  # SBJ04375 in PROD
+
+        wfl_run = wes.get_run(wfr_id)
+
+        tumor_bam_out, normal_bam_out = liborca.parse_wgs_tumor_normal_output_for_bam_files(
+            json.dumps(wfl_run.output)
+        )
+
+        # Assert that we return a bam file
+        self.assertRegex(tumor_bam_out, r"^gds:\/\/\S+\.bam$")
+        self.assertRegex(normal_bam_out, r"^gds:\/\/\S+\.bam$")
+        self.assertIn("SBJ04375", tumor_bam_out)
+        logger.info(tumor_bam_out)
+        logger.info(normal_bam_out)

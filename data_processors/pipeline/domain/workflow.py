@@ -256,7 +256,8 @@ class ExternalWorkflowHelper(WorkflowHelper):
     def __init__(self, type_: WorkflowType):
         allowed_workflow_types = [
             WorkflowType.STAR_ALIGNMENT,
-            WorkflowType.ONCOANALYSER_WTS
+            WorkflowType.ONCOANALYSER_WTS,
+            WorkflowType.ONCOANALYSER_WGS,
         ]
         if type_ not in allowed_workflow_types:
             raise ValueError(f"Unsupported WorkflowType for external analysis: {type_}")

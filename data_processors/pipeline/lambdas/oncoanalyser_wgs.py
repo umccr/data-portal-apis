@@ -17,7 +17,7 @@ from libumccr.aws import libssm
 from libumccr.aws.liblambda import LambdaInvocationType
 
 from data_portal.models import Workflow
-from data_processors.pipeline.domain.config import ONCOANALYSER_WTS_LAMBDA_ARN
+from data_processors.pipeline.domain.config import ONCOANALYSER_WGS_LAMBDA_ARN
 from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
 from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 
@@ -63,68 +63,67 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """event payload dict
+    """event payload dict for oncoanalyser wgs submission lambda
     {
         "subject_id": "SBJ00910",
-        "tumor_wts_sample_id": "MDX210176",
-        "tumor_wts_library_id": "L2100746",
-        "tumor_wts_bam": "s3://path/to/tumor.bam",
+        "tumor_wgs_sample_id": "MDX210176",
+        "tumor_wgs_library_id": "L2100746",
+        "tumor_wgs_bam": "s3://umccr-research-dev/stephen/oncoanalyser_test_data/SBJ00910/wgs/bam/GRCh38_umccr/MDX210176_tumor.bam",
+        "normal_wgs_sample_id": "MDX210175",
+        "normal_wgs_library_id": "L2100745",
+        "normal_wgs_bam": "s3://umccr-research-dev/stephen/oncoanalyser_test_data/SBJ00910/wgs/bam/GRCh38_umccr/MDX210175_normal.bam"
     }
     """
-    logger.info(f"Start processing {WorkflowType.ONCOANALYSER_WTS.value} event")
+    logger.info(f"Start processing {WorkflowType.ONCOANALYSER_WGS.value} event")
     logger.info(libjson.dumps(event))
 
     # check expected information is present
     subject_id = event['subject_id']
-    tumor_wts_sample_id = event['tumor_wts_sample_id']
-    tumor_wts_library_id = event['tumor_wts_library_id']
-    tumor_wts_bam = event['tumor_wts_bam']
+    tumor_wgs_sample_id = event['tumor_wgs_sample_id']
+    tumor_wgs_library_id = event['tumor_wgs_library_id']
+    tumor_wgs_bam = event['tumor_wgs_bam']
+    normal_wgs_sample_id = event['normal_wgs_sample_id']
+    normal_wgs_library_id = event['normal_wgs_library_id']
+    normal_wgs_bam = event['normal_wgs_bam']
 
-    # see oncoanalyser (wts) submission lambda payload for preparing job JSON structure
-    # NOTE: WTS only requires a subset of parameters
+    # see oncoanalyser (wgs) submission lambda payload for preparing job JSON structure
+    # NOTE: WGS only requires only a subset of parameters
     # https://github.com/umccr/nextflow-stack/blob/05ebc83b9a024a6db40f03a68a43228b1b6dc9ff/application/pipeline-stacks/oncoanalyser/lambda_functions/batch_job_submission/lambda_code.py#L20-L36
-    # expected oncoanalyser (wts) submission lambda payload
-    # {
-    #     "mode": "wts",
-    #     "portal_run_id": "20230915wgsaaaaa",
-    #     "subject_id": "SBJ00910",
-    #     "tumor_wts_sample_id": "MDX210176",
-    #     "tumor_wts_library_id": "L2100746",
-    #     "tumor_wts_bam": "s3://path/to/tumor.bam",
-    # }
-
-    helper = ExternalWorkflowHelper(WorkflowType.ONCOANALYSER_WTS)
+    helper = ExternalWorkflowHelper(WorkflowType.ONCOANALYSER_WGS)
     portal_run_id = helper.get_portal_run_id()
     job = {
-        'mode': "wts",  # hard coded for the WTS use case
+        'mode': "wgs",  # hard coded for the WGS use case
         'portal_run_id': portal_run_id,
         'subject_id': subject_id,
-        'tumor_wts_sample_id': tumor_wts_sample_id,
-        'tumor_wts_library_id': tumor_wts_library_id,
-        'tumor_wts_bam': tumor_wts_bam,
+        'tumor_wgs_sample_id': tumor_wgs_sample_id,
+        'tumor_wgs_library_id': tumor_wgs_library_id,
+        'tumor_wgs_bam': tumor_wgs_bam,
+        'normal_wgs_sample_id': normal_wgs_sample_id,
+        'normal_wgs_library_id': normal_wgs_library_id,
+        'normal_wgs_bam': normal_wgs_bam
     }
 
     # register workflow in workflow table
     workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'portal_run_id': portal_run_id,
-            'wfr_name': f"{WorkflowType.ONCOANALYSER_WTS.value}__{portal_run_id}",
-            'type': WorkflowType.ONCOANALYSER_WTS,
+            'wfr_name': f"{WorkflowType.ONCOANALYSER_WGS.value}__{portal_run_id}",
+            'type': WorkflowType.ONCOANALYSER_WGS,
             'input': job,
             'end_status': "CREATED",
         }
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_wts_library_id], workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_wgs_library_id, normal_wgs_library_id], workflow)
 
-    # submit job: call oncoanalyser (wts) submission lambda
+    # submit job: call oncoanalyser (wgs) submission lambda
     # NOTE: lambda_client and SSM parameter "should" be loaded statically on class initialisation instead of here
     # (i.e. once instead of every invocation). However, that will prevent mockito from intercepting and complicate
     # testing. We compromise the little execution overhead for ease of testing.
     lambda_client = aws.lambda_client()
-    submission_lambda = libssm.get_ssm_param(ONCOANALYSER_WTS_LAMBDA_ARN)
-    logger.info(f"Using oncoanalyser (wts) submission lambda: {submission_lambda}")
+    submission_lambda = libssm.get_ssm_param(ONCOANALYSER_WGS_LAMBDA_ARN)
+    logger.info(f"Using oncoanalyser (wgs) submission lambda: {submission_lambda}")
     lambda_response = lambda_client.invoke(
         FunctionName=submission_lambda,
         InvocationType=LambdaInvocationType.EVENT.value,
@@ -135,7 +134,8 @@ def handler(event, context) -> dict:
     result = {
         'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
-        'tumor_library_id': tumor_wts_library_id,
+        'tumor_library_id': tumor_wgs_library_id,
+        'normal_library_id': normal_wgs_library_id,
         'id': workflow.id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,

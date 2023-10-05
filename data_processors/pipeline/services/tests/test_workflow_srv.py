@@ -4,14 +4,13 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import now
 
-from data_portal.models.libraryrun import LibraryRun
-from data_portal.models.workflow import Workflow
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
+from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import TestConstant, DragenWtsWorkflowFactory, WorkflowFactory, LabMetadataFactory, \
-    LibraryRunFactory
+    LibraryRunFactory, TumorNormalWorkflowFactory, TumorLabMetadataFactory, TumorLibraryRunFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
-from data_processors.pipeline.services import workflow_srv
+from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
 
 
@@ -167,3 +166,26 @@ class WorkflowSrvUnitTests(PipelineUnitTestCase):
         # Test result
         self.assertEqual(1, len(matched_labmetadata))
         self.assertTrue(matched_labmetadata[0].subject_id, test_subject_id)
+
+    def test_get_labmetadata_by_workflow(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_labmetadata_by_workflow
+        """
+
+        mock_tumor_normal_workflow: Workflow = TumorNormalWorkflowFactory()
+        mock_meta_wgs_tumor: LabMetadata = TumorLabMetadataFactory()
+        mock_meta_wgs_normal: LabMetadata = LabMetadataFactory()
+        mock_lbr_tumor: LibraryRun = TumorLibraryRunFactory()
+        mock_lbr_normal: LibraryRun = LibraryRunFactory()
+
+        _ = libraryrun_srv.link_library_runs_with_x_seq_workflow(
+            library_id_list=[mock_lbr_tumor.library_id, mock_lbr_normal.library_id],
+            workflow=mock_tumor_normal_workflow,
+        )
+
+        meta_list = workflow_srv.get_labmetadata_by_workflow(mock_tumor_normal_workflow)
+        self.assertIsNotNone(meta_list)
+        logger.info(meta_list)
+
+        self.assertEqual(len(meta_list), 2)
+        self.assertIn(mock_meta_wgs_normal, meta_list)
