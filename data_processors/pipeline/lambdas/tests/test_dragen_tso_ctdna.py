@@ -31,24 +31,24 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
                 "sample_id": "PRJ000001_L0000001",
                 "sample_name": "sample_name",
                 "sample_type": "DNA",
-                "pair_id": "sample_name"
-            },
-            "fastq_list_rows": [
-                {
-                    "rgid": "index1.index2.lane",
-                    "rgsm": "sample_name",
-                    "rglb": TestConstant.library_id_normal.value,
-                    "lane": 1,
-                    "read_1": {
-                      "class": "File",
-                      "location": "gds://path/to/read_1.fastq.gz"
-                    },
-                    "read_2": {
-                      "class": "File",
-                      "location": "gds://path/to/read_2.fastq.gz"
+                "pair_id": "sample_name",
+                "fastq_list_rows": [
+                    {
+                        "rgid": "index1.index2.lane",
+                        "rgsm": "sample_name",
+                        "rglb": TestConstant.library_id_normal.value,
+                        "lane": 1,
+                        "read_1": {
+                            "class": "File",
+                            "location": "gds://path/to/read_1.fastq.gz"
+                        },
+                        "read_2": {
+                            "class": "File",
+                            "location": "gds://path/to/read_2.fastq.gz"
+                        }
                     }
-                }
-            ],
+                ]
+            },
             "samplesheet": {
                 "class": "File",
                 "location": "gds://path/to/samplesheet"
@@ -103,24 +103,24 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
                 "sample_id": "sample_id",
                 "sample_name": "sample_name",
                 "sample_type": "DNA",
-                "pair_id": "sample_name"
-            },
-            "fastq_list_rows": [
-                {
-                    "rgid": "index1.index2.lane",
-                    "rgsm": "sample_name",
-                    "rglb": "sample_library",
-                    "lane": 1,
-                    "read_1": {
-                      "class": "File",
-                      "location": "gds://path/to/read_1.fastq.gz"
-                    },
-                    "read_2": {
-                      "class": "File",
-                      "location": "gds://path/to/read_2.fastq.gz"
+                "pair_id": "sample_name",
+                "fastq_list_rows": [
+                    {
+                        "rgid": "index1.index2.lane",
+                        "rgsm": "sample_name",
+                        "rglb": "sample_library",
+                        "lane": 1,
+                        "read_1": {
+                            "class": "File",
+                            "location": "gds://path/to/read_1.fastq.gz"
+                        },
+                        "read_2": {
+                            "class": "File",
+                            "location": "gds://path/to/read_2.fastq.gz"
+                        }
                     }
-                }
-            ],
+                ]
+            },
             "samplesheet": {
                 "class": "File",
                 "location": "gds://path/to/samplesheet"
@@ -158,24 +158,24 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
                 "sample_id": "sample_id",
                 "sample_name": "sample_name",
                 "sample_type": "DNA",
-                "pair_id": "sample_name"
-            },
-            "fastq_list_rows": [
-                {
-                    "rgid": "index1.index2.lane",
-                    "rgsm": "sample_name",
-                    "rglb": "sample_library",
-                    "lane": 1,
-                    "read_1": {
-                      "class": "File",
-                      "location": "gds://path/to/read_1.fastq.gz"
-                    },
-                    "read_2": {
-                      "class": "File",
-                      "location": "gds://path/to/read_2.fastq.gz"
+                "pair_id": "sample_name",
+                "fastq_list_rows": [
+                    {
+                        "rgid": "index1.index2.lane",
+                        "rgsm": "sample_name",
+                        "rglb": "sample_library",
+                        "lane": 1,
+                        "read_1": {
+                            "class": "File",
+                            "location": "gds://path/to/read_1.fastq.gz"
+                        },
+                        "read_2": {
+                            "class": "File",
+                            "location": "gds://path/to/read_2.fastq.gz"
+                        }
                     }
-                }
-            ],
+                ],
+            },
             "samplesheet": {
                 "class": "File",
                 "location": "gds://path/to/samplesheet"

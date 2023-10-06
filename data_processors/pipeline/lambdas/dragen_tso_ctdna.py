@@ -66,22 +66,23 @@ def handler(event, context) -> dict:
             "sample_id": "sample_id",
             "sample_name": "sample_name",
             "sample_type": "DNA",
-            "pair_id": "sample_name"
+            "pair_id": "sample_name",
+            "fastq_list_rows": [{
+                "rgid": "index1.index2.lane",
+                "rgsm": "sample_name",
+                "rglb": "UnknownLibrary",
+                "lane": int,
+                "read_1": {
+                  "class": "File",
+                  "location": "gds://path/to/read_1.fastq.gz"
+                },
+                "read_2": {
+                  "class": "File",
+                  "location": "gds://path/to/read_2.fastq.gz"
+                }
+            }]
         },
-        "fastq_list_rows": [{
-            "rgid": "index1.index2.lane",
-            "rgsm": "sample_name",
-            "rglb": "UnknownLibrary",
-            "lane": int,
-            "read_1": {
-              "class": "File",
-              "location": "gds://path/to/read_1.fastq.gz"
-            },
-            "read_2": {
-              "class": "File",
-              "location": "gds://path/to/read_2.fastq.gz"
-            }
-        }],
+        ,
         "samplesheet": {
           "class": "File",
           "location": "gds://path/to/samplesheet"
@@ -119,7 +120,6 @@ def handler(event, context) -> dict:
     # Read input template from parameter store
     workflow_input: dict = wfl_helper.get_workflow_input()
     workflow_input['tso500_samples'] = [event['tso500_sample']]
-    workflow_input['fastq_list_rows'] = event['fastq_list_rows']
     workflow_input['samplesheet'] = event['samplesheet']
     workflow_input['run_info_xml'] = event['run_info_xml']
     workflow_input['run_parameters_xml'] = event['run_parameters_xml']
