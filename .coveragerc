@@ -1,0 +1,5 @@
+[run]
+omit = */tests/*,*tests*,data_portal/management/*,data_portal/migrations/*,data_portal/wsgi.py,migrate.py,manage.py
+
+[report]
+omit = */tests/*,*tests*,data_portal/management/*,data_portal/migrations/*,data_portal/wsgi.py,migrate.py,manage.py
