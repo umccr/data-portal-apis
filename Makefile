@@ -64,6 +64,16 @@ test: load_localstack
 	@python manage.py migrate
 	@python manage.py test
 
+coverage: load_localstack
+	@pip install -r requirements-dev.txt
+	@echo $$DJANGO_SETTINGS_MODULE
+	@python manage.py migrate
+	@coverage run --source='.' manage.py test
+
+report:
+	@coverage report -m
+	@coverage html
+
 sure:
 	@python manage.py test data_processors.pipeline
 

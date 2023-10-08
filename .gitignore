@@ -50,3 +50,6 @@ data/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+.coverage
+htmlcov/
