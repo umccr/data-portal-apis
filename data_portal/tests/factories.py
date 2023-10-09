@@ -28,7 +28,6 @@ class TestConstant(Enum):
     wfr_id2 = f"wfr.Q5555aO8zB6yG25Zm6PsgSivGwDx_Uaa"
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
-    oncoanalyser_wgs_portal_run_id = "20230911wgsaaaaa"
     umccrise_portal_run_id = "20230103abcdefgh"
     umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
     umccrise_wfv_id = f"wfv.umccrisenVTCE8KhfXEurUfTCqSa6zVx"
@@ -362,19 +361,6 @@ class WorkflowFactory(factory.django.DjangoModelFactory):
     )
 
 
-class OncoanalyserWgsWorkflowFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Workflow
-
-    portal_run_id = TestConstant.oncoanalyser_wgs_portal_run_id.value
-    type_name = WorkflowType.ONCOANALYSER_WGS.value
-    input = json.dumps({
-        "mock": "must override me, after factory init call"
-    })
-    start = make_aware(datetime.now())
-    end_status = WorkflowStatus.RUNNING.value
-
-
 class DragenWgsQcWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
@@ -542,6 +528,78 @@ class StarAlignmentWorkflowFactory(factory.django.DjangoModelFactory):
     })
     start = make_aware(datetime.now())
     end_status = WorkflowStatus.RUNNING.value
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
+class OncoanalyserWtsS3ObjectOutputFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = S3Object
+
+    bucket = "bucket1"
+    key = (f"analysis_data/{TestConstant.subject_id.value}/oncoanalyser/"
+           f"{TestConstant.portal_run_id2.value}/wts/{TestConstant.wts_library_id_tumor.value}/")
+    size = 1000
+    last_modified_date = now()
+    e_tag = "abcdefghi123456"
+
+
+class OncoanalyserWgsS3ObjectOutputFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = S3Object
+
+    bucket = "bucket1"
+    key = (f"analysis_data/{TestConstant.subject_id.value}/oncoanalyser/"
+           f"{TestConstant.portal_run_id.value}/wgs/"
+           f"{TestConstant.library_id_tumor.value}__{TestConstant.library_id_normal.value}/")
+    size = 1000
+    last_modified_date = now()
+    e_tag = "abcdefghi123456"
+
+
+class OncoanalyserWtsWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    portal_run_id = TestConstant.portal_run_id2.value
+    type_name = WorkflowType.ONCOANALYSER_WTS.value
+    input = json.dumps({
+        "subject_id": TestConstant.subject_id.value,
+        "tumor_wts_sample_id": TestConstant.wts_sample_id.value,
+        "tumor_wts_library_id": TestConstant.wts_library_id_tumor.value,
+        "tumor_wts_bam": f"s3://bucket1/{portal_run_id}/star_alignment/tumor_wts_bam.bam"
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.SUCCEEDED.value
+    end = make_aware(datetime.now())
+    notified = True
+
+    wfr_name = factory.LazyAttribute(
+        lambda w: f"umccr__{w.type_name}__{utc_now_ts}"
+    )
+
+
+class OncoanalyserWgsWorkflowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Workflow
+
+    portal_run_id = TestConstant.portal_run_id.value
+    type_name = WorkflowType.ONCOANALYSER_WGS.value
+    input = json.dumps({
+        "subject_id": TestConstant.subject_id.value,
+        "tumor_wgs_sample_id": TestConstant.sample_id.value,
+        "tumor_wgs_library_id": TestConstant.library_id_tumor.value,
+        "tumor_wgs_bam": f"gds://vol1/{portal_run_id}/wgs_tumor_normal/tumor_wts_bam.bam",
+        "normal_wgs_sample_id": TestConstant.sample_id.value,
+        "normal_wgs_library_id": TestConstant.library_id_normal.value,
+        "normal_wgs_bam": f"gds://vol1/{portal_run_id}/wgs_tumor_normal/normal_wgs_bam.bam",
+    })
+    start = make_aware(datetime.now())
+    end_status = WorkflowStatus.SUCCEEDED.value
+    end = make_aware(datetime.now())
     notified = True
 
     wfr_name = factory.LazyAttribute(

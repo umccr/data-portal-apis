@@ -69,3 +69,15 @@ class S3ObjectSrvUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(results)
         self.assertEqual(len(results), 3)
         self.assertEqual(results[0], f"s3://{mock_bam.bucket}/{mock_bam.key}")
+
+    def test_get_s3_files_for_regex(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_s3object_srv.S3ObjectSrvUnitTests.test_get_s3_files_for_regex
+        """
+        generate_mock_data()
+
+        results = s3object_srv.get_s3_files_for_regex(pattern=f"{TestConstant.portal_run_id.value}/L4200001/PRJ421001/$")
+
+        logger.info(results)
+        self.assertEqual(len(results), 1)
+        self.assertTrue(str(results[0]).startswith("s3://"))

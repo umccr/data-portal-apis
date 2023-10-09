@@ -226,6 +226,15 @@ functions:
           arn: ${ssm:/data_portal/backend/sqs_oncoanalyser_wgs_queue_arn}
     timeout: 28
 
+  sqs_oncoanalyser_wgts_existing_both_event_processor:
+    handler: data_processors.pipeline.lambdas.oncoanalyser_wgts_existing_both.sqs_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    events:
+      - sqs:
+          arn: ${ssm:/data_portal/backend/sqs_oncoanalyser_wgts_queue_arn}
+    timeout: 28
+
   sqs_dragen_tso_ctdna_event_processor:
     handler: data_processors.pipeline.lambdas.dragen_tso_ctdna.sqs_handler
     layers:
@@ -312,6 +321,12 @@ functions:
 
   oncoanalyser_wgs:
     handler: data_processors.pipeline.lambdas.oncoanalyser_wgs.handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 28
+
+  oncoanalyser_wgts_existing_both:
+    handler: data_processors.pipeline.lambdas.oncoanalyser_wgts_existing_both.handler
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
