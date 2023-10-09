@@ -12,7 +12,7 @@ _output = {
 }
 
 _parameters = {
-    "portal_run_id": TestConstant.oncoanalyser_wgs_portal_run_id.value,
+    "portal_run_id": TestConstant.portal_run_id.value,
     "output": json.dumps(_output),
     "workflow": "oncoanalyser_wgs",
     "version": "v0.1.1"
@@ -164,7 +164,7 @@ class SQSBatchEventUnitTests(PipelineUnitTestCase):
 
         _ = sqs_batch_event.handler(event=_mock_sqs_event, context=None)
 
-        stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.oncoanalyser_wgs_portal_run_id.value)
+        stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.portal_run_id.value)
 
         logger.info(f"-" * 32)
         logger.info(stub_workflow)

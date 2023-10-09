@@ -25,3 +25,22 @@ def get_s3_files_for_path_tokens(path_tokens: list) -> List[str]:
             results.append(f"s3://{row.bucket}/{row.key}")
 
     return results
+
+
+@transaction.atomic
+def get_s3_files_for_regex(pattern: str):
+    """
+    Find S3 files in a specific portal_run_id with defined string tokens in the key.
+
+    :param pattern:
+    :return: list of string representation for S3 URI
+    """
+    qs = S3Object.objects.filter(key__regex=pattern)
+
+    results = list()
+
+    if qs.exists():
+        for row in qs.all():
+            results.append(f"s3://{row.bucket}/{row.key}")
+
+    return results

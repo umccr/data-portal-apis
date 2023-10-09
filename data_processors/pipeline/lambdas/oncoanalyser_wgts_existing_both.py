@@ -63,8 +63,7 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """
-    expected payload
+    """event payload dict
     {
         "subject_id": "SBJ00910",
         "tumor_wgs_sample_id": "PRJ230001",
@@ -80,7 +79,7 @@ def handler(event, context) -> dict:
         "existing_wts_dir": "s3://path/to/oncoanalyser/wts/dir/",
     }
     """
-    logger.info(f"Start processing {WorkflowType.ONCOANALYSER_WTS.value} event")
+    logger.info(f"Start processing {WorkflowType.ONCOANALYSER_WGTS_EXISTING_BOTH.value} event")
     logger.info(libjson.dumps(event))
 
     # see oncoanalyser (wgts) submission lambda payload for preparing job JSON structure
@@ -104,25 +103,25 @@ def handler(event, context) -> dict:
     #     "existing_wts_dir": "s3://path/to/oncoanalyser/wts/dir/",
     # }
 
-    helper = ExternalWorkflowHelper(WorkflowType.ONCOANALYSER_WGTS)
+    helper = ExternalWorkflowHelper(WorkflowType.ONCOANALYSER_WGTS_EXISTING_BOTH)
     portal_run_id = helper.get_portal_run_id()
     subject_id = event['subject_id']
+    normal_wgs_library_id = event['normal_wgs_library_id']
     tumor_wgs_library_id = event['tumor_wgs_library_id']
     tumor_wts_library_id = event['tumor_wts_library_id']
-    normal_wgs_library_id = event['normal_wgs_library_id']
     job = {
         "mode": "wgts_existing_both",  # hard coded for the WGTS use case with existing oncoanalyser wgs/wts results
         "portal_run_id": portal_run_id,
         "subject_id": subject_id,
+        "normal_wgs_sample_id": event['normal_wgs_sample_id'],
+        "normal_wgs_library_id": normal_wgs_library_id,
+        "normal_wgs_bam": event['normal_wgs_bam'],
         "tumor_wgs_sample_id": event['tumor_wgs_sample_id'],
         "tumor_wgs_library_id": tumor_wgs_library_id,
         "tumor_wgs_bam": event['tumor_wgs_bam'],
         "tumor_wts_sample_id": event['tumor_wts_sample_id'],
         "tumor_wts_library_id": tumor_wts_library_id,
         "tumor_wts_bam": event['tumor_wts_bam'],
-        "normal_wgs_sample_id": event['normal_wgs_sample_id'],
-        "normal_wgs_library_id": normal_wgs_library_id,
-        "normal_wgs_bam": event['normal_wgs_bam'],
         "existing_wgs_dir": event['existing_wgs_dir'],
         "existing_wts_dir": event['existing_wts_dir']
     }
@@ -131,8 +130,8 @@ def handler(event, context) -> dict:
     workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'portal_run_id': portal_run_id,
-            'wfr_name': f"{WorkflowType.ONCOANALYSER_WGTS.value}__{portal_run_id}",
-            'type': WorkflowType.ONCOANALYSER_WGTS,
+            'wfr_name': f"{WorkflowType.ONCOANALYSER_WGTS_EXISTING_BOTH.value}__{portal_run_id}",
+            'type': WorkflowType.ONCOANALYSER_WGTS_EXISTING_BOTH,
             'input': job,
             'end_status': "CREATED",
         }

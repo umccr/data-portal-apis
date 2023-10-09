@@ -35,6 +35,10 @@ def perform(this_workflow: Workflow):
 
     job = prepare_oncoanalyser_wts_job(this_workflow)
 
+    if not job:
+        logger.warning(f"Calling to prepare_oncoanalyser_wts_job() return empty dict, no job to dispatch...")
+        return {}
+
     logger.info(f"Submitting {WorkflowType.ONCOANALYSER_WTS.value} job induced by "
                 f"workflow ({this_workflow.type_name}, {this_workflow.portal_run_id})")
 
