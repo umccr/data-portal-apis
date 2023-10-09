@@ -19,7 +19,7 @@ phases:
       - which pip
       - pip install -U pip
       - pip install -r requirements-test.txt
-      - yarn install
+      - npx yarn install
   build:
     commands:
       - which docker
