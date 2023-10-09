@@ -12,7 +12,7 @@ plugins:
 provider:
   name: aws
   deploymentMethod: direct
-  runtime: python3.9
+  runtime: python3.11
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   deploymentBucket:
@@ -463,7 +463,7 @@ custom:
     # environment does not require this. Only for local `sls deploy --stage dev`
     # on macOS. e.g. direct push to DEV for debugging build convenience.
     #
-    #dockerImage: public.ecr.aws/sam/build-python3.9
+    #dockerImage: public.ecr.aws/sam/build-python3.11
     dockerizePip: non-linux
     layer: true
     zip: false

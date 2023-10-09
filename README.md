@@ -9,17 +9,17 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 #### TL;DR
 
 - Required:
-  - **Python 3.9**
+  - **Python3.11**
   - Node.js with Yarn
   - See `buildspec.yml` for runtime versions requirement
 - Create virtual environment; use either built-in `python -mvenv venv` or [conda](https://docs.conda.io/en/latest/).
 
 ```
 python -V
-Python 3.9.6
+Python 3.11.5
 
 node -v
-v18.16.0
+v18.18.0
 
 npm i -g yarn
 yarn -v

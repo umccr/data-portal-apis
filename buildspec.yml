@@ -9,8 +9,8 @@ env:
 phases:
   install:
     runtime-versions:
-        nodejs: 14
-        python: 3.9
+        nodejs: 18
+        python: 3.11
     commands:
       - ps -p $$
       - python -m venv .venv
