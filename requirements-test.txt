@@ -1,5 +1,5 @@
 -r requirements.txt
-factory_boy==3.2.1
-pytz==2023.3
+factory_boy==3.3.0
+pytz==2023.3.post1
 mockito==1.4.0
 coverage==7.3.2
