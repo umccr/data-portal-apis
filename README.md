@@ -42,7 +42,8 @@ make up
 make ps
 (depends on your laptop performance :P, please wait all services to be fully started)
 
-make test_iap_mock
+make test_ica_mock
+make test_localstack
 make start
 ```
 
@@ -65,13 +66,13 @@ python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique
 
 #### Loading Data
 
-- You can sync the latest db dump from S3 bucket as follow:
+- You can sync the latest db dump from S3 bucket as follows:
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 make syncdata
 ```
 
-- Then, you can drop db and restore from db dump as follow:
+- Then, you can drop db and restore from db dump as follows:
 ```
 make loaddata
 ```

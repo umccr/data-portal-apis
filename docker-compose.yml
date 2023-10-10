@@ -24,25 +24,13 @@ services:
       - MYSQL_PASSWORD=data_portal
 
   localstack:
-    image: public.ecr.aws/localstack/localstack:0.14
+    image: public.ecr.aws/localstack/localstack:2.3
     container_name: portal_localstack
     ports:
       - "4566:4566"
-      - "4572:4572"
-      - "4576:4576"
-      - "8383:8080"
-    environment:
-      - DEFAULT_REGION=ap-southeast-2
-      - SERVICES=sqs,s3
-      - DEBUG=false
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - HOST_TMP_FOLDER=${TMPDIR}
-    volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
 
   haproxy:
-    image: public.ecr.aws/docker/library/haproxy:2.4
+    image: public.ecr.aws/docker/library/haproxy:2.8
     container_name: portal_haproxy
     ports:
       - "80:80"
@@ -50,7 +38,7 @@ services:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
 
   wes:
-    image: stoplight/prism:4
+    image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_wes
     command: mock -d -h 0.0.0.0 "/swagger/wes.json"
@@ -61,7 +49,7 @@ services:
       - ./swagger:/swagger
 
   tes:
-    image: stoplight/prism:4
+    image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_tes
     command: mock -d -h 0.0.0.0 "/swagger/tes.json"
@@ -72,7 +60,7 @@ services:
       - ./swagger:/swagger
 
   gds:
-    image: stoplight/prism:4
+    image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_gds
     command: mock -d -h 0.0.0.0 "/swagger/gds.json"
@@ -83,7 +71,7 @@ services:
       - ./swagger:/swagger
 
   ens:
-    image: stoplight/prism:4
+    image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_ens
     command: mock -d -h 0.0.0.0 "/swagger/ens.json"
@@ -94,7 +82,7 @@ services:
       - ./swagger:/swagger
 
   console:
-    image: stoplight/prism:4
+    image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_console
     command: mock -d -h 0.0.0.0 "/swagger/console.json"
@@ -105,7 +93,7 @@ services:
       - ./swagger:/swagger
 
   v2:
-    image: stoplight/prism:4
+    image: stoplight/prism:5
     platform: linux/amd64
     command: mock -d -h 0.0.0.0 "/swagger/openapi_public.yaml"
     restart: always
