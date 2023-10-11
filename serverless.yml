@@ -475,7 +475,8 @@ custom:
     - http:
         domainName: ${ssm:/data_portal/backend/api_domain_name}
         basePath: ''
-        stage: ${self:provider.stage}
+        # Either set the stage to proper one or use the APIGateway v2 $default value
+#        stage: ${self:provider.stage}
         createRoute53Record: true
         certificateArn: ${ssm:/data_portal/backend/certificate_arn}
         apiType: http
@@ -483,7 +484,7 @@ custom:
     - http:
         domainName: ${ssm:/data_portal/backend/api_domain_name2}
         basePath: ''
-        stage: ${self:provider.stage}
+#        stage: ${self:provider.stage}
         createRoute53Record: true
         certificateArn: ${ssm:/data_portal/backend/certificate_arn2}
         apiType: http

@@ -29,6 +29,6 @@ phases:
       - make load_localstack
       - python manage.py test
       - docker-compose -f docker-compose.yml -f docker-compose.ci.yml down
-      - npx serverless create_domain --stage $STAGE
+      - npx serverless create_domain
       - npx serverless deploy --stage $STAGE
       - npx serverless invoke -f migrate --stage $STAGE
