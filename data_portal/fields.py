@@ -1,7 +1,6 @@
 import hashlib
 from datetime import datetime
 from uuid import uuid4
-import re
 
 from django.db import models
 
@@ -52,14 +51,6 @@ class HashFieldHelper(object):
 
 class IdHelper(object):
 
-    portal_run_id_regex = re.compile('[0-9]{8}[a-zA-z0-9]{8}')
-
     @staticmethod
     def generate_portal_run_id():
         return f"{datetime.utcnow().strftime('%Y%m%d')}{str(uuid4())[:8]}"
-
-    @staticmethod
-    def get_portal_run_id_from_path_element(path: str) -> str:
-        matches = IdHelper.portal_run_id_regex.findall(path)
-        assert len(matches) == 1
-        return matches[0]

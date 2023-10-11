@@ -10,6 +10,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
 
 # ---
+
 import logging
 import json
 from libumccr import libjson, libdt, aws
@@ -63,10 +64,8 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """
-    sash event payload dict
+    """event payload dict
     {
-        "portal_run_id": "20230530abcdefgh",
         "subject_id": "SBJ00001",
         "tumor_sample_id": "PRJ230001",
         "tumor_library_id": "L2300001",
@@ -77,7 +76,7 @@ def handler(event, context) -> dict:
         "oncoanalyser_dir": "s3://org.umccr.data.oncoanalyser/analysis_data/SBJ00001/oncoanalyser/20230518poiuytre/wgs/L2300001__L2300002/SBJ00001_PRJ230001/"
     }
     """
-    logger.info(f"Start processing {WorkflowType.STAR_ALIGNMENT.value} event")
+    logger.info(f"Start processing {WorkflowType.SASH.value} event")
     logger.info(libjson.dumps(event))
 
     # check expected information is present
@@ -89,19 +88,12 @@ def handler(event, context) -> dict:
     dragen_somatic_dir = event['dragen_somatic_dir']
     dragen_germline_dir = event['dragen_germline_dir']
     oncoanalyser_dir = event['oncoanalyser_dir']
-    assert tumor_library_id is not None
-    assert normal_library_id is not None
-    assert tumor_sample_id is not None
-    assert normal_sample_id is not None
-    assert subject_id is not None
-    assert dragen_somatic_dir is not None
-    assert dragen_germline_dir is not None
-    assert oncoanalyser_dir is not None
 
     # see sash payload for preparing job JSON structure
-    # https://github.com/umccr/nextflow-stack/blob/e0878abd191b33ffbce4ab7ed72cbba1d2604262/application/pipeline-stacks/sash/lambda_functions/batch_job_submission/lambda_code.py#L20-L31
+    # https://github.com/umccr/nextflow-stack/blob/2ba3c88/application/pipeline-stacks/sash/lambda_functions/batch_job_submission/lambda_code.py#L20-L31
     helper = ExternalWorkflowHelper(WorkflowType.SASH)
     portal_run_id = helper.get_portal_run_id()
+
     job = {
         "portal_run_id": portal_run_id,
         "subject_id": subject_id,
@@ -126,7 +118,7 @@ def handler(event, context) -> dict:
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_library_id, normal_library_id], workflow)
+    libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_library_id, normal_library_id], workflow)
 
     # submit job: call sash submission lambda
     # NOTE: lambda_client and SSM parameter "should" be loaded statically on class initialisation instead of here
@@ -143,11 +135,11 @@ def handler(event, context) -> dict:
     logger.info(f"Submission lambda response: {lambda_response}")
 
     result = {
+        'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
         "tumor_library_id": tumor_library_id,
         "normal_library_id": normal_library_id,
         'id': workflow.id,
-        'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
         'start': libdt.serializable_datetime(workflow.start),

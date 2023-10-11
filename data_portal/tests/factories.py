@@ -22,20 +22,25 @@ utc_now_ts = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 
 
 class TestConstant(Enum):
-    portal_run_id = "20230101abcdefgh"
-    portal_run_id2 = "20230102abcdefgh"
+    portal_run_id = "20230101abcdefgh"  # typically use in T/N mock
+    portal_run_id2 = "20230102abcdefgh"  # likewise use in transcriptome mock
+    portal_run_id_umccrise = "20230103abcdefgh"
+    portal_run_id_rnasum = "20230104abcdefgh"
+    portal_run_id_oncoanalyser = "20230105abcdefgh"
+
     wfr_id = f"wfr.j317paO8zB6yG25Zm6PsgSivJEoq4Ums"
     wfr_id2 = f"wfr.Q5555aO8zB6yG25Zm6PsgSivGwDx_Uaa"
     wfv_id = f"wfv.TKWp7hsFnVTCE8KhfXEurUfTCqSa6zVx"
     wfl_id = f"wfl.Dc4GzACbjhzOf3NbqAYjSmzkE1oWKI9H"
-    umccrise_portal_run_id = "20230103abcdefgh"
+
     umccrise_wfr_id = f"wfr.umccrisezB6yG25Zm6PsgSivJEoq4Ums"
     umccrise_wfv_id = f"wfv.umccrisenVTCE8KhfXEurUfTCqSa6zVx"
     umccrise_wfl_id = f"wfl.umccrisejhzOf3NbqAYjSmzkE1oWKI9H"
-    rnasum_portal_run_id = "20230104abcdefgh"
+
     rnasum_wfr_id = f"wfr.rnasumzB6yG25Zm6PsgSivJEoq4Ums"
     rnasum_wfv_id = f"wfv.rnasumnVTCE8KhfXEurUfTCqSa6zVx"
     rnasum_wfl_id = f"wfl.rnasumjhzOf3NbqAYjSmzkE1oWKI9H"
+
     version = "v1"
     instrument_run_id = "200508_A01052_0001_BH5LY7ACGT"
     instrument_run_id2 = "220101_A01052_0002_XR5LY7TGCA"
@@ -455,7 +460,7 @@ class RNAsumWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
-    portal_run_id = TestConstant.rnasum_portal_run_id.value
+    portal_run_id = TestConstant.portal_run_id_rnasum.value
     wfr_id = TestConstant.rnasum_wfr_id.value
     wfv_id = TestConstant.rnasum_wfv_id.value
     wfl_id = TestConstant.rnasum_wfl_id.value
@@ -499,7 +504,7 @@ class UmccriseWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
-    portal_run_id = TestConstant.umccrise_portal_run_id.value
+    portal_run_id = TestConstant.portal_run_id_umccrise.value
     wfr_id = TestConstant.umccrise_wfr_id.value
     wfv_id = TestConstant.umccrise_wfv_id.value
     wfl_id = TestConstant.umccrise_wfl_id.value
@@ -553,7 +558,7 @@ class OncoanalyserWgsS3ObjectOutputFactory(factory.django.DjangoModelFactory):
 
     bucket = "bucket1"
     key = (f"analysis_data/{TestConstant.subject_id.value}/oncoanalyser/"
-           f"{TestConstant.portal_run_id.value}/wgs/"
+           f"{TestConstant.portal_run_id_oncoanalyser.value}/wgs/"
            f"{TestConstant.library_id_tumor.value}__{TestConstant.library_id_normal.value}/")
     size = 1000
     last_modified_date = now()
@@ -586,16 +591,16 @@ class OncoanalyserWgsWorkflowFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Workflow
 
-    portal_run_id = TestConstant.portal_run_id.value
+    portal_run_id = TestConstant.portal_run_id_oncoanalyser.value
     type_name = WorkflowType.ONCOANALYSER_WGS.value
     input = json.dumps({
         "subject_id": TestConstant.subject_id.value,
         "tumor_wgs_sample_id": TestConstant.sample_id.value,
         "tumor_wgs_library_id": TestConstant.library_id_tumor.value,
-        "tumor_wgs_bam": f"gds://vol1/{portal_run_id}/wgs_tumor_normal/tumor_wts_bam.bam",
+        "tumor_wgs_bam": f"gds://vol1/wgs_tumor_normal/{TestConstant.portal_run_id.value}/tumor_wts_bam.bam",
         "normal_wgs_sample_id": TestConstant.sample_id.value,
         "normal_wgs_library_id": TestConstant.library_id_normal.value,
-        "normal_wgs_bam": f"gds://vol1/{portal_run_id}/wgs_tumor_normal/normal_wgs_bam.bam",
+        "normal_wgs_bam": f"gds://vol1/wgs_tumor_normal/{TestConstant.portal_run_id.value}/normal_wgs_bam.bam",
     })
     start = make_aware(datetime.now())
     end_status = WorkflowStatus.SUCCEEDED.value

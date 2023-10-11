@@ -129,10 +129,10 @@ def handler(event, context) -> dict:
     logger.info(f"Submission lambda response: {lambda_response}")
 
     result = {
+        'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
         'library_id': library_id,
         'id': workflow.id,
-        'wfr_id': workflow.wfr_id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,
         'start': libdt.serializable_datetime(workflow.start),
