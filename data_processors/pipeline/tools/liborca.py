@@ -528,3 +528,39 @@ def parse_tso_ctdna_output_for_bam_file(workflow_output_json: str, deep_check: b
             raise ValueError(f"Couldn't get bam file from tso_ctdna_tumor_only output directory '{main_bam_path}'")
 
         return main_bam_path
+
+
+def parse_portal_run_id_from_path_element(path: str) -> str:
+    """
+    Consider this for `libregex` module in libumccr. So that any client side can benefit of code reuse.
+    """
+    portal_run_id_regex = re.compile('[0-9]{8}[a-zA-z0-9]{8}')
+    matches = portal_run_id_regex.findall(path)
+    assert len(matches) == 1, "Malformed path"
+    return matches[0]
+
+
+def parse_oncoanalyser_workflow_output_directory(output_json: str, deep_check: bool = True) -> str:
+    """
+    Parse the oncoanalyser (all modes: wgs, wts, wgts, ....) workflow run output and
+    get the output directory of the workflow
+
+    See discussion:
+    https://github.com/umccr/nextflow-stack/pull/37
+    https://umccr.slack.com/archives/CP356DDCH/p1694066750376839
+
+    :param output_json:
+    :param deep_check: default to True to raise ValueError if the output section of interest is None
+    :return:
+    """
+
+    lookup_keys = ['output_directory']
+
+    oncoanalyser_output_directory = parse_workflow_output(output_json, lookup_keys)
+
+    # Unlike CWL, oncoanalyser output is in pure JSON format
+    # i.e. not an Object form with {Directory, Class, Location}
+    if deep_check and not isinstance(oncoanalyser_output_directory, str):
+        raise ValueError("The 'output_directory' attribute of the oncoanalyser output is not string")
+
+    return oncoanalyser_output_directory

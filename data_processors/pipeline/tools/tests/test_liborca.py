@@ -572,6 +572,66 @@ class LibOrcaUnitTests(PipelineUnitTestCase):
         logger.info(tumor_bam_out)
         logger.info(normal_bam_out)
 
+    def test_parse_portal_run_id_from_path_element(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_portal_run_id_from_path_element
+        """
+        portal_run_id = liborca.parse_portal_run_id_from_path_element("gds://vol1////path/20231010abcdefg1/some.bam")
+        logger.info(portal_run_id)
+        self.assertEqual(portal_run_id, "20231010abcdefg1")
+
+    def test_parse_portal_run_id_from_path_element_raise(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_portal_run_id_from_path_element_raise
+        """
+        with self.assertRaises(AssertionError) as cm:
+            _ = liborca.parse_portal_run_id_from_path_element("gds://vol1//20231010abcdefg1//path/20231010abcdefg1/some.bam")
+        e = cm.exception
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("Malformed path", str(e))
+
+    def test_parse_oncoanalyser_workflow_output_directory(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_oncoanalyser_workflow_output_directory
+        """
+        mock_uri = "s3://bk1/key/down/under"
+        out_dir = liborca.parse_oncoanalyser_workflow_output_directory(json.dumps({
+            'output_directory': mock_uri
+        }))
+        logger.info(out_dir)
+        self.assertEqual(out_dir, mock_uri)
+
+    def test_parse_oncoanalyser_workflow_output_directory_raise1(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_oncoanalyser_workflow_output_directory_raise1
+        """
+        mock_uri = "s3://bk1/key/down/under"
+        with self.assertRaises(ValueError) as cm:
+            _ = liborca.parse_oncoanalyser_workflow_output_directory(json.dumps({
+                'output_directory': {
+                    'class': "Directory",
+                    'location': mock_uri
+                }
+            }))
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("oncoanalyser output is not string", str(e))
+
+    def test_parse_oncoanalyser_workflow_output_directory_raise2(self):
+        """
+        python manage.py test data_processors.pipeline.tools.tests.test_liborca.LibOrcaUnitTests.test_parse_oncoanalyser_workflow_output_directory_raise2
+        """
+        mock_uri = "s3://bk1/key/down/under"
+        with self.assertRaises(KeyError) as cm:
+            _ = liborca.parse_oncoanalyser_workflow_output_directory(json.dumps({
+                'output_directory1': mock_uri
+            }))
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("Unexpected workflow output format", str(e))
+
 
 class LibOrcaIntegrationTests(PipelineIntegrationTestCase):
     # Comment @skip

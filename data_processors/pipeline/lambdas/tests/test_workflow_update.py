@@ -24,7 +24,7 @@ mock_event = {
     'source': "aws.batch",
     'time': "2023-09-03T03:20:50Z",
     'detail': {
-        'portal_run_id': TestConstant.portal_run_id.value,
+        'portal_run_id': TestConstant.portal_run_id_oncoanalyser.value,
         'type_name': "oncoanalyser_wgs",
         'version': "v0.1.0",
         'output': json.dumps(mock_output),
@@ -47,7 +47,7 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(results)
         self.assertIsInstance(results, dict)
 
-        stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.portal_run_id.value)
+        stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.portal_run_id_oncoanalyser.value)
         logger.info(f"-" * 32)
         logger.info(stub_workflow)
         logger.info(stub_workflow.output)

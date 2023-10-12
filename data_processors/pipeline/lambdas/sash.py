@@ -10,6 +10,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'data_portal.settings.base')
 django.setup()
 
 # ---
+
 import logging
 import json
 from libumccr import libjson, libdt, aws
@@ -17,7 +18,7 @@ from libumccr.aws import libssm
 from libumccr.aws.liblambda import LambdaInvocationType
 
 from data_portal.models import Workflow
-from data_processors.pipeline.domain.config import STAR_ALIGNMENT_LAMBDA_ARN
+from data_processors.pipeline.domain.config import SASH_LAMBDA_ARN
 from data_processors.pipeline.domain.workflow import ExternalWorkflowHelper, WorkflowType
 from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 
@@ -63,64 +64,69 @@ def sqs_handler(event, context):
 
 
 def handler(event, context) -> dict:
-    """
-    star alignment event payload dict
+    """event payload dict
     {
-        "subject_id": subject_id,
-        "sample_id": fastq_list_row.rgsm,
-        "library_id": library_id,
-        "fastq_fwd": fastq_list_row.read_1,
-        "fastq_rev": fastq_list_row.read_2,
+        "subject_id": "SBJ00001",
+        "tumor_sample_id": "PRJ230001",
+        "tumor_library_id": "L2300001",
+        "normal_sample_id": "PRJ230002",
+        "normal_library_id": "L2300002",
+        "dragen_somatic_dir": "gds://production/analysis_data/SBJ00001/wgs_tumor_normal/20230515zyxwvuts/L2300001_L2300002/",
+        "dragen_germline_dir": "gds://production/analysis_data/SBJ00001/wgs_tumor_normal/20230515zyxwvuts/L2300002_dragen_germline/",
+        "oncoanalyser_dir": "s3://org.umccr.data.oncoanalyser/analysis_data/SBJ00001/oncoanalyser/20230518poiuytre/wgs/L2300001__L2300002/SBJ00001_PRJ230001/"
     }
     """
-    logger.info(f"Start processing {WorkflowType.STAR_ALIGNMENT.value} event")
+    logger.info(f"Start processing {WorkflowType.SASH.value} event")
     logger.info(libjson.dumps(event))
 
     # check expected information is present
-    library_id = event['library_id']
-    sample_id = event['sample_id']
+    tumor_library_id = event['tumor_library_id']
+    normal_library_id = event['normal_library_id']
+    tumor_sample_id = event['tumor_sample_id']
+    normal_sample_id = event['normal_sample_id']
     subject_id = event['subject_id']
-    fastq_fwd = event['fastq_fwd']
-    fastq_rev = event['fastq_rev']
-    assert library_id is not None
-    assert sample_id is not None
-    assert fastq_fwd is not None
-    assert fastq_rev is not None
+    dragen_somatic_dir = event['dragen_somatic_dir']
+    dragen_germline_dir = event['dragen_germline_dir']
+    oncoanalyser_dir = event['oncoanalyser_dir']
 
-    # see star alignment payload for preparing job JSON structure
-    # https://github.com/umccr/nextflow-stack/pull/29
-    helper = ExternalWorkflowHelper(WorkflowType.STAR_ALIGNMENT)
+    # see sash payload for preparing job JSON structure
+    # https://github.com/umccr/nextflow-stack/blob/2ba3c88/application/pipeline-stacks/sash/lambda_functions/batch_job_submission/lambda_code.py#L20-L31
+    helper = ExternalWorkflowHelper(WorkflowType.SASH)
     portal_run_id = helper.get_portal_run_id()
+
     job = {
         "portal_run_id": portal_run_id,
         "subject_id": subject_id,
-        "sample_id": sample_id,
-        "library_id": library_id,
-        "fastq_fwd": fastq_fwd,
-        "fastq_rev": fastq_rev,
+        "tumor_sample_id": tumor_sample_id,
+        "tumor_library_id": tumor_library_id,
+        "normal_sample_id": normal_sample_id,
+        "normal_library_id": normal_library_id,
+        "dragen_somatic_dir": dragen_somatic_dir,
+        "dragen_germline_dir": dragen_germline_dir,
+        "oncoanalyser_dir": oncoanalyser_dir
     }
 
     # register workflow in workflow table
     workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'portal_run_id': portal_run_id,
-            'wfr_name': f"star_alignment_{portal_run_id}",
-            'type': WorkflowType.STAR_ALIGNMENT,
+            'wfr_name': f"sash_{portal_run_id}",
+            'type': WorkflowType.SASH,
             'input': job,
             'end_status': "CREATED",
         }
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([job['library_id']], workflow)
+    libraryrun_srv.link_library_runs_with_x_seq_workflow([tumor_library_id, normal_library_id], workflow)
 
-    # submit job: call star alignment lambda
+    # submit job: call sash submission lambda
     # NOTE: lambda_client and SSM parameter "should" be loaded statically on class initialisation instead of here
     # (i.e. once instead of every invocation). However, that will prevent mockito from intercepting and complicate
     # testing. We compromise the little execution overhead for ease of testing.
     lambda_client = aws.lambda_client()
-    submission_lambda = libssm.get_ssm_param(STAR_ALIGNMENT_LAMBDA_ARN)
-    logger.info(f"Using star alignment lambda: {submission_lambda}")
+    submission_lambda = libssm.get_ssm_param(SASH_LAMBDA_ARN)
+    logger.info(f"Using sash submission lambda: {submission_lambda}")
     lambda_response = lambda_client.invoke(
         FunctionName=submission_lambda,
         InvocationType=LambdaInvocationType.EVENT.value,
@@ -131,7 +137,8 @@ def handler(event, context) -> dict:
     result = {
         'portal_run_id': workflow.portal_run_id,
         'subject_id': subject_id,
-        'library_id': library_id,
+        "tumor_library_id": tumor_library_id,
+        "normal_library_id": normal_library_id,
         'id': workflow.id,
         'wfr_name': workflow.wfr_name,
         'status': workflow.end_status,

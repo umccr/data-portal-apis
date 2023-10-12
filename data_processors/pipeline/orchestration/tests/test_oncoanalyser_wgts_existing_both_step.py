@@ -260,7 +260,7 @@ class OncoanalyserWgtsExistingBothStepUnitTests(PipelineUnitTestCase):
 
         logger.info(result)
         self.assertIsNotNone(result)
-        self.assertEqual(result.portal_run_id, TestConstant.portal_run_id.value)
+        self.assertEqual(result.portal_run_id, TestConstant.portal_run_id_oncoanalyser.value)
         self.assertEqual(result.type_name, WorkflowType.ONCOANALYSER_WGS.value)
 
     def test_get_existing_wgs_dir_raises_error(self):

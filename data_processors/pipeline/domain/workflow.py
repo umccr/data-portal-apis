@@ -40,6 +40,7 @@ class WorkflowType(Enum):
     ONCOANALYSER_WTS = "oncoanalyser_wts"
     ONCOANALYSER_WGS = "oncoanalyser_wgs"
     ONCOANALYSER_WGTS_EXISTING_BOTH = "oncoanalyser_wgts_existing_both"
+    SASH = "sash"
 
     @classmethod
     def from_value(cls, value):
@@ -69,6 +70,8 @@ class WorkflowType(Enum):
             return cls.ONCOANALYSER_WGS
         elif value == cls.ONCOANALYSER_WGTS_EXISTING_BOTH.value:
             return cls.ONCOANALYSER_WGTS_EXISTING_BOTH
+        elif value == cls.SASH.value:
+            return cls.SASH
         else:
             raise ValueError(f"No matching type found for {value}")
 
@@ -256,6 +259,7 @@ class ExternalWorkflowHelper(WorkflowHelper):
             WorkflowType.ONCOANALYSER_WTS,
             WorkflowType.ONCOANALYSER_WGS,
             WorkflowType.ONCOANALYSER_WGTS_EXISTING_BOTH,
+            WorkflowType.SASH
         ]
         if type_ not in allowed_workflow_types:
             raise ValueError(f"Unsupported WorkflowType for external analysis: {type_}")
