@@ -36,7 +36,7 @@ def perform(this_workflow: Workflow):
 
 def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
     """
-    TL;DR is if there is 1 dragen wgs qc or wts or tso workflow, there will be one somalier extraction step workflow
+    TL;DR is if there is 1 dragen wgs qc or wts qc or tso workflow, there will be one somalier extraction step workflow
     :param this_workflow:
     :return:
     """
@@ -45,10 +45,7 @@ def prepare_somalier_extract_jobs(this_workflow: Workflow) -> List[Dict]:
     gds_bam_path = None
     reference = SomalierReferenceSite.HG38_RNA.value
 
-    if this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS.value.lower():
-        gds_bam_path = liborca.parse_transcriptome_output_for_bam_file(this_workflow.output)
-
-    elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
+    if this_workflow.type_name.lower() == WorkflowType.DRAGEN_WGS_QC.value.lower():
         gds_bam_path = liborca.parse_wgs_alignment_qc_output_for_bam_file(this_workflow.output)
 
     elif this_workflow.type_name.lower() == WorkflowType.DRAGEN_WTS_QC.value.lower():
