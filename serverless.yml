@@ -146,6 +146,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 120
     reservedConcurrency: 20
     # Uncomment to enable xray on this lambda
@@ -160,6 +161,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/ica_gds_event_sqs_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 120
     reservedConcurrency: 20
 
@@ -170,6 +172,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/batch_event_sqs_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 120
 
   sqs_iap_event_processor:
@@ -179,8 +182,12 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/iap_ens_event_sqs_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 120
 
+  # SQS Implement partial batch responses - ReportBatchItemFailures
+  # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#services-sqs-batchfailurereporting
+  # https://repost.aws/knowledge-center/lambda-sqs-report-batch-item-failures
   sqs_dragen_wgs_qc_event_processor:
     handler: data_processors.pipeline.lambdas.dragen_wgs_qc.sqs_handler
     layers:
@@ -188,6 +195,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_dragen_wgs_qc_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_dragen_wts_event_processor:
@@ -197,6 +205,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_dragen_wts_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_star_alignment_event_processor:
@@ -206,6 +215,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_star_alignment_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_oncoanalyser_wts_event_processor:
@@ -215,6 +225,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_oncoanalyser_wts_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_oncoanalyser_wgs_event_processor:
@@ -224,6 +235,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_oncoanalyser_wgs_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_oncoanalyser_wgts_existing_both:
@@ -233,6 +245,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_oncoanalyser_wgts_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_sash_event_processor:
@@ -242,6 +255,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_sash_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_dragen_tso_ctdna_event_processor:
@@ -251,6 +265,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_dragen_tso_ctdna_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_tumor_normal_event_processor:
@@ -260,6 +275,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_tumor_normal_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_umccrise_event_processor:
@@ -269,6 +285,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_umccrise_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_rnasum_event_processor:
@@ -278,6 +295,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_rnasum_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   sqs_somalier_extract_event_processor:
@@ -287,6 +305,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_somalier_extract_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 60
 
   sqs_notification_event_processor:
@@ -296,6 +315,7 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/sqs_notification_queue_arn}
+          functionResponseType: ReportBatchItemFailures
     timeout: 28
 
   bcl_convert:

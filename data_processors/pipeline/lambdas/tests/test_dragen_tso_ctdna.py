@@ -212,7 +212,7 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         logger.info("Example dragen_tso_ctdna.sqs_handler lambda output:")
         logger.info(json.dumps(results))
 
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2)
 
 
 class DragenTsoCtDnaIntegrationTests(PipelineIntegrationTestCase):

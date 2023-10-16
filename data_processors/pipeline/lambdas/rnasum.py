@@ -51,12 +51,24 @@ def sqs_handler(event, context):
     messages = event['Records']
 
     results = []
+    batch_item_failures = []
     for message in messages:
         job = libjson.loads(message['body'])
-        results.append(handler(job, context))
+        try:
+            results.append(handler(job, context))
+        except Exception as e:
+            logger.exception(str(e), exc_info=e, stack_info=True)
+
+            # SQS Implement partial batch responses - ReportBatchItemFailures
+            # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#services-sqs-batchfailurereporting
+            # https://repost.aws/knowledge-center/lambda-sqs-report-batch-item-failures
+            batch_item_failures.append({
+                "itemIdentifier": message['messageId']
+            })
 
     return {
-        'results': results
+        'results': results,
+        'batchItemFailures': batch_item_failures
     }
 
 

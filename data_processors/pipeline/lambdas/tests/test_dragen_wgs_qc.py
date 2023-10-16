@@ -165,7 +165,7 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         logger.info("Example dragen_wgs_qc.sqs_handler lambda output:")
         logger.info(json.dumps(results))
 
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2)
 
     def test_portal_run_id(self):
         """
