@@ -257,7 +257,7 @@ def notify_batch_run_status(batch_run_id):
         state = "completed"
 
     workflows = Workflow.objects.get_by_batch_run(batch_run=batch_run)
-    workflow = workflows[0]  # pick one for convenience
+    workflow: Workflow = workflows[0]  # pick one for convenience
 
     _total_cnt = 0
     _stats = {
@@ -295,11 +295,15 @@ def notify_batch_run_status(batch_run_id):
         # anything else -> orange
         _color = libslack.SlackColor.ORANGE.value
 
+    wfl_type = str(workflow.type_name)
+    if wfl_type.lower() in [WorkflowType.DRAGEN_WTS_QC.value.lower(), WorkflowType.DRAGEN_WGS_QC.value.lower()]:
+        wfl_type = WorkflowType.DRAGEN_WGTS_QC.value  # override with placeholder WGTS type for a qc batch as whole
+
     _attachments = [
         {
             "fallback": _topic,
             "color": _color,
-            "pretext": f"Status: {state.upper()}, Workflow: {workflow.type_name.upper()}@{workflow.version}",
+            "pretext": f"Status: {state.upper()}, Workflow: {wfl_type.upper()}@{workflow.version}",
             "title": _title,
             "text": _metrics,
             "footer": SLACK_FOOTER_BADGE_AUTO,

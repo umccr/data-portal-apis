@@ -387,3 +387,68 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         logger.info("-" * 32)
         for br in Batch.objects.all():
             logger.info(f"{br}")
+
+    @skip
+    def test_prepare_dragen_wgs_qc_jobs_169(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wgs_qc_step.DragenWgsQcStepIntegrationTests.test_prepare_dragen_wgs_qc_jobs_169
+        """
+
+        # --- pick one successful BCL Convert run
+        # ica workflows runs list
+        # ica workflows runs get wfr.<ID>
+
+        bcl_convert_wfr_id = "wfr.99e54af4fd694e49846f76d7a6a7035c"  # from DEV
+        total_jobs_to_eval = 38
+
+        # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
+
+        # first --
+        # - we need metadata!
+        # - populate LabMetadata tables in test db
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2023"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # second --
+        # - we need to have BCL Convert workflow in db
+        # - WorkflowFactory also create related fixture sub factory SequenceRunFactory and linked them
+        mock_bcl_convert: Workflow = WorkflowFactory()
+
+        # third --
+        # - grab workflow run from WES endpoint
+        # - sync input and output attributes to our mock BCL Convert workflow in db
+        bcl_convert_run = wes.get_run(bcl_convert_wfr_id, to_dict=True)
+        mock_bcl_convert.input = json.dumps(bcl_convert_run['input'])
+        mock_bcl_convert.output = json.dumps(bcl_convert_run['output'])
+        mock_bcl_convert.save()
+
+        # fourth --
+        # - replay FastqListRow update step after BCL Convert workflow succeeded
+        fastq_update_step.perform(mock_bcl_convert)
+
+        # fifth --
+        # - we also need Batch and BatchRun since DRAGEN_WGS_QC workflows (jobs) are running in batch manner
+        # - we will use Batcher to create them, just like in dragen_wgs_qc_step.perform()
+        batcher = Batcher(
+            workflow=mock_bcl_convert,
+            run_step=WorkflowType.DRAGEN_WGTS_QC.value,
+            batch_srv=batch_srv,
+            fastq_srv=fastq_srv,
+            logger=logger
+        )
+
+        logger.info("-" * 32)
+        logger.info("PREPARE DRAGEN_WGTS_QC JOBS:")
+
+        job_list = dragen_wgs_qc_step.prepare_dragen_wgs_qc_jobs(batcher)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(json.dumps(job_list))
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), total_jobs_to_eval)
