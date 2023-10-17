@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from mockito import when
 
@@ -129,7 +130,7 @@ _mock_batch_event = {
 _mock_sqs_event = {
     "Records": [
         {
-            "messageId": "aaaaAA0e-4b00-4a2e-a92e-bdaa98c3eeEE",
+            "messageId": str(uuid.uuid4()),
             "receiptHandle": "AQEBiFujdr<snip>96Y=",
             "body": json.dumps(_mock_batch_event),
             "attributes": {
