@@ -127,7 +127,6 @@ def handler(event, context) -> dict:
     # Read the following step module doc string about workflow typing
     # `data_processors.pipeline.orchestration.dragen_wgs_qc_step`
     # ###
-    # Get workflow helper
     if library_lab_metadata.type.lower() == LabMetadataType.WTS.value.lower():
         workflow_type = WorkflowType.DRAGEN_WTS_QC
     elif library_lab_metadata.type.lower() == LabMetadataType.WGS.value.lower():
@@ -135,6 +134,7 @@ def handler(event, context) -> dict:
     else:
         raise ValueError(f"Expected metadata type for library_id '{library_id}' to be one of WGS or WTS")
 
+    # Get workflow helper
     wfl_helper = SecondaryAnalysisHelper(workflow_type)
     workflow_input: dict = wfl_helper.get_workflow_input()
 
@@ -190,7 +190,7 @@ def handler(event, context) -> dict:
             'wfr_id': wfl_run['id'],
             'portal_run_id': wfl_helper.get_portal_run_id(),
             'wfv_id': wfl_run['workflow_version']['id'],
-            'type': WorkflowType.DRAGEN_WGS_QC,
+            'type': workflow_type,
             'version': workflow_version,
             'input': workflow_input,
             'start': wfl_run.get('time_started'),
