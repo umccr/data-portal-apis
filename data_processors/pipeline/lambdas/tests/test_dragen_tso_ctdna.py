@@ -212,6 +212,9 @@ class DragenTsoCtDnaTests(PipelineUnitTestCase):
         logger.info("Example dragen_tso_ctdna.sqs_handler lambda output:")
         logger.info(json.dumps(results))
 
+        # expecting length of 2 in results
+        # i.e. one for the handler results and one for the batchItemFailures
+        # No matter what, both should always be present.
         self.assertEqual(len(results), 2)
 
 
