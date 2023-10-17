@@ -11,8 +11,9 @@ from data_portal.models.labmetadata import LabMetadataType
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
-from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory, LabMetadataFactory
-from data_processors.pipeline.domain.workflow import SecondaryAnalysisHelper
+from data_portal.tests.factories import SequenceRunFactory, TestConstant, LibraryRunFactory, LabMetadataFactory, \
+    WtsTumorLabMetadataFactory, WtsTumorLibraryRunFactory
+from data_processors.pipeline.domain.workflow import SecondaryAnalysisHelper, WorkflowType
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import dragen_wgs_qc
 from data_processors.pipeline.services import metadata_srv, workflow_srv
@@ -135,6 +136,60 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         for lib_run in workflow_srv.get_all_library_runs_by_workflow(wfl):
             logger.info(lib_run)
             self.assertEqual(lib_run.library_id, TestConstant.library_id_normal.value)
+
+    def test_handler_wts(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_wts
+        """
+        mock_wts_library: LabMetadata = WtsTumorLabMetadataFactory()
+        mock_wts_library_run: LibraryRun = WtsTumorLibraryRunFactory()
+        mock_sqr: SequenceRun = SequenceRunFactory()
+
+        when(metadata_srv).get_subject_id_from_library_id(...).thenReturn(TestConstant.subject_id.value)
+
+        workflow: dict = dragen_wgs_qc.handler({
+            "library_id": mock_wts_library.library_id,
+            "lane": TestConstant.wts_lane_tumor_library.value,
+            "fastq_list_rows": [
+                {
+                    "rgid": "index1.index2.lane",
+                    "rgsm": "sample_name",
+                    "rglb": "L0000001",
+                    "lane": 1,
+                    "read_1": {
+                      "class": "File",
+                      "location": "gds://path/to/read_1.fastq.gz"
+                    },
+                    "read_2": {
+                      "class": "File",
+                      "location": "gds://path/to/read_2.fastq.gz"
+                    }
+                }
+            ],
+            "seq_run_id": mock_sqr.run_id,
+            "seq_name": mock_sqr.name,
+        }, None)
+
+        logger.info("-" * 32)
+        logger.info("Example dragen_wgs_qc.handler lambda output:")
+        logger.info(json.dumps(workflow))
+
+        # assert DRAGEN_WTS_QC workflow launch success and save workflow run in db
+        qs = Workflow.objects.all()
+        self.assertEqual(1, qs.count())
+
+        wfl = qs.get()
+
+        # assert SecondaryAnalysisHelper initialise with proper workflow type `wts_alignment_qc`
+        self.assertEqual(wfl.type_name, WorkflowType.DRAGEN_WTS_QC.value)  # assert db record
+        self.assertIn(WorkflowType.DRAGEN_WTS_QC.value, wfl.wfr_name)
+
+        # assert that we can query related LibraryRun from Workflow side
+        all_lib_runs = workflow_srv.get_all_library_runs_by_workflow(wfl)
+        self.assertEqual(1, len(all_lib_runs))
+        for lib_run in workflow_srv.get_all_library_runs_by_workflow(wfl):
+            logger.info(lib_run)
+            self.assertEqual(lib_run.library_id, TestConstant.wts_library_id_tumor.value)
 
     def test_handler_alt(self):
         """
