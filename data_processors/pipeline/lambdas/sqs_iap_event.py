@@ -45,25 +45,42 @@ def handler(event, context):
 
     messages = event['Records']
 
+    results = []
+    batch_item_failures = []
     for message in messages:
-        event_type = message['messageAttributes']['type']['stringValue']
 
-        if event_type not in IMPLEMENTED_ENS_TYPES:
-            logger.warning(f"Skipping unsupported IAP ENS type: {event_type}")
-            continue
+        try:
+            event_type = message['messageAttributes']['type']['stringValue']
 
-        event_action = message['messageAttributes']['action']['stringValue']
-        message_body = libjson.loads(message['body'])
+            if event_type not in IMPLEMENTED_ENS_TYPES:
+                logger.warning(f"Skipping unsupported IAP ENS type: {event_type}")
+                continue
 
-        if event_type == ENSEventType.BSSH_RUNS.value:
-            handle_bssh_run_event(message, event_action, event_type, context)
+            event_action = message['messageAttributes']['action']['stringValue']
+            message_body = libjson.loads(message['body'])
 
-        if event_type == ENSEventType.WES_RUNS.value:
-            handle_wes_runs_event(message_body, context)
+            if event_type == ENSEventType.BSSH_RUNS.value:
+                handle_bssh_run_event(message, event_action, event_type, context)
 
-    _msg = f"IAP ENS event processing complete"
-    logger.info(_msg)
-    return _msg
+            if event_type == ENSEventType.WES_RUNS.value:
+                handle_wes_runs_event(message_body, context)
+
+            results.append(message['messageId'])
+
+        except Exception as e:
+            logger.exception(str(e), exc_info=e, stack_info=True)
+
+            # SQS Implement partial batch responses - ReportBatchItemFailures
+            # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#services-sqs-batchfailurereporting
+            # https://repost.aws/knowledge-center/lambda-sqs-report-batch-item-failures
+            batch_item_failures.append({
+                'itemIdentifier': message['messageId']
+            })
+
+    return {
+        'results': results,
+        'batchItemFailures': batch_item_failures
+    }
 
 
 def handle_bssh_run_event(message, event_action, event_type, context):

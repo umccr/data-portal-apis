@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -186,6 +187,7 @@ def _sqs_wes_event_message(wfv_id, wfr_id, workflow_status: WorkflowStatus = Wor
                     "SenderId": "ACTGAGCTI2IGZA4XHGYYY:sender-sender",
                     "ApproximateFirstReceiveTimestamp": "1589509337535"
                 },
+                "messageId": str(uuid.uuid4()),
             }
         ]
     }
@@ -263,6 +265,7 @@ def _sqs_bssh_event_message():
                     "ApproximateFirstReceiveTimestamp": "1589509337535"
                 },
                 "eventSourceARN": "arn:aws:sqs:ap-southeast-2:843407916570:my-queue",
+                "messageId": str(uuid.uuid4()),
             }
         ]
     }
@@ -319,7 +322,8 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
                 {
                     "eventSource": "aws:sqs",
                     "body": "does_not_matter",
-                    "messageAttributes": ens_sqs_message_attributes
+                    "messageAttributes": ens_sqs_message_attributes,
+                    "messageId": str(uuid.uuid4()),
                 }
             ]
         }
