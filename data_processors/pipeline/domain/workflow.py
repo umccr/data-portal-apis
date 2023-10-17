@@ -208,7 +208,7 @@ class SecondaryAnalysisHelper(IcaWorkflowHelper):
     def __init__(self, type_: WorkflowType):
         allowed_workflow_types = [
             WorkflowType.DRAGEN_WGS_QC,
-            WorkflowType.DRAGEN_WGTS_QC,
+            # WorkflowType.DRAGEN_WGTS_QC,  # intentional comment, do not initialise a placeholder type, see ^^^
             WorkflowType.DRAGEN_WTS_QC,
             WorkflowType.DRAGEN_TSO_CTDNA,
             WorkflowType.DRAGEN_WTS,
@@ -217,7 +217,7 @@ class SecondaryAnalysisHelper(IcaWorkflowHelper):
             WorkflowType.RNASUM
         ]
         if type_ not in allowed_workflow_types:
-            raise ValueError(f"Unsupported WorkflowType for Secondary analysis: {type_}")
+            raise ValueError(f"Unsupported WorkflowType for Secondary Analysis: {type_}")
         super().__init__(type_)
 
     def get_mid_path(self, target_id: str, secondary_target_id: str = None) -> str:
