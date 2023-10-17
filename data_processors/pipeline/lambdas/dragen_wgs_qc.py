@@ -50,12 +50,24 @@ def sqs_handler(event, context):
     messages = event['Records']
 
     results = []
+    batch_item_failures = []
     for message in messages:
         job = libjson.loads(message['body'])
-        results.append(handler(job, context))
+        try:
+            results.append(handler(job, context))
+        except Exception as e:
+            logger.exception(str(e), exc_info=e, stack_info=True)
+
+            # SQS Implement partial batch responses - ReportBatchItemFailures
+            # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#services-sqs-batchfailurereporting
+            # https://repost.aws/knowledge-center/lambda-sqs-report-batch-item-failures
+            batch_item_failures.append({
+                "itemIdentifier": message['messageId']
+            })
 
     return {
-        'results': results
+        'results': results,
+        'batchItemFailures': batch_item_failures
     }
 
 
@@ -109,21 +121,19 @@ def handler(event, context) -> dict:
 
     # Check type is not None
     if library_lab_metadata is None:
-        logger.error(f"Expected to retrieve metadata for library '{library_id}' but no metadata was returned")
-        raise ValueError
+        raise ValueError(f"Metadata not found for library_id '{library_id}'")
 
     # ###
     # Read the following step module doc string about workflow typing
     # `data_processors.pipeline.orchestration.dragen_wgs_qc_step`
     # ###
     # Get workflow helper
-    if library_lab_metadata.type == LabMetadataType.WTS:
+    if library_lab_metadata.type.lower() == LabMetadataType.WTS.value.lower():
         workflow_type = WorkflowType.DRAGEN_WTS_QC
-    elif library_lab_metadata.type == LabMetadataType.WGS:
+    elif library_lab_metadata.type.lower() == LabMetadataType.WGS.value.lower():
         workflow_type = WorkflowType.DRAGEN_WGS_QC
     else:
-        logger.error(f"Expected metadata type for library id '{library_id}' to be one of WGS or WTS")
-        raise ValueError
+        raise ValueError(f"Expected metadata type for library_id '{library_id}' to be one of WGS or WTS")
 
     wfl_helper = SecondaryAnalysisHelper(workflow_type)
     workflow_input: dict = wfl_helper.get_workflow_input()

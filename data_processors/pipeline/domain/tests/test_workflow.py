@@ -1,11 +1,12 @@
 import json
 
 from libumccr.aws import libssm
-from mockito import when
+from mockito import when, spy2
 
 from data_portal.models.workflow import Workflow
 from data_portal.tests import factories
 from data_portal.tests.factories import SequenceFactory, TestConstant
+from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowRule, WorkflowType, SecondaryAnalysisHelper, \
     PrimaryDataHelper, SequenceRule, SequenceRuleError, WorkflowHelper
 from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase
@@ -47,6 +48,32 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         logger.info(tso_eng_params)
         self.assertIn("maxScatter", tso_eng_params)
         self.assertEqual(tso_eng_params['maxScatter'], 8)
+
+    def test_secondary_analysis_helper_block_wgts_qc_type(self):
+        """
+        python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_secondary_analysis_helper_block_wgts_qc_type
+        """
+        with self.assertRaises(ValueError) as cm:
+            _ = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WGTS_QC)
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("Unsupported WorkflowType for Secondary Analysis", str(e))
+
+    def test_secondary_analysis_helper_param_not_found(self):
+        """
+        python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_secondary_analysis_helper_param_not_found
+        """
+        spy2(libssm.get_ssm_param)
+        (when(libssm).get_ssm_param(f"{ICA_WORKFLOW_PREFIX}/{WorkflowType.DRAGEN_WTS_QC.value}/id")
+         .thenRaise(Exception("An error occurred (ParameterNotFound) when calling the GetParameter operation")))
+
+        with self.assertRaises(Exception) as cm:
+            _ = SecondaryAnalysisHelper(WorkflowType.DRAGEN_WTS_QC)
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("An error occurred (ParameterNotFound)", str(e))
 
     def test_primary_data_helper(self):
         """

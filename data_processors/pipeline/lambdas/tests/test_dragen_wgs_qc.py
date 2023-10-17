@@ -6,6 +6,8 @@ from libica.openapi import libwes
 from libumccr import libjson
 from mockito import when
 
+from data_portal.models import LabMetadata
+from data_portal.models.labmetadata import LabMetadataType
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.sequencerun import SequenceRun
 from data_portal.models.workflow import Workflow
@@ -18,6 +20,72 @@ from data_processors.pipeline.tests.case import logger, PipelineUnitTestCase, Pi
 
 
 class DragenWgsQcUnitTests(PipelineUnitTestCase):
+
+    def test_handler_no_meta(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_no_meta
+        """
+
+        with self.assertRaises(ValueError) as cm:
+            dragen_wgs_qc.handler({
+                "library_id": TestConstant.library_id_normal.value,
+                "lane": TestConstant.lane_normal_library.value,
+                "fastq_list_rows": [
+                    {
+                        "rgid": "index1.index2.lane",
+                        "rgsm": "sample_name",
+                        "rglb": "L0000001",
+                        "lane": 1,
+                        "read_1": {
+                            "class": "File",
+                            "location": "gds://path/to/read_1.fastq.gz"
+                        },
+                        "read_2": {
+                            "class": "File",
+                            "location": "gds://path/to/read_2.fastq.gz"
+                        }
+                    }
+                ],
+            }, None)
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("Metadata not found", str(e))
+
+    def test_handler_wrong_meta_type(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_dragen_wgs_qc.DragenWgsQcUnitTests.test_handler_wrong_meta_type
+        """
+
+        mock_normal_library: LabMetadata = LabMetadataFactory()
+        mock_normal_library.type = LabMetadataType.EXOME
+        mock_normal_library.save()
+
+        with self.assertRaises(ValueError) as cm:
+            dragen_wgs_qc.handler({
+                "library_id": TestConstant.library_id_normal.value,
+                "lane": TestConstant.lane_normal_library.value,
+                "fastq_list_rows": [
+                    {
+                        "rgid": "index1.index2.lane",
+                        "rgsm": "sample_name",
+                        "rglb": "L0000001",
+                        "lane": 1,
+                        "read_1": {
+                            "class": "File",
+                            "location": "gds://path/to/read_1.fastq.gz"
+                        },
+                        "read_2": {
+                            "class": "File",
+                            "location": "gds://path/to/read_2.fastq.gz"
+                        }
+                    }
+                ],
+            }, None)
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("be one of WGS or WTS", str(e))
 
     def test_handler(self):
         """
@@ -165,7 +233,10 @@ class DragenWgsQcUnitTests(PipelineUnitTestCase):
         logger.info("Example dragen_wgs_qc.sqs_handler lambda output:")
         logger.info(json.dumps(results))
 
-        self.assertEqual(len(results), 1)
+        # expecting length of 2 in results
+        # i.e. one for the handler results and one for the batchItemFailures
+        # No matter what, both should always be present.
+        self.assertEqual(len(results), 2)
 
     def test_portal_run_id(self):
         """
