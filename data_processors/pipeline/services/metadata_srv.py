@@ -74,6 +74,13 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
     """
     Determine which samples are available for T/N workflow
 
+    Input Contract:
+        qc_workflows must be an instance of Workflow from database and, linked to SequenceRun
+
+    Business logic:
+        Find clinical or research grade, WTS tumor library metadata by given QC workflows
+        Only those that are sequenced
+
     :param qc_workflows: Succeeded QC workflows
     :return: (List[LabMetadata], List[str])
     """
@@ -100,6 +107,19 @@ def get_tn_metadata_by_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadat
 
 @transaction.atomic
 def get_wts_metadata_by_wts_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMetadata], List[str]):
+    """
+    Determine which samples are available for transcriptome workflow
+
+    Input Contract:
+        qc_workflows must be an instance of Workflow from database and, linked to SequenceRun
+
+    Business logic:
+        Find clinical or research grade, WTS tumor library metadata by given QC workflows
+        Only those that are sequenced
+
+    :param qc_workflows: Succeeded QC workflows
+    :return: (List[LabMetadata], List[str])
+    """
     meta_list = list()
 
     libraries = []
@@ -119,7 +139,6 @@ def get_wts_metadata_by_wts_qc_runs(qc_workflows: List[Workflow]) -> (List[LabMe
             meta_list.append(meta)
 
     return meta_list, libraries
-
 
 
 @transaction.atomic
