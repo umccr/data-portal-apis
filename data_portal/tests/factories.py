@@ -5,6 +5,7 @@ from enum import Enum
 import factory
 from django.utils.timezone import now, make_aware
 
+from data_portal.models import FastqListRow
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.gdsfile import GDSFile
@@ -640,3 +641,29 @@ class ReportLinkedS3ObjectFactory(factory.django.DjangoModelFactory):
     size = 1000
     last_modified_date = now()
     e_tag = 'etag'
+
+
+class WtsFastqListRowFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = FastqListRow
+
+    rgid = (f"TCCGGAGA.AGGATAGG.1.{TestConstant.instrument_run_id.value}."
+            f"{TestConstant.wts_sample_id.value}_{TestConstant.wts_library_id_tumor.value}")
+    rglb = TestConstant.wts_library_id_tumor.value
+    rgsm = TestConstant.wts_sample_id.value
+    lane = TestConstant.wts_lane_tumor_library.value
+    read_1 = f"gds://umccr-fastq-data/A/UMCCR/PRJ123456_L1234567_S1_L001_R1_001.fastq.gz"
+    read_2 = f"gds://umccr-fastq-data/A/UMCCR/PRJ123456_L1234567_S1_L001_R2_001.fastq.gz"
+
+
+class WtsFastqListRowFactory2(factory.django.DjangoModelFactory):
+    class Meta:
+        model = FastqListRow
+
+    rgid = (f"TCCGGAGA.AGGATAGG.1.{TestConstant.instrument_run_id2.value}."
+            f"{TestConstant.wts_sample_id.value}_{TestConstant.wts_library_id_tumor2.value}")
+    rglb = TestConstant.wts_library_id_tumor2.value
+    rgsm = TestConstant.wts_sample_id.value
+    lane = TestConstant.wts_lane_tumor_library.value
+    read_1 = f"gds://umccr-fastq-data/A/UMCCR/PRJ123456_L1234567_S1_L001_R1_001.fastq.gz"
+    read_2 = f"gds://umccr-fastq-data/A/UMCCR/PRJ123456_L1234567_S1_L001_R2_001.fastq.gz"

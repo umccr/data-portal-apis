@@ -7,7 +7,8 @@ from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import TestConstant, DragenWtsQcWorkflowFactory, WtsTumorLibraryRunFactory, \
-    WtsTumorLabMetadataFactory
+    WtsTumorLabMetadataFactory, WtsTumorLabMetadataFactory2, WtsTumorLibraryRunFactory2, WtsFastqListRowFactory, \
+    WtsFastqListRowFactory2
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.orchestration import star_alignment_step
 from data_processors.pipeline.services import libraryrun_srv
@@ -67,4 +68,102 @@ class StarAlignmentStepUnitTests(PipelineUnitTestCase):
         logger.info(f"{json.dumps(result)}")
         self.assertEqual(result['subject_id'], TestConstant.subject_id.value)
 
-    # TODO: Integration Test
+    def test_prepare_star_alignment_job_meta_list_zero(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_star_alignment_step.StarAlignmentStepUnitTests.test_prepare_star_alignment_job_meta_list_zero
+        """
+        mock_qc_workflow: Workflow = DragenWtsQcWorkflowFactory()
+        mock_qc_workflow.end = now()
+        mock_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_qc_workflow.save()
+
+        job = star_alignment_step.prepare_star_alignment_job(this_workflow=mock_qc_workflow)
+
+        logger.info(job)
+        self.assertEqual(job, {})
+
+    def test_prepare_star_alignment_job_meta_list_multiple(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_star_alignment_step.StarAlignmentStepUnitTests.test_prepare_star_alignment_job_meta_list_multiple
+        """
+        mock_meta_wts_tumor: LabMetadata = WtsTumorLabMetadataFactory()
+        mock_meta_wts_tumor2: LabMetadata = WtsTumorLabMetadataFactory2()
+
+        mock_lbr_wts_tumor: LibraryRun = WtsTumorLibraryRunFactory()
+        mock_lbr_wts_tumor2: LibraryRun = WtsTumorLibraryRunFactory2()
+        mock_lbr_wts_tumor2.instrument_run_id = mock_lbr_wts_tumor.instrument_run_id
+        mock_lbr_wts_tumor2.run_id = mock_lbr_wts_tumor.run_id
+        mock_lbr_wts_tumor2.save()
+
+        mock_qc_workflow: Workflow = DragenWtsQcWorkflowFactory()
+        mock_qc_workflow.end = now()
+        mock_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_qc_workflow.save()
+
+        # this is deliberately linking - in real world there could never be 2 libraries link to single QC workflow
+        _ = libraryrun_srv.link_library_runs_with_x_seq_workflow(
+            [mock_meta_wts_tumor.library_id, mock_meta_wts_tumor2.library_id],
+            workflow=mock_qc_workflow,
+        )
+
+        job = star_alignment_step.prepare_star_alignment_job(this_workflow=mock_qc_workflow)
+
+        logger.info(job)
+        self.assertEqual(job, {})
+
+    def test_prepare_star_alignment_job_fqlr_zero(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_star_alignment_step.StarAlignmentStepUnitTests.test_prepare_star_alignment_job_fqlr_zero
+        """
+        mock_meta_wts_tumor: LabMetadata = WtsTumorLabMetadataFactory()
+
+        mock_lbr_wts_tumor: LibraryRun = WtsTumorLibraryRunFactory()
+
+        mock_qc_workflow: Workflow = DragenWtsQcWorkflowFactory()
+        mock_qc_workflow.end = now()
+        mock_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_qc_workflow.save()
+
+        _ = libraryrun_srv.link_library_runs_with_x_seq_workflow(
+            [mock_meta_wts_tumor.library_id],
+            workflow=mock_qc_workflow,
+        )
+
+        # let not populate any FastqListRow into db then it should hit statement: `if len(fastq_list_rows) == 0`
+
+        job = star_alignment_step.prepare_star_alignment_job(this_workflow=mock_qc_workflow)
+
+        logger.info(job)
+        self.assertEqual(job, {})
+
+    def test_prepare_star_alignment_job_fqlr_multiple(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_star_alignment_step.StarAlignmentStepUnitTests.test_prepare_star_alignment_job_fqlr_multiple
+        """
+        mock_meta_wts_tumor: LabMetadata = WtsTumorLabMetadataFactory()
+
+        mock_lbr_wts_tumor: LibraryRun = WtsTumorLibraryRunFactory()
+
+        mock_qc_workflow: Workflow = DragenWtsQcWorkflowFactory()
+        mock_qc_workflow.end = now()
+        mock_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_qc_workflow.save()
+
+        _ = libraryrun_srv.link_library_runs_with_x_seq_workflow(
+            [mock_meta_wts_tumor.library_id],
+            workflow=mock_qc_workflow,
+        )
+
+        # let simulate faulty multiple records of FastqListRow db state with the same sequencerun, library_id
+        mock_fqlr1: FastqListRow = WtsFastqListRowFactory()
+        mock_fqlr1.sequence_run = mock_qc_workflow.sequence_run
+        mock_fqlr1.save()
+        mock_fqlr2: FastqListRow = WtsFastqListRowFactory2()
+        mock_fqlr2.sequence_run = mock_qc_workflow.sequence_run
+        mock_fqlr2.rglb = mock_fqlr1.rglb
+        mock_fqlr2.save()
+
+        job = star_alignment_step.prepare_star_alignment_job(this_workflow=mock_qc_workflow)
+
+        logger.info(job)
+        self.assertEqual(job, {})
