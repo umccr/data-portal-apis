@@ -139,17 +139,23 @@ def get_workflows_by_wfr_ids(wfr_id_list: List[str]) -> List[Workflow]:
 
 
 @transaction.atomic
-def get_running_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType):
+def get_running_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType) -> List[Workflow]:
     """query for Workflows associated with this SequenceRun"""
+    workflows = list()
+
     qs: QuerySet = Workflow.objects.get_running_by_sequence_run(
         sequence_run=sequence_run,
         type_name=workflow_type.value.lower()
     )
-    return qs.all()
+
+    if qs.exists():
+        for w in qs.all():
+            workflows.append(w)
+    return workflows
 
 
 @transaction.atomic
-def get_succeeded_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType):
+def get_succeeded_by_sequence_run(sequence_run: SequenceRun, workflow_type: WorkflowType) -> List[Workflow]:
     """query for Succeeded Workflows associated with this SequenceRun"""
     workflows = list()
 

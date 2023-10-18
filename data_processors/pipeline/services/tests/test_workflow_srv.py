@@ -8,7 +8,8 @@ from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import TestConstant, DragenWtsWorkflowFactory, WorkflowFactory, LabMetadataFactory, \
-    LibraryRunFactory, TumorNormalWorkflowFactory, TumorLabMetadataFactory, TumorLibraryRunFactory
+    LibraryRunFactory, TumorNormalWorkflowFactory, TumorLabMetadataFactory, TumorLibraryRunFactory, \
+    DragenWgsQcWorkflowFactory
 from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
 from data_processors.pipeline.services import workflow_srv, libraryrun_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
@@ -189,3 +190,76 @@ class WorkflowSrvUnitTests(PipelineUnitTestCase):
 
         self.assertEqual(len(meta_list), 2)
         self.assertIn(mock_meta_wgs_normal, meta_list)
+
+    def test_get_running_by_sequence_run(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_running_by_sequence_run
+        """
+
+        mock_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+
+        running: List[Workflow] = workflow_srv.get_running_by_sequence_run(
+            sequence_run=mock_wgs_qc_workflow.sequence_run,
+            workflow_type=WorkflowType.DRAGEN_WGS_QC
+        )
+
+        logger.info(running)
+        self.assertEqual(len(running), 1)
+        self.assertIsNone(running[0].end)
+        self.assertEqual(running[0].end_status, WorkflowStatus.RUNNING.value)
+
+    def test_get_running_by_sequence_run_end_status_null(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_running_by_sequence_run_end_status_null
+        """
+
+        mock_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+        # Set workflow status to NULL. We should not classify this workflow as 'RUNNING' in this case.
+        mock_wgs_qc_workflow.end_status = None
+        mock_wgs_qc_workflow.save()
+
+        running: List[Workflow] = workflow_srv.get_running_by_sequence_run(
+            sequence_run=mock_wgs_qc_workflow.sequence_run,
+            workflow_type=WorkflowType.DRAGEN_WGS_QC
+        )
+
+        logger.info(running)
+        self.assertEqual(len(running), 0)
+
+    def test_get_succeeded_by_sequence_run(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_succeeded_by_sequence_run
+        """
+
+        mock_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+        mock_wgs_qc_workflow.end = now()
+        mock_wgs_qc_workflow.end_status = WorkflowStatus.SUCCEEDED.value
+        mock_wgs_qc_workflow.save()
+
+        succeeded: List[Workflow] = workflow_srv.get_succeeded_by_sequence_run(
+            sequence_run=mock_wgs_qc_workflow.sequence_run,
+            workflow_type=WorkflowType.DRAGEN_WGS_QC
+        )
+
+        logger.info(succeeded)
+        self.assertEqual(len(succeeded), 1)
+        self.assertIsNotNone(succeeded[0].end)
+        self.assertEqual(succeeded[0].end_status, WorkflowStatus.SUCCEEDED.value)
+
+    def test_get_succeeded_by_sequence_run_end_status_null(self):
+        """
+        python manage.py test data_processors.pipeline.services.tests.test_workflow_srv.WorkflowSrvUnitTests.test_get_succeeded_by_sequence_run_end_status_null
+        """
+
+        mock_wgs_qc_workflow: Workflow = DragenWgsQcWorkflowFactory()
+        mock_wgs_qc_workflow.end = now()
+        mock_wgs_qc_workflow.end_status = None  # make workflow status NULL
+        mock_wgs_qc_workflow.save()
+
+        succeeded: List[Workflow] = workflow_srv.get_succeeded_by_sequence_run(
+            sequence_run=mock_wgs_qc_workflow.sequence_run,
+            workflow_type=WorkflowType.DRAGEN_WGS_QC
+        )
+
+        logger.info(succeeded)
+        self.assertEqual(len(succeeded), 0)
