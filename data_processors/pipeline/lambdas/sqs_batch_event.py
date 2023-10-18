@@ -73,6 +73,7 @@ def handler(event, context):
             results.append(message['messageId'])
 
         except Exception as e:
+            logger.error(f"Exception raise processing messageId {message['messageId']}")
             logger.exception(str(e), exc_info=e, stack_info=True)
 
             # SQS Implement partial batch responses - ReportBatchItemFailures
@@ -84,7 +85,7 @@ def handler(event, context):
 
     return {
         'results': results,
-        'batchItemFailures': batch_item_failures
+        # 'batchItemFailures': batch_item_failures
     }
 
 
