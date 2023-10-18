@@ -37,7 +37,8 @@ class WorkflowManager(PortalBaseManager):
         qs: QuerySet = self.filter(
             sequence_run=sequence_run,
             type_name__iexact=type_name.lower(),
-            end__isnull=True
+            end__isnull=True,
+            end_status__iexact=WorkflowStatus.RUNNING.value
         )
         return qs
 
