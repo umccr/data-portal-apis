@@ -163,7 +163,9 @@ class SQSBatchEventUnitTests(PipelineUnitTestCase):
 
         when(orchestrator).next_step(...).thenReturn({})  # do not advance to next step yet
 
-        _ = sqs_batch_event.handler(event=_mock_sqs_event, context=None)
+        resp = sqs_batch_event.handler(event=_mock_sqs_event, context=None)
+        self.assertIsNotNone(resp)
+        self.assertEqual(len(resp['results']), 1)  # assert that it should have processed 1 event message
 
         stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.portal_run_id_oncoanalyser.value)
 
