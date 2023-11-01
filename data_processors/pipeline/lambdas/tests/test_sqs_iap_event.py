@@ -328,8 +328,9 @@ class SQSIAPEventUnitTests(PipelineUnitTestCase):
             ]
         }
 
-        result = sqs_iap_event.handler(sqs_event_message, None)
-        self.assertIsNotNone(result)
+        resp = sqs_iap_event.handler(sqs_event_message, None)
+        self.assertIsNotNone(resp)
+        self.assertEqual(len(resp['results']), 0)  # since we skip event, assert that results is empty
 
     def test_sequence_run_event(self):
         """

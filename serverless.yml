@@ -146,7 +146,6 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/s3_event_sqs_arn}
-          functionResponseType: ReportBatchItemFailures
     timeout: 120
     reservedConcurrency: 20
     # Uncomment to enable xray on this lambda
@@ -161,7 +160,6 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/ica_gds_event_sqs_arn}
-          functionResponseType: ReportBatchItemFailures
     timeout: 120
     reservedConcurrency: 20
 
@@ -172,7 +170,6 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/batch_event_sqs_arn}
-          functionResponseType: ReportBatchItemFailures
     timeout: 120
 
   sqs_iap_event_processor:
@@ -182,7 +179,6 @@ functions:
     events:
       - sqs:
           arn: ${ssm:/data_portal/backend/iap_ens_event_sqs_arn}
-          functionResponseType: ReportBatchItemFailures
     timeout: 120
 
   # SQS Implement partial batch responses - ReportBatchItemFailures

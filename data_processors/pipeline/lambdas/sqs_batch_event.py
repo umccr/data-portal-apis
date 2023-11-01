@@ -51,41 +51,27 @@ def handler(event, context):
     messages = event['Records']
 
     results = []
-    batch_item_failures = []
     for message in messages:
 
-        try:
-            # parse outer SQS event
-            event_source = message['eventSource']
-            if event_source != EventSource.AWS_SQS.value:
-                logger.warning(f"Skipping unsupported event source: {event_source}")
-                continue
+        # parse outer SQS event
+        event_source = message['eventSource']
+        if event_source != EventSource.AWS_SQS.value:
+            logger.warning(f"Skipping unsupported event source: {event_source}")
+            continue
 
-            # parse inner Batch event
-            batch_event = json.loads(message['body'], object_hook=lambda d: SimpleNamespace(**d))
-            if batch_event.source == EventSource.AWS_BATCH.value:
-                handle_aws_batch_event(batch_event, context)
+        # parse inner Batch event
+        batch_event = json.loads(message['body'], object_hook=lambda d: SimpleNamespace(**d))
+        if batch_event.source == EventSource.AWS_BATCH.value:
+            handle_aws_batch_event(batch_event, context)
 
-            if batch_event.source != EventSource.AWS_BATCH.value:
-                logger.warning(f"Skipping unsupported inner event source: {batch_event.source}")
-                continue
+        if batch_event.source != EventSource.AWS_BATCH.value:
+            logger.warning(f"Skipping unsupported inner event source: {batch_event.source}")
+            continue
 
-            results.append(message['messageId'])
-
-        except Exception as e:
-            logger.error(f"Exception raise processing messageId {message['messageId']}")
-            logger.exception(str(e), exc_info=e, stack_info=True)
-
-            # SQS Implement partial batch responses - ReportBatchItemFailures
-            # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#services-sqs-batchfailurereporting
-            # https://repost.aws/knowledge-center/lambda-sqs-report-batch-item-failures
-            batch_item_failures.append({
-                'itemIdentifier': message['messageId']
-            })
+        results.append(message['messageId'])
 
     return {
         'results': results,
-        # 'batchItemFailures': batch_item_failures
     }
 
 
