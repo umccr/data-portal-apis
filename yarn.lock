@@ -1687,9 +1687,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@serverless/dashboard-plugin@npm:^7.0.2":
-  version: 7.0.5
-  resolution: "@serverless/dashboard-plugin@npm:7.0.5"
+"@serverless/dashboard-plugin@npm:^7.1.0":
+  version: 7.1.0
+  resolution: "@serverless/dashboard-plugin@npm:7.1.0"
   dependencies:
     "@aws-sdk/client-cloudformation": ^3.410.0
     "@aws-sdk/client-sts": ^3.410.0
@@ -1714,7 +1714,7 @@ __metadata:
     type: ^2.7.2
     uuid: ^8.3.2
     yamljs: ^0.3.0
-  checksum: da306543792698e35f1538039735a22d9954d55d298153483f1f3a6a289a6dcaccc6a57bd15e3ee89a19d87f32f3d58b0b736af5b1b0cc9bf6da75a9d59a4882
+  checksum: d10cf72d2a5caf8d7ad7508076f2a76c9688b71598cc410ce411eef6c413aec22b290298705674393df9a4f8cb8816afcc82070e14c75ba783294943bfc708c9
   languageName: node
   linkType: hard
 
@@ -3107,9 +3107,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-sdk@npm:^2.1472.0":
-  version: 2.1472.0
-  resolution: "aws-sdk@npm:2.1472.0"
+"aws-sdk@npm:^2.1488.0":
+  version: 2.1488.0
+  resolution: "aws-sdk@npm:2.1488.0"
   dependencies:
     buffer: 4.9.2
     events: 1.1.1
@@ -3121,7 +3121,7 @@ __metadata:
     util: ^0.12.4
     uuid: 8.0.0
     xml2js: 0.5.0
-  checksum: 8bce22c556a5eaf351cd0711bb7016fbc78d94869417479d2323a98567bc0a0eb6a034931c1d43230f1a9f26545507dbb1d024a374fbabb6a2d0ae53823bf0bb
+  checksum: 952a3d7231f2de360c6e0fec4121b04edf5378dcbdfb2782dd9c877604257ea4ca2132cb525fc3fd277cfd115409b6fc4eb3e029a677c89551773e918f3519a9
   languageName: node
   linkType: hard
 
@@ -3153,14 +3153,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.5.1":
-  version: 1.5.1
-  resolution: "axios@npm:1.5.1"
+"axios@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "axios@npm:1.6.0"
   dependencies:
     follow-redirects: ^1.15.0
     form-data: ^4.0.0
     proxy-from-env: ^1.1.0
-  checksum: 4444f06601f4ede154183767863d2b8e472b4a6bfc5253597ed6d21899887e1fd0ee2b3de792ac4f8459fe2e359d2aa07c216e45fd8b9e4e0688a6ebf48a5a8d
+  checksum: c7c9f2ae9e0b9bad7d6f9a4dff030930b12ee667dedf54c3c776714f91681feb743c509ac0796ae5c01e12c4ab4a2bee74905068dd200fbc1ab86f9814578fb0
   languageName: node
   linkType: hard
 
@@ -4555,7 +4555,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob-all@npm:^3.3.0":
+"glob-all@npm:^3.3.1":
   version: 3.3.1
   resolution: "glob-all@npm:3.3.1"
   dependencies:
@@ -6386,7 +6386,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.3.8, semver@npm:^7.5.3":
+"semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.3.8, semver@npm:^7.5.3, semver@npm:^7.5.4":
   version: 7.5.4
   resolution: "semver@npm:7.5.4"
   dependencies:
@@ -6438,28 +6438,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serverless-python-requirements@npm:^6.0.0":
-  version: 6.0.0
-  resolution: "serverless-python-requirements@npm:6.0.0"
+"serverless-python-requirements@npm:^6.0.1":
+  version: 6.0.1
+  resolution: "serverless-python-requirements@npm:6.0.1"
   dependencies:
     "@iarna/toml": ^2.2.5
     appdirectory: ^0.1.0
     bluebird: ^3.7.2
     child-process-ext: ^2.1.1
     fs-extra: ^10.1.0
-    glob-all: ^3.3.0
+    glob-all: ^3.3.1
     is-wsl: ^2.2.0
     jszip: ^3.10.1
     lodash.get: ^4.4.2
     lodash.uniqby: ^4.7.0
     lodash.values: ^4.3.0
     rimraf: ^3.0.2
+    semver: ^7.5.4
     set-value: ^4.1.0
     sha256-file: 1.0.0
-    shell-quote: ^1.7.4
+    shell-quote: ^1.8.1
   peerDependencies:
     serverless: ^2.32 || 3
-  checksum: ade3bf09ff75bb8f7c89742ace504ab5b7e0e815ce0fd19116d5b00356a0feccd2169ba3dbc487ffedb66a2a4a4f5901a1660d0dc6accd564eb80e7169cbd63b
+  checksum: bf12d33bf80f6b2bfc2fdb42d940220e1e700e3ad1104a796d8c2fa46b8c3c8358e0c32b864604cfa628b3f8521d5da8bd923c4cd9ac0c3c2746412ee3d9e745
   languageName: node
   linkType: hard
 
@@ -6476,11 +6477,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serverless@npm:^3.35.2":
-  version: 3.35.2
-  resolution: "serverless@npm:3.35.2"
+"serverless@npm:^3.36.0":
+  version: 3.36.0
+  resolution: "serverless@npm:3.36.0"
   dependencies:
-    "@serverless/dashboard-plugin": ^7.0.2
+    "@serverless/dashboard-plugin": ^7.1.0
     "@serverless/platform-client": ^4.4.0
     "@serverless/utils": ^6.13.1
     abort-controller: ^3.0.0
@@ -6539,7 +6540,7 @@ __metadata:
   bin:
     serverless: bin/serverless.js
     sls: bin/serverless.js
-  checksum: c783b709b91941c3bb70fba51668a759aeba831bc4c829ff8329d5fe33823f322ce877750caf485aa52f6e4ab1c9204b23ef42cd06997a760a8db65ed0e5b641
+  checksum: 377660d63b84e0f104520f66a9a695a311362e9bfdf3565773f43dfd3eb16a93afba7426166c725893c38827516f6f44701e7dfc71566c1f56d1224e78ed0d9b
   languageName: node
   linkType: hard
 
@@ -6606,7 +6607,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shell-quote@npm:^1.7.4":
+"shell-quote@npm:^1.8.1":
   version: 1.8.1
   resolution: "shell-quote@npm:1.8.1"
   checksum: 5f01201f4ef504d4c6a9d0d283fa17075f6770bfbe4c5850b074974c68062f37929ca61700d95ad2ac8822e14e8c4b990ca0e6e9272e64befd74ce5e19f0736b
@@ -7065,14 +7066,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "umccr-data-portal-api-serverless@workspace:."
   dependencies:
-    aws-sdk: ^2.1472.0
+    aws-sdk: ^2.1488.0
     aws4-axios: ^3.3.0
-    axios: ^1.5.1
-    serverless: ^3.35.2
+    axios: ^1.6.0
+    serverless: ^3.36.0
     serverless-associate-waf: ^1.2.1
     serverless-domain-manager: ^7.1.2
     serverless-prune-plugin: ^2.0.2
-    serverless-python-requirements: ^6.0.0
+    serverless-python-requirements: ^6.0.1
     serverless-wsgi: ^3.0.3
   languageName: unknown
   linkType: soft
