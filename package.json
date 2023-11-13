@@ -10,7 +10,7 @@
   "dependencies": {
     "aws-sdk": "^2.1488.0",
     "aws4-axios": "^3.3.0",
-    "axios": "^1.6.0"
+    "axios": "^1.6.1"
   },
   "devDependencies": {
     "serverless": "^3.36.0",
@@ -19,6 +19,9 @@
     "serverless-prune-plugin": "^2.0.2",
     "serverless-python-requirements": "^6.0.1",
     "serverless-wsgi": "^3.0.3"
+  },
+  "resolutions": {
+    "axios": "^1.6.1"
   },
   "packageManager": "yarn@3.5.1"
 }
