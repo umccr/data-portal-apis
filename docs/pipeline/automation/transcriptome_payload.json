@@ -1,10 +1,11 @@
 {
+  "subject_id": "subject_id",
   "library_id": "library_id (usually rglb)",
   "fastq_list_rows": [
     {
-      "rgid": "index1.index2.laneNo.illuminaId.sampleId_libraryId",
-      "rgsm": "sampleId",
-      "rglb": "libraryId",
+      "rgid": "index1.index2.lane.instrument_run_id.(sample_id)_(library_id_with_suffixes)",
+      "rgsm": "sample_id",
+      "rglb": "library_id (no suffixes)",
       "lane": 1,
       "read_1": {
         "class": "File",
@@ -16,6 +17,5 @@
       }
     }
   ],
-  "seq_run_id": "r.abcDEFGhi123456",
-  "seq_name": "420708_A00130_0001_BHGVWYDSX3"
+  "arriba_large_mem": false
 }

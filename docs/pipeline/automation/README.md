@@ -91,6 +91,19 @@ See [transcriptome.md](transcriptome.md)
 
 See [rnasum.md](rnasum.md)
 
+### Star Alignment
+
+See [star_alignment.md](star_alignment.md)
+
+### Oncoanalyser WTS
+
+See [oncoanalyser_wts.md](oncoanalyser_wts.md)
+
+### Star Alignment
+
+See [oncoanalyser_wgs.md](oncoanalyser_wgs.md)
+
+
 ## Post Analysis Stage
 
 ### Somalier

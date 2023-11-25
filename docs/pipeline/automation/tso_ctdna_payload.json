@@ -1,0 +1,51 @@
+{
+  "tso500_sample": {
+    "sample_id": "PRJ210166_L2101400",
+    "sample_name": "PRJ210166",
+    "sample_type": "DNA",
+    "pair_id": "PRJ210166",
+    "fastq_list_rows": [
+      {
+        "rgid": "ATTCAGAA.AGGCTATA.2.211118_A01052_0064_BH372GDMXY.PRJ210166_L2101400",
+        "rgsm": "PRJ210166",
+        "rglb": "L2101400",
+        "lane": 2,
+        "read_1": {
+          "class": "File",
+          "location": "gds://production/primary_data/211118_A01052_0064_BH372GDMXY/202112164c162d5f/ctDNA_ctTSO/PRJ210166_L2101400_S1_L002_R1_001.fastq.gz"
+        },
+        "read_2": {
+          "class": "File",
+          "location": "gds://production/primary_data/211118_A01052_0064_BH372GDMXY/202112164c162d5f/ctDNA_ctTSO/PRJ210166_L2101400_S1_L002_R2_001.fastq.gz"
+        }
+      },
+      {
+        "rgid": "ATTCAGAA.AGGCTATA.1.211118_A01052_0064_BH372GDMXY.PRJ210166_L2101400",
+        "rgsm": "PRJ210166",
+        "rglb": "L2101400",
+        "lane": 1,
+        "read_1": {
+          "class": "File",
+          "location": "gds://production/primary_data/211118_A01052_0064_BH372GDMXY/202112164c162d5f/ctDNA_ctTSO/PRJ210166_L2101400_S1_L001_R1_001.fastq.gz"
+        },
+        "read_2": {
+          "class": "File",
+          "location": "gds://production/primary_data/211118_A01052_0064_BH372GDMXY/202112164c162d5f/ctDNA_ctTSO/PRJ210166_L2101400_S1_L001_R2_001.fastq.gz"
+        }
+      }
+    ]
+  },
+  "samplesheet": {
+    "class": "File",
+    "location": "gds://production/primary_data/211118_A01052_0064_BH372GDMXY/202112164c162d5f/samplesheets-by-assay-type/SampleSheet.ctDNA_ctTSO.csv"
+  },
+  "run_info_xml": {
+    "class": "File",
+    "location": "gds://production/raw_data/Runs/211118_A01052_0064_BH372GDMXY_r.np5GFi6Nm0yByqui2vvLaA/RunInfo.xml"
+  },
+  "run_parameters_xml": {
+    "class": "File",
+    "location": "gds://production/raw_data/Runs/211118_A01052_0064_BH372GDMXY_r.np5GFi6Nm0yByqui2vvLaA/RunParameters.xml"
+  },
+  "library_id": "L2101400"
+}

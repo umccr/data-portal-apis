@@ -88,7 +88,7 @@ test_ica_mock:
 	@curl -s -H "Authorization: Bearer Test" -X GET http://localhost/v1/workflows/runs/wfr.anything_work | jq
 
 test_localstack:
-	@curl -s http://localhost:4566/health | jq
+	@curl -s http://localhost:4566/_localstack/health | jq
 
 openapi:
 	@curl -s http://localhost:8000/swagger.json | jq > swagger/swagger.json

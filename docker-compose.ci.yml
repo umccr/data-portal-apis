@@ -13,7 +13,7 @@ services:
     image: public.ecr.aws/docker/library/mysql:8
 
   localstack:
-    image: public.ecr.aws/localstack/localstack:2.3
+    image: public.ecr.aws/localstack/localstack:3
 
   haproxy:
     image: public.ecr.aws/docker/library/haproxy:2.8

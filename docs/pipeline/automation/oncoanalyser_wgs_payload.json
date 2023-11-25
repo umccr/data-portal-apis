@@ -1,0 +1,9 @@
+{
+  "subject_id": "SBJ04417",
+  "tumor_wgs_sample_id": "PRJ231263",
+  "tumor_wgs_library_id": "L2301391",
+  "tumor_wgs_bam": "gds://production/analysis_data/SBJ04417/wgs_tumor_normal/20231122f6cc369b/L2301391_L2301390_dragen_somatic/PRJ231263_tumor.bam",
+  "normal_wgs_sample_id": "PRJ231262",
+  "normal_wgs_library_id": "L2301390",
+  "normal_wgs_bam": "gds://production/analysis_data/SBJ04417/wgs_tumor_normal/20231122f6cc369b/L2301391_L2301390_dragen_somatic/PRJ231262_normal.bam"
+}

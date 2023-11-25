@@ -24,7 +24,7 @@ services:
       - MYSQL_PASSWORD=data_portal
 
   localstack:
-    image: public.ecr.aws/localstack/localstack:2.3
+    image: public.ecr.aws/localstack/localstack:3
     container_name: portal_localstack
     ports:
       - "4566:4566"

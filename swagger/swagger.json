@@ -532,6 +532,152 @@
       },
       "parameters": []
     },
+    "/lims/by_aggregate_count/": {
+      "get": {
+        "operationId": "lims_by_aggregate_count",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LIMSRowModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lims"
+        ]
+      },
+      "parameters": []
+    },
+    "/lims/by_cube/": {
+      "get": {
+        "operationId": "lims_by_cube",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LIMSRowModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lims"
+        ]
+      },
+      "parameters": []
+    },
     "/lims/{id}/": {
       "get": {
         "operationId": "lims_read",
@@ -561,6 +707,152 @@
     "/metadata/": {
       "get": {
         "operationId": "metadata_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LabMetadataModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "metadata"
+        ]
+      },
+      "parameters": []
+    },
+    "/metadata/by_aggregate_count/": {
+      "get": {
+        "operationId": "metadata_by_aggregate_count",
+        "description": "",
+        "parameters": [
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "rowsPerPage",
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "required": [
+                "count",
+                "results"
+              ],
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "next": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "previous": {
+                  "type": "string",
+                  "format": "uri",
+                  "x-nullable": true
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LabMetadataModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "metadata"
+        ]
+      },
+      "parameters": []
+    },
+    "/metadata/by_cube/": {
+      "get": {
+        "operationId": "metadata_by_cube",
         "description": "",
         "parameters": [
           {
@@ -1700,8 +1992,8 @@
         "size_in_bytes": {
           "title": "Size in bytes",
           "type": "integer",
-          "maximum": 9223372036854776000,
-          "minimum": -9223372036854776000
+          "maximum": 9223372036854775807,
+          "minimum": -9223372036854775808
         },
         "is_uploaded": {
           "title": "Is uploaded",
@@ -2245,8 +2537,8 @@
         "size": {
           "title": "Size",
           "type": "integer",
-          "maximum": 9223372036854776000,
-          "minimum": -9223372036854776000
+          "maximum": 9223372036854775807,
+          "minimum": -9223372036854775808
         },
         "last_modified_date": {
           "title": "Last modified date",
@@ -2478,11 +2770,8 @@
     },
     "Workflow": {
       "required": [
+        "portal_run_id",
         "type_name",
-        "wfr_id",
-        "wfl_id",
-        "wfv_id",
-        "version",
         "input",
         "start"
       ],
@@ -2493,16 +2782,11 @@
           "type": "integer",
           "readOnly": true
         },
-        "wfr_name": {
-          "title": "Wfr name",
-          "type": "string",
-          "x-nullable": true
-        },
-        "sample_name": {
-          "title": "Sample name",
+        "portal_run_id": {
+          "title": "Portal run id",
           "type": "string",
           "maxLength": 255,
-          "x-nullable": true
+          "minLength": 1
         },
         "type_name": {
           "title": "Type name",
@@ -2514,32 +2798,25 @@
           "title": "Wfr id",
           "type": "string",
           "maxLength": 255,
-          "minLength": 1
-        },
-        "portal_run_id": {
-          "title": "Portal run id",
-          "type": "string",
-          "maxLength": 255,
-          "minLength": 1,
           "x-nullable": true
         },
         "wfl_id": {
           "title": "Wfl id",
           "type": "string",
           "maxLength": 255,
-          "minLength": 1
+          "x-nullable": true
         },
         "wfv_id": {
           "title": "Wfv id",
           "type": "string",
           "maxLength": 255,
-          "minLength": 1
+          "x-nullable": true
         },
         "version": {
           "title": "Version",
           "type": "string",
           "maxLength": 255,
-          "minLength": 1
+          "x-nullable": true
         },
         "input": {
           "title": "Input",
@@ -2550,6 +2827,11 @@
           "title": "Start",
           "type": "string",
           "format": "date-time"
+        },
+        "wfr_name": {
+          "title": "Wfr name",
+          "type": "string",
+          "x-nullable": true
         },
         "output": {
           "title": "Output",

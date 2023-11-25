@@ -6,7 +6,7 @@ Portal has data processing Lambdas for scheduled or on-demand sync with "upstrea
 > 
 > While Portal offers a convenience way to access these metadata through `/metadata` and `/lims` endpoints; or through Portal Athena; it is to note that "ownership" of these metadata and its structures are all upstream to Portal. The initial purpose is that Portal makes its own "local cache" of these _meta-information_ to drive "Pipeline Automation" and/or linking with Cloud buckets "File Object" purpose (i.e. `S3Object`, `GDSFile` indexes). Portal could have left, not to expose these "meta-info"; however, Portal exploration was the stepping stone case for future betterment; of how to best to handle these structures.
 > 
-> Portal keeps them in their own original "flat" data model for no join, "fast" read performance; i.e. as in [denormalized](https://www.google.com/search?q=denormalized) form. Portal use cases are in transactional sense and, it is ok (enough) to work with this form without re-shaping much. Furthermore and, since Portal does not bear ownership of metadata life cycle (read-only), it left out any additional treatments such as potential data re-modelling for future works.
+> Portal keeps them in their own original "flat" data model for no join, "fast" read performance; i.e. as in [denormalized](https://www.google.com/search?q=denormalized) form. Portal use cases are in _read-only_ transactional sense and, it is ok (enough) to work with this form without re-shaping much. Furthermore and, since Portal does not bear ownership of metadata life cycle (read-only), it left out any additional treatments such as potential data re-modelling for future works.
 
 ### Google LIMS
 
@@ -50,13 +50,18 @@ Alternatively, you can use **SampleSheet Checker UI** as follows.
 
 The following columns from Lab metadata tracking sheets are mandatory for Portal Automation purpose.
 
+- Use in Secondary Analysis
 ```
 LibraryID
 SampleID
 SubjectID
 Type
-Assay
 Phenotype
-OverrideCycles  (use in BCL_Convert)
 Workflow
+```
+
+- Use in BCL_Convert
+```
+Assay
+OverrideCycles
 ```
