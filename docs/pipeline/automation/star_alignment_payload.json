@@ -1,0 +1,7 @@
+{
+  "subject_id": "subject_id",
+  "sample_id": "sample_id (usually rgsm)",
+  "library_id": "library_id (usually rglb)",
+  "fastq_fwd": "gds://path/to/read_1.fastq.gz",
+  "fastq_rev": "gds://path/to/read_2.fastq.gz"
+}

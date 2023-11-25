@@ -1,0 +1,6 @@
+{
+  "subject_id": "SBJ04417",
+  "tumor_wts_sample_id": "PRJ231264",
+  "tumor_wts_library_id": "L2301387",
+  "tumor_wts_bam": "s3://org.umccr.data.oncoanalyser/analysis_data/SBJ04417/star-align-nf/20231122083daa82/L2301387/PRJ231264/PRJ231264.md.bam"
+}

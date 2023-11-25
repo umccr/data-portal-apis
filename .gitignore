@@ -53,3 +53,7 @@ data/
 
 .coverage
 htmlcov/
+
+# drawio
+*.bkp
+*.dtmp

@@ -247,7 +247,7 @@ _In iam endpoint with awscurl:_
 awscurl -X POST -d '["220311_A01052_0085_AHGGTWDSX3"]' -H "Content-Type: application/json" --profile prodops --region ap-southeast-2 "https://api.portal.prod.umccr.org/iam/pairing" | jq
 ```
 
-_POST payload JSON can also be in file as follows_:
+_POST payload JSON can also be in file (e.g. [pairing.json](pairing.json)) as follows_:
 ```
 curl -s -X POST -d "@pairing.json" -H "Content-Type: application/json" -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/pairing/by_sequence_runs" | jq
 ```

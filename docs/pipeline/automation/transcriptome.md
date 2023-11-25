@@ -1,28 +1,30 @@
 # Transcriptome
 
-_a.k.a. DRAGEN transcriptome workflow or WTS_
+_a.k.a. DRAGEN transcriptome workflow or `wts_tumor_only` workflow_
 
-### Option 1
+## Option 1
 
 We can re-enter the Pipeline from _some_ Transcriptome step as follows.
 
 _Step 1)_
-- To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/dragen_wts.py#L61-L81)
+- To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/dragen_wts.py#L78-L97)
   - _Attached [transcriptome_payload.json](transcriptome_payload.json) here for convenience_
 
 _Step 2)_
-- You should know related SequenceRun info for the target WTS tumor library ID. See `/sequencerun` or `/sequence` endpoints.
-- You will need to work out the required _Fastq List Rows_ model.
-- Generally, _Fastq List Rows_ details can be inferred from primary step output i.e. `/fastq` endpoint
-- For this
-  - You may wish to check [examples/fastq_list_row.R](../../examples/fastq_list_row.R) as starter
-  - And in conjunction Portal `/metadata` endpoint
-- Alternatively, you could use **Portal Athena Query** with SQL, if you prefer. 
-  - See "Saved queries" tab for starter. Or see `*.sql` scripts in [example folder](../../examples).
-- You may ignore `batch_run_id` as we are not running it as a Batch manner. Just this WTS library only.
-- If any other doubts, please feel free to reach out in `#bioinfo` channel
+- Get FASTQs details from `/fastq` endpoint
+```bash
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/fastq?rglb=L2301353" | jq
+```
+
+- Alternatively, use **Portal Athena Query** with SQL, if you prefer.
+```sql
+select * from "data_portal_fastqlistrow" where rglb = 'L2301353';
+```
 
 _Step 3)_
+- Set `arriba_large_mem` flag to `true` if you need to run arriba using the `standardHiMem:medium` 
+
+_Step 4)_
 - Then, to hit the Lambda as follows.
 
 ```
@@ -30,13 +32,20 @@ aws lambda invoke --profile prod \
   --function-name data-portal-api-prod-dragen_wts \
   --cli-binary-format raw-in-base64-out \
   --payload file://transcriptome_payload.json \
-  out.txt
+  out.json
 ```
 
-### Option 2
+
+## Option 2
+
+_Expert Mode_
 
 We can also to re-enter (restart) from Orchestrator such that knowing of previous step.
-
-- In this case, BCL Convert workflow run ID as payload to it.
-  - https://github.com/umccr/data-portal-apis/tree/dev/docs/pipeline/automation#orchestrator
+- In this case, WTS QC (`wts_alignment_qc`) workflow run ID as payload to it.
 - Then, Pipeline will continue from then on.
+- See [README.md#orchestrator](README.md#orchestrator)
+
+
+## Example Scripts
+
+- [examples/fastq_list_row.R](../../examples/fastq_list_row.R)

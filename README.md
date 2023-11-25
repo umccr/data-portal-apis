@@ -8,13 +8,19 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 
 #### TL;DR
 
+> Policy: We tend to keep up as with [AWS Lambda Runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) upon every Portal major release cycle. You can have higher version in your local but; encourage to stay within upper bound of AWS Lambda Runtimes as this is where we are going to run our code. See [buildspec.yml](buildspec.yml) and [serverless.yml](serverless.yml) for runtime version requirement.
+
 - Required:
-  - **Python3.11**
+  - Python
   - Node.js with Yarn
-  - See `buildspec.yml` for runtime versions requirement
+  - Docker
+  - Active AWS SSO login session (e.g. `aws sso login --profile dev && export AWS_PROFILE=dev`)
 - Create virtual environment; use either built-in `python -mvenv venv` or [conda](https://docs.conda.io/en/latest/).
 
 ```
+docker --version
+Docker version 24.0.7, build afdd53b4e3
+
 python -V
 Python 3.11.5
 
@@ -26,21 +32,25 @@ yarn -v
 3.5.1
 ```
 
-then activate it:
+then:
 
 ```
 source venv/bin/activate
 (or)
 conda activate myenv
 
-(install Python and node.js development dependencies)
+(install Python and Node development dependencies)
+
 make install
+
+(login AWS SSO session)
 
 aws sso login --profile dev && export AWS_PROFILE=dev
 
 make up
 make ps
-(depends on your laptop performance :P, please wait all services to be fully started)
+
+(wait all services to be fully started)
 
 make test_ica_mock
 make test_localstack
@@ -52,23 +62,10 @@ make start
 - ReDoc at: http://localhost:8000/redoc/
 - Look into `Makefile` for more dev routine targets
 
-#### Testing
-
-- Run test suite
-```commandline
-make test
-```
-
-- Run individual test case, e.g.
-```commandline
-python manage.py test data_portal.tests.test_s3_object.S3ObjectTests.test_unique_hash
-```
-
 #### Loading Data
 
-- You can sync the latest db dump from S3 bucket as follows:
+- You can sync a dev db dump from S3 bucket as follows:
 ```
-aws sso login --profile dev && export AWS_PROFILE=dev
 make syncdata
 ```
 
@@ -76,6 +73,39 @@ make syncdata
 ```
 make loaddata
 ```
+
+## Testing
+
+#### Suite
+
+- Run test suite
+```commandline
+make test
+```
+
+#### Unit test
+
+- Run individual test case, e.g.
+```commandline
+python manage.py test data_portal.models.tests.test_s3object.S3ObjectTests.test_unique_hash
+```
+
+#### Coverage Report
+
+Test coverage report can be generated locally as follows.
+
+```
+make coverage report
+```
+
+- View coverage report at: [htmlcov/index.html](htmlcov/index.html)
+
+```
+open -a Safari htmlcov/index.html
+```
+
+
+## Git
 
 #### Pre-commit Hook
 
@@ -85,6 +115,14 @@ make loaddata
 git config --unset core.hooksPath
 pre-commit install
 pre-commit run --all-files
+```
+
+#### SecOps
+
+```
+make check
+make scan
+make deep scan
 ```
 
 #### GitOps
@@ -113,6 +151,9 @@ git checkout main
 git merge --ff-only stg
 git push origin main
 ```
+
+See [docs/PORTAL_RELEASE.md](docs/PORTAL_RELEASE.md)
+
 
 ## Portal Lambdas
 

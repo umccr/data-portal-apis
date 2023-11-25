@@ -58,6 +58,8 @@ aws lambda invoke --profile prodops \
 
 ## Option 3
 
+We need to prepare [RNAsum Lambda payload](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/rnasum.py#L76-L95).
+
 Required:
 
 - Umccrise workflow output location

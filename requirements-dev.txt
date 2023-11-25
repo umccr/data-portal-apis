@@ -8,3 +8,4 @@ pre-commit
 detect-secrets
 ggshield
 datamodel-code-generator==0.22.1
+awscli-local
