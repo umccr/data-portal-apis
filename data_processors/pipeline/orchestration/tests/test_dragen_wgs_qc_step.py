@@ -8,6 +8,7 @@ from libica.openapi import libwes
 from libumccr.aws import libssm
 from mockito import when, spy2
 
+from data_portal.fields import IdHelper
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataWorkflow
@@ -174,8 +175,9 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # ica workflows runs list
         # ica workflows runs get wfr.<ID>
 
-        bcl_convert_wfr_id = "wfr.18210c790f30452992c5fd723521f014"  # from PROD
-        total_jobs_to_eval = 12
+        # https://umccr.slack.com/archives/C8CG6K76W/p1701104259275569
+        bcl_convert_wfr_id = "wfr.dfc4cf0e0e114a06a3fa526e5bc8e972"  # from PROD
+        total_jobs_to_eval = 31
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 
@@ -184,7 +186,7 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # - populate LabMetadata tables in test db
         from data_processors.lims.lambdas import labmetadata
         labmetadata.scheduled_update_handler({
-            'sheets': ["2020", "2021"],
+            'sheets': ["2023"],
             'truncate': False
         }, None)
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
@@ -311,6 +313,7 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
                 library_id, wfr_id = run_pair
                 wfr = wes.get_run(wfr_id=wfr_id)
                 wfl = Workflow.objects.create(
+                    portal_run_id=IdHelper.generate_portal_run_id(),
                     wfr_name=wfr.name,
                     type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
                     wfr_id=wfr.id,
@@ -324,7 +327,7 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
                     sequence_run=sqr,
                     batch_run=init_batch_run,
                 )
-                libraryrun_srv.link_library_runs_with_workflow(library_id=library_id, workflow=wfl)
+                libraryrun_srv.link_library_runs_with_x_seq_workflow(library_id_list=[library_id], workflow=wfl)
 
         # first --
         # - we need metadata!
@@ -399,7 +402,7 @@ class DragenWgsQcStepIntegrationTests(PipelineIntegrationTestCase):
         # ica workflows runs get wfr.<ID>
 
         bcl_convert_wfr_id = "wfr.99e54af4fd694e49846f76d7a6a7035c"  # from DEV
-        total_jobs_to_eval = 38
+        total_jobs_to_eval = 35
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 

@@ -47,5 +47,7 @@
     "class": "File",
     "location": "gds://production/raw_data/Runs/211118_A01052_0064_BH372GDMXY_r.np5GFi6Nm0yByqui2vvLaA/RunParameters.xml"
   },
-  "library_id": "L2101400"
+  "library_id": "L2101400",
+  "seq_run_id": "r.np5GFi6Nm0yByqui2vvLaA",
+  "seq_name": "211118_A01052_0064_BH372GDMXY"
 }

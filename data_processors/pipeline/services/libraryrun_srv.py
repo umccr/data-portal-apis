@@ -191,34 +191,6 @@ def link_library_run_with_workflow(library_id: str, lane: int, workflow: Workflo
 
 
 @transaction.atomic
-def link_library_runs_with_workflow(library_id: str, workflow: Workflow):
-    """
-    typically library_id is in its _pure_form_ such as rglb from FastqListRow i.e. no suffixes
-    workflow is still sequence-aware
-    """
-    seq_name = workflow.sequence_run.instrument_run_id
-    seq_run_id = workflow.sequence_run.run_id
-
-    rglb = liborca.strip_topup_rerun_from_library_id(library_id)
-
-    library_run_list: List[LibraryRun] = get_library_runs(
-        library_id=rglb,
-        instrument_run_id=seq_name,
-        run_id=seq_run_id,
-    )
-
-    for lib_run in library_run_list:
-        lib_run.workflows.add(workflow)
-        lib_run.save()
-
-    if library_run_list:
-        return library_run_list
-    else:
-        logger.warning(f"No LibraryRun records found for {rglb}, {seq_name}")
-        return None
-
-
-@transaction.atomic
 def link_library_runs_with_x_seq_workflow(library_id_list: List[str], workflow: Workflow):
     """
     typically library_id is in its _pure_form_ such as rglb from FastqListRow i.e. no suffixes

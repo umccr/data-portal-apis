@@ -94,10 +94,6 @@ def handler(event, context) -> dict:
     subject_id = event['subject_id']
     fastq_fwd = event['fastq_fwd']
     fastq_rev = event['fastq_rev']
-    assert library_id is not None
-    assert sample_id is not None
-    assert fastq_fwd is not None
-    assert fastq_rev is not None
 
     # see star alignment payload for preparing job JSON structure
     # https://github.com/umccr/nextflow-stack/pull/29
