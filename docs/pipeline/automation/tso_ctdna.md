@@ -14,7 +14,7 @@ _ADVANCED_
 _Step 1)_
 - To prepare event payload JSON as required in [Lambda payload schema](https://github.com/umccr/data-portal-apis/blob/dev/data_processors/pipeline/lambdas/dragen_tso_ctdna.py#L75-L114)
   - _Attached [tso_ctdna_payload.json](tso_ctdna_payload.json) here for convenience_
-- The attributes `seq_run_id`, `seq_name`, `batch_run_id` are optional.
+- The `batch_run_id` attribute is optional.
 
 
 _Step 2)_

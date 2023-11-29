@@ -8,6 +8,7 @@ from libica.openapi import libwes
 from libumccr.aws import libssm
 from mockito import when, spy2
 
+from data_portal.fields import IdHelper
 from data_portal.models.batch import Batch
 from data_portal.models.batchrun import BatchRun
 from data_portal.models.labmetadata import LabMetadata, LabMetadataPhenotype, LabMetadataType, LabMetadataAssay, \
@@ -378,6 +379,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
                 library_id, wfr_id = run_pair
                 wfr = wes.get_run(wfr_id=wfr_id)
                 wfl = Workflow.objects.create(
+                    portal_run_id=IdHelper.generate_portal_run_id(),
                     wfr_name=wfr.name,
                     type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
                     wfr_id=wfr.id,
@@ -391,7 +393,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
                     sequence_run=sqr,
                     batch_run=init_batch_run,
                 )
-                libraryrun_srv.link_library_runs_with_workflow(library_id=library_id, workflow=wfl)
+                libraryrun_srv.link_library_runs_with_x_seq_workflow(library_id_list=[library_id], workflow=wfl)
 
         # first --
         # - we need metadata!
@@ -524,6 +526,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
                 library_id, wfr_id = run_pair
                 wfr = wes.get_run(wfr_id=wfr_id)
                 wfl = Workflow.objects.create(
+                    portal_run_id=IdHelper.generate_portal_run_id(),
                     wfr_name=wfr.name,
                     type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
                     wfr_id=wfr.id,
@@ -537,7 +540,7 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
                     sequence_run=sqr,
                     batch_run=init_batch_run,
                 )
-                libraryrun_srv.link_library_runs_with_workflow(library_id=library_id, workflow=wfl)
+                libraryrun_srv.link_library_runs_with_x_seq_workflow(library_id_list=[library_id], workflow=wfl)
 
         # first --
         # - we need metadata!
@@ -545,6 +548,145 @@ class DragenTsoCtDnaStepIntegrationTests(PipelineIntegrationTestCase):
         from data_processors.lims.lambdas import labmetadata
         labmetadata.scheduled_update_handler({
             'sheets': ["2020", "2021"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # second --
+        # - we need to have BCL Convert workflow in db
+        # - WorkflowFactory also create related fixture sub factory SequenceRunFactory and linked them
+        mock_bcl_convert: Workflow = WorkflowFactory()
+        sqr = mock_bcl_convert.sequence_run
+        sqr.run_id = bssh_run_event['run_id']
+        sqr.instrument_run_id = bssh_run_event['instrument_run_id']
+        sqr.name = sqr.instrument_run_id
+        sqr.save()
+
+        # third --
+        # - grab workflow run from WES endpoint
+        # - sync input and output attributes to our mock BCL Convert workflow in db
+        bcl_convert_run = wes.get_run(bcl_convert_wfr_id, to_dict=True)
+        mock_bcl_convert.wfr_id = bcl_convert_wfr_id
+        mock_bcl_convert.input = json.dumps(bcl_convert_run['input'])
+        mock_bcl_convert.output = json.dumps(bcl_convert_run['output'])
+        mock_bcl_convert.save()
+
+        # Optionally we could perform deep replay
+        deep_replay()
+
+        # fourth --
+        # - replay FastqListRow update step after BCL Convert workflow succeeded
+        fastq_update_step.perform(mock_bcl_convert)
+
+        # fifth --
+        # - we also need Batch and BatchRun since workflows (jobs) are running in batch manner
+        # - we will use Batcher to create them, just like in dragen_wgs_qc_step.perform()
+        batcher = Batcher(
+            workflow=mock_bcl_convert,
+            run_step=WorkflowType.DRAGEN_TSO_CTDNA.value,
+            batch_srv=batch_srv,
+            fastq_srv=fastq_srv,
+            logger=logger
+        )
+
+        logger.info("-" * 32)
+        logger.info("PREPARE DRAGEN_TSO_CTDNA JOBS:")
+
+        job_list = dragen_tso_ctdna_step.prepare_dragen_tso_ctdna_jobs(batcher)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(json.dumps(job_list))
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), total_jobs_to_eval)
+
+    @skip
+    def test_prepare_dragen_tso_ctdna_jobs_64(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_tso_ctdna_step.DragenTsoCtDnaStepIntegrationTests.test_prepare_dragen_tso_ctdna_jobs_64
+        """
+
+        # --- pick one successful BCL Convert run in development project
+
+        # 211118_A01052_0064_BH372GDMXY in PROD
+
+        # https://umccr.slack.com/archives/C8CG6K76W/p1637570920068700 << original sequence run
+        # gds://bssh.acddbfda498038ed99fa94fe79523959/Runs/211118_A01052_0064_BH372GDMXY_r.np5GFi6Nm0yByqui2vvLaA/
+        # https://umccr.slack.com/archives/C8CG6K76W/p1701037357442279 << restore run meta files
+        # https://github.com/umccr/data-portal-apis/blob/dev/docs/pipeline/automation/tso_ctdna.md << doc here
+        # gds://production/raw_data/Runs/211118_A01052_0064_BH372GDMXY_r.np5GFi6Nm0yByqui2vvLaA/
+        bssh_run_event = {
+            'gds_volume_name': "production",
+            'gds_folder_path': "/raw_data/Runs/211118_A01052_0064_BH372GDMXY_r.np5GFi6Nm0yByqui2vvLaA",
+            'instrument_run_id': "211118_A01052_0064_BH372GDMXY",
+            'run_id': "r.np5GFi6Nm0yByqui2vvLaA",
+        }
+
+        # https://umccr.slack.com/archives/C8CG6K76W/p1639678345001700
+        bcl_convert_wfr_id = "wfr.2ce6d8d55db34205beb029f8c0a7b86d"
+        total_jobs_to_eval = 8
+
+        # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
+
+        def deep_replay():
+            from data_processors.pipeline.lambdas import libraryrun
+            libraryrun.handler(bssh_run_event, None)
+
+            # replay initial BatchRun state
+            init_batcher = Batcher(
+                workflow=mock_bcl_convert,
+                run_step=WorkflowType.DRAGEN_TSO_CTDNA.value,
+                batch_srv=batch_srv,
+                fastq_srv=fastq_srv,
+                logger=logger
+            )
+            init_batch_run: BatchRun = init_batcher.batch_run
+            init_batch_run.running = False
+            init_batch_run.notified = True
+            init_batch_run.save()
+
+            # https://umccr.slack.com/archives/C8CG6K76W/p1639745109007200
+            run_pairs = [
+                ("L2101400", "wfr.bad6ee1c6c18454cbd1be764fad8328f"),
+                ("L2101401", "wfr.28fa11b25b33405496bb7d2c402da34b"),
+                ("L2101403", "wfr.a578812866e845f4821b5c36153b3413"),
+                ("L2101404", "wfr.0d54e381c9304e3db779ac30e95fb27c"),
+                ("L2101405", "wfr.56b6e78d49524e219f57c534e4af9602"),
+                ("L2101406", "wfr.a72e82a219d64560aa10d4368f0d3a79"),
+                ("L2101407", "wfr.d8c5c8553ea0451ea5e8d2f3d4b24657"),
+                ("L2101408", "wfr.be0a3dd303ef4c42aa1656bf6c516332"),
+            ]
+
+            nonlocal total_jobs_to_eval
+            total_jobs_to_eval = 1  # overwrite evaluation
+
+            for run_pair in run_pairs:
+                library_id, wfr_id = run_pair
+                wfr = wes.get_run(wfr_id=wfr_id)
+                wfl = Workflow.objects.create(
+                    portal_run_id=IdHelper.generate_portal_run_id(),
+                    wfr_name=wfr.name,
+                    type_name=WorkflowType.DRAGEN_TSO_CTDNA.value,
+                    wfr_id=wfr.id,
+                    wfv_id=wfr.workflow_version.id,
+                    version=wfr.workflow_version.version,
+                    input=wfr.input,
+                    start=wfr.time_started if wfr.time_started else wfr.time_created,
+                    output=wfr.output,
+                    end=wfr.time_stopped if wfr.time_stopped else wfr.time_modified,
+                    end_status=wfr.status,
+                    sequence_run=sqr,
+                    batch_run=init_batch_run,
+                )
+                libraryrun_srv.link_library_runs_with_x_seq_workflow(library_id_list=[library_id], workflow=wfl)
+
+        # first --
+        # - we need metadata!
+        # - populate LabMetadata tables in test db
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2021"],
             'truncate': False
         }, None)
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")

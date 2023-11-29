@@ -94,7 +94,6 @@ def handler(event, context) -> dict:
                 }
             }]
         },
-        ,
         "samplesheet": {
           "class": "File",
           "location": "gds://path/to/samplesheet"
@@ -107,8 +106,8 @@ def handler(event, context) -> dict:
           "class": "File",
           "location": "path/to/dir/RunParameters.xml"
         },
-        "seq_run_id": "sequence run id",
-        "seq_name": "sequence run name",
+        "seq_run_id": "BSSH run id",
+        "seq_name": "instrument_run_id",
         "batch_run_id": "batch run id",
         "library_id": "library id",
     }
@@ -121,8 +120,8 @@ def handler(event, context) -> dict:
     logger.info(f"Start processing {WorkflowType.DRAGEN_TSO_CTDNA.value} event")
     logger.info(libjson.dumps(event))
 
-    seq_run_id = event.get('seq_run_id', None)
-    seq_name = event.get('seq_name', None)
+    seq_run_id = event['seq_run_id']
+    seq_name = event['seq_name']
     batch_run_id = event.get('batch_run_id', None)
     library_id = event['library_id']
 
@@ -174,7 +173,7 @@ def handler(event, context) -> dict:
     )
 
     # establish link between Workflow and LibraryRun
-    _ = libraryrun_srv.link_library_runs_with_workflow(library_id, workflow)
+    _ = libraryrun_srv.link_library_runs_with_x_seq_workflow([library_id], workflow)
 
     # notification shall trigger upon wes.run event created action in workflow_update lambda
 
