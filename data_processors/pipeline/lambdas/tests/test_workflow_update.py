@@ -57,6 +57,63 @@ class WorkflowUpdateUnitTests(PipelineUnitTestCase):
         self.assertEqual(stub_workflow.end_status, "Succeeded")
         self.assertEqual(json.loads(stub_workflow.output), mock_output)
 
+    def test_handler_ng_min(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_workflow_update.WorkflowUpdateUnitTests.test_handler_ng_min
+        """
+        mock_wfl_in_db: Workflow = OncoanalyserWgsWorkflowFactory()
+        mock_wfl_in_db.output = json.dumps(mock_output)
+        mock_wfl_in_db.save()
+
+        mock_event_min = {
+            'id': str(uuid.uuid4()),
+            'detail-type': "Workflow Run State Change",
+            'source': "aws.batch",
+            'time': "2023-09-03T03:20:50Z",
+            'detail': {
+                'portal_run_id': TestConstant.portal_run_id_oncoanalyser.value,
+                'end_status': "Deprecated",
+            }
+        }
+
+        results = workflow_update.handler_ng(event=mock_event_min, context=None)
+
+        self.assertIsNotNone(results)
+        self.assertIsInstance(results, dict)
+
+        stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.portal_run_id_oncoanalyser.value)
+        logger.info(f"-" * 32)
+        logger.info(stub_workflow)
+        logger.info(stub_workflow.output)
+
+        self.assertIsNotNone(stub_workflow.output)
+        self.assertIsNotNone(stub_workflow.end)
+        self.assertEqual(stub_workflow.end_status, "Deprecated")
+        self.assertEqual(json.loads(stub_workflow.output), mock_output)
+
+    def test_handler_ng_alt(self):
+        """
+        python manage.py test data_processors.pipeline.lambdas.tests.test_workflow_update.WorkflowUpdateUnitTests.test_handler_ng_alt
+        """
+        _ = OncoanalyserWgsWorkflowFactory()
+
+        mock_event['detail']['type_name'] = None
+        mock_event['detail']['end_status'] = 'Deprecated'
+        results = workflow_update.handler_ng(event=mock_event, context=None)
+
+        self.assertIsNotNone(results)
+        self.assertIsInstance(results, dict)
+
+        stub_workflow = Workflow.objects.get(portal_run_id=TestConstant.portal_run_id_oncoanalyser.value)
+        logger.info(f"-" * 32)
+        logger.info(stub_workflow)
+        logger.info(stub_workflow.output)
+
+        self.assertIsNotNone(stub_workflow.output)
+        self.assertIsNotNone(stub_workflow.end)
+        self.assertEqual(stub_workflow.end_status, "Deprecated")
+        self.assertEqual(json.loads(stub_workflow.output), mock_output)
+
     def test_portal_run_id_not_in_db(self):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_workflow_update.WorkflowUpdateUnitTests.test_portal_run_id_not_in_db
