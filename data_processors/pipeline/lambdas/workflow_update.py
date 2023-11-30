@@ -157,12 +157,17 @@ def handler_ng(event, context):
         # measure automatically. As a last resort, the event message will be DLQ in side channel for further checking.
         raise ValueError(msg)
 
+    if wrsc.type_name is None:
+        type_name = WorkflowType.from_value(wfl_in_db.type_name)
+    else:
+        type_name = WorkflowType.from_value(wrsc.type_name)
+
     # --- update db record, we will update corresponding Workflow record directly from `wfr_event` payload
 
     updated_workflow: Workflow = workflow_srv.create_or_update_workflow(
         {
             'portal_run_id': wrsc.portal_run_id,
-            'type': WorkflowType.from_value(wrsc.type_name),
+            'type': type_name,
             'wfl_id': wrsc.wfl_id,
             'wfv_id': wrsc.wfv_id,
             'wfr_id': wrsc.wfr_id,
