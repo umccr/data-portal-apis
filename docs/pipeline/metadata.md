@@ -8,7 +8,7 @@ Portal has data processing Lambdas for scheduled or on-demand sync with "upstrea
 > 
 > Portal keeps them in their own original "flat" data model for no join, "fast" read performance; i.e. as in [denormalized](https://www.google.com/search?q=denormalized) form. Portal use cases are in _read-only_ transactional sense and, it is ok (enough) to work with this form without re-shaping much. Furthermore and, since Portal does not bear ownership of metadata life cycle (read-only), it left out any additional treatments such as potential data re-modelling for future works.
 
-### Google LIMS
+## Google LIMS
 
 Google LIMS update lambda is idempotent i.e. you can hit as many times as you like. Portal do `2-ways sync protocol` (merge & update) from Google LIMS sheet1.
 
@@ -24,7 +24,7 @@ aws lambda invoke --profile prodops \
   lims_update.json
 ```
 
-### Lab Metadata
+## Lab Metadata
 
 Lab metadata update lambda is idempotent i.e. you can hit as many times as you like. Portal do `sync latest` (truncate & reload) from Google Lab tracking sheets.
 
@@ -46,7 +46,7 @@ Alternatively, you can use **SampleSheet Checker UI** as follows.
 - Click button next to label "Sync Portal Metadata"
 
 
-#### Automation Usage
+### Automation Usage
 
 The following columns from Lab metadata tracking sheets are mandatory for Portal Automation purpose.
 
@@ -65,3 +65,21 @@ Workflow
 Assay
 OverrideCycles
 ```
+
+### New Meta Sheet
+
+This activity typically happens at the end of year or, start of the year.
+
+> What process involves when we add a new sheet into "Lab Metadata Tracking" Google spreadsheet?
+
+1. Add a new sheet to Lab Metadata Tracking Google spreadsheet
+2. Create Portal PR to make it aware. REF:
+    - https://github.com/umccr/data-portal-apis/pulls?q=is%3Apr+is%3Aclosed+lab+metadata+sheet
+    - https://github.com/umccr/data-portal-apis/pull/535/files
+    - https://github.com/umccr/data-portal-apis/pull/653/files
+3. Create Infrastructure PR to update SubjectID generator App script
+    - https://github.com/umccr/infrastructure/blob/master/scripts/umccr_pipeline/UMCCR_Library_Tracking_MetaData.js#L5
+    - https://github.com/umccr/infrastructure/pull/344
+4. Deploy SubjectID generator App script
+
+We wish to improve this process. See https://trello.com/c/2i6PvmjT
