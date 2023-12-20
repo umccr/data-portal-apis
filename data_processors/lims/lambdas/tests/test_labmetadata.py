@@ -295,7 +295,7 @@ class LabMetadataIntegrationTests(LimsIntegrationTestCase):
         logger.info("-" * 32)
         logger.info("Example LabMetadataIntegrationTests.scheduled_update_handler lambda output:")
         logger.info(json.dumps(result))
-        self.assertGreater(result['2023']['labmetadata_row_new_count'], 1)
+        self.assertGreater(result['2024']['labmetadata_row_new_count'], 1)
 
         logger.info(f"Total ingested rows into test db: {LabMetadata.objects.count()}")
 
