@@ -67,7 +67,7 @@ def perform(this_workflow: Workflow):
     }
 
 
-def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
+def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List):
     """
     NOTE: like TN Workflow dragen wts now uses the metadata list format
     See ICA catalogue
@@ -77,18 +77,18 @@ def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
     Here "Pure" Library ID means we don't need to worry about _topup(N) or _rerun(N) suffixes.
 
     :param meta_list:
-    :return: job_list, subjects, submitting_subjects
+    :return: job_list, subjects
     """
     job_list = list()
 
     # step 1 and 3
     if not meta_list:
-        return [], [], []
+        return [], []
 
     meta_list_df = _reduce_and_transform_to_df(meta_list)
 
     if meta_list_df.shape[0] == 0:
-        return [], [], []
+        return [], []
 
     subjects = _extract_unique_subjects(meta_list_df)
 
@@ -102,9 +102,10 @@ def prepare_dragen_wts_jobs(meta_list: List[LabMetadata]) -> (List, List, List):
         fastq_list_rows = fastq_srv.get_fastq_list_row_by_rglb(row.library_id)
 
         # Check library id for rerun
-        fastq_list_rows = _handle_rerun(fastq_list_rows, row.library_id)
+        fastq_list_rows = _handle_rerun(fastq_list_rows, row.library_id)  # it could return empty fqlr
 
-        job_list.append(create_wts_job(fastq_list_rows, subject_id=row.subject_id, library_id=row.library_id))
+        if fastq_list_rows:
+            job_list.append(create_wts_job(fastq_list_rows, subject_id=row.subject_id, library_id=row.library_id))
 
     return job_list, subjects
 

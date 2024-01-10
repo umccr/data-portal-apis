@@ -10,10 +10,9 @@ from data_portal.models.libraryrun import LibraryRun
 from data_portal.models.workflow import Workflow
 from data_portal.tests.factories import WorkflowFactory, TestConstant, DragenWtsQcWorkflowFactory, \
     WtsTumorLibraryRunFactory, WtsTumorLabMetadataFactory
-from data_processors.pipeline.domain.batch import Batcher
-from data_processors.pipeline.domain.workflow import WorkflowStatus, WorkflowType
+from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.orchestration import fastq_update_step, dragen_wts_step
-from data_processors.pipeline.services import batch_srv, fastq_srv, libraryrun_srv
+from data_processors.pipeline.services import libraryrun_srv, metadata_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 
@@ -67,6 +66,27 @@ class DragenWtsStepUnitTests(PipelineUnitTestCase):
         logger.info(f"{json.dumps(results)}")
         self.assertEqual(results['subjects'][0], TestConstant.subject_id.value)
 
+    def test_prepare_dragen_wts_jobs_issue_655(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wts_step.DragenWtsStepUnitTests.test_prepare_dragen_wts_jobs_issue_655
+
+        See https://github.com/umccr/data-portal-apis/issues/655
+        """
+        mock_meta_wts_tumor: LabMetadata = WtsTumorLabMetadataFactory()
+
+        mock_meta_list = [mock_meta_wts_tumor]
+        job_list, subjects = dragen_wts_step.prepare_dragen_wts_jobs(mock_meta_list)
+
+        logger.info(f"{json.dumps(job_list)}")
+        logger.info(f"{json.dumps(subjects)}")
+
+        # assert that the return `subjects` container holds some metadata
+        self.assertIn(TestConstant.subject_id.value, subjects)
+
+        # assert that the return `job_list` container is empty i.e. no FastqListRow records found for given library_id
+        # so that it shall skip job submission all together
+        self.assertEqual(len(job_list), 0)
+
 
 class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
     # integration test hit actual File or API endpoint, thus, manual run in most cases
@@ -84,8 +104,11 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
         # ica workflows runs list
         # ica workflows runs get wfr.<ID>
 
-        bcl_convert_wfr_id = "wfr.8885338040b542f290c9bf6b7e0c4a36"  # from Run 171 in PROD
-        total_jobs_to_eval = 8
+        # from Run 175 in PROD https://umccr.slack.com/archives/C8CG6K76W/p1702091016040529
+        bcl_convert_wfr_id = "wfr.c4d30704ef1d46d5a2e95860421f999d"
+        # pick one WTS library_id from bcl_convert output as test fixture
+        fixture_library_id = 'L2301430'
+        total_jobs_to_eval = 1
 
         # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
 
@@ -93,7 +116,7 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
         # - we need metadata!
         # - populate LabMetadata tables in test db
         from data_processors.lims.lambdas import labmetadata
-        labmetadata.scheduled_update_handler({'sheets': ["2020", "2021"], 'truncate': False}, None)
+        labmetadata.scheduled_update_handler({'sheets': ["2023"], 'truncate': False}, None)
         logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
 
         # second --
@@ -114,20 +137,74 @@ class DragenWtsStepIntegrationTests(PipelineIntegrationTestCase):
         fastq_update_step.perform(mock_bcl_convert)
 
         # fifth --
-        # - we also need Batch and BatchRun since DRAGEN_WTS workflows (jobs) are running in batch manner
-        # - we will use Batcher to create them
-        batcher = Batcher(
-            workflow=mock_bcl_convert,
-            run_step=WorkflowType.DRAGEN_WTS.value,
-            batch_srv=batch_srv,
-            fastq_srv=fastq_srv,
-            logger=logger
-        )
+        # - query LabMetadata table for fixture library_id
+        meta_list = metadata_srv.filter_metadata_by_library_id(fixture_library_id)
 
         logger.info("-" * 32)
         logger.info("PREPARE DRAGEN_WTS JOBS:")
 
-        job_list = dragen_wts_step.prepare_dragen_wts_jobs(batcher)
+        job_list, subjects = dragen_wts_step.prepare_dragen_wts_jobs(meta_list=meta_list)
+
+        logger.info("-" * 32)
+        logger.info("JOB LIST JSON:")
+        logger.info(json.dumps(job_list))
+        logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
+        self.assertIsNotNone(job_list)
+        self.assertEqual(len(job_list), total_jobs_to_eval)
+
+    @skip
+    def test_prepare_dragen_wts_jobs_rerun_lib(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_dragen_wts_step.DragenWtsStepIntegrationTests.test_prepare_dragen_wts_jobs_rerun_lib
+
+        See https://github.com/umccr/data-portal-apis/issues/655
+        """
+
+        # --- pick one recent successful BCL Convert run
+        # ica workflows runs list
+        # ica workflows runs get wfr.<ID>
+
+        # from Run 283 in PROD https://umccr.slack.com/archives/C8CG6K76W/p1703297926076779
+        bcl_convert_wfr_id = "wfr.eff04574b4044cd081c66640fa62cc23"
+        # pick one WTS library_id from bcl_convert output as test fixture
+        fixture_library_id = 'L2301323'  # MLee rerun WTS library
+        # it is a `rerun WTS library` so it should skip
+        total_jobs_to_eval = 0
+
+        # --- we need to rewind & replay pipeline state in the test db (like cassette tape, ya know!)
+
+        # first --
+        # - we need metadata!
+        # - populate LabMetadata tables in test db
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({'sheets': ["2023"], 'truncate': False}, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # second --
+        # - we need to have BCL Convert workflow in db
+        # - WorkflowFactory also create related fixture sub factory SequenceRunFactory and linked them
+        mock_bcl_convert: Workflow = WorkflowFactory()
+
+        # third --
+        # - grab workflow run from WES endpoint
+        # - sync input and output attributes to our mock BCL Convert workflow in db
+        bcl_convert_run = wes.get_run(bcl_convert_wfr_id, to_dict=True)
+        mock_bcl_convert.input = json.dumps(bcl_convert_run['input'])
+        mock_bcl_convert.output = json.dumps(bcl_convert_run['output'])
+        mock_bcl_convert.save()
+
+        # fourth --
+        # - replay FastqListRow update step after BCL Convert workflow succeeded
+        fastq_update_step.perform(mock_bcl_convert)
+
+        # fifth --
+        # - query LabMetadata table for fixture library_id
+        meta_list = metadata_srv.filter_metadata_by_library_id(fixture_library_id)
+
+        logger.info("-" * 32)
+        logger.info("PREPARE DRAGEN_WTS JOBS:")
+
+        job_list, subjects = dragen_wts_step.prepare_dragen_wts_jobs(meta_list=meta_list)
 
         logger.info("-" * 32)
         logger.info("JOB LIST JSON:")
