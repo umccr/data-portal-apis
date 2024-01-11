@@ -53,7 +53,7 @@ NOTES:
 
 1. Here `wfr.<ID>` is the Workflow Run ID of one step before your next target step that you wish to trigger.
 2. And `wfv.<ID>` correspond to Workflow Version ID counterpart from point 1 Workflow Run ID.
-3. You can skip steps. See Pipeline [Concept](../README.md).
+3. You can skip steps. See Pipeline [Concept](../README.md) and **Pipeline Control** mechanism (see below section).
 
 You should get this information typically through correspond Slack notification from ICA Pipeline Automated Workflow Event in `#biobot`. 
 
@@ -72,6 +72,10 @@ aws lambda invoke --profile prod \
 ## Secondary and Tertiary Analysis Stage
 
 > NOTE: Others Lambda entry points are possible. We are documenting it as we speak. Please look into [their docstring](../../../data_processors/pipeline/lambdas) for event payload requirement. Typically, we drive (i.e. restart/resume/rerun) the step from Orchestrator for post BCL conversion steps.
+
+### ctTSO
+
+See [tso_ctdna.md](tso_ctdna.md)
 
 ### Tumor Normal
 

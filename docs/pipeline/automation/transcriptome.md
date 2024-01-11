@@ -2,6 +2,20 @@
 
 _a.k.a. DRAGEN transcriptome workflow or `wts_tumor_only` workflow_
 
+
+_(See [automated_pipeline.svg](../../model/automated_pipeline.svg))_
+
+
+## Notes
+
+- See [metadata.md](../metadata.md) note for NTC/PTC sample treatment.
+- Since Portal 2.2 (Ocicat) release, DRAGEN transcriptome trigger business logic has updated as follows.
+  - For **topup** library, it will trigger "merged" with the original (initially) sequenced WTS library.
+  - For **rerun** library, it will skip trigger all together. Hence, it requires manual trigger follow up; as well as for the corresponding RNAsum.
+  - DRAGEN transcriptome workflow is triggered in Subject-wide manner. 
+    - i.e. It could go across different sequencing runs to find matching WTS library (e.g. topup) of a given subject.
+
+
 ## Option 1
 
 We can re-enter the Pipeline from _some_ Transcriptome step as follows.

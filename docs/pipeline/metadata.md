@@ -66,6 +66,28 @@ Assay
 OverrideCycles
 ```
 
+### PTC and NTC
+
+_(See https://umccr.slack.com/archives/CP356DDCH/p1697583381042659)_
+
+- For WGS T/N cases,
+	- We do not explicitly filter NTC/PTC yet (rule wise)
+	- However, T/N pairing step only take in consider - `Phenotype`: `tumor` or `normal`
+		- So, all NTC get filtered (inheritance)
+	- PTC are still getting paired and processed
+		- If, only if, LabMetadata `Workflow` column must be either of: `clinical` or `research`
+
+- For WTS,
+	- We do not explicitly filter NTC/PTC yet (rule wise)
+	- However, for transcriptome workflow, we only consider - `Phenotype`: `tumor`
+		- So, all NTC get filtered (inheritance)
+	- PTC are still getting processed
+		- If, only if, LabMetadata `Workflow` column must be either of: `clinical` or `research`
+
+- For ctTSO,
+	- We explicitly allow process NTC (https://github.com/umccr/data-portal-apis/issues/561)
+	- PTC are getting processed
+
 ### New Meta Sheet
 
 This activity typically happens at the end of year or, start of the year.
@@ -75,11 +97,15 @@ This activity typically happens at the end of year or, start of the year.
 1. Add a new sheet to Lab Metadata Tracking Google spreadsheet
 2. Create Portal PR to make it aware. REF:
     - https://github.com/umccr/data-portal-apis/pulls?q=is%3Apr+is%3Aclosed+lab+metadata+sheet
-    - https://github.com/umccr/data-portal-apis/pull/535/files
-    - https://github.com/umccr/data-portal-apis/pull/653/files
+    - https://github.com/umccr/data-portal-apis/pull/535
+    - https://github.com/umccr/data-portal-apis/pull/653
 3. Create Infrastructure PR to update SubjectID generator App script
     - https://github.com/umccr/infrastructure/blob/master/scripts/umccr_pipeline/UMCCR_Library_Tracking_MetaData.js#L5
     - https://github.com/umccr/infrastructure/pull/344
+    - https://github.com/umccr/infrastructure/pull/391
 4. Deploy SubjectID generator App script
+5. Update SampleSheet Checker UI (if any)
+   - https://github.com/umccr/samplesheet-check-frontend/pull/40
+   - https://umccr.slack.com/archives/C94CQMNVA/p1704844116202929
 
 We wish to improve this process. See https://trello.com/c/2i6PvmjT
