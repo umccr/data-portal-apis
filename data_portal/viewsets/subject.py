@@ -38,6 +38,7 @@ class SubjectViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, pk=None, **kwargs):
         results = S3Object.objects.get_subject_results(pk).all()
         results_gds = GDSFile.objects.get_subject_results(pk).all()
+        results_sash = S3Object.objects.get_subject_sash_results(pk).all()
 
         features = []
 
@@ -60,5 +61,7 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         data.update(lims=LIMSRowModelSerializer(LIMSRow.objects.filter(subject_id=pk), many=True).data)
         data.update(features=features)
         data.update(results=S3ObjectModelSerializer(results, many=True).data)
+        data.update(results_sash=S3ObjectModelSerializer(results_sash, many=True).data)
         data.update(results_gds=GDSFileModelSerializer(results_gds, many=True).data)
+
         return Response(data)
