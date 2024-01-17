@@ -93,7 +93,7 @@ class S3ObjectManager(models.Manager):
         cpsr = Q(key__iregex='cpsr.html$')
         linx = Q(key__iregex='linx.html$')
         circos = Q(key__iregex='circos_baf.png$')
-        multiqc = Q(key__iregex='multiqc.html$')
+        multiqc = Q(key__iregex='multiqc') & Q(key__iregex='.html$')
 
         vcf_germline_snv = Q(key__iregex='smlv_germline') & Q(key__iregex='.annotations.vcf.gz$')
         vcf_somatic_snv_filter_set = Q(key__iregex='smlv_somatic') & Q(key__iregex='.filters_set.vcf.gz$')
