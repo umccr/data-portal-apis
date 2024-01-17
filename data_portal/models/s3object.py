@@ -93,6 +93,7 @@ class S3ObjectManager(models.Manager):
         cpsr = Q(key__iregex='cpsr.html$')
         linx = Q(key__iregex='linx.html$')
         circos = Q(key__iregex='circos_baf.png$')
+        multiqc = Q(key__iregex='multiqc.html$')
 
         vcf_germline_snv = Q(key__iregex='smlv_germline') & Q(key__iregex='.annotations.vcf.gz$')
         vcf_somatic_snv_filter_set = Q(key__iregex='smlv_somatic') & Q(key__iregex='.filters_set.vcf.gz$')
@@ -101,8 +102,8 @@ class S3ObjectManager(models.Manager):
         vcf_somatic_sv = Q(key__iregex='sv_somatic') & Q(key__iregex='sv.prioritised.vcf.gz$')
 
         q_results: Q = (
-                cancer | pcgr | cpsr | circos | linx | vcf_germline_snv | vcf_somatic_snv_filter_set |
-                vcf_somatic_snv_filter_applied | vcf_somatic_sv
+                cancer | pcgr | cpsr | circos | linx | vcf_germline_snv | multiqc |
+                vcf_somatic_snv_filter_set | vcf_somatic_snv_filter_applied | vcf_somatic_sv
         )
 
         qs = qs.filter(q_results)
