@@ -82,5 +82,6 @@ class S3ObjectTests(TestCase):
 
         sash_results = S3Object.objects.get_subject_sash_results(subject_id="SBJ001")
         list_sash_results = list(sash_results.values_list('key', flat=True))
+
         self.assertEqual(len(sash_results), 4, "4 valid key is expected")
         self.assertEqual(list_sash_results, valid_keys, 'only valid key is expected')

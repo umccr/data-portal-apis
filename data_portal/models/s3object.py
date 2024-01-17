@@ -88,7 +88,6 @@ class S3ObjectManager(models.Manager):
     def get_subject_sash_results(self, subject_id: str, **kwargs) -> QuerySet:
         qs: QuerySet = self.filter(key__icontains=subject_id).filter(key__icontains="/sash/")
 
-        bam = Q(key__iregex='.bam$')
         cancer = Q(key__iregex='cancer_report.html$')
         pcgr = Q(key__iregex='pcgr.html$')
         cpsr = Q(key__iregex='cpsr.html$')
@@ -97,12 +96,13 @@ class S3ObjectManager(models.Manager):
 
         vcf_germline_snv = Q(key__iregex='smlv_germline') & Q(key__iregex='.annotations.vcf.gz$')
         vcf_somatic_snv_filter_set = Q(key__iregex='smlv_somatic') & Q(key__iregex='.filters_set.vcf.gz$')
-        vcf_somatic_snv_filter_applied = Q(key__iregex='smlv_somatic') & Q(key__iregex='^((?!pcgr).)+$') & Q(key__iregex= '.pass.vcf.gz$')
+        vcf_somatic_snv_filter_applied = Q(key__iregex='smlv_somatic') & Q(key__iregex='^((?!pcgr).)+$') & Q(
+            key__iregex='.pass.vcf.gz$')
         vcf_somatic_sv = Q(key__iregex='sv_somatic') & Q(key__iregex='sv.prioritised.vcf.gz$')
 
         q_results: Q = (
-            bam | cancer | pcgr | cpsr | circos | linx | vcf_germline_snv | vcf_somatic_snv_filter_set |
-            vcf_somatic_snv_filter_applied | vcf_somatic_sv
+                cancer | pcgr | cpsr | circos | linx | vcf_germline_snv | vcf_somatic_snv_filter_set |
+                vcf_somatic_snv_filter_applied | vcf_somatic_sv
         )
 
         qs = qs.filter(q_results)
