@@ -1,8 +1,18 @@
 # Tumor Normal ICA Pipeline Lambda
 
-> NOTE:
-> * In most recent cases, you should be able to drive Tumor/Normal trigger through Portal Launch Pad UI.
-> * The following are alternates; when you need to "pair" sample manually and, like to trigger them - [ditto](https://umccr.slack.com/archives/CP356DDCH/p1698793560313359).
+_(See [automated_pipeline.svg](../../model/automated_pipeline.svg))_
+
+
+## Notes
+
+- See [metadata.md](../metadata.md) note for NTC/PTC sample treatment.
+- In most recent cases, you should be able to drive Tumor/Normal trigger through Portal Launch Pad UI.
+- The following options are alternates; when you need to "pair" sample manually and, like to trigger them - [ditto](https://umccr.slack.com/archives/CP356DDCH/p1698793560313359).
+- Pairing algorithm
+  - Topup (library having `_topup`) are merged with previous libraries of the same name
+  - No logic yet for reruns (i.e. it will skip library having `_rerun` suffix)
+  - https://github.com/umccr/data-portal-apis/pull/262
+  - https://github.com/umccr/data-portal-apis/pull/596
 
 
 ## Option 1
@@ -81,3 +91,4 @@ We can also to re-enter (restart) from Orchestrator such that knowing of previou
 - [examples/fastq_list_row.R](../../examples/fastq_list_row.R)
 - [examples/pairing_tn_fastq.R](../../examples/pairing_tn_fastq.R)
 - https://github.com/umccr/biodaily/tree/main/WGS_accreditation/seqc_dilution_run_samples_2
+- https://github.com/umccr/biodaily/pull/58

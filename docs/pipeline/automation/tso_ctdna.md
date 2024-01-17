@@ -1,12 +1,16 @@
 # TSO ctDNA
 
-_ADVANCED_
+_(See [automated_pipeline.svg](../../model/automated_pipeline.svg))_
 
-> NOTE: To trigger DRAGEN `tso_ctdna_tumor_only` workflow requires active SequenceRun raw data path having the following meta info files.
-> - RunInfo.xml
-> - RunParameters.xml
-> 
-> Since we may have already archived raw data, these file locations won't be available anymore. It requires to restore these meta files from archival location and prepare them in active GDS location.
+
+## Notes
+
+- See [metadata.md](../metadata.md) note for NTC/PTC sample treatment.
+- To trigger DRAGEN `tso_ctdna_tumor_only` workflow requires an active SequenceRun raw data path having the following meta info files.
+  - `RunInfo.xml`
+  - `RunParameters.xml`
+  - Since we might have already archived the raw data, these files' locations won't be available anymore. 
+  - It requires to restore these meta files from archival location and prepare them in active GDS location.
 
 
 ## Option 1

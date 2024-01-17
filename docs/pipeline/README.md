@@ -12,9 +12,9 @@ This is v1 documentation of fully automated pipeline and workflows orchestration
 
 ## Concept
 
-The following depicts a simplified process diagram ([automated_pipeline.png](../model/automated_pipeline.png)) of main steps in the pipeline automation.
+The following depicts a simplified process diagram ([automated_pipeline.svg](../model/automated_pipeline.svg) | [automated_pipeline.png](../model/automated_pipeline.png)) of main steps in the pipeline automation.
 
-![automated_pipeline.png](../model/automated_pipeline.png)
+![automated_pipeline.svg](../model/automated_pipeline.svg)
 
 The current automation is centered around (workflow) events, i.e. actions are triggered by previous actions/events. As such particular workflows/steps can be triggered by replaying external events.
 
