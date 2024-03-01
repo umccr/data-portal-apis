@@ -103,7 +103,7 @@ See [star_alignment.md](star_alignment.md)
 
 See [oncoanalyser_wts.md](oncoanalyser_wts.md)
 
-### Star Alignment
+### Oncoanalyser WGS
 
 See [oncoanalyser_wgs.md](oncoanalyser_wgs.md)
 
