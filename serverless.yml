@@ -502,19 +502,10 @@ custom:
     slimPatternsAppendDefaults: true
     slimPatterns: ${file(slimpatterns.yml):slimPatterns}
   customDomains:
-    # FIXME: https://github.com/umccr/infrastructure/issues/272
-    - http:
-        domainName: ${ssm:/data_portal/backend/api_domain_name}
-        basePath: ''
-        # Either set the stage to proper one or use the APIGateway v2 $default value
-#        stage: ${self:provider.stage}
-        createRoute53Record: true
-        certificateArn: ${ssm:/data_portal/backend/certificate_arn}
-        apiType: http
-        endpointType: regional
     - http:
         domainName: ${ssm:/data_portal/backend/api_domain_name2}
         basePath: ''
+        # Either set the stage to proper one or use the APIGateway v2 $default value
 #        stage: ${self:provider.stage}
         createRoute53Record: true
         certificateArn: ${ssm:/data_portal/backend/certificate_arn2}
