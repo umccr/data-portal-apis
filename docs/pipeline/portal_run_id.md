@@ -2,12 +2,6 @@
 
 You may come across people mentioning this term. The following document and explain about its attributes, property, constraint rule and use cases that intend to solve.
 
-> In summary, the `portal_run_id` is formula-based and, systematic scheme for herding the analysis run records into Portal Pipeline database; either with data "late binding" process or automated tracking process; so that one person (or a system event) would start the analysis without the wait and, still be consistent by following standard operation procedure (SOP) and best practises.
-
-![portal_run_id.png](../model/portal_run_id.png)
-
-link: `docs/model/portal_run_id.png`
-
 ## Curation
 
 ### Where would you encounter?
@@ -38,36 +32,40 @@ Since Portal never delete "the contextual fact" about BioInformatics analysis ru
 
 ### Construct
 
+![portal_run_id.png](../model/portal_run_id.png)
+
+_Permalink to image: [`docs/model/portal_run_id.png`](../model/portal_run_id.png)_
+
 The `portal_run_id` consists of two parts: **time component** and **random component**. It has total length of fixed size `16` characters. The ID construct algorithm as follows.
 
-Step 1: Generate datestamp in `YYYYMMDD` format
+**Step 1**: Generate datestamp in `YYYYMMDD` format in UTC
 ```bash
-$ date +"%Y%m%d"
+$ date -u +"%Y%m%d"
 20240512
 ```
 
-Step 2: Generate UUID and get the first 8 characters block
+**Step 2**: Generate UUID and get the first 8 characters block
 ```bash
 uuidgen | cut -c 1-8
 9e44e5e0
 ```
 
-Step 3: Concatenation of the two components form the `portal_run_id`
+**Step 3**: Concatenation of the two components form the `portal_run_id`
 ```
 202405129e44e5e0
 ```
 
 **Justification**: The reasons why we do this ID construct scheme are as follows.
-- It has to design in mind such that by looking at it, our end user can understand the analysis run date that has been performed.
-- It has to be globally unique ID (at least within Portal system domain context).
-- It is a formula-based ID such that it can be generated outside of Portal with minimal tool required.
-- The ID must handle analysis run workload in "distributed fashion" (explain next).
+- **User Understanding**: The ID design aims to ensure that end users can easily comprehend the analysis run date associated with it.
+- **Global Uniqueness**: The ID must be globally unique within the context of the portal ecosystem.
+- **Formula-Based Generation**: It is a formula-based ID, allowing it to be generated outside the portal with common command-line tools.
+- **Distributed Workload Handling**: The ID is designed to handle analysis run workloads in a distributed fashion (explained below).
 
 ### In-Band and Out-of-Band
 
-When BioInformatics analysis runs are launched through Portal (exposed as AWS Lambda function calling [entrypoints](automation)), Portal internally assign the `portal_run_id` to start tracking of the analysis run. This use case is called "In-Band". Portal Automation then know how to update of the corresponding workflow run and, what to trigger next. Because the `portal_run_id` is being generated "In-Band" and, Portal know what to do with based on best practise BioInformatics runbook **rules** that has coded into the system.
+When BioInformatics analysis runs are launched through Portal (exposed as AWS Lambda function calling [entrypoints](automation)), Portal internally assigns the `portal_run_id` to start tracking of the analysis run. This use case is called "In-Band". Portal Automation then knows how to update of the corresponding workflow run and, what to trigger next. Because the `portal_run_id` is being generated "In-Band" and, Portal know what to do with based on best practise BioInformatics runbook **rules** that has coded into the system.
 
-The "Out-of-Band" analysis runs are happened outside the Portal Automation. Typical use cases are preparing some large Cohort (re)analysis. We request Bioinformatician to generate and assign every analysis workflow run execution to have one unique `portal_run_id`; including, even if, failed ones. This `portal_run_id` may have corresponding execution ID where the analysis get computed. For instance,
+The "Out-of-Band" analysis runs are happened outside the Portal Automation. Typical use cases are preparing some large Cohort (re)analysis. We request Bioinformatician to generate and assign every analysis workflow run execution to have one unique `portal_run_id`; including failed ones. This `portal_run_id` may have corresponding execution ID where the analysis get computed. For instance,
 
 - If BioInformatics analysis workflow run on AWS Batch execution engine, you have a pair of `portal_run_id` and AWS Batch execution ID.
 - If analysis workflow run on AWS StepFunction, you have a pair of `portal_run_id` and AWS StepFunction execution ID.
@@ -92,4 +90,4 @@ icav2://scratch-project/runs/wgs_tumor_normal/202405129e44e5e0/
 
 Once the analysis run has been concluded, we can drive the results back; enter into the Portal Pipeline database for traceability and/or further data warehousing purpose. Often, this process need to comply with Portal [Metadata](metadata.md).
 
-In summary, the `portal_run_id` is formula-based and, systematic scheme for herding the analysis run records into Portal Pipeline database; either with data "late binding" process or automated tracking process; so that one person (or a system event) would start the analysis without the wait and, still be consistent by following standard operation procedure (SOP) and best practises.
+In summary, the `portal_run_id` is formula-based and, systematic scheme for herding the analysis run records into Portal Pipeline database; either with "out-of-band" process or automated tracking process; so that one person (or a system event) would start the analysis without the wait and, still be consistent by following standard operation procedure (SOP) and best practises.
