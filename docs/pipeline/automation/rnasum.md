@@ -75,20 +75,20 @@ aws lambda invoke --profile prodops \
   --function-name data-portal-api-prod-rnasum \
   --cli-binary-format raw-in-base64-out \
   --payload '{
-        "dragen_transcriptome_directory": {
+        "dragen_wts_dir": {
             "class": "Directory",
             "location": "gds://path/to/WTS/output/dir"
         },
-        "arriba_directory": {
+        "arriba_dir": {
             "class": "Directory",
             "location": "gds://path/to/arriba/output/dir"
         },
-        "umccrise_directory": {
+        "umccrise": {
             "class": "Directory",
             "location": "gds://path/to/umccrise/output/dir"
         },
         "sample_name": "TUMOR_SAMPLE_ID",
-        "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
+        "report_dir": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
         "dataset": "reference_data",
         "subject_id": "SUBJECT_ID",
         "tumor_library_id": "WTS_TUMOR_LIBRARY_ID"  

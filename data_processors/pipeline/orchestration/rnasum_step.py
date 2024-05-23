@@ -160,11 +160,11 @@ def prepare_rnasum_jobs(this_workflow: Workflow) -> List[Dict]:
     deduce_umccrise_result_location_from_root_dir(umccrise_directory, this_subject, this_wgs_tumor_sample)
 
     job = {
-        "dragen_transcriptome_directory": dragen_transcriptome_directory,
-        "umccrise_directory": umccrise_directory,
-        "arriba_directory": arriba_directory,
+        "dragen_wts_dir": dragen_transcriptome_directory,
+        "umccrise": umccrise_directory,
+        "arriba_dir": arriba_directory,
         "sample_name": wts_tumor_meta.sample_id,
-        "report_directory": f"{this_subject}__{this_wts_tumor_library}",
+        "report_dir": f"{this_subject}__{this_wts_tumor_library}",
         "dataset": tumor_dataset,
         "subject_id": this_subject,
         "tumor_library_id": this_wts_tumor_library,

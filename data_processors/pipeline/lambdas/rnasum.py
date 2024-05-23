@@ -75,20 +75,20 @@ def sqs_handler(event, context):
 def handler(event, context) -> dict:
     """event payload dict
     {
-        "dragen_transcriptome_directory": {
+        "dragen_wts_dir": {
             "class": "Directory",
             "location": "gds://path/to/WTS/output/dir"
         },
-        "umccrise_directory": {
+        "umccrise": {
             "class": "Directory",
             "location": "gds://path/to/umccrise/output/dir"
         },
-        "arriba_directory": {
+        "arriba_dir": {
             "class": "Directory",
             "location": "gds://path/to/arriba/output/dir"
         },
         "sample_name": "TUMOR_SAMPLE_ID",
-        "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
+        "report_dir": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
         "dataset": "reference_data",
         "subject_id": "SUBJECT_ID",
         "tumor_library_id": "WTS_TUMOR_LIBRARY_ID"
@@ -112,10 +112,10 @@ def handler(event, context) -> dict:
 
     # Read input template from parameter store
     workflow_input: dict = wfl_helper.get_workflow_input()
-    workflow_input['dragen_transcriptome_directory'] = event['dragen_transcriptome_directory']
-    workflow_input['umccrise_directory'] = event['umccrise_directory']
-    workflow_input['arriba_directory'] = event['arriba_directory']
-    workflow_input['report_directory'] = event['report_directory']
+    workflow_input['dragen_transcriptome_directory'] = event['dragen_wts_dir']
+    workflow_input['umccrise_directory'] = event['umccrise']
+    workflow_input['arriba_directory'] = event['arriba_dir']
+    workflow_input['report_directory'] = event['report_dir']
     workflow_input['sample_name'] = sample_name
 
     # TCGA dataset
