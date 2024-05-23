@@ -24,20 +24,20 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
 
         result: dict = rnasum.handler(
             {
-                "dragen_transcriptome_directory": {
+                "dragen_wts_dir": {
                     "class": "Directory",
                     "location": "gds://path/to/WTS/output/dir"
                 },
-                "umccrise_directory": {
+                "umccrise": {
                     "class": "Directory",
                     "location": "gds://path/to/umccrise/output/dir"
                 },
-                "arriba_directory": {
+                "arriba_dir": {
                     "class": "Directory",
                     "location": "gds://path/to/arriba/output/dir"
                 },
                 "sample_name": "TUMOR_SAMPLE_ID",
-                "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
+                "report_dir": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
                 "dataset": "BRCA",
                 "subject_id": "SUBJECT_ID",
                 "tumor_library_id": mock_tumor_library_run.library_id
@@ -67,15 +67,12 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
 
         input_tpl = json.dumps(
             {
-                "dragen_transcriptome_directory": None,
-                "umccrise_directory": None,
+                "dragen_wts_dir": None,
+                "umccrise": None,
+                "arriba_dir": None,
                 "sample_name": None,
                 "dataset": None,
-                "report_directory": None,
-                "ref_data_directory": {
-                    "class": "File",
-                    "location": "gds://development/reference-data/rnasum/"
-                }
+                "report_dir": None
             }
         )
 
@@ -85,20 +82,20 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
 
         result: dict = rnasum.handler(
             {
-                "dragen_transcriptome_directory": {
+                "dragen_wts_dir": {
                     "class": "Directory",
                     "location": "gds://path/to/WTS/output/dir"
                 },
-                "umccrise_directory": {
+                "umccrise": {
                     "class": "Directory",
                     "location": "gds://path/to/umccrise/output/dir"
                 },
-                "arriba_directory": {
+                "arriba_dir": {
                     "class": "Directory",
                     "location": "gds://path/to/arriba/output/dir"
                 },
                 "sample_name": "TUMOR_SAMPLE_ID",
-                "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
+                "report_dir": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
                 "dataset": None,
                 "subject_id": "SUBJECT_ID",
                 "tumor_library_id": "WTS_TUMOR_LIBRARY_ID"
@@ -124,15 +121,12 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
 
         input_tpl = json.dumps(
             {
-                "dragen_transcriptome_directory": None,
-                "umccrise_directory": None,
+                "dragen_wts_dir": None,
+                "umccrise": None,
+                "arriba_dir": None,
                 "sample_name": None,
                 "dataset": "BRCA",  # BRCA as default dataset in input template
-                "report_directory": None,
-                "ref_data_directory": {
-                    "class": "File",
-                    "location": "gds://development/reference-data/rnasum/"
-                }
+                "report_dir": None
             }
         )
 
@@ -142,20 +136,20 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
 
         result: dict = rnasum.handler(
             {
-                "dragen_transcriptome_directory": {
+                "dragen_wts_dir": {
                     "class": "Directory",
                     "location": "gds://path/to/WTS/output/dir"
                 },
-                "umccrise_directory": {
+                "umccrise": {
                     "class": "Directory",
                     "location": "gds://path/to/umccrise/output/dir"
                 },
-                "arriba_directory": {
+                "arriba_dir": {
                     "class": "Directory",
                     "location": "gds://path/to/arriba/output/dir"
                 },
                 "sample_name": "TUMOR_SAMPLE_ID",
-                "report_directory": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
+                "report_dir": "SUBJECT_ID__WTS_TUMOR_LIBRARY_ID",
                 "dataset": None,  # User payload None dataset
                 "subject_id": "SUBJECT_ID",
                 "tumor_library_id": "WTS_TUMOR_LIBRARY_ID"
