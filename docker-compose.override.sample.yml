@@ -7,8 +7,6 @@
 #
 # This makes phpMyAdmin at: http://localhost:8181  (u/p: root) for MySQL
 
-version: '3.1'
-
 services:
 
 #  db:
