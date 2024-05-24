@@ -8,6 +8,7 @@ This is v1 documentation of fully automated pipeline and workflows orchestration
 - See [cleanup](cleanup) for pipeline failure, cleanup and rerun SOP.
 - See [automation](automation) for operational notes.
 - See [metadata.md](metadata.md) for syncing upstream Metadata.
+- See [portal_run_id.md](portal_run_id.md)
 
 
 ## Concept
