@@ -4,10 +4,17 @@
 services:
 
   db:
-    image: public.ecr.aws/docker/library/mysql:8.4
+    # NOTE: Please maintain the same MySQL major version with RDS Aurora MySQL Major version policy.
+    # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.VersionPolicy.html
+    # For any other version for local dev purpose, please leverage docker compose override yaml config.
+    image: public.ecr.aws/docker/library/mysql:8.0
     container_name: portal_db
     command:
-      - '--mysql-native-password=ON'
+      # Reverting MySQL-8.4 from PR https://github.com/umccr/data-portal-apis/pull/670 to pin MySQL-8.0 instead.
+      # This is to align with upstream RDS Aurora MySQL version^^. When we bump this version in future then
+      # re-apply the PR 670 patch. See https://umccr.slack.com/archives/C7QC9N8G4/p1716508565949979
+      # - '--mysql-native-password=ON'
+      - '--default-authentication-plugin=mysql_native_password'
       - '--max_allowed_packet=1G'
       - '--net-read-timeout=90'
       - '--net-write-timeout=180'
