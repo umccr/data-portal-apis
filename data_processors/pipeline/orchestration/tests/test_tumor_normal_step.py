@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from unittest import skip
 
 from django.utils.timezone import make_aware, now
 from libica.openapi import libwes
@@ -16,7 +17,7 @@ from data_processors.pipeline.domain.config import ICA_WORKFLOW_PREFIX
 from data_processors.pipeline.domain.workflow import WorkflowStatus
 from data_processors.pipeline.lambdas import orchestrator
 from data_processors.pipeline.orchestration import tumor_normal_step, google_lims_update_step
-from data_processors.pipeline.services import libraryrun_srv
+from data_processors.pipeline.services import libraryrun_srv, metadata_srv
 from data_processors.pipeline.tests.case import PipelineIntegrationTestCase, PipelineUnitTestCase, logger
 
 tn_mock_subject_id = "SBJ00001"
@@ -346,4 +347,66 @@ class TumorNormalStepIntegrationTests(PipelineIntegrationTestCase):
     # uncomment @skip and hit each test case!
     # and keep decorated @skip after tested
 
-    pass
+    @skip
+    def test_prepare_tumor_normal_jobs_SBJ00695(self):
+        """
+        export DJANGO_SETTINGS_MODULE=data_portal.settings.local
+        export AWS_PROFILE=umccr-prod-admin
+        python manage.py test data_processors.pipeline.orchestration.tests.test_tumor_normal_step.TumorNormalStepIntegrationTests.test_prepare_tumor_normal_jobs_SBJ00695
+
+        We want only with _rerun lib:
+            L2100191_rerun
+            L2100192_rerun
+
+        But. We do not support TN for _rerun libs.
+        See https://github.com/umccr/data-portal-apis/issues/678
+        """
+
+        from data_processors.lims.lambdas import labmetadata
+        labmetadata.scheduled_update_handler({
+            'sheets': ["2021"],
+            'truncate': False
+        }, None)
+        logger.info(f"Lab metadata count: {LabMetadata.objects.count()}")
+
+        # stub LibraryRun records - does not need to be exact, one record each lib is fine
+        LibraryRun.objects.create(
+            library_id="L2100191",
+            instrument_run_id="38",
+            run_id="r.38",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151"
+        )
+        LibraryRun.objects.create(
+            library_id="L2100192",
+            instrument_run_id="38",
+            run_id="r.38",
+            lane=1,
+            override_cycles="Y151;I8;I8;Y151"
+        )
+
+        # stub FastqListRow records - does not need to be exact, one record each lib is fine
+        FastqListRow.objects.create(
+            rgid="MTATGGAT.TAATACAM.1.38.MDX210045_L2100191_rerun",
+            rgsm="MDX210045",
+            rglb="L2100191",
+            lane=1,
+            read_1="gds://x/y/38/20220105d4a34cfb/WGS_TsqNano/MDX210045_L2100191_rerun_S1_L001_R1_001.fastq.gz",
+            read_2="gds://x/y/38/20220105d4a34cfb/WGS_TsqNano/MDX210045_L2100191_rerun_S1_L001_R2_001.fastq.gz"
+        )
+        FastqListRow.objects.create(
+            rgid="MCGCAAGC.CGGCGTGM.1.38.MDX210051_L2100192_rerun",
+            rgsm="MDX210051",
+            rglb="L2100192",
+            lane=1,
+            read_1="gds://x/y/38/20220105d4a34cfb/WGS_TsqNano/MDX210051_L2100192_rerun_S2_L001_R1_001.fastq.gz",
+            read_2="gds://x/y/38/20220105d4a34cfb/WGS_TsqNano/MDX210051_L2100192_rerun_S2_L001_R2_001.fastq.gz"
+        )
+
+        meta_list = metadata_srv.get_wgs_metadata_by_subjects(subjects=['SBJ00695'])
+        logger.info(meta_list)
+
+        job_list, subjects, submitting_subjects = tumor_normal_step.prepare_tumor_normal_jobs(meta_list)
+
+        logger.info(f"job_list: {json.dumps(job_list)}")
+        self.assertEqual(len(job_list), 0)
