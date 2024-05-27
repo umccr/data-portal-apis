@@ -60,6 +60,14 @@ class RNAsumLambdaUnitTests(PipelineUnitTestCase):
             logger.info(lib_run)
             self.assertIn(lib_run.library_id, fixtures)
 
+        # Assert CWL workflow input keys payload interface are in-placed
+        # See https://github.com/umccr/data-portal-apis/issues/672
+        rnasum_wfl_input = json.loads(wfl.input)
+        self.assertIn("dragen_wts_dir", rnasum_wfl_input.keys())
+        self.assertIn("umccrise", rnasum_wfl_input.keys())
+        self.assertIn("arriba_dir", rnasum_wfl_input.keys())
+        self.assertIn("report_dir", rnasum_wfl_input.keys())
+
     def test_handler_dataset_none(self):
         """
         python manage.py test data_processors.pipeline.lambdas.tests.test_rnasum.RNAsumLambdaUnitTests.test_handler_dataset_none

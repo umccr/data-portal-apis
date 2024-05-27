@@ -115,8 +115,8 @@ class RNAsumStepUnitTests(PipelineUnitTestCase):
 
         for job in job_list:
             logger.info(f"\n{libjson.dumps(job)}")  # NOTE libjson is intentional and part of ser/deser test
-            self.assertIn("dragen_transcriptome_directory", job.keys())
-            self.assertIn("umccrise_directory", job.keys())
+            self.assertIn("dragen_wts_dir", job.keys())
+            self.assertIn("umccrise", job.keys())
             self.assertEqual(job['subject_id'], TestConstant.subject_id.value)
             self.assertEqual(job['tumor_library_id'], TestConstant.wts_library_id_tumor.value)
 
@@ -234,7 +234,7 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
 
         # Extra assert that we have really pointed to umccrise sample result subdirectory
         wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2200320").sample_id
-        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise_directory']['location'])
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise']['location'])
 
     @skip
     def test_prepare_rnasum_jobs_SBJ01285(self):
@@ -321,6 +321,10 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), 1)
 
+        # Extra assert that we have really pointed to umccrise sample result subdirectory
+        wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2101732").sample_id
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise']['location'])
+
     @skip
     def test_prepare_rnasum_jobs_SBJ01625(self):
         """
@@ -397,6 +401,10 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), 1)
 
+        # Extra assert that we have really pointed to umccrise sample result subdirectory
+        wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2200229").sample_id
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise']['location'])
+
     @skip
     def test_prepare_rnasum_jobs_SBJ00910(self):
         """
@@ -471,6 +479,10 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         logger.info("YOU SHOULD COPY ABOVE JSON INTO A FILE, FORMAT IT AND CHECK THAT IT LOOKS ALRIGHT")
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), 1)
+
+        # Extra assert that we have really pointed to umccrise sample result subdirectory
+        wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2100746").sample_id
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise']['location'])
 
     @skip
     def test_prepare_rnasum_jobs_SBJ02060(self):
@@ -599,6 +611,10 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         self.assertEqual(len(job_list), 1)
         self.assertEqual(job_list[0]['tumor_library_id'], "L2201545")
 
+        # Extra assert that we have really pointed to umccrise sample result subdirectory
+        wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2201539").sample_id
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise']['location'])
+
     @skip
     def test_prepare_rnasum_jobs_SBJ02569(self):
         """
@@ -698,6 +714,10 @@ class RNAsumStepIntegrationTests(PipelineIntegrationTestCase):
         self.assertIsNotNone(job_list)
         self.assertEqual(len(job_list), 1)
         self.assertEqual(job_list[0]['tumor_library_id'], "L2201035")
+
+        # Extra assert that we have really pointed to umccrise sample result subdirectory
+        wgs_tumor_sample_id = LabMetadata.objects.get(library_id__iexact="L2200985").sample_id
+        self.assertIn(wgs_tumor_sample_id, job_list[0]['umccrise']['location'])
 
     @skip
     def test_lookup_tcga_dataset(self):

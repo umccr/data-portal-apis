@@ -112,10 +112,10 @@ def handler(event, context) -> dict:
 
     # Read input template from parameter store
     workflow_input: dict = wfl_helper.get_workflow_input()
-    workflow_input['dragen_transcriptome_directory'] = event['dragen_wts_dir']
-    workflow_input['umccrise_directory'] = event['umccrise']
-    workflow_input['arriba_directory'] = event['arriba_dir']
-    workflow_input['report_directory'] = event['report_dir']
+    workflow_input['dragen_wts_dir'] = event['dragen_wts_dir']
+    workflow_input['umccrise'] = event['umccrise']
+    workflow_input['arriba_dir'] = event['arriba_dir']
+    workflow_input['report_dir'] = event['report_dir']
     workflow_input['sample_name'] = sample_name
 
     # TCGA dataset
