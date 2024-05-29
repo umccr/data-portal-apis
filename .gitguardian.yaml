@@ -1,0 +1,5 @@
+secret:
+  ignored_matches:
+  - match: d43748dae1d75018ceee7e847cb10b8b203aa595dd04e6bf636f638c59472595
+    name: MySQL Credentials - commit://9390e85fddb7df74666d381b8818d51cbf976999/apis/.env
+version: 2
