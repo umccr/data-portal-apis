@@ -29,7 +29,7 @@ v18.18.0
 
 npm i -g yarn
 yarn -v
-3.5.1
+4.2.2
 ```
 
 then:
