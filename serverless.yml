@@ -1,6 +1,6 @@
 service: data-portal-api
 
-frameworkVersion: '^3'
+frameworkVersion: "^3"
 
 plugins:
   - serverless-wsgi
@@ -25,7 +25,7 @@ provider:
     httpApi: true
   httpApi:
     disableDefaultEndpoint: true
-    payload: '2.0'
+    payload: "2.0"
     cors:
       allowedOrigins:
         # FIXME: https://github.com/umccr/infrastructure/issues/272
@@ -37,9 +37,10 @@ provider:
         - https://data.prod.umccr.org
         - https://data.dev.umccr.org
         - https://data.stg.umccr.org
-        - https://status.data.umccr.org
-        - https://status.data.prod.umccr.org
-        - https://status.data.dev.umccr.org
+        - https://status.umccr.org
+        - https://status.prod.umccr.org
+        - https://status.stg.umccr.org
+        - https://status.dev.umccr.org
         - https://sscheck.umccr.org
         - https://sscheck.prod.umccr.org
         - https://sscheck.dev.umccr.org
@@ -86,7 +87,6 @@ provider:
     LAB_METADATA_SYNC_LAMBDA: ${self:service}-${sls:stage}-labmetadata_scheduled_update_processor
 
 functions:
-
   api:
     handler: wsgi_handler.handler
     layers:
@@ -149,9 +149,9 @@ functions:
     timeout: 120
     reservedConcurrency: 20
     # Uncomment to enable xray on this lambda
-#    tracing: Active
-#    environment:
-#      AWS_XRAY_SDK_ENABLED: true
+  #    tracing: Active
+  #    environment:
+  #      AWS_XRAY_SDK_ENABLED: true
 
   sqs_gds_event_processor:
     handler: data_processors.gds.lambdas.gds_event.handler
@@ -504,9 +504,9 @@ custom:
   customDomains:
     - http:
         domainName: ${ssm:/data_portal/backend/api_domain_name2}
-        basePath: ''
+        basePath: ""
         # Either set the stage to proper one or use the APIGateway v2 $default value
-#        stage: ${self:provider.stage}
+        #        stage: ${self:provider.stage}
         createRoute53Record: true
         certificateArn: ${ssm:/data_portal/backend/certificate_arn2}
         apiType: http
@@ -521,31 +521,31 @@ custom:
 package:
   # See https://www.serverless.com/framework/docs/providers/aws/guide/packaging/
   patterns:
-    - '!.husky/**'
-    - '!.git/**'
-    - '!.idea/**'
-    - '!__pycache__/**'
-    - '!node_modules/**'
-    - '!package.json'
-    - '!yarn.lock'
-    - '!mocks/**'
-    - '!downloads/**'
-    - '!venv/**'
-    - '!.venv/**'
-    - '!env/**'
-    - '!.env/**'
-    - '!data/**'
-    - '!swagger/**'
-    - '!docs/**'
-    - '!docker-compose.yml'
-    - '!docker-compose.override.sample.yml'
-    - '!docker-compose.override.yml'
-    - '!docker-compose.ci.yml'
-    - '!buildspec.yml'
-    - '!slimpatterns.yml'
-    - '!Makefile'
-    - '!README.md'
-    - '!requirements-dev.txt'
-    - '!requirements-test.txt'
-    - '!haproxy.cfg'
-    - '!loaddata.sh'
+    - "!.husky/**"
+    - "!.git/**"
+    - "!.idea/**"
+    - "!__pycache__/**"
+    - "!node_modules/**"
+    - "!package.json"
+    - "!yarn.lock"
+    - "!mocks/**"
+    - "!downloads/**"
+    - "!venv/**"
+    - "!.venv/**"
+    - "!env/**"
+    - "!.env/**"
+    - "!data/**"
+    - "!swagger/**"
+    - "!docs/**"
+    - "!docker-compose.yml"
+    - "!docker-compose.override.sample.yml"
+    - "!docker-compose.override.yml"
+    - "!docker-compose.ci.yml"
+    - "!buildspec.yml"
+    - "!slimpatterns.yml"
+    - "!Makefile"
+    - "!README.md"
+    - "!requirements-dev.txt"
+    - "!requirements-test.txt"
+    - "!haproxy.cfg"
+    - "!loaddata.sh"
