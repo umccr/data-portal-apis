@@ -39,6 +39,7 @@ provider:
         - https://data.stg.umccr.org
         - https://status.umccr.org
         - https://status.prod.umccr.org
+        - https://status.stg.umccr.org
         - https://status.dev.umccr.org
         - https://sscheck.umccr.org
         - https://sscheck.prod.umccr.org
