@@ -22,11 +22,11 @@ where lbr.instrument_run_id = @instr_run_id
   and wfl.start < @cut_off_time
 group by wfl.portal_run_id;
 
--- ### mark them failed
+-- ### mark them deleted
 update data_portal.data_portal_libraryrun lbr
 	inner join data_portal.data_portal_libraryrun_workflows linker on linker.libraryrun_id=lbr.id
     inner join data_portal.data_portal_workflow wfl on linker.workflow_id=wfl.id
-set wfl.end_status='Failed'
+set wfl.end_status='Deleted'
 where
 	lbr.instrument_run_id=@instr_run_id
     and wfl.type_name = @workflow_step
