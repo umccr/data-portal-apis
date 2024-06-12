@@ -40,8 +40,8 @@ Consult the Specific Analysis Workflow case below.
 - Must have up-to-date understanding of Pipeline and Data Model
 - General strategy: **preform cleanup ops before staging rerun trigger**
 - Using SQL scripts to determine 
-  - affected GDS paths to be deleted
-  - affected workflows to be marked them `Failed`
+  - affected GDS/S3 object paths/keys to be deleted
+  - affected workflows to be marked them `Deleted`
   - affected DB metadata records deleted (`FastqListRow`s)
 - When deleting GDS paths, GDS file events will fire and, Portal will auto-sync (remove them from) GDSFile index. Check DLQ for potentially missed GDS file events (as large number of events can overload the system temporarily).
 - Request data admin (Florian) to delete them from GDS production volume.

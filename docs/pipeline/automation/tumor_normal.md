@@ -92,3 +92,5 @@ We can also to re-enter (restart) from Orchestrator such that knowing of previou
 - [examples/pairing_tn_fastq.R](../../examples/pairing_tn_fastq.R)
 - https://github.com/umccr/biodaily/tree/main/WGS_accreditation/seqc_dilution_run_samples_2
 - https://github.com/umccr/biodaily/pull/58
+- https://github.com/umccr/biodaily/pull/69
+- https://github.com/umccr/biodaily/tree/main/pdiakumis/tumor_normal_submission

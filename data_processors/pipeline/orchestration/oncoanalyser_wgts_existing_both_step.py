@@ -76,15 +76,15 @@ def prepare_oncoanalyser_wgts_job(this_workflow: Workflow) -> dict:
         wgs_wf = this_workflow
         wts_wf = find_wts_wf(this_workflow)
         if not wts_wf:
-            logger.info(f"Cloud not find matching Oncoanalyser WTS workflow for "
-                        f"{this_workflow.portal_run_id}. Aborting.")
+            logger.info(f"Can not find matching Oncoanalyser WTS workflow for "
+                        f"{this_workflow.portal_run_id}. Skipping.")
             return {}
     elif this_workflow.type_name == WorkflowType.ONCOANALYSER_WTS.value:
         wgs_wf = find_wgs_wf(this_workflow)
         wts_wf = this_workflow
         if not wgs_wf:
-            logger.info(f"Cloud not find matching Oncoanalyser WGS workflow for "
-                        f"{this_workflow.portal_run_id}. Aborting.")
+            logger.info(f"Can not find matching Oncoanalyser WGS workflow for "
+                        f"{this_workflow.portal_run_id}. Skipping.")
             return {}
     else:
         raise ValueError(f"Wrong input workflow '{this_workflow.type_name}' for "

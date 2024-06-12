@@ -66,6 +66,11 @@ Assay
 OverrideCycles
 ```
 
+### LibraryID Suffixes
+
+- Portal Automation removes any form of Lab annotated LibraryID suffixes before triggering Bioinformatics Secondary Analysis workflows.
+- See [library_suffix.md](library_suffix.md)
+
 ### PTC and NTC
 
 _(See https://umccr.slack.com/archives/CP356DDCH/p1697583381042659)_
