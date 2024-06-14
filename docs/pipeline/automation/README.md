@@ -77,6 +77,10 @@ aws lambda invoke --profile prod \
 
 See [tso_ctdna.md](tso_ctdna.md)
 
+### DRAGEN Alignment QC
+
+See [dragen_alignment_qc.md](dragen_alignment_qc.md)
+
 ### Tumor Normal
 
 See [tumor_normal.md](tumor_normal.md)
