@@ -244,6 +244,10 @@ class SecondaryAnalysisHelper(IcaWorkflowHelper):
             # See https://github.com/umccr-illumina/cwl-iap/issues/200
             engine_params.update(maxScatter=8)
 
+        if self.type == WorkflowType.TUMOR_NORMAL:
+            # https://github.com/umccr/data-portal-apis/issues/671
+            engine_params.update(tesUseInputManifest="never")
+
         return engine_params
 
     def construct_workflow_name(self, subject_id: str, sample_name: str):

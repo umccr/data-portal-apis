@@ -49,6 +49,12 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         self.assertIn("maxScatter", tso_eng_params)
         self.assertEqual(tso_eng_params['maxScatter'], 8)
 
+        tn_helper = SecondaryAnalysisHelper(WorkflowType.TUMOR_NORMAL)
+        tn_eng_params = tn_helper.get_engine_parameters(target_id="SBJ0002")
+        logger.info(tn_eng_params)
+        self.assertIn("tesUseInputManifest", tn_eng_params)
+        self.assertEqual(tn_eng_params['tesUseInputManifest'], "never")
+
     def test_secondary_analysis_helper_block_wgts_qc_type(self):
         """
         python manage.py test data_processors.pipeline.domain.tests.test_workflow.WorkflowDomainUnitTests.test_secondary_analysis_helper_block_wgts_qc_type
