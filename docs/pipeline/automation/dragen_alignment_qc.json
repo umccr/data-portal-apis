@@ -1,0 +1,22 @@
+{
+  "library_id": "L2100878",
+  "lane": 2,
+  "fastq_list_rows": [
+    {
+      "rgid": "TXXXXXXG.GYYYYYYA.2.240607_A01052_0209_BHLHFTDSXC.PRJ21XXXX_L2100878_topup",
+      "rgsm": "PRJ21XXXX",
+      "rglb": "L2100878",
+      "lane": 2,
+      "read_1": {
+        "class": "File",
+        "location": "gds://production/primary_data/240607_A01052_0209_BHLHFTDSXC/2024061140802544/WGS_NebDNA_Y101N50_I8_I8_Y101N50/PRJ21XXXX_L2100878_topup_S2_L002_R1_001.fastq.gz"
+      },
+      "read_2": {
+        "class": "File",
+        "location": "gds://production/primary_data/240607_A01052_0209_BHLHFTDSXC/2024061140802544/WGS_NebDNA_Y101N50_I8_I8_Y101N50/PRJ21XXXX_L2100878_topup_S2_L002_R2_001.fastq.gz"
+      }
+    }
+  ],
+  "seq_run_id": "r.<MI__REMOVED__wA>",
+  "seq_name": "240607_A01052_0209_BHLHFTDSXC"
+}
