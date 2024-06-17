@@ -42,12 +42,14 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         self.assertIn("outputDirectory", eng_params)
         self.assertIn("SBJ0001", eng_params['workDirectory'])
         self.assertIn("SBJ0001", eng_params['outputDirectory'])
+        self.assertEqual(eng_params['tesUseInputManifest'], "never")
 
         tso_helper = SecondaryAnalysisHelper(WorkflowType.DRAGEN_TSO_CTDNA)
         tso_eng_params = tso_helper.get_engine_parameters(target_id="SBJ0002")
         logger.info(tso_eng_params)
         self.assertIn("maxScatter", tso_eng_params)
         self.assertEqual(tso_eng_params['maxScatter'], 8)
+        self.assertEqual(tso_eng_params['tesUseInputManifest'], "never")
 
         tn_helper = SecondaryAnalysisHelper(WorkflowType.TUMOR_NORMAL)
         tn_eng_params = tn_helper.get_engine_parameters(target_id="SBJ0002")
