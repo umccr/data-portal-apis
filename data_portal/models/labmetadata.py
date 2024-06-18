@@ -21,6 +21,10 @@ class LabMetadataType(models.TextChoices):
     TSO_RNA = "TSO-RNA"
     WGS = "WGS"
     WTS = "WTS"
+    BI_MODAL = "BiModal"
+    ME_DIP = "MeDIP"
+    METAGENM = "Metagenm"
+    METHYL_SEQ = "MethylSeq"
 
 
 class LabMetadataPhenotype(models.TextChoices):
@@ -30,24 +34,38 @@ class LabMetadataPhenotype(models.TextChoices):
 
 
 class LabMetadataAssay(models.TextChoices):
-    AG_SS_CRE = "AgSsCRE"
-    CT_TSO = "ctTSO"
+    TSQ_NANO = "TsqNano"
+    TSQ_STR = "TsqSTR"
     NEB_DNA = "NebDNA"
-    NEB_DNA_U = "NebDNAu"
     NEB_RNA = "NebRNA"
-    PCR_FREE = "PCR-Free-Tagmentation"
     TEN_X_3PRIME = "10X-3prime-expression"
     TEN_X_5PRIME = "10X-5prime-expression"
+    TEN_X_ADT = "10X-ADT"
     TEN_X_ATAC = "10X-ATAC"
     TEN_X_CITE_FEAT = "10X-CITE-feature"
     TEN_X_CITE_HASH = "10X-CITE-hashing"
     TEN_X_CNV = "10X-CNV"
+    TEN_X_CSP = "10X-CSP"
+    TEN_X_GEX = "10X-GEX"
     TEN_X_VDJ = "10X-VDJ"
+    TEN_X_VDJ_BCR = "10X-VDJ-BCR"
     TEN_X_VDJ_TCR = "10X-VDJ-TCR"
+    AG_SS_CRE = "AgSsCRE"
+    B_ATAC = "bATAC"
+    CRISPR = "CRISPR"
+    CT_TSO = "ctTSO"
+    IDT_X_GEN = "IDTxGen"
+    ILMN_DNA_PREP = "IlmnDNAprep"
+    NEB_DNA_U = "NebDNAu"
+    NEB_MS = "NebMS"
+    PCR_FREE = "PCR-Free-Tagmentation"
+    TAKARA = "Takara"
+    TPL_X_HV = "TPlxHV"
     TSO_DNA = "TSODNA"
-    TSO_RNA = "TSORNA"
-    TSQ_NANO = "TsqNano"
-    TSQ_STR = "TsqSTR"
+    BM_5L = "BM-5L"
+    BM_6L = "BM-6L"
+    ME_DIP = "MeDIP"
+    CT_TSO_V2 = "ctTSOv2"
 
 
 class LabMetadataQuality(models.TextChoices):
@@ -76,6 +94,7 @@ class LabMetadataSource(models.TextChoices):
     RNA = "RNA"
     TISSUE = "tissue"
     WATER = "water"
+    SKIN = "skin"
 
 
 class LabMetadataWorkflow(models.TextChoices):
