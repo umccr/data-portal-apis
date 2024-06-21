@@ -52,6 +52,48 @@ mock_report_event = {
     ]
 }
 
+mock_eventbridge_s3_event_object_created = {
+    "Records": [
+        {
+            "messageId": "b18b1ca5-fe74-4b2b-b1db-0063b6ff6b3c",
+            "receiptHandle": "AQEBGr...Khw=",
+            "body": "{\"version\":\"0\",\"id\":\"93c45b10-e27d-55af-b092-23185cd114d0\",\"detail-type\":\"Object Created\",\"source\":\"aws.s3\",\"account\":\"987654321987\",\"time\":\"2024-06-20T18:49:05Z\",\"region\":\"ap-southeast-2\",\"resources\":[\"arn:aws:s3:::pipeline-dev-cache-987654321987-ap-southeast-2\"],\"detail\":{\"version\":\"0\",\"bucket\":{\"name\":\"pipeline-dev-cache-987654321987-ap-southeast-2\"},\"object\":{\"key\":\"byob-icav2/development/primary/240424_A01052_0193_BH7JMMDRX5/2024062093bae4d5/InterOp/OpticalModelMetricsOut.bin\",\"size\":14363,\"etag\":\"9999999b411d58dc35bf3c978a680647\",\"sequencer\":\"00667479A0F5211022\"},\"request-id\":\"XXXXXXXXJ6KSW1YB\",\"requester\":\"000000148045\",\"source-ip-address\":\"10.153.152.99\",\"reason\":\"CopyObject\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1718909346487",
+                "SenderId": "AIDAIDYJ123456T46XWPK",
+                "ApproximateFirstReceiveTimestamp": "1718909346489"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "dd195...cb",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:ap-southeast-2:123456789123:s3-event-queue",
+            "awsRegion": "ap-southeast-2"
+        }
+    ]
+}
+
+mock_eventbridge_s3_event_object_deleted = {
+    "Records": [
+        {
+            "messageId": "3fb10414-e1d9-4061-85fd-53d58bd32d83",
+            "receiptHandle": "AQEBR...3I=",
+            "body": "{\"version\":\"0\",\"id\":\"3332f6b6-d092-b2b6-b746-a0473621fbb9\",\"detail-type\":\"Object Deleted\",\"source\":\"aws.s3\",\"account\":\"987654321987\",\"time\":\"2024-06-19T07:51:53Z\",\"region\":\"ap-southeast-2\",\"resources\":[\"arn:aws:s3:::pipeline-dev-cache-987654321987-ap-southeast-2\"],\"detail\":{\"version\":\"0\",\"bucket\":{\"name\":\"pipeline-dev-cache-987654321987-ap-southeast-2\"},\"object\":{\"key\":\"byob-icav2/.iap_upload_test.tmp\",\"sequencer\":\"0066728E192EA8FA5E\"},\"request-id\":\"W40X8C90HKCSB18G\",\"requester\":\"999999321987\",\"source-ip-address\":\"10.153.152.203\",\"reason\":\"DeleteObject\",\"deletion-type\":\"Permanently Deleted\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1718783514561",
+                "SenderId": "AIDAIDYJ123456T46XWPK",
+                "ApproximateFirstReceiveTimestamp": "1718783514565"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "728eeaf1...0990",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:ap-southeast-2:123456789123:s3-event-queue",
+            "awsRegion": "ap-southeast-2"
+        }
+    ]
+}
+
 
 class S3EventUnitTests(S3EventUnitTestCase):
 
@@ -211,6 +253,42 @@ class S3EventUnitTests(S3EventUnitTestCase):
         """
         event_records_dict = s3_event.parse_raw_s3_event_records(mock_event_no_records['Records'])
         self.assertEqual(len(event_records_dict['s3_event_records']), 0)
+
+    def test_handler_eventbridge_object_created(self):
+        """
+        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler_eventbridge_object_created
+        """
+        self.verify_local()
+        results = s3_event.handler(mock_eventbridge_s3_event_object_created, None)
+        logger.info(json.dumps(results))
+        self.assertEqual(results['created_count'], 1)
+
+    def test_handler_eventbridge_object_deleted(self):
+        """
+        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler_eventbridge_object_deleted
+        """
+        self.verify_local()
+
+        _ = S3Object.objects.create(
+            bucket='pipeline-dev-cache-987654321987-ap-southeast-2',
+            key='byob-icav2/.iap_upload_test.tmp',
+            size=123,
+            last_modified_date=now(),
+            e_tag='',
+        )
+
+        results = s3_event.handler(mock_eventbridge_s3_event_object_deleted, None)
+        logger.info(json.dumps(results))
+        self.assertEqual(results['removed_count'], 1)
+
+    def test_handler_eventbridge_object_deleted_non_existent(self):
+        """
+        python manage.py test data_processors.s3.tests.test_s3_event.S3EventUnitTests.test_handler_eventbridge_object_deleted_non_existent
+        """
+        self.verify_local()
+        results = s3_event.handler(mock_eventbridge_s3_event_object_deleted, None)
+        logger.info(json.dumps(results))
+        self.assertEqual(results['removed_count'], 0)
 
 
 class S3EventIntegrationTests(S3EventIntegrationTestCase):

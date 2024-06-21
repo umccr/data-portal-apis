@@ -60,7 +60,16 @@ def handler(event: dict, context) -> Union[bool, Dict[str, int]]:
 
 def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
     """
-    Parse raw SQS messages into S3EventRecord objects
+    Parse raw SQS messages into internal S3EventRecord struct representation.
+
+    1) Bucket notification > SQS > Lambda
+    https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html
+    https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
+
+    2) Bucket > EventBridge enable > SQS > Lambda
+    https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventBridge.html
+    https://docs.aws.amazon.com/AmazonS3/latest/userguide/ev-events.html
+
     :param messages: the messages to be processed
     :return: list of S3EventRecord objects
     """
@@ -68,22 +77,20 @@ def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
 
     for message in messages:
         body: dict = libjson.loads(message['body'])
-        if 'Records' not in body.keys():
-            continue
 
-        records = body['Records']
+        if 'detail-type' in body:
 
-        for record in records:
-            event_name = record['eventName']
-            event_time = parse(record['eventTime'])
-            s3 = record['s3']
+            # -- S3 event route through EventBridge integration
+
+            event_name = str(body['detail-type']).strip().replace(' ', '')
+            event_time = parse(body['time'])
+            s3 = body['detail']
             s3_bucket_name = s3['bucket']['name']
             s3_object_meta = s3['object']
 
-            # Check event type
-            if libs3.S3EventType.EVENT_OBJECT_CREATED.value in event_name:
+            if event_name in ['ObjectCreated']:
                 event_type = libs3.S3EventType.EVENT_OBJECT_CREATED
-            elif libs3.S3EventType.EVENT_OBJECT_REMOVED.value in event_name:
+            elif event_name in ['ObjectDeleted']:
                 event_type = libs3.S3EventType.EVENT_OBJECT_REMOVED
             else:
                 event_type = libs3.S3EventType.EVENT_UNSUPPORTED
@@ -91,6 +98,34 @@ def parse_raw_s3_event_records(messages: List[dict]) -> Dict:
             logger.debug(f"Found new event of type {event_type}")
 
             s3_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
+
+        else:
+
+            # -- S3 event route through SQS, SNS, Lambda integration
+
+            if 'Records' not in body:
+                continue
+
+            records = body['Records']
+
+            for record in records:
+                event_name = record['eventName']
+                event_time = parse(record['eventTime'])
+                s3 = record['s3']
+                s3_bucket_name = s3['bucket']['name']
+                s3_object_meta = s3['object']
+
+                # Check event type
+                if libs3.S3EventType.EVENT_OBJECT_CREATED.value in event_name:
+                    event_type = libs3.S3EventType.EVENT_OBJECT_CREATED
+                elif libs3.S3EventType.EVENT_OBJECT_REMOVED.value in event_name:
+                    event_type = libs3.S3EventType.EVENT_OBJECT_REMOVED
+                else:
+                    event_type = libs3.S3EventType.EVENT_UNSUPPORTED
+
+                logger.debug(f"Found new event of type {event_type}")
+
+                s3_event_records.append(S3EventRecord(event_type, event_time, s3_bucket_name, s3_object_meta))
 
     return {
         's3_event_records': s3_event_records,

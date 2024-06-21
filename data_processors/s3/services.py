@@ -58,7 +58,13 @@ def _sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     bucket_name = record.s3_bucket_name
     key = record.s3_object_meta['key']
     size = record.s3_object_meta['size']
-    e_tag = record.s3_object_meta['eTag']
+
+    if 'eTag' in record.s3_object_meta:
+        e_tag = record.s3_object_meta['eTag']  # S3 Event Notification convention
+    elif 'etag' in record.s3_object_meta:
+        e_tag = record.s3_object_meta['etag']  # EventBridge convention
+    else:
+        e_tag = None
 
     tag_s3_object(bucket_name, key, "bam")
 
