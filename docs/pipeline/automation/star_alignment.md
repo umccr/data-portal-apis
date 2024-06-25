@@ -2,6 +2,12 @@
 
 See automated pipeline [trigger and input dependency diagram](../README.md) for upstream/downstream workflow dependencies and what might it get trigger automatically.
 
+## Notes
+
+- Unlike [DRAGEN transcriptome pipeline](transcriptome.md), Star Alignment pipeline does not take WTS sample with FASTQs split into multiple lanes.
+  - This is known caveat by Bioinfo pipeline team. See [discussion](https://umccr.slack.com/archives/C025TLC7D/p1719295647502089).
+  - Hence, Portal Automation will skip triggering Star Alignment pipeline for such WTS samples. e.g. `L2400882` `L2400879`
+
 ## Option 1
 
 We can re-enter the Pipeline from _some_ Star Alignment step as follows.

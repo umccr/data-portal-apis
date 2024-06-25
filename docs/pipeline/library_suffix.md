@@ -9,7 +9,7 @@ At Portal-driven Bioinformatics workflow automation, our current convention is;
   - FASTQ file naming and,
   - when populating Portal database `FastqListRow` table.
 
-### FastqListRow Table
+## FastqListRow Table
 
 Portal `FastqListRow` table systematically maintains this mapping as last known point before starting downstream informatics analysis. This table keeps track of _suffix_ vs _original_ LibraryID by each sequencing runs. As follows.
 
@@ -42,11 +42,13 @@ It resolves:
 }
 ```
 
-### By Design Effects
+## By Design Effects
 
-> Merge Effect:
+### Merge Effect
+
+> Merge Effect 1:
 > 
-> If LibraryID comes later as multiple topup at different sequencing point-in-time, query by `rglb` gives "merging effect" of all these topup sequencing run of the same _root_ LibraryID.
+> If LibraryID comes later as multiple topup(s) at different sequencing point-in-time, query by `rglb` gives "merging effect" of all these topup sequencing run of the same _root_ LibraryID.
 
 ```
 L2100191         \
@@ -55,6 +57,35 @@ L2100191_topup2   \
 L2100191_topup3   /
 L2100191_topup4  /
 ```
+
+> Merge Effect 2:
+> 
+> If LibraryID split into multiple lanes, query by `rglb` gives "merging effect" of all these sequencing run FASTQs by the same _root_ LibraryID.
+
+```
+L2100241 Lane 1  \
+L2100241 Lane 2   \
+...                -->  L2100241
+L2100241 Lane 3   /
+L2100241 Lane 4  /
+```
+
+A combination of both merge effects 1 and 2 is possible as a total product.
+
+Observe API (WGS Library):
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/fastq?rglb=L2100241" | jq
+```
+
+Observe UI (WGS Library):
+- https://portal.umccr.org/subjects/SBJ00723/launch-pad/wgs-tn
+
+Observe API (WTS Library):
+```
+curl -s -H "Authorization: Bearer $PORTAL_TOKEN" "https://api.portal.prod.umccr.org/fastq?rglb=L2400882" | jq
+```
+
+### Override Effect
 
 > Override Effect:
 > 
