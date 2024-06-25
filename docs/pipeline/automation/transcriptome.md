@@ -14,7 +14,8 @@ _(See [automated_pipeline.svg](../../model/automated_pipeline.svg))_
   - For **rerun** library, it will skip trigger all together. Hence, it requires manual trigger follow up; as well as for the corresponding RNAsum.
   - DRAGEN transcriptome workflow is triggered in Subject-wide manner. 
     - i.e. It could go across different sequencing runs to find matching WTS library (e.g. topup) of a given subject.
-
+- When sequencing run splits WTS sample into multiple lanes, DRAGEN transcriptome pipeline able to [merge them](../library_suffix.md).
+  - See [discussion](https://umccr.slack.com/archives/C025TLC7D/p1719295647502089)
 
 ## Option 1
 
