@@ -1,11 +1,11 @@
 -r requirements-test.txt
 drf_yasg==1.21.7
-pipdeptree==2.13.0
 django_extensions==3.2.3
 aws-requests-auth==0.4.3
 requests-aws4auth==1.2.3
 pre-commit
 detect-secrets
 ggshield
-datamodel-code-generator==0.22.1
+datamodel-code-generator
 awscli-local
+pipdeptree
