@@ -15,6 +15,7 @@ gspread==5.12.4
 gspread-pandas==3.3.0
 sample-sheet==0.13.0
 requests==2.32.3
-pandas==2.2.2
+pandas==2.1.4
+numpy==1.26.4
 cachetools==5.3.3
 pydantic==2.7.4

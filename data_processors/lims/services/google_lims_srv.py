@@ -24,7 +24,7 @@ def persist_lims_data(df: pd.DataFrame, rewrite: bool = False) -> Dict[str, int]
     """
     logger.info(f"Start processing LIMS data")
 
-    df = df.applymap(_clean_data_cell)
+    df = df.map(_clean_data_cell)
     # df = df.drop_duplicates()  # Defer handling row duplicate a bit further down for invalid rows stat
     df = df.reset_index(drop=True)
 
