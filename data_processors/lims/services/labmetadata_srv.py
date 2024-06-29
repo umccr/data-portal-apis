@@ -55,7 +55,7 @@ def persist_labmetadata(df: pd.DataFrame):
         }
 
     df = clean_columns(df)
-    df = df.applymap(_clean_data_cell)
+    df = df.map(_clean_data_cell)
     df = df.drop_duplicates()
     df = df.reset_index(drop=True)
 

@@ -127,8 +127,7 @@ load_localstack() {
   echo "...Loading mock data to localstack container"
   aws_local_cmd="aws --endpoint-url=http://localhost:4566"
 
-  BUCKET_EXISTS=$(aws --endpoint-url=http://localhost:4566 s3api head-bucket --bucket test1 2>&1 || true)
-  if [ -z "$BUCKET_EXISTS" ]; then
+  if eval "${aws_local_cmd} s3api head-bucket --bucket test1 2>/dev/null"; then
     true
   else
     eval "${aws_local_cmd} s3 mb s3://test1"
