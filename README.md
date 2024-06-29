@@ -22,14 +22,14 @@ docker --version
 Docker version 24.0.7, build afdd53b4e3
 
 python -V
-Python 3.11.5
+Python 3.11.9
 
 node -v
-v18.18.0
+v20.15.0
 
 npm i -g yarn
 yarn -v
-4.2.2
+4.3.1
 ```
 
 then:
