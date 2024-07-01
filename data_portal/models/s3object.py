@@ -1,13 +1,34 @@
 import logging
 import random
+from typing import List
 
 from django.db import models
 from django.db.models import Max, QuerySet, Q
+from libumccr import libregex
 
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
+from data_portal.models import LabMetadata
+from data_portal.models.labmetadata import LabMetadataAssay
 
 logger = logging.getLogger(__name__)
+
+
+def _strip_topup_rerun_from_library_id_list(library_id_list: List[str]) -> List[str]:
+    """
+    TODO copy from liborca, perhaps refactor to libumccr
+    """
+    rglb_id_set = set()
+    for library_id in library_id_list:
+        # Strip _topup
+        rglb = libregex.SAMPLE_REGEX_OBJS['topup'].split(library_id, 1)[0]
+
+        # Strip _rerun
+        rglb = libregex.SAMPLE_REGEX_OBJS['rerun'].split(rglb, 1)[0]
+
+        rglb_id_set.add(rglb)
+
+    return list(rglb_id_set)
 
 
 class S3ObjectManager(models.Manager):
@@ -111,6 +132,41 @@ class S3ObjectManager(models.Manager):
         bucket = kwargs.get('bucket', None)
         if bucket:
             qs = qs.filter(bucket=bucket)
+        return qs
+
+    def get_subject_cttsov2_results(self, subject_id: str, **kwargs) -> QuerySet:
+        # baseline queryset
+        qs: QuerySet = self.filter(key__icontains="/cttsov2/")
+
+        # get cttsov2 libraries
+        subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
+            subject_id=subject_id,
+            assay__iexact=str(LabMetadataAssay.CT_TSO_V2.value).lower()
+        ).all()
+
+        cttsov2_libraries: List[str] = list()
+        for meta in subject_meta_list:
+            cttsov2_libraries.append(meta.library_id)
+
+        # strip library suffixes
+        minted_cttsov2_libraries = _strip_topup_rerun_from_library_id_list(cttsov2_libraries)
+
+        # create library filter Q
+        lib_q = Q()
+        for lib in minted_cttsov2_libraries:
+            lib_q.add(data=Q(key__icontains=lib), conn_type=Q.OR)
+
+        # create file of interest Q
+        tmb_metrics_csv_q = Q(key__iregex='tmb.metrics.csv$')
+        all_bam_q = Q(key__iregex='.bam$')
+        all_results_q = Q(key__icontains='/Results/')
+
+        q_results: Q = (
+            tmb_metrics_csv_q | all_results_q | all_bam_q
+        ) & lib_q
+
+        qs = qs.filter(q_results)
+
         return qs
 
 
