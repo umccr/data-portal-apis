@@ -96,6 +96,8 @@ L2100191_rerun  -- override -->  L2100191
 L2100191_rerun2 -- override -->  L2100191
 ```
 
+Repeated informatics analysis run for the same _root_ LibraryID(s) is isolated by [Portal Run ID](portal_run_id.md) concept. Effectively, the results won't be overridden. Outdated analysis outputs get deleted by data retention policy. See Portal data [cleanup](cleanup) and [deletion request](../PORTAL_RELEASE.md) notes.
+
 ---
 
 See also:
