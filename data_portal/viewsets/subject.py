@@ -39,6 +39,7 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         results = S3Object.objects.get_subject_results(pk).all()
         results_gds = GDSFile.objects.get_subject_results(pk).all()
         results_sash = S3Object.objects.get_subject_sash_results(pk).all()
+        results_cttsov2 = S3Object.objects.get_subject_cttsov2_results(pk).all()
 
         features = []
 
@@ -63,5 +64,6 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         data.update(results=S3ObjectModelSerializer(results, many=True).data)
         data.update(results_sash=S3ObjectModelSerializer(results_sash, many=True).data)
         data.update(results_gds=GDSFileModelSerializer(results_gds, many=True).data)
+        data.update(results_cttsov2=S3ObjectModelSerializer(results_cttsov2, many=True).data)
 
         return Response(data)
