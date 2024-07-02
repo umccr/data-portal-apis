@@ -135,9 +135,6 @@ class S3ObjectManager(models.Manager):
         return qs
 
     def get_subject_cttsov2_results(self, subject_id: str, **kwargs) -> QuerySet:
-        # baseline queryset
-        qs: QuerySet = self.filter(key__icontains="/cttsov2/")
-
         # get cttsov2 libraries
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
             subject_id=subject_id,
@@ -150,6 +147,19 @@ class S3ObjectManager(models.Manager):
 
         # strip library suffixes
         minted_cttsov2_libraries = _strip_topup_rerun_from_library_id_list(cttsov2_libraries)
+
+        # if the subject_id has no cttsov2 assay library then skip all together
+        if not minted_cttsov2_libraries:
+            return self.none()
+
+        # baseline queryset
+        qs: QuerySet = self.filter(key__icontains="/cttsov2/")
+
+        # TODO
+        #  for baseline queryset, we can also consider bucket filter for a tad more performance boost
+        #  but this also makes dependency upon bucket name look up
+        #  anyway, unlike Athena; Django to vanilla SQL query on a RDBMS table is already fast enough with index lookup
+        #  we can observe current approach and explore this down the track
 
         # create library filter Q
         lib_q = Q()
