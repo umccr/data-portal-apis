@@ -12,8 +12,11 @@ def _error_response(message, status_code=400, err=None) -> Response:
     )
 
 
-def _presign_response(bucket, key) -> Response:
-    response = libs3.presign_s3_file(bucket, key)
+def _presign_response(bucket, key, content_disposition) -> Response:
+    
+    #  need modify libumccr to pass content_disposition to libs3.presign_s3_file
+    response = libs3.presign_s3_file(bucket, key, content_disposition)
+    
     if response[0]:
         return Response({'signed_url': response[1]})
     else:
