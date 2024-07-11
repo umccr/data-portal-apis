@@ -37,7 +37,9 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
         bucket = self.request.query_params.get('bucket', None)
         subject = self.request.query_params.get('subject', None)
         run = self.request.query_params.get('run', None)
-        return S3Object.objects.get_by_keyword(bucket=bucket, subject=subject, run=run)
+        key = self.request.query_params.get('key', None)
+
+        return S3Object.objects.get_by_keyword(bucket=bucket, subject=subject, run=run, key=key)
 
     @action(detail=True)
     def presign(self, request, pk=None):

@@ -70,7 +70,7 @@ class S3ObjectManager(models.Manager):
 
         bucket = kwargs.get('bucket', None)
         if bucket:
-            qs = qs.filter(bucket=bucket)
+            qs = qs.filter(bucket__exact=bucket)
 
         subject = kwargs.get('subject', None)
         if subject:
@@ -79,6 +79,10 @@ class S3ObjectManager(models.Manager):
         run = kwargs.get('run', None)
         if run:
             qs = qs.filter(key__icontains=run)
+
+        key = kwargs.get('key', None)
+        if key:
+            qs = qs.filter(key__exact=key)
 
         return qs
 
