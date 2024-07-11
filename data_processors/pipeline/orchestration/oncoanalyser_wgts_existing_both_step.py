@@ -99,10 +99,8 @@ def prepare_oncoanalyser_wgts_job(this_workflow: Workflow) -> dict:
     # WGS Tumor/Normal BAMs output from DRAGEN alignment in ICA/GDS
     tumor_wgs_sample_id = wgs_input['tumor_wgs_sample_id']
     tumor_wgs_library_id = wgs_input['tumor_wgs_library_id']
-    tumor_wgs_bam = wgs_input['tumor_wgs_bam']
     normal_wgs_sample_id = wgs_input['normal_wgs_sample_id']
     normal_wgs_library_id = wgs_input['normal_wgs_library_id']
-    normal_wgs_bam = wgs_input['normal_wgs_bam']
 
     # WTS BAM output from STAR aligner
     tumor_wts_sample_id = wts_input['tumor_wts_sample_id']
@@ -112,6 +110,10 @@ def prepare_oncoanalyser_wgts_job(this_workflow: Workflow) -> dict:
     # We will use `wgts_existing_both` mode
     existing_wgs_dir = get_existing_wgs_dir(wgs_wf)
     existing_wts_dir = get_existing_wts_dir(wts_wf)
+
+    # Select existing WGS MarkDups BAMs; DRAGEN BAMs from original WGS input are ignored
+    tumor_wgs_bam = get_existing_wgs_markdups_bam(existing_wgs_dir, tumor_wgs_sample_id)
+    normal_wgs_bam = get_existing_wgs_markdups_bam(existing_wgs_dir, normal_wgs_sample_id)
 
     payload = {
         "subject_id": subject_id,
@@ -201,6 +203,31 @@ def get_existing_wgs_dir(this_workflow: Workflow) -> str:
         return results[0]  # this is already in S3 URI string format for output directory
     else:
         raise ValueError("Found none or many output directory")
+
+
+def get_existing_wgs_markdups_bam(existing_wgs_dir: str, sample_id: str):
+    """
+    Locate existing WGS MarkDups BAMs and return corresponding path.
+
+    :param str existing_wgs_dir: S3 path to previously generated WGS output
+    :param str sample_id: identifier for the WGS tumor and normal sample
+    :return: MarkDups BAM path
+    :rtype: str
+    :raises ValueError: if exactly one MarkDups BAM isn't found
+    """
+
+    results = s3object_srv.get_s3_files_for_path_tokens(path_tokens=[
+        existing_wgs_dir,
+        f"alignments/dna/{sample_id}.markdups.bam",
+    ])
+
+    filtered_list = list(filter(lambda x: str(x).endswith(".bam"), results))
+
+    if len(filtered_list) != 1:
+        message_component = "No MarkDups BAM" if len(filtered_list) == 0 else "Multiple MarkDups BAMs"
+        raise ValueError(f"{message_component} found in existing WGS output: {existing_wgs_dir}")
+
+    return filtered_list[0]
 
 
 def get_existing_wts_dir(this_workflow: Workflow) -> str:
