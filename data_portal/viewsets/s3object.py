@@ -44,7 +44,8 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
     @action(detail=True)
     def presign(self, request, pk=None):
         obj: S3Object = self.get_object()
-        return _presign_response(obj.bucket, obj.key)
+        content_disposition = request.headers.get('Content-Disposition', 'attachment') 
+        return _presign_response(obj.bucket, obj.key, content_disposition)
 
     @action(detail=True)
     def status(self, request, pk=None):
