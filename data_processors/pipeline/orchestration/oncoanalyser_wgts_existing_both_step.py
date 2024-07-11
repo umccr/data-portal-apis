@@ -7,6 +7,7 @@ See orchestration package __init__.py doc string.
 import json
 import logging
 from typing import Optional
+from urllib.parse import urlparse
 
 from libumccr.aws import libssm, libsqs
 
@@ -216,12 +217,17 @@ def get_existing_wgs_markdups_bam(existing_wgs_dir: str, sample_id: str):
     :raises ValueError: if exactly one MarkDups BAM isn't found
     """
 
+    existing_wgs_dir_prefix = urlparse(existing_wgs_dir).path.lstrip('/')
     results = s3object_srv.get_s3_files_for_path_tokens(path_tokens=[
-        existing_wgs_dir,
+        existing_wgs_dir_prefix,
         f"alignments/dna/{sample_id}.markdups.bam",
     ])
 
     filtered_list = list(filter(lambda x: str(x).endswith(".bam"), results))
+
+    results_all = s3object_srv.get_s3_files_for_path_tokens(path_tokens=[
+        existing_wgs_dir_prefix,
+    ])
 
     if len(filtered_list) != 1:
         message_component = "No MarkDups BAM" if len(filtered_list) == 0 else "Multiple MarkDups BAMs"
