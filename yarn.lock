@@ -2708,7 +2708,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-sdk@npm:^2.1404.0, aws-sdk@npm:^2.1651.0":
+"aws-sdk@npm:^2.1404.0":
   version: 2.1651.0
   resolution: "aws-sdk@npm:2.1651.0"
   dependencies:
@@ -2723,6 +2723,24 @@ __metadata:
     uuid: "npm:8.0.0"
     xml2js: "npm:0.6.2"
   checksum: 10/05530f426debee2ca7c139f0cca58849f23f5f23e961226478033d3a4d39bd05b6f5a1b8a36fb07a2e9cd9e57d9027d3df050147783d0be9d4021c6b23065b41
+  languageName: node
+  linkType: hard
+
+"aws-sdk@npm:^2.1659.0":
+  version: 2.1659.0
+  resolution: "aws-sdk@npm:2.1659.0"
+  dependencies:
+    buffer: "npm:4.9.2"
+    events: "npm:1.1.1"
+    ieee754: "npm:1.1.13"
+    jmespath: "npm:0.16.0"
+    querystring: "npm:0.2.0"
+    sax: "npm:1.2.1"
+    url: "npm:0.10.3"
+    util: "npm:^0.12.4"
+    uuid: "npm:8.0.0"
+    xml2js: "npm:0.6.2"
+  checksum: 10/46895953a532687842231ddd458fb815a0effae5588443da058bed37a3ef4e5feceaebd53ac675a030017441e053d681ec92f4278275476502b73bbcc6a9ec1d
   languageName: node
   linkType: hard
 
@@ -7288,7 +7306,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "umccr-data-portal-api-serverless@workspace:."
   dependencies:
-    aws-sdk: "npm:^2.1651.0"
+    aws-sdk: "npm:^2.1659.0"
     aws4-axios: "npm:^3.3.6"
     axios: "npm:^1.7.2"
     serverless: "npm:^3.39.0"
