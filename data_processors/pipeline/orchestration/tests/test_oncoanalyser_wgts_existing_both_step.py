@@ -1,8 +1,9 @@
 import json
 from datetime import timedelta, datetime
 
-from django.utils.timezone import make_aware
+from django.utils.timezone import now, make_aware
 
+from data_portal.models import S3Object
 from data_portal.models import Workflow
 from data_portal.models.labmetadata import LabMetadata
 from data_portal.models.libraryrun import LibraryRun
@@ -14,6 +15,37 @@ from data_processors.pipeline.domain.workflow import WorkflowType, WorkflowStatu
 from data_processors.pipeline.orchestration import oncoanalyser_wgts_existing_both_step
 from data_processors.pipeline.services import libraryrun_srv
 from data_processors.pipeline.tests.case import PipelineUnitTestCase, logger
+
+
+def generate_mock_markdups_bam(include_bad_duplicate=False):
+    _ = S3Object.objects.create(
+        bucket="bucket1",
+        key=(
+            f"analysis_data/{TestConstant.subject_id.value}/oncoanalyser/"
+            f"{TestConstant.portal_run_id_oncoanalyser.value}/wgs/"
+            f"{TestConstant.library_id_tumor.value}__{TestConstant.library_id_normal.value}/"
+            f"{TestConstant.subject_id.value}__{TestConstant.sample_id.value}/"
+            f"alignments/dna/{TestConstant.sample_id.value}.markdups.bam"
+        ),
+        size=1000,
+        last_modified_date=now(),
+        e_tag="abcdefghi123456"
+    )
+
+    if include_bad_duplicate:
+        _ = S3Object.objects.create(
+            bucket="bucket1",
+            key=(
+                f"analysis_data/{TestConstant.subject_id.value}/oncoanalyser/"
+                f"{TestConstant.portal_run_id_oncoanalyser.value}/wgs/"
+                f"{TestConstant.library_id_tumor.value}__{TestConstant.library_id_normal.value}/"
+                f"{TestConstant.subject_id.value}__{TestConstant.sample_id.value}//"
+                f"alignments/dna/{TestConstant.sample_id.value}.markdups.bam"
+            ),
+            size=1000,
+            last_modified_date=now(),
+            e_tag="abcdefghi123456"
+        )
 
 
 class OncoanalyserWgtsExistingBothStepUnitTests(PipelineUnitTestCase):
@@ -46,6 +78,8 @@ class OncoanalyserWgtsExistingBothStepUnitTests(PipelineUnitTestCase):
             library_id_list=[mock_lbr_wts_tumor.library_id],
             workflow=mock_wts_wfl,
         )
+
+        _ = generate_mock_markdups_bam()
 
         result = oncoanalyser_wgts_existing_both_step.perform(this_workflow=mock_wgs_wfl)
 
@@ -288,3 +322,43 @@ class OncoanalyserWgtsExistingBothStepUnitTests(PipelineUnitTestCase):
 
         logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
         self.assertIn("Found none", str(e))
+
+    def test_find_markdup_bam_more_than_1(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_oncoanalyser_wgts_existing_both_step.OncoanalyserWgtsExistingBothStepUnitTests.test_find_markdup_bam_more_than_1
+        """
+        self.verify_local()
+
+        mock_wgs_wfl = OncoanalyserWgsWorkflowFactory()
+
+        _ = OncoanalyserWgsS3ObjectOutputFactory()
+
+        mock_existing_wgs_dir = oncoanalyser_wgts_existing_both_step.get_existing_wgs_dir(mock_wgs_wfl)
+
+        _ = generate_mock_markdups_bam(include_bad_duplicate=True)
+
+        with self.assertRaises(ValueError) as cm:
+            _ = oncoanalyser_wgts_existing_both_step.get_existing_wgs_markdups_bam(mock_existing_wgs_dir, TestConstant.sample_id.value)
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("Multiple MarkDups BAMs found", str(e))
+
+    def test_find_markdup_bam_less_than_1(self):
+        """
+        python manage.py test data_processors.pipeline.orchestration.tests.test_oncoanalyser_wgts_existing_both_step.OncoanalyserWgtsExistingBothStepUnitTests.test_find_markdup_bam_less_than_1
+        """
+        self.verify_local()
+
+        mock_wgs_wfl = OncoanalyserWgsWorkflowFactory()
+
+        _ = OncoanalyserWgsS3ObjectOutputFactory()
+
+        mock_existing_wgs_dir = oncoanalyser_wgts_existing_both_step.get_existing_wgs_dir(mock_wgs_wfl)
+
+        with self.assertRaises(ValueError) as cm:
+            _ = oncoanalyser_wgts_existing_both_step.get_existing_wgs_markdups_bam(mock_existing_wgs_dir, TestConstant.sample_id.value)
+        e = cm.exception
+
+        logger.exception(f"THIS ERROR EXCEPTION IS INTENTIONAL FOR TEST. NOT ACTUAL ERROR. \n{str(e)}")
+        self.assertIn("No MarkDups BAM found", str(e))
