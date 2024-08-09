@@ -25,11 +25,11 @@ python -V
 Python 3.11.9
 
 node -v
-v20.15.0
+v20.16.0
 
 npm i -g yarn
 yarn -v
-4.3.1
+4.4.0
 ```
 
 then:
@@ -170,7 +170,7 @@ aws lambda invoke --function-name data-portal-api-dev-migrate output.json
 - First, install `serverless` CLI and its plugins dependencies:
 ```
 yarn install
-npx serverless --version
+yarn serverless --version
 ```
 
 - You can `serverless` invoke or deploy from local. However, we favour [CodeBuild pipeline](buildspec.yml) for deploying into AWS dev/prod account environment.
@@ -178,10 +178,10 @@ npx serverless --version
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-npx serverless info --stage dev
-npx serverless invoke -f migrate --stage dev
-npx serverless invoke -f lims_scheduled_update_processor --stage dev
-npx serverless deploy --stage dev --debug='*' --verbose
+yarn serverless info --stage dev
+yarn serverless invoke -f migrate --stage dev
+yarn serverless invoke -f lims_scheduled_update_processor --stage dev
+yarn serverless deploy --stage dev --debug='*' --verbose
 ```
 
 ## Deployment
@@ -197,8 +197,8 @@ npx serverless deploy --stage dev --debug='*' --verbose
 ```
 aws sso login --profile dev && export AWS_PROFILE=dev
 
-npx serverless delete_domain --stage dev
-npx serverless remove --stage dev
+yarn serverless delete_domain --stage dev
+yarn serverless remove --stage dev
 ```
 
 ## X-Ray

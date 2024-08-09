@@ -5,12 +5,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "audit": "yarn npm audit"
+    "audit": "yarn npm audit",
+    "sls": "serverless",
+    "serverless": "serverless"
   },
   "dependencies": {
-    "aws-sdk": "^2.1659.0",
-    "aws4-axios": "^3.3.6",
-    "axios": "^1.7.2"
+    "aws-sdk": "^2.1671.0",
+    "aws4-axios": "^3.3.7",
+    "axios": "^1.7.3"
   },
   "devDependencies": {
     "serverless": "^3.39.0",
@@ -20,5 +22,8 @@
     "serverless-python-requirements": "^6.1.0",
     "serverless-wsgi": "^3.0.4"
   },
-  "packageManager": "yarn@4.3.1"
+  "resolutions": {
+    "fast-xml-parser": "^4.4.1"
+  },
+  "packageManager": "yarn@4.4.0"
 }
