@@ -2726,9 +2726,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-sdk@npm:^2.1659.0":
-  version: 2.1659.0
-  resolution: "aws-sdk@npm:2.1659.0"
+"aws-sdk@npm:^2.1671.0":
+  version: 2.1671.0
+  resolution: "aws-sdk@npm:2.1671.0"
   dependencies:
     buffer: "npm:4.9.2"
     events: "npm:1.1.1"
@@ -2740,19 +2740,19 @@ __metadata:
     util: "npm:^0.12.4"
     uuid: "npm:8.0.0"
     xml2js: "npm:0.6.2"
-  checksum: 10/46895953a532687842231ddd458fb815a0effae5588443da058bed37a3ef4e5feceaebd53ac675a030017441e053d681ec92f4278275476502b73bbcc6a9ec1d
+  checksum: 10/0ee841be15bc260df4a2f336bd7f4fba21b0bc87a83e366391e1da1072df6fcb637b88ebfdf17e2910638fd4aba3a80c5910c046d618a06da5efa1648569e90c
   languageName: node
   linkType: hard
 
-"aws4-axios@npm:^3.3.6":
-  version: 3.3.6
-  resolution: "aws4-axios@npm:3.3.6"
+"aws4-axios@npm:^3.3.7":
+  version: 3.3.7
+  resolution: "aws4-axios@npm:3.3.7"
   dependencies:
     "@aws-sdk/client-sts": "npm:^3.4.1"
     aws4: "npm:^1.12.0"
   peerDependencies:
     axios: ">=1.6.0"
-  checksum: 10/7a70a9438752e990422caeced684ddb5c06b63c6e4ca9f95828bd6e4b4163c9e9e0ec7b8b92fd6b00854de0530d4e99d55c007cd33c95a65d9de5fd84ef5a906
+  checksum: 10/903e7b0133a69186ee6a8bebd87ee02f956f5df3aecf090d25fec4b560dbd11473ca7f763a6143e51b09946f6cec73372509fcf5c68f3a244236ac36bf38cc18
   languageName: node
   linkType: hard
 
@@ -2763,7 +2763,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.2, axios@npm:^1.7.2":
+"axios@npm:^1.6.2":
   version: 1.7.2
   resolution: "axios@npm:1.7.2"
   dependencies:
@@ -2771,6 +2771,17 @@ __metadata:
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
   checksum: 10/6ae80dda9736bb4762ce717f1a26ff997d94672d3a5799ad9941c24d4fb019c1dff45be8272f08d1975d7950bac281f3ba24aff5ecd49ef5a04d872ec428782f
+  languageName: node
+  linkType: hard
+
+"axios@npm:^1.7.3":
+  version: 1.7.3
+  resolution: "axios@npm:1.7.3"
+  dependencies:
+    follow-redirects: "npm:^1.15.6"
+    form-data: "npm:^4.0.0"
+    proxy-from-env: "npm:^1.1.0"
+  checksum: 10/7f92af205705a8fb4a9d35666b663729507657f252a1d39d83582590119941872d49078017cf992e32f47aa3b7317f5439f77be772a173dac2ae0fedd38f43ae
   languageName: node
   linkType: hard
 
@@ -3988,14 +3999,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:4.2.5":
-  version: 4.2.5
-  resolution: "fast-xml-parser@npm:4.2.5"
+"fast-xml-parser@npm:^4.4.1":
+  version: 4.4.1
+  resolution: "fast-xml-parser@npm:4.4.1"
   dependencies:
     strnum: "npm:^1.0.5"
   bin:
     fxparser: src/cli/cli.js
-  checksum: 10/4be7ebe24d6a9a60c278e1423cd86a7da9a77ec64c95563e2c552363caf7a777e0c87c9de1255c2f4e8dea9bce8905dc2bdc58a34e9f2b73c4693654456ad284
+  checksum: 10/0c05ab8703630d8c857fafadbd78d0020d3a8e54310c3842179cd4a0d9d97e96d209ce885e91241f4aa9dd8dfc2fd924a682741a423d65153cad34da2032ec44
   languageName: node
   linkType: hard
 
@@ -7306,9 +7317,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "umccr-data-portal-api-serverless@workspace:."
   dependencies:
-    aws-sdk: "npm:^2.1659.0"
-    aws4-axios: "npm:^3.3.6"
-    axios: "npm:^1.7.2"
+    aws-sdk: "npm:^2.1671.0"
+    aws4-axios: "npm:^3.3.7"
+    axios: "npm:^1.7.3"
     serverless: "npm:^3.39.0"
     serverless-associate-waf: "npm:^1.2.1"
     serverless-domain-manager: "npm:^7.3.8"
