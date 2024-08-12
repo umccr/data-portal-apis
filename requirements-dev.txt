@@ -1,8 +1,8 @@
 -r requirements-test.txt
-drf_yasg==1.21.7
-django_extensions==3.2.3
-aws-requests-auth==0.4.3
-requests-aws4auth==1.2.3
+drf_yasg
+django_extensions
+aws-requests-auth
+requests-aws4auth
 pre-commit
 detect-secrets
 ggshield
