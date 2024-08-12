@@ -1115,6 +1115,11 @@
             "type": "string"
           },
           {
+            "in": "header",
+            "name": "folderListSecret",
+            "type": "string"
+          },
+          {
             "in": "body",
             "name": "body",
             "description": "",
@@ -1354,6 +1359,11 @@
             "type": "string"
           },
           {
+            "in": "header",
+            "name": "folderListSecret",
+            "type": "string"
+          },
+          {
             "in": "body",
             "name": "body",
             "description": "",
@@ -1570,7 +1580,7 @@
           {
             "in": "path",
             "name": "folderId",
-            "description": "Unique identifier for the folder to be copied.",
+            "description": "Unique identifier for the folder to be moved.",
             "required": true,
             "type": "string"
           },
@@ -3685,13 +3695,6 @@
     "CreateVolumeResponse": {
       "type": "object",
       "properties": {
-        "importSessionId": {
-          "description": "Unique identifier of the import Session for this Volume. This only applies to Volumes created from custom\r\nVolume configurations.",
-          "type": "string"
-        },
-        "objectStoreAccess": {
-          "$ref": "#/definitions/ObjectStoreAccess"
-        },
         "id": {
           "description": "A unique identifier for this Volume",
           "type": "string"
@@ -3761,6 +3764,13 @@
         "migrationStatus": {
           "description": "Status of the root folder migration status from v1 to v2",
           "type": "string"
+        },
+        "importSessionId": {
+          "description": "Unique identifier of the import Session for this Volume. This only applies to Volumes created from custom\r\nVolume configurations.",
+          "type": "string"
+        },
+        "objectStoreAccess": {
+          "$ref": "#/definitions/ObjectStoreAccess"
         }
       }
     },
@@ -3824,6 +3834,9 @@
             "type": "string"
           }
         },
+        "metadataToUpdate": { },
+        "metadataItemsToAdd": { },
+        "metadataItemsToDelete": { },
         "duplicateFileAction": {
           "type": "string"
         }
@@ -3902,10 +3915,20 @@
           }
         },
         "metadataToCopy": {
+          "description": "List of metadata to be copied/kept",
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "metadataToUpdate": {
+          "description": "Modifies the contents of existing metadata"
+        },
+        "metadataItemsToAdd": {
+          "description": "Add an item to a metadata with array type"
+        },
+        "metadataItemsToDelete": {
+          "description": "Delete an item from a metadata with array type"
         },
         "duplicateFileAction": {
           "type": "string"
@@ -3934,6 +3957,22 @@
           "items": {
             "type": "string"
           }
+        },
+        "metadataToCopy": {
+          "description": "List of metadata to be copied/kept",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadataToUpdate": {
+          "description": "Modifies the contents of existing metadata"
+        },
+        "metadataItemsToAdd": {
+          "description": "Add an item to a metadata with array type"
+        },
+        "metadataItemsToDelete": {
+          "description": "Delete an item from a metadata with array type"
         }
       }
     },
@@ -3999,7 +4038,16 @@
         },
         "targetFolderId": {
           "type": "string"
-        }
+        },
+        "metadataToCopy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadataToUpdate": { },
+        "metadataItemsToAdd": { },
+        "metadataItemsToDelete": { }
       }
     },
     "FileMoveOutput": {
@@ -4174,8 +4222,7 @@
         "Partial",
         "Available",
         "Archived",
-        "Unarchiving",
-        "Moving"
+        "Unarchiving"
       ],
       "type": "string"
     },
@@ -4382,8 +4429,16 @@
           "type": "string"
         },
         "targetFolderId": {
+          "description": "The Id of the Target Parent Folder where the actual folder is copied",
           "type": "string"
-        }
+        },
+        "destinationFolderId": {
+          "description": "The Id of the actual folder copied under the Target Folder",
+          "type": "string"
+        },
+        "metadataToUpdate": { },
+        "metadataItemsToAdd": { },
+        "metadataItemsToDelete": { }
       }
     },
     "FolderCopyRequest": {
@@ -4402,10 +4457,20 @@
           "type": "string"
         },
         "metadataToCopy": {
+          "description": "List of metadata to be copied/kept",
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "metadataToUpdate": {
+          "description": "Modifies the contents of existing metadata"
+        },
+        "metadataItemsToAdd": {
+          "description": "Add an item to a metadata with array type"
+        },
+        "metadataItemsToDelete": {
+          "description": "Delete an item from a metadata with array type"
         },
         "duplicateFileAction": {
           "type": "string"
@@ -4484,6 +4549,11 @@
           "type": "string"
         },
         "targetFolderId": {
+          "description": "The Id of the Target Parent Folder where the actual folder is moved",
+          "type": "string"
+        },
+        "destinationFolderId": {
+          "description": "The Id of the actual folder moved under the Target Folder",
           "type": "string"
         },
         "sourceVolumeId": {
@@ -4497,7 +4567,16 @@
         },
         "originalSourcePath": {
           "type": "string"
-        }
+        },
+        "metadataToCopy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadataToUpdate": { },
+        "metadataItemsToAdd": { },
+        "metadataItemsToDelete": { }
       }
     },
     "FolderMoveRequest": {
@@ -4509,6 +4588,22 @@
         "targetParentFolderId": {
           "description": "The parent folder into which the folder will be moved.",
           "type": "string"
+        },
+        "metadataToCopy": {
+          "description": "List of metadata to be copied/kept",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadataToUpdate": {
+          "description": "Modifies the contents of existing metadata"
+        },
+        "metadataItemsToAdd": {
+          "description": "Add an item to a metadata with array type"
+        },
+        "metadataItemsToDelete": {
+          "description": "Delete an item from a metadata with array type"
         }
       }
     },
@@ -4945,7 +5040,8 @@
         "Archiving",
         "Unarchiving",
         "Deleting",
-        "Moving"
+        "Moving",
+        "Copying"
       ],
       "type": "string"
     },
