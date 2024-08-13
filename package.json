@@ -10,7 +10,7 @@
     "serverless": "serverless"
   },
   "dependencies": {
-    "aws-sdk": "^2.1671.0",
+    "@aws-sdk/credential-providers": "^3.629.0",
     "aws4-axios": "^3.3.7",
     "axios": "^1.7.3"
   },
