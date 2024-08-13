@@ -27,7 +27,7 @@ class WorkflowDomainUnitTests(PipelineUnitTestCase):
         self.assertIsNotNone(helper.portal_run_id)
         self.assertEqual(len(helper.portal_run_id), 16)
         self.assertEqual(helper.get_portal_run_id(), helper.portal_run_id)
-        self.assertNotEquals(helper.portal_run_id, helper2.portal_run_id)
+        self.assertNotEqual(helper.portal_run_id, helper2.portal_run_id)
 
     def test_secondary_analysis_helper(self):
         """

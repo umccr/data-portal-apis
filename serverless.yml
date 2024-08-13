@@ -2,6 +2,11 @@ service: data-portal-api
 
 frameworkVersion: "^3"
 
+# FIXME: https://github.com/serverless/serverless/pull/12300
+#  see https://github.com/umccr/data-portal-apis/issues/718
+#  allowed values [error, warn, off] turning it `warn` for python3.12 runtime
+configValidationMode: warn
+
 plugins:
   - serverless-wsgi
   - serverless-python-requirements
@@ -12,7 +17,8 @@ plugins:
 provider:
   name: aws
   deploymentMethod: direct
-  runtime: python3.11
+  # FIXME: https://github.com/serverless/serverless/pull/12300
+  runtime: python3.12
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   deploymentBucket:
@@ -494,7 +500,7 @@ custom:
     # environment does not require this. Only for local `sls deploy --stage dev`
     # on macOS. e.g. direct push to DEV for debugging build convenience.
     #
-    #dockerImage: public.ecr.aws/sam/build-python3.11
+    #dockerImage: public.ecr.aws/sam/build-python3.12
     dockerizePip: non-linux
     layer: true
     zip: false
