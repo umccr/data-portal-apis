@@ -13,10 +13,15 @@ libica==2.5.0
 libumccr==0.4.0rc4
 sample-sheet==0.13.0
 requests==2.32.3
-pandas==2.2.2
-numpy==2.0.1
 cachetools==5.4.0
 pydantic==2.8.2
+
+# NOTE:
+# https://pandas.pydata.org/docs/whatsnew/v2.2.2.html
+# https://github.com/pandas-dev/pandas/issues/55519
+# By right, numpy-2.x should work. But. It didn't. Pinning to 1.x for now.
+pandas==2.2.2
+numpy==1.26.4
 
 # NOTE:
 # We can't bump `gspread` to v6 yet. As `gspread-pandas` required `gspread>=5.0.0, <6`.
