@@ -1310,9 +1310,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/credential-providers@npm:^3.629.0":
-  version: 3.629.0
-  resolution: "@aws-sdk/credential-providers@npm:3.629.0"
+"@aws-sdk/credential-providers@npm:^3.630.0":
+  version: 3.630.0
+  resolution: "@aws-sdk/credential-providers@npm:3.630.0"
   dependencies:
     "@aws-sdk/client-cognito-identity": "npm:3.629.0"
     "@aws-sdk/client-sso": "npm:3.629.0"
@@ -1330,7 +1330,7 @@ __metadata:
     "@smithy/property-provider": "npm:^3.1.3"
     "@smithy/types": "npm:^3.3.0"
     tslib: "npm:^2.6.2"
-  checksum: 10/61e4a3f70b9294994463ee165ea8662420ac553d6364bea46ac1c39e5d75bc542516558acbf43ed0c1a31645cf73d2100f031cdfa9ee8fe6cf8ee85646e6f6fc
+  checksum: 10/ee87988e37bcac67ad646cd1b7c191487ae02c38966d3e0380d63f824202070f5e3e89358addfc9ab8017804312aa14659899fb26dab4ce58e21ff4a163c3e6e
   languageName: node
   linkType: hard
 
@@ -3471,14 +3471,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.7.3":
-  version: 1.7.3
-  resolution: "axios@npm:1.7.3"
+"axios@npm:^1.7.4":
+  version: 1.7.4
+  resolution: "axios@npm:1.7.4"
   dependencies:
     follow-redirects: "npm:^1.15.6"
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
-  checksum: 10/7f92af205705a8fb4a9d35666b663729507657f252a1d39d83582590119941872d49078017cf992e32f47aa3b7317f5439f77be772a173dac2ae0fedd38f43ae
+  checksum: 10/7a1429be1e3d0c2e1b96d4bba4d113efbfabc7c724bed107beb535c782c7bea447ff634886b0c7c43395a264d085450d009eb1154b5f38a8bae49d469fdcbc61
   languageName: node
   linkType: hard
 
@@ -7249,9 +7249,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serverless-python-requirements@npm:^6.1.0":
-  version: 6.1.0
-  resolution: "serverless-python-requirements@npm:6.1.0"
+"serverless-python-requirements@npm:^6.1.1":
+  version: 6.1.1
+  resolution: "serverless-python-requirements@npm:6.1.1"
   dependencies:
     "@iarna/toml": "npm:^2.2.5"
     appdirectory: "npm:^0.1.0"
@@ -7270,8 +7270,8 @@ __metadata:
     sha256-file: "npm:1.0.0"
     shell-quote: "npm:^1.8.1"
   peerDependencies:
-    serverless: ^2.32 || 3
-  checksum: 10/e8b5466f57eab907d48e1ad6437c82a3fa546c0eb0c3c359681b52506c6e95623c01f6f3e3870d4acc38be6757db025e0e18b658a9f8bede440d94975932e63e
+    serverless: ">=2.32"
+  checksum: 10/8fee4d0977cbba21bf0f1b55f6b2b3bb6cd94e07ea9627606464a5ddc6d7990b3fc848cb83affe5ba2608764fbbd9d70af9678feb5c5d8fbe7742f2313bfc841
   languageName: node
   linkType: hard
 
@@ -8014,14 +8014,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "umccr-data-portal-api-serverless@workspace:."
   dependencies:
-    "@aws-sdk/credential-providers": "npm:^3.629.0"
+    "@aws-sdk/credential-providers": "npm:^3.630.0"
     aws4-axios: "npm:^3.3.7"
-    axios: "npm:^1.7.3"
+    axios: "npm:^1.7.4"
     serverless: "npm:^3.39.0"
     serverless-associate-waf: "npm:^1.2.1"
     serverless-domain-manager: "npm:^7.3.8"
     serverless-prune-plugin: "npm:^2.0.2"
-    serverless-python-requirements: "npm:^6.1.0"
+    serverless-python-requirements: "npm:^6.1.1"
     serverless-wsgi: "npm:^3.0.4"
   languageName: unknown
   linkType: soft
