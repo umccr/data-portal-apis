@@ -23,7 +23,8 @@
     "serverless-wsgi": "^3.0.4"
   },
   "resolutions": {
-    "fast-xml-parser": "^4.4.1"
+    "fast-xml-parser": "^4.4.1",
+    "axios": "^1.7.4"
   },
   "packageManager": "yarn@4.4.0"
 }
