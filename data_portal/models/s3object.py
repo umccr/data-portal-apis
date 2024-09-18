@@ -139,10 +139,11 @@ class S3ObjectManager(models.Manager):
         return qs
 
     def get_subject_cttsov2_results(self, subject_id: str, **kwargs) -> QuerySet:
-        # get cttsov2 libraries
+        # We are to show analysis done by cttsov2 pipeline from ICA v2 BYOB bucket
+        # Get both ctTSO and ctTSOv2 libraries of the Subject
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
             subject_id=subject_id,
-            assay__iexact=str(LabMetadataAssay.CT_TSO_V2.value).lower()
+            assay__in=[str(LabMetadataAssay.CT_TSO_V2.value).lower(), str(LabMetadataAssay.CT_TSO.value).upper()],
         ).all()
 
         cttsov2_libraries: List[str] = list()
