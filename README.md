@@ -19,17 +19,17 @@ Cloud native serverless backend API for [UMCCR](https://umccr.org) [Data Portal 
 
 ```
 docker --version
-Docker version 27.1.1, build 6312585
+Docker version 27.2.0, build 3ab4256
 
 python -V
 Python 3.12.4
 
 node -v
-v20.16.0
+v20.17.0
 
 npm i -g yarn
 yarn -v
-4.4.0
+4.5.0
 ```
 
 then:
