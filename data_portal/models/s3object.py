@@ -143,7 +143,7 @@ class S3ObjectManager(models.Manager):
         # Get both ctTSO and ctTSOv2 libraries of the Subject
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
             subject_id=subject_id,
-            assay__in=[str(LabMetadataAssay.CT_TSO_V2.value).lower(), str(LabMetadataAssay.CT_TSO.value).upper()],
+            assay__in=[LabMetadataAssay.CT_TSO_V2.value, LabMetadataAssay.CT_TSO.value],
         ).all()
 
         cttsov2_libraries: List[str] = list()
