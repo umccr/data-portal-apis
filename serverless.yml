@@ -446,6 +446,12 @@ functions:
       - { Ref: PythonRequirementsLambdaLayer }
     timeout: 28
 
+  google_lims_update_by_provided_id:
+    handler: data_processors.pipeline.lambdas.google_lims_update.by_provided_id
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    timeout: 120
+
   wes_launch:
     handler: data_processors.pipeline.lambdas.wes_handler.launch
     layers:

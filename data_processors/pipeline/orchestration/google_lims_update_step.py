@@ -20,14 +20,16 @@ from data_processors.pipeline.tools import liborca
 def perform(workflow: Workflow):
     libraries = get_libs_from_run(workflow=workflow)
     instrument_run_id = workflow.sequence_run.instrument_run_id
+    return perform_by_provided_id(libraries, instrument_run_id)
 
+
+def perform_by_provided_id(libraries: List[str], instrument_run_id: str):
     lims_rows = list()
     for library in libraries:
         lims_row = create_lims_entry(lib_id=library, instrument_run_id=instrument_run_id)
         lims_rows.append(lims_row)
 
-    resp = update_google_lims_sheet(lims_rows)
-    return resp
+    return update_google_lims_sheet(lims_rows)
 
 
 def get_libs_from_run(workflow: Workflow) -> List[str]:
