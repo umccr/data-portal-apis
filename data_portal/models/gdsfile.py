@@ -31,8 +31,8 @@ class GDSFileManager(models.Manager):
         qs: QuerySet = self.filter(path__icontains=subject_id)
 
         bam = Q(path__iregex='wgs') & Q(path__iregex='tumor') & Q(path__iregex='normal') & Q(path__iregex='.bam$')
-        vcf = (Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^(work)*]')
-               & Q(path__iregex='small_variants/[^\/]*(.vcf.gz$|.maf$)'))
+        vcf = (Q(path__iregex=r'umccrise/[^\/]*/[^\/]*/[^(work)*]')
+               & Q(path__iregex=r'small_variants/[^\/]*(.vcf.gz$|.maf$)'))
 
         vcf_germline = (
                 Q(path__iregex='[umccrise|wgs_tumor_normal]')
@@ -42,9 +42,9 @@ class GDSFileManager(models.Manager):
 
         cancer = Q(path__iregex='umccrise') & Q(path__iregex='cancer_report.html$')
         qc = Q(path__iregex='umccrise') & Q(path__iregex='multiqc_report.html$')
-        pcgr = Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^\/]*/[^\/]*(pcgr|cpsr).html$')
+        pcgr = Q(path__iregex=r'umccrise/[^\/]*/[^\/]*/[^\/]*/[^\/]*(pcgr|cpsr).html$')
         coverage = Q(path__iregex='umccrise') & Q(path__iregex='(normal|tumor).cacao.html$')
-        circos = (Q(path__iregex='umccrise/[^\/]*/[^\/]*/[^(work)*]') & Q(path__iregex='purple/')
+        circos = (Q(path__iregex=r'umccrise/[^\/]*/[^\/]*/[^(work)*]') & Q(path__iregex='purple/')
                   & Q(path__iregex='circos') & Q(path__iregex='baf') & Q(path__iregex='.png$'))
 
         wts_bam = Q(path__iregex='wts') & Q(path__iregex='tumor') & Q(path__iregex='.bam$')
