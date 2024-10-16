@@ -9,7 +9,7 @@ from libumccr import libregex
 from data_portal.exceptions import RandSamplesTooLarge
 from data_portal.fields import HashField
 from data_portal.models import LabMetadata
-from data_portal.models.labmetadata import LabMetadataAssay
+from data_portal.models.labmetadata import LabMetadataAssay, LabMetadataType
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,25 @@ class S3ObjectManager(models.Manager):
             qs = qs.filter(bucket=bucket)
         return qs
 
-    def get_subject_cttsov2_results(self, subject_id: str, **kwargs) -> QuerySet:
+    def get_byob(self):
+        """
+        new era analysis result output buckets (orchestrated by orcabus)
+        we harmonise all outputs into single bucket in each environment
+        buckets are name by following a convention, hence, we can statically look up
+
+        implNote:
+            bucket name column is indexed and, act like a `SortKey` to reduce the amount of data rows being scanned
+        """
+        bucket_dict = self.filter(bucket__in=[
+            'pipeline-dev-cache-503977275616-ap-southeast-2',
+            'pipeline-prod-cache-503977275616-ap-southeast-2',
+            'pipeline-stg-cache-503977275616-ap-southeast-2',
+        ]).values('bucket').distinct().first()
+        if bucket_dict:
+            return bucket_dict['bucket']
+        return None
+
+    def get_subject_cttsov2_results_from_byob(self, subject_id: str, **kwargs) -> QuerySet:
         # We are to show analysis done by cttsov2 pipeline from ICA v2 BYOB bucket
         # Get both ctTSO and ctTSOv2 libraries of the Subject
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
@@ -160,12 +178,6 @@ class S3ObjectManager(models.Manager):
         # baseline queryset
         qs: QuerySet = self.filter(key__icontains="/cttsov2/")
 
-        # TODO
-        #  for baseline queryset, we can also consider bucket filter for a tad more performance boost
-        #  but this also makes dependency upon bucket name look up
-        #  anyway, unlike Athena; Django to vanilla SQL query on a RDBMS table is already fast enough with index lookup
-        #  we can observe current approach and explore this down the track
-
         # create library filter Q
         lib_q = Q()
         for lib in minted_cttsov2_libraries:
@@ -180,8 +192,70 @@ class S3ObjectManager(models.Manager):
             tmb_metrics_csv_q | all_results_q | all_bam_q
         ) & lib_q
 
+        bucket = kwargs.get('bucket', self.get_byob())
+        if bucket:
+            qs = qs.filter(bucket=bucket)
+
         qs = qs.filter(q_results)
 
+        return qs
+
+    def get_subject_wgts_results_from_byob(self, subject_id: str, **kwargs) -> QuerySet:
+        # We are to show analysis done by WGTS pipelines from ICA v2 BYOB bucket
+        # Get both WGS and WTS libraries of the Subject
+        subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
+            subject_id=subject_id,
+            type__in=[LabMetadataType.WGS.value, LabMetadataType.WTS.value],
+        ).all()
+
+        wgts_libraries: List[str] = list()
+        for meta in subject_meta_list:
+            wgts_libraries.append(meta.library_id)
+
+        # strip library suffixes
+        minted_wgts_libraries = _strip_topup_rerun_from_library_id_list(wgts_libraries)
+
+        # if the subject_id has no wgts library then skip all together
+        if not minted_wgts_libraries:
+            return self.none()
+
+        # baseline queryset filter on `/production/analysis/` in the key
+        baseline = Q(key__icontains='/production/analysis/')
+
+        # create library filter Q
+        lib_q = Q()
+        for lib in minted_wgts_libraries:
+            lib_q.add(data=Q(key__icontains=lib), conn_type=Q.OR)
+
+        bam = Q(key__iregex='tumor') & Q(key__iregex='normal') & Q(key__iregex='.bam$')
+        vcf = (Q(key__iregex=r'umccrise/[^\/]*/[^\/]*/[^(work)*]')
+               & Q(key__iregex=r'small_variants/[^\/]*(.vcf.gz$|.maf$)'))
+
+        vcf_germline = (
+                Q(key__iregex='dragen_germline')
+                & Q(key__iregex='.vcf.gz$')
+        )
+
+        cancer = Q(key__iregex='umccrise') & Q(key__iregex='cancer_report.html$')
+        qc = Q(key__iregex='umccrise') & Q(key__iregex='multiqc_report.html$')
+        pcgr = Q(key__iregex=r'umccrise/[^\/]*/[^\/]*/[^\/]*/[^\/]*(pcgr|cpsr).html$')
+        coverage = Q(key__iregex='umccrise') & Q(key__iregex='(normal|tumor).cacao.html$')
+        circos = (Q(key__iregex=r'umccrise/[^\/]*/[^\/]*/[^(work)*]') & Q(key__iregex='purple/')
+                  & Q(key__iregex='circos') & Q(key__iregex='baf') & Q(key__iregex='.png$'))
+
+        wts_bam = Q(key__iregex='wts') & Q(key__iregex='.bam$')
+        wts_qc = Q(key__iregex='wts') & Q(key__iregex='multiqc') & Q(key__iregex='.html$')
+        wts_fusions = Q(key__iregex='wts') & Q(key__iregex='fusions') & Q(key__iregex='.pdf$')
+        rnasum = Q(key__iregex='rnasum') & Q(key__iregex='RNAseq_report.html$')
+
+        q_results: Q = (bam | vcf | vcf_germline | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc
+                        | wts_fusions | rnasum) & lib_q & baseline
+
+        qs = self.filter(q_results)
+
+        bucket = kwargs.get('bucket', self.get_byob())
+        if bucket:
+            qs = qs.filter(bucket=bucket)
         return qs
 
 
@@ -190,6 +264,11 @@ class S3Object(models.Model):
     MySQL has character length limitation on unique indexes and since key column require to store
     lengthy path, unique_hash is sha256sum of bucket and key for unique indexes purpose.
     """
+    class Meta:
+        indexes = [
+            models.Index(fields=['bucket']),
+        ]
+
     id = models.BigAutoField(primary_key=True)
     bucket = models.CharField(max_length=255)
     key = models.TextField()
