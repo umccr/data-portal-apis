@@ -59,6 +59,8 @@ copy_db_dump() {
 
 load_db_dump() {
   echo "...Loading database dump to db container"
+  docker exec -i -e MYSQL_PWD=root "$db_container" \
+    mysql -uroot -e"GRANT ALL PRIVILEGES ON *.* TO 'data_portal'@'%';FLUSH PRIVILEGES;"
   docker exec -i -e MYSQL_PWD=data_portal "$db_container" \
     mysql -udata_portal -e"DROP DATABASE IF EXISTS data_portal;CREATE DATABASE IF NOT EXISTS data_portal;"
   docker exec -i -e MYSQL_PWD=data_portal "$db_container" \
