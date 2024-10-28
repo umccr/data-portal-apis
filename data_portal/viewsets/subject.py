@@ -41,7 +41,7 @@ class SubjectViewSet(ReadOnlyModelViewSet):
         results_sash = S3Object.objects.get_subject_sash_results(pk).all()
         results_byob_cttsov2 = S3Object.objects.get_subject_cttsov2_results_from_byob(pk).all()
         results_byob_wgts = S3Object.objects.get_subject_wgts_results_from_byob(pk).all()
-        results_byob_sash = []  # TODO impl after orcabus O3 release
+        results_byob_sash = S3Object.objects.get_subject_sash_results_from_byob(pk).all()
 
         features = []
 

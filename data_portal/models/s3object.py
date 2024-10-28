@@ -219,8 +219,14 @@ class S3ObjectManager(models.Manager):
         if not minted_wgts_libraries:
             return self.none()
 
-        # baseline queryset filter on `/production/analysis/` in the key
-        baseline = Q(key__icontains='/production/analysis/')
+        # baseline queryset filter in the key
+        baseline = (
+                Q(key__icontains='/analysis/umccrise/') |
+                Q(key__icontains='/analysis/tumor_normal/') |
+                Q(key__icontains='/analysis/tumor-normal/') |
+                Q(key__icontains='/analysis/wts/') |
+                Q(key__icontains='/analysis/rnasum/')
+        )
 
         # create library filter Q
         lib_q = Q()
@@ -250,6 +256,58 @@ class S3ObjectManager(models.Manager):
 
         q_results: Q = (bam | vcf | vcf_germline | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc
                         | wts_fusions | rnasum) & lib_q & baseline
+
+        qs = self.filter(q_results)
+
+        bucket = kwargs.get('bucket', self.get_byob())
+        if bucket:
+            qs = qs.filter(bucket=bucket)
+        return qs
+
+    def get_subject_sash_results_from_byob(self, subject_id: str, **kwargs) -> QuerySet:
+        # We are to show analysis done by orcabus oncoanalyser pipelines from BYOB bucket
+        # Get both WGS and WTS libraries of the Subject
+        subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
+            subject_id=subject_id,
+            type__in=[LabMetadataType.WGS.value, LabMetadataType.WTS.value],
+        ).all()
+
+        wgts_libraries: List[str] = list()
+        for meta in subject_meta_list:
+            wgts_libraries.append(meta.library_id)
+
+        # strip library suffixes
+        minted_wgts_libraries = _strip_topup_rerun_from_library_id_list(wgts_libraries)
+
+        # if the subject_id has no wgts library then skip all together
+        if not minted_wgts_libraries:
+            return self.none()
+
+        # baseline queryset filter in the key
+        baseline = Q(key__icontains='/analysis/sash/')
+
+        # create library filter Q
+        lib_q = Q()
+        for lib in minted_wgts_libraries:
+            lib_q.add(data=Q(key__icontains=lib), conn_type=Q.OR)
+
+        cancer = Q(key__iregex='cancer_report.html$')
+        pcgr = Q(key__iregex='pcgr.html$')
+        cpsr = Q(key__iregex='cpsr.html$')
+        linx = Q(key__iregex='linx.html$')
+        circos = Q(key__iregex='circos_baf.png$')
+        multiqc = Q(key__iregex='multiqc') & Q(key__iregex='.html$')
+
+        vcf_germline_snv = Q(key__iregex='smlv_germline') & Q(key__iregex='.annotations.vcf.gz$')
+        vcf_somatic_snv_filter_set = Q(key__iregex='smlv_somatic') & Q(key__iregex='.filters_set.vcf.gz$')
+        vcf_somatic_snv_filter_applied = Q(key__iregex='smlv_somatic') & Q(key__iregex='^((?!pcgr).)+$') & \
+                                         Q(key__iregex='.pass.vcf.gz$')
+        vcf_somatic_sv = Q(key__iregex='sv_somatic') & Q(key__iregex='sv.prioritised.vcf.gz$')
+
+        q_results: Q = (
+                cancer | pcgr | cpsr | circos | linx | vcf_germline_snv | multiqc |
+                vcf_somatic_snv_filter_set | vcf_somatic_snv_filter_applied | vcf_somatic_sv
+        ) & lib_q & baseline
 
         qs = self.filter(q_results)
 
