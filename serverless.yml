@@ -17,7 +17,6 @@ plugins:
 provider:
   name: aws
   deploymentMethod: direct
-  # FIXME: https://github.com/serverless/serverless/pull/12300
   runtime: python3.12
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
@@ -34,19 +33,9 @@ provider:
     payload: "2.0"
     cors:
       allowedOrigins:
-        # FIXME: https://github.com/umccr/infrastructure/issues/272
         - https://portal.umccr.org
         - https://portal.prod.umccr.org
-        - https://portal.stg.umccr.org
         - https://portal.dev.umccr.org
-        - https://data.umccr.org
-        - https://data.prod.umccr.org
-        - https://data.dev.umccr.org
-        - https://data.stg.umccr.org
-        - https://status.umccr.org
-        - https://status.prod.umccr.org
-        - https://status.stg.umccr.org
-        - https://status.dev.umccr.org
         - https://sscheck.umccr.org
         - https://sscheck.prod.umccr.org
         - https://sscheck.dev.umccr.org
@@ -77,7 +66,6 @@ provider:
           - ${ssm:/data_portal/client/cog_app_client_id_local}
           - ${ssm:/data_portal/client/cog_app_client_id_stage}
           - ${ssm:/data_portal/client/data2/cog_app_client_id_stage}
-          - ${ssm:/data_portal/status_page/cog_app_client_id_stage}
           - ${ssm:/sscheck/client/cog_app_client_id_stage}
   vpc:
     securityGroupIds:
