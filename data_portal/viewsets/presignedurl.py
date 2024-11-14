@@ -53,18 +53,3 @@ class PresignedUrlViewSet(ViewSet):
 
         # wrap response objects in rest framework Response object
         return _presign_list_response(presigned_urls=resps)
-
-    def list(self, request):
-        """
-        TODO this could extend to support possibly presign list of objects
-        :param request:
-        :return:
-        """
-        query_params = self.request.query_params
-        bucket = query_params.get('bucket', None)
-        key = query_params.get('key', None)
-
-        if bucket is None or key is None:
-            return Response({'error': 'Missing required parameters: bucket or key'})
-        
-        return _presign_response(bucket, key, expires_in=43200)
