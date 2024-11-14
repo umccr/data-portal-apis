@@ -66,5 +66,5 @@ class PresignedUrlViewSet(ViewSet):
 
         if bucket is None or key is None:
             return Response({'error': 'Missing required parameters: bucket or key'})
-
-        return _presign_response(bucket, key)
+        
+        return _presign_response(bucket, key, expires_in=43200)

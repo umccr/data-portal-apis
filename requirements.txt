@@ -9,7 +9,7 @@ pymysql==1.1.1
 python-dateutil==2.9.0.post0
 Werkzeug==3.0.6
 libica==2.5.0
-libumccr==0.4.0
+libumccr==0.4.1
 sample-sheet==0.13.0
 requests==2.32.3
 cachetools==5.5.0

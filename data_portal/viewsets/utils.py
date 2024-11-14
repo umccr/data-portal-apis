@@ -12,8 +12,8 @@ def _error_response(message, status_code=400, err=None) -> Response:
     )
 
 
-def _presign_response(bucket, key, content_disposition) -> Response:
-    response = libs3.presign_s3_file(bucket, key, content_disposition)
+def _presign_response(bucket, key, content_disposition: str = 'inline', expires_in: int = 3600) -> Response:
+    response = libs3.presign_s3_file(bucket, key, content_disposition, expires_in)
     if response[0]:
         return Response({'signed_url': response[1]})
     else:
