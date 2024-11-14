@@ -45,7 +45,8 @@ class S3ObjectViewSet(ReadOnlyModelViewSet):
     def presign(self, request, pk=None):
         obj: S3Object = self.get_object()
         content_disposition = request.headers.get('Content-Disposition', 'attachment') + '; filename=' + obj.key.split('/')[-1]
-        return _presign_response(obj.bucket, obj.key, content_disposition)
+        # Setting 12 hours expiry for presigned URL (mainly for IGV use)
+        return _presign_response(obj.bucket, obj.key, content_disposition, expires_in=43200)
 
     @action(detail=True)
     def status(self, request, pk=None):
