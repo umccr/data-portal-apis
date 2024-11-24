@@ -17,3 +17,4 @@ from .s3object import S3Object
 from .sequence import Sequence
 from .sequencerun import SequenceRun
 from .workflow import Workflow
+from .analysisresult import AnalysisResult

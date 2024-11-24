@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test.utils import override_settings
 from django.utils.timezone import now
 
+from data_portal.models import AnalysisResult
 from data_portal.models.limsrow import LIMSRow, S3LIMS
 from data_portal.models.s3object import S3Object
 from data_processors.s3.lambdas import s3_event
@@ -145,6 +146,14 @@ class S3EventUnitTests(S3EventUnitTestCase):
         s3_lims = S3LIMS(s3_object=s3_object, lims_row=lims_row)
         s3_lims.save()
 
+        # Create AnalysisResult instance
+        analysis_result = AnalysisResult(key='SBJ00001', gen=0, method=0)
+        analysis_result.save()
+
+        # Create the s3-analysisresult association
+        analysis_result.s3objects.add(s3_object)
+        self.assertEqual(AnalysisResult.objects.first().s3objects.count(), 1)  # assert associated
+
         s3_event_message = {
             "Records": [
                 {
@@ -188,6 +197,9 @@ class S3EventUnitTests(S3EventUnitTestCase):
 
         results = s3_event.handler(sqs_event, None)
 
+        # Simulate second AnalysisResult association. If uncommented, test assertion will fail - which is correct.
+        # analysis_result.s3objects.add(S3Object.objects.get(id=2))
+
         self.assertEqual(results['removed_count'], 1)
         # We should expect the existing association removed as well
         # self.assertEqual(results['s3_lims_removed_count'], 1)     FIXME to be removed when refactoring #343
@@ -196,6 +208,13 @@ class S3EventUnitTests(S3EventUnitTestCase):
         # We should expect the new association created as well
         # self.assertEqual(results['s3_lims_created_count'], 1)     FIXME to be removed when refactoring #343
         self.assertEqual(results['unsupported_count'], 0)
+
+        # assert AnalysisResult side retain
+        self.assertIsNotNone(AnalysisResult.objects.first())
+        self.assertEqual(AnalysisResult.objects.count(), 1)
+        # assert no more association
+        self.assertIsNone(AnalysisResult.objects.get(key='SBJ00001').s3objects.first())
+        self.assertEqual(AnalysisResult.objects.first().s3objects.count(), 0)
 
     def test_delete_non_existent_s3_object(self):
         """
