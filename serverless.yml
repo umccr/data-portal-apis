@@ -83,6 +83,9 @@ provider:
 functions:
   api:
     handler: wsgi_handler.handler
+    # configure API lambda to use rds aurora reader endpoint
+    environment:
+      DJANGO_SETTINGS_MODULE: data_portal.settings.aws_ro
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     events:
