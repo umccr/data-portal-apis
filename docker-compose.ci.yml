@@ -17,19 +17,25 @@ services:
     image: public.ecr.aws/docker/library/haproxy:2.8
 
   wes:
-    image: quay.io/victorskl/prism:5
+    image: quay.io/victorskl/prism:5-aarch64
+    platform: linux/aarch64
 
   tes:
-    image: quay.io/victorskl/prism:5
+    image: quay.io/victorskl/prism:5-aarch64
+    platform: linux/aarch64
 
   gds:
-    image: quay.io/victorskl/prism:5
+    image: quay.io/victorskl/prism:5-aarch64
+    platform: linux/aarch64
 
   ens:
-    image: quay.io/victorskl/prism:5
+    image: quay.io/victorskl/prism:5-aarch64
+    platform: linux/aarch64
 
   console:
-    image: quay.io/victorskl/prism:5
+    image: quay.io/victorskl/prism:5-aarch64
+    platform: linux/aarch64
 
   v2:
-    image: quay.io/victorskl/prism:5
+    image: quay.io/victorskl/prism:5-aarch64
+    platform: linux/aarch64

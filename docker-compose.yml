@@ -46,7 +46,7 @@ services:
     image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_wes
-    command: mock -d -h 0.0.0.0 "/swagger/wes.json"
+    command: mock --seed 6f97cf1b -d -h 0.0.0.0 "/swagger/wes.json"
     restart: always
     ports:
       - "4010:4010"
@@ -57,7 +57,7 @@ services:
     image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_tes
-    command: mock -d -h 0.0.0.0 "/swagger/tes.json"
+    command: mock --seed 6f97cf1b -d -h 0.0.0.0 "/swagger/tes.json"
     restart: always
     ports:
       - "4011:4010"
@@ -68,7 +68,7 @@ services:
     image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_gds
-    command: mock -d -h 0.0.0.0 "/swagger/gds.json"
+    command: mock --seed 6f97cf1b -d -h 0.0.0.0 "/swagger/gds.json"
     restart: always
     ports:
       - "4012:4010"
@@ -79,7 +79,7 @@ services:
     image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_ens
-    command: mock -d -h 0.0.0.0 "/swagger/ens.json"
+    command: mock --seed 6f97cf1b -d -h 0.0.0.0 "/swagger/ens.json"
     restart: always
     ports:
       - "4013:4010"
@@ -90,7 +90,7 @@ services:
     image: stoplight/prism:5
     platform: linux/amd64
     container_name: portal_console
-    command: mock -d -h 0.0.0.0 "/swagger/console.json"
+    command: mock --seed 6f97cf1b -d -h 0.0.0.0 "/swagger/console.json"
     restart: always
     ports:
       - "4014:4010"
@@ -100,7 +100,7 @@ services:
   v2:
     image: stoplight/prism:5
     platform: linux/amd64
-    command: mock -d -h 0.0.0.0 "/swagger/openapi_public.yaml"
+    command: mock --seed 6f97cf1b -d -h 0.0.0.0 "/swagger/openapi_public.yaml"
     restart: always
     ports:
       - "4015:4010"
