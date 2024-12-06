@@ -18,6 +18,8 @@ provider:
   name: aws
   deploymentMethod: direct
   runtime: python3.12
+  architecture: arm64
+  memorySize: 512
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   deploymentBucket:
@@ -83,6 +85,7 @@ provider:
 functions:
   api:
     handler: wsgi_handler.handler
+    snapStart: true
     # configure API lambda to use rds aurora reader endpoint
     environment:
       DJANGO_SETTINGS_MODULE: data_portal.settings.aws_ro
@@ -138,6 +141,7 @@ functions:
 
   sqs_s3_event_processor:
     handler: data_processors.s3.lambdas.s3_event.handler
+    memorySize: 256
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     events:

@@ -17,6 +17,7 @@ from django.db import transaction
 # from django.db.models import ExpressionWrapper, Value, CharField, Q, F  FIXME to be removed when refactoring #343
 from libumccr.aws import libs3
 
+from data_portal.fields import HashFieldHelper
 from data_portal.models.limsrow import LIMSRow, S3LIMS
 from data_portal.models.s3object import S3Object
 from data_processors.const import S3EventRecord
@@ -33,6 +34,7 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
     """
     results = defaultdict(int)
 
+    obj_list = list()
     for record in records:
         if record.event_type == libs3.S3EventType.EVENT_OBJECT_REMOVED:
             removed_count, s3_lims_removed_count = _sync_s3_event_record_removed(record)
@@ -40,17 +42,31 @@ def sync_s3_event_records(records: List[S3EventRecord]) -> dict:
             results['s3_lims_removed_count'] += s3_lims_removed_count
 
         elif record.event_type == libs3.S3EventType.EVENT_OBJECT_CREATED:
-            created_count, s3_lims_created_count = _sync_s3_event_record_created(record)
+            # created_count, s3_lims_created_count = _sync_s3_event_record_created(record)
+            obj_list.append(_sync_s3_event_record_created(record))
+            created_count, s3_lims_created_count = (1, 1)
             results['created_count'] += created_count
             results['s3_lims_created_count'] += s3_lims_created_count
         else:
             logger.info(f"Found unsupported S3 event type: {record.event_type}")
             results['unsupported_count'] += 1
 
+    persist_s3_object_bulk(obj_list)
+
     return results
 
 
-def _sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
+@transaction.atomic
+def persist_s3_object_bulk(obj_list):
+    S3Object.objects.bulk_create(
+        obj_list,
+        update_conflicts=True,
+        # unique_fields=['unique_hash'],
+        update_fields=['last_modified_date', 'size', 'e_tag'],
+    )
+
+
+def _sync_s3_event_record_created(record: S3EventRecord) -> S3Object:
     """
     Synchronise a S3 event (CREATED) record to db
     :return: number of s3 object created, number of database association records created
@@ -66,7 +82,7 @@ def _sync_s3_event_record_created(record: S3EventRecord) -> Tuple[int, int]:
     else:
         e_tag = None
 
-    tag_s3_object(bucket_name, key, "bam")
+    # tag_s3_object(bucket_name, key, "bam")
 
     return persist_s3_object(bucket=bucket_name, key=key, size=size, last_modified_date=record.event_time, e_tag=e_tag)
 
@@ -82,8 +98,8 @@ def _sync_s3_event_record_removed(record: S3EventRecord) -> Tuple[int, int]:
     return delete_s3_object(bucket_name, key)
 
 
-@transaction.atomic
-def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size: int, e_tag: str) -> Tuple[int, int]:
+# @transaction.atomic
+def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size: int, e_tag: str) -> S3Object:
     """
     Persist an s3 object record into the db
     :param bucket: s3 bucket name
@@ -93,31 +109,41 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
     :param e_tag: s3 objec etag
     :return: number of s3 object created, number of s3-lims association records created
     """
-    query_set = S3Object.objects.filter(bucket=bucket, key=key)
-    new = not query_set.exists()
+    # query_set = S3Object.objects.filter(bucket=bucket, key=key)
+    # new = not query_set.exists()
 
-    if new:
-        logger.info(f"Creating a new S3Object (bucket={bucket}, key={key})")
-        s3_object = S3Object(
-            bucket=bucket,
-            key=key
-        )
-    else:
-        logger.info(f"Updating a existing S3Object (bucket={bucket}, key={key})")
-        s3_object: S3Object = query_set.get()
+    # if new:
+    #     logger.info(f"Creating a new S3Object (bucket={bucket}, key={key})")
+    #     s3_object = S3Object(
+    #         bucket=bucket,
+    #         key=key
+    #     )
+    # else:
+    #     logger.info(f"Updating a existing S3Object (bucket={bucket}, key={key})")
+    #     s3_object: S3Object = query_set.get()
 
-    s3_object.last_modified_date = last_modified_date
-    s3_object.size = size
-    s3_object.e_tag = e_tag
-    s3_object.save()
+    # s3_object.last_modified_date = last_modified_date
+    # s3_object.size = size
+    # s3_object.e_tag = e_tag
+    # s3_object.save()
 
-    if not new:
-        return 0, 0
+    logger.info(f"Upsert S3Object (bucket={bucket}, key={key})")
+    s3_object = S3Object(
+        bucket=bucket,
+        key=key,
+        last_modified_date=last_modified_date,
+        size=size,
+        e_tag=e_tag,
+    )
+    return s3_object
+
+    # if not new:
+    #     return 0, 0
 
     # TODO remove association logic and drop S3LIMS table, related with global search overhaul
     #  see https://github.com/umccr/data-portal-apis/issues/343
     # Number of s3-lims association records we have created in this run
-    new_association_count = 0
+    # new_association_count = 0
 
     # FIXME quick patch fix, permanently remove these when refactoring #343 in next iteration
     #  commented out the following association link due to performance issue upon S3 object Update events
@@ -150,7 +176,7 @@ def persist_s3_object(bucket: str, key: str, last_modified_date: datetime, size:
     # if len(lims_rows) == 0:
     #     logger.debug(f"No association to any LIMS row is found for the S3Object (bucket={bucket}, key={key})")
 
-    return 1, new_association_count
+    # return 1, new_association_count
 
 
 @transaction.atomic
@@ -162,18 +188,27 @@ def delete_s3_object(bucket_name: str, key: str) -> Tuple[int, int]:
     :return: number of s3 records deleted, number of s3-lims association records deleted
     """
     try:
-        s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
+        h = HashFieldHelper()
+        h.add(bucket_name).add(key)
+        hash_key_lookup = h.calculate_hash()
+        s3_object = S3Object.objects.filter(unique_hash__exact=hash_key_lookup)
+
+        # s3_object: S3Object = S3Object.objects.get(bucket=bucket_name, key=key)
 
         # TODO remove association logic and drop S3LIMS table, related with global search overhaul
         #  see https://github.com/umccr/data-portal-apis/issues/343
         #
-        s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
-        s3_lims_count = s3_lims_records.count()
-        s3_lims_records.delete()
+        # s3_lims_records = S3LIMS.objects.filter(s3_object=s3_object)
+        # s3_lims_count = s3_lims_records.count()
+        # s3_lims_records.delete()
 
-        s3_object.delete()
-        logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")
-        return 1, s3_lims_count
+        if s3_object.exists():
+            s3_object.delete()
+            logger.info(f"Deleted S3Object: s3://{bucket_name}/{key}")
+            return 1, 0
+        else:
+            logger.info(f"No deletion required. Non-existent S3Object (bucket={bucket_name}, key={key})")
+            return 0, 0
     except ObjectDoesNotExist as e:
         logger.info(f"No deletion required. Non-existent S3Object (bucket={bucket_name}, key={key}): {str(e)}")
         return 0, 0
