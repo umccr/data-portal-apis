@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 from typing import List
 
 from django.db import models
@@ -7,7 +8,7 @@ from django.db.models import Max, QuerySet, Q
 from libumccr import libregex
 
 from data_portal.exceptions import RandSamplesTooLarge
-from data_portal.fields import HashField
+from data_portal.fields import HashField, HashFieldHelper
 from data_portal.models import LabMetadata
 from data_portal.models.labmetadata import LabMetadataAssay, LabMetadataType
 
@@ -156,7 +157,7 @@ class S3ObjectManager(models.Manager):
             return bucket_dict['bucket']
         return None
 
-    def get_subject_cttsov2_results_from_byob(self, subject_id: str, **kwargs) -> QuerySet:
+    def get_subject_cttsov2_results_from_icav2(self, subject_id: str, **kwargs) -> QuerySet:
         # We are to show analysis done by cttsov2 pipeline from ICA v2 BYOB bucket
         # Get both ctTSO and ctTSOv2 libraries of the Subject
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
@@ -192,15 +193,17 @@ class S3ObjectManager(models.Manager):
             tmb_metrics_csv_q | all_results_q | all_bam_q
         ) & lib_q
 
-        bucket = kwargs.get('bucket', self.get_byob())
+        bucket = kwargs.get('bucket', None)
         if bucket:
             qs = qs.filter(bucket=bucket)
 
-        qs = qs.filter(q_results)
+        exclude_uq_hashes = kwargs.get('exclude_uq_hashes', [])  # exclude migrated (relocated) objects
+
+        qs = qs.filter(q_results).exclude(unique_hash__in=exclude_uq_hashes)
 
         return qs
 
-    def get_subject_wgts_results_from_byob(self, subject_id: str, **kwargs) -> QuerySet:
+    def get_subject_wgts_results_from_icav2(self, subject_id: str, **kwargs) -> QuerySet:
         # We are to show analysis done by WGTS pipelines from ICA v2 BYOB bucket
         # Get both WGS and WTS libraries of the Subject
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
@@ -257,14 +260,16 @@ class S3ObjectManager(models.Manager):
         q_results: Q = (bam | vcf | vcf_germline | cancer | qc | pcgr | coverage | circos | wts_bam | wts_qc
                         | wts_fusions | rnasum) & lib_q & baseline
 
-        qs = self.filter(q_results)
+        exclude_uq_hashes = kwargs.get('exclude_uq_hashes', [])  # exclude migrated (relocated) objects
 
-        bucket = kwargs.get('bucket', self.get_byob())
+        qs = self.filter(q_results).exclude(unique_hash__in=exclude_uq_hashes)
+
+        bucket = kwargs.get('bucket', None)
         if bucket:
             qs = qs.filter(bucket=bucket)
         return qs
 
-    def get_subject_sash_results_from_byob(self, subject_id: str, **kwargs) -> QuerySet:
+    def get_subject_sash_results_from_icav2(self, subject_id: str, **kwargs) -> QuerySet:
         # We are to show analysis done by orcabus oncoanalyser pipelines from BYOB bucket
         # Get both WGS and WTS libraries of the Subject
         subject_meta_list: List[LabMetadata] = LabMetadata.objects.filter(
@@ -309,12 +314,98 @@ class S3ObjectManager(models.Manager):
                 vcf_somatic_snv_filter_set | vcf_somatic_snv_filter_applied | vcf_somatic_sv
         ) & lib_q & baseline
 
-        qs = self.filter(q_results)
+        exclude_uq_hashes = kwargs.get('exclude_uq_hashes', [])  # exclude migrated (relocated) objects
 
-        bucket = kwargs.get('bucket', self.get_byob())
+        qs = self.filter(q_results).exclude(unique_hash__in=exclude_uq_hashes)
+
+        bucket = kwargs.get('bucket', None)
         if bucket:
             qs = qs.filter(bucket=bucket)
         return qs
+
+    def get_migrated_subject_results_from_icav1(self, subject_id: str, byob_name: str, gds_results_by_subject: QuerySet):
+        # workflow type src to dst mapping lookup table
+        # see https://github.com/umccr/biodaily/blob/ee9c4f6/data-migration/icav1-to-icav2/clinical-data/Move%20Clinical%20Data.py
+        ICAV2_ANALYSIS_NAME_BY_WFR_TYPE = {
+            # WGS SOMATIC
+            "wgs_tumor_normal": "tumor-normal",
+            # WTS
+            "wts_tumor_only": "wts",
+            # QC
+            "wts_alignment_qc": "wgts-qc",
+            "wgs_alignment_qc": "wgts-qc",
+            # TSO
+            "tso_ctdna_tumor_only": "cttsov1",
+            # GERMLINE
+            "GERMLINE": "germline",
+            # UMCCRise
+            "umccrise": "umccrise",
+            # RNASum
+            "rnasum": "rnasum"
+        }
+
+        def calc_byob_uq_hash(_bucket_name, _project_name, _dst_type, _rpath):
+            byob_key = f"byob-icav2/{_project_name}/analysis/{_dst_type}/{_rpath}"
+            h = HashFieldHelper()
+            h.add(_bucket_name).add(byob_key)
+            byob_uq_hash = h.calculate_hash()
+            # print(byob_key, byob_uq_hash)
+            return byob_uq_hash
+
+        def calc_archive_uq_hash(_rpath):
+            archive_bucket_name = "archive-prod-analysis-503977275616-ap-southeast-2"  # we only have 1 archive as destination
+            _pid = _rpath.split("/")[0]
+            assert re.match(r"\d{8}[A-Za-z0-9]{8}", _pid) is not None, f"{_pid} is not portal_run_id for {subject_id} - {_rpath}"
+            _yyyy = _pid[:4]
+            _mm = _pid[4:6]
+            archive_bucket_key = f"v1/year={_yyyy}/month={_mm}/{_rpath}"
+            h = HashFieldHelper()
+            h.add(archive_bucket_name).add(archive_bucket_key)
+            archive_uq_hash = h.calculate_hash()
+            # print(archive_bucket_key, archive_uq_hash)
+            return archive_uq_hash
+
+        cttsov1_uq_hashes = []
+        wgts_uq_hashes = []
+        src_cnt = 0
+        for gdsfile in gds_results_by_subject.all():
+            # get gds path as vectorised elements
+            gdsfile_path_vec = gdsfile.path.split("/")
+
+            # ImplNote:
+            #  The input dataset gdsfile is frozen set. There are no more ongoing update activity nor; its structure has
+            #  now considered "fix" constant. No worry with slice operation `gdsfile_path_vec` down under. These were
+            #  well-known file path convention from ICAv1. ditto "convention over configuration..." stuff!
+
+            # resolve type
+            old_type = gdsfile_path_vec[3]
+            new_type = ICAV2_ANALYSIS_NAME_BY_WFR_TYPE[old_type]
+
+            if old_type == "tso_ctdna_tumor_only":
+                # need to pop LibraryID out from middle path
+                # see https://github.com/umccr/biodaily/blob/ee9c4f6/data-migration/icav1-to-icav2/clinical-data/clinical_data_move_scripts/tso_ctdna_tumor_only/batch_000.sh
+                remainder_path = "/".join([gdsfile_path_vec[4]] + gdsfile_path_vec[6:])
+                cttsov1_uq_hashes.append(calc_byob_uq_hash(byob_name, gdsfile.volume_name, new_type, remainder_path))
+                cttsov1_uq_hashes.append(calc_archive_uq_hash(remainder_path))
+            else:
+                remainder_path = "/".join(gdsfile_path_vec[4:])
+                wgts_uq_hashes.append(calc_byob_uq_hash(byob_name, gdsfile.volume_name, new_type, remainder_path))
+                wgts_uq_hashes.append(calc_archive_uq_hash(remainder_path))
+
+            src_cnt += 1
+
+        icav1_cttsov1_results_by_subject_qs = self.filter(unique_hash__in=cttsov1_uq_hashes)
+        icav1_wgts_results_by_subject_qs = self.filter(unique_hash__in=wgts_uq_hashes)
+
+        # --- QC step
+        # combine uq_hashes and make count check
+        # most of the time, this should match up. if not, log warning and follow up manually what have been missed
+        uq_hashes = cttsov1_uq_hashes + wgts_uq_hashes
+        dst_cnt = self.filter(unique_hash__in=uq_hashes).count()
+        if src_cnt != dst_cnt:
+            logger.warning(f"MISMATCH {subject_id} -- gds:{src_cnt}, s3:{dst_cnt}")
+
+        return icav1_cttsov1_results_by_subject_qs, icav1_wgts_results_by_subject_qs, uq_hashes
 
 
 class S3Object(models.Model):

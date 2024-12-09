@@ -60,14 +60,24 @@ class Command(BaseCommand):
             logger.info("Key is not set, skipping.")
             return
 
-        bcbio_results_by_subject = S3Object.objects.get_subject_results(self.key).all()
+        bcbio_bucket = "umccr-primary-data-prod"  # FIXME comment this out if not prod
+        bcbio_results_by_subject = S3Object.objects.get_subject_results(self.key, bucket=bcbio_bucket).all()
 
         gds_results_by_subject = GDSFile.objects.get_subject_results(self.key).all()
-        sash_results_by_subject = S3Object.objects.get_subject_sash_results(self.key).all()
 
-        byob_cttsov2_results_by_subject = S3Object.objects.get_subject_cttsov2_results_from_byob(self.key).all()
-        byob_wgts_results_by_subject = S3Object.objects.get_subject_wgts_results_from_byob(self.key).all()
-        byob_sash_results_by_subject = S3Object.objects.get_subject_sash_results_from_byob(self.key).all()
+        oncoanalyser_bucket = "org.umccr.data.oncoanalyser"  # FIXME comment this out if not prod
+        sash_results_by_subject = S3Object.objects.get_subject_sash_results(self.key, bucket=oncoanalyser_bucket).all()
+
+        # byob_name = S3Object.objects.get_byob()  # FIXME use this if not prod
+        byob_name = "pipeline-prod-cache-503977275616-ap-southeast-2"  # statically set to boost the perf
+
+        icav1_cttsov1_results_by_subject_qs, icav1_wgts_results_by_subject_qs, migrated_uq_hashes = S3Object.objects.get_migrated_subject_results_from_icav1(self.key, byob_name, gds_results_by_subject)
+        icav1_cttsov1_results_by_subject = icav1_cttsov1_results_by_subject_qs.all()
+        icav1_wgts_results_by_subject = icav1_wgts_results_by_subject_qs.all()
+
+        icav2_cttsov2_results_by_subject = S3Object.objects.get_subject_cttsov2_results_from_icav2(self.key, bucket=byob_name, exclude_uq_hashes=migrated_uq_hashes).all()
+        icav2_wgts_results_by_subject = S3Object.objects.get_subject_wgts_results_from_icav2(self.key, bucket=byob_name, exclude_uq_hashes=migrated_uq_hashes).all()
+        icav2_sash_results_by_subject = S3Object.objects.get_subject_sash_results_from_icav2(self.key, bucket=byob_name, exclude_uq_hashes=migrated_uq_hashes).all()
 
         if bcbio_results_by_subject.exists():
             AnalysisResult.objects.create_or_update(
@@ -82,23 +92,40 @@ class Command(BaseCommand):
                 gdsfiles=gds_results_by_subject,
             )
 
-        if byob_cttsov2_results_by_subject.exists():
+        if icav1_cttsov1_results_by_subject.exists():
+            AnalysisResult.objects.create_or_update(
+                lookup=Lookup(self.key, PlatformGeneration.TWO, AnalysisMethod.TSO500),
+                s3objects=icav1_cttsov1_results_by_subject,
+            )
+
+        if icav1_wgts_results_by_subject.exists():
+            AnalysisResult.objects.create_or_update(
+                lookup=Lookup(self.key, PlatformGeneration.TWO, AnalysisMethod.WGTS),
+                s3objects=icav1_wgts_results_by_subject,
+            )
+
+        if icav2_cttsov2_results_by_subject.exists():
             AnalysisResult.objects.create_or_update(
                 lookup=Lookup(self.key, PlatformGeneration.THREE, AnalysisMethod.TSO500V2),
-                s3objects=byob_cttsov2_results_by_subject,
+                s3objects=icav2_cttsov2_results_by_subject,
             )
 
-        if byob_wgts_results_by_subject.exists():
+        if icav2_wgts_results_by_subject.exists():
             AnalysisResult.objects.create_or_update(
                 lookup=Lookup(self.key, PlatformGeneration.THREE, AnalysisMethod.WGTS),
-                s3objects=byob_wgts_results_by_subject,
+                s3objects=icav2_wgts_results_by_subject,
             )
 
-        if byob_sash_results_by_subject.exists():
+        if icav2_sash_results_by_subject.exists():
             AnalysisResult.objects.create_or_update(
                 lookup=Lookup(self.key, PlatformGeneration.THREE, AnalysisMethod.SASH),
-                s3objects=byob_sash_results_by_subject,
+                s3objects=icav2_sash_results_by_subject,
             )
+
+        # Un-comment to review SQL queries
+        # import json
+        # from django.db import connection
+        # print(json.dumps(connection.queries, indent=4))
 
     def add_arguments(self, parser):
         parser.add_argument('-s', '--subject_id', action='store')
@@ -154,17 +181,31 @@ class Command(BaseCommand):
                     logger.info("Not a valid Instrument Run ID")
                     exit(1)
 
-                for s in LIMSRow.objects.filter(illumina_id=opt_instrument_run_id).values('subject_id'):
+                for s in LIMSRow.objects.filter(
+                    illumina_id=opt_instrument_run_id,
+                    type__in=('WGS', 'WTS', 'ctDNA', 'ctTSO'),
+                    workflow__in=('research', 'clinical', 'control', 'manual'),
+                    phenotype__in=('normal', 'tumor', 'negative-control'),
+                ).values('subject_id'):
                     if not s['subject_id']:
                         continue
                     subject_set.add(s['subject_id'])
             else:
                 # all subjects
-                for s in LabMetadata.objects.order_by().values('subject_id'):
+                for s in LabMetadata.objects.filter(
+                    type__in=('WGS', 'WTS', 'ctDNA', 'ctTSO'),
+                    workflow__in=('research', 'clinical', 'control', 'manual'),
+                    phenotype__in=('normal', 'tumor', 'negative-control'),
+                ).order_by().values('subject_id'):
                     if not s['subject_id']:
                         continue
                     subject_set.add(s['subject_id'])
-                for s in LIMSRow.objects.order_by().values('subject_id'):
+
+                for s in LIMSRow.objects.filter(
+                    type__in=('WGS', 'WTS', 'ctDNA', 'ctTSO'),
+                    workflow__in=('research', 'clinical', 'control', 'manual'),
+                    phenotype__in=('normal', 'tumor', 'negative-control'),
+                ).order_by().values('subject_id'):
                     if not s['subject_id']:
                         continue
                     subject_set.add(s['subject_id'])
