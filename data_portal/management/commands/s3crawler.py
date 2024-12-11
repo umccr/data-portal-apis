@@ -55,18 +55,30 @@ class Command(BaseCommand):
 
         if uin == 'y':
             cnt = 0
+            batch_list = []
             for obj in libs3.get_matching_s3_objects(bucket, prefix=key_prefix):
                 if opt_dry:
                     logger.info(f"s3://{bucket}/{obj['Key']}")
                 else:
-                    services.persist_s3_object(
-                        bucket=bucket,
-                        key=obj['Key'],
-                        last_modified_date=obj['LastModified'],
-                        e_tag=str(obj['ETag'][1:-1]),
-                        size=int(obj['Size']),
+                    batch_list.append(
+                        services.persist_s3_object(
+                            bucket=bucket,
+                            key=obj['Key'],
+                            last_modified_date=obj['LastModified'],
+                            e_tag=str(obj['ETag'][1:-1]),
+                            size=int(obj['Size']),
+                        )
                     )
+
+                    if len(batch_list) == 10:
+                        services.persist_s3_object_bulk(batch_list)
+                        batch_list.clear()
+
                 cnt += 1
+
+            # any remainder in the last batch
+            services.persist_s3_object_bulk(batch_list)
+
             logger.info(f"Total {cnt} objects have been indexd from s3://{bucket}/{key_prefix}")
         else:
             logger.info("Abort upon user request")
